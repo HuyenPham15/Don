@@ -1,4 +1,5 @@
 import React from 'react';
+import { DonField } from "../types";
 function DonFieldRow({ field, editing, value, changed, onChange, onHighlight }: {
   field: DonField; editing: boolean; value: string; changed: boolean; onChange: (v: string) => void; onHighlight: (k: string) => void;
 }) {
@@ -10,11 +11,6 @@ function DonFieldRow({ field, editing, value, changed, onChange, onHighlight }: 
     <div>
       <div className="flex items-center gap-1.5 mb-1">
         <span className="text-xs font-medium" style={{ color: "#94A3B8" }}>{field.label}</span>
-        {field.hlKey && !editing && !empty && (
-          <button onClick={() => onHighlight(field.hlKey!)} className="text-xs flex items-center gap-0.5" style={{ color: "#1D4ED8" }} title="Xem nguồn trong tài liệu">
-            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="7" cy="7" r="4.5" /><path d="M10.5 10.5L14 14" /></svg>
-          </button>
-        )}
       </div>
 
       {editing ? (

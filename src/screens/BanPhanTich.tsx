@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from "react";
 import AiAnalyzingHeader from "../components/AiAnalyzingHeader";
 import AIStatusBadge from "../components/AIStatusBadge";
 import DaXacNhanSection from "../components/DaXacNhanSection";
@@ -8,17 +8,23 @@ import StepAnalyzingCard from "../components/StepAnalyzingCard";
 import ThongTinDonSection from "../components/ThongTinDonSection";
 import ThongTinXuLySection from "../components/ThongTinXuLySection";
 import TraCuuVaPhanTichSection from "../components/TraCuuVaPhanTichSection";
+import { LuotNhan, AIJob, Acks, DrawerState, Screen, WorkflowConfig } from "../types";
+
 function BanPhanTich({ luotNhan, onNav }: { luotNhan: LuotNhan; onNav: (s: Screen) => void }) {
   const [job, setJob] = useState<AIJob>(1);
   const [confirmed, setConfirmed] = useState(false);
   const [acks, setAcks] = useState<Acks>({ info: false, traCuu: false });
-  const [huong, setHuong] = useState<string>("");
+  const [huong, setHuong] = useState<string>("tiep-nhan-xu-ly");
   const [donViXL, setDonViXL] = useState<string>("");
   const [sourceHighlight, setSourceHighlight] = useState<string | null>(null);
   const [drawer, setDrawer] = useState<DrawerState | null>(null);
   const [splitPct, setSplitPct] = useState<number>(50);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Workflow acceptance state
+  const [acceptedWorkflow, setAcceptedWorkflow] = useState<WorkflowConfig | null>(null);
+  const [acceptedLoaiDonName, setAcceptedLoaiDonName] = useState("");
 
   useEffect(() => {
     if (!isDragging) return;
@@ -50,13 +56,16 @@ function BanPhanTich({ luotNhan, onNav }: { luotNhan: LuotNhan; onNav: (s: Scree
   const closeDrawer = () => setDrawer(null);
   const setAck = (k: keyof Acks, v: boolean) => setAcks((a) => ({ ...a, [k]: v }));
 
-  const reviewCount = [acks.info, acks.traCuu, huong !== ""].filter(Boolean).length;
-  const needsDonVi = ["chuyen-tiep-nhan", "chuyen-tham-quyen", "gan-hien-co"].includes(huong);
-  const canProceed = done && huong !== "" && acks.traCuu && (!needsDonVi || donViXL !== "");
-
   const handleRerun = () => {
     setJob(1);
     setConfirmed(false);
+    setAcceptedWorkflow(null);
+  };
+
+  const handleAccept = (wf: WorkflowConfig, loaiDonName: string) => {
+    setAcceptedWorkflow(wf);
+    setAcceptedLoaiDonName(loaiDonName);
+    setConfirmed(true);
   };
 
   return (
@@ -104,7 +113,7 @@ function BanPhanTich({ luotNhan, onNav }: { luotNhan: LuotNhan; onNav: (s: Scree
           <PdfPane highlight={sourceHighlight} onClearHighlight={() => setSourceHighlight(null)} onHighlight={setSourceHighlight} />
         </div>
 
-        {/* Thanh kéo điều chỉnh tỉ lệ giữa 2 màn hình */}
+        {/* Thanh kéo điều chỉnh tỉ lệ */}
         <div
           onMouseDown={() => setIsDragging(true)}
           className={`w-2 hover:w-2.5 transition-all cursor-col-resize flex items-center justify-center relative z-20 flex-shrink-0 ${isDragging ? "bg-blue-600 shadow-lg" : "bg-slate-200 hover:bg-blue-400"
@@ -120,10 +129,12 @@ function BanPhanTich({ luotNhan, onNav }: { luotNhan: LuotNhan; onNav: (s: Scree
         </div>
 
         {/* RIGHT: AI phân tích */}
-        <div style={{ width: `${100 - splitPct}%` }} className="h-full flex-1 min-w-0 flex flex-col overflow-hidden" style={{ background: "#F8FAFC" }}>
+        <div style={{ width: `${100 - splitPct}%`, background: "#F8FAFC" }} className="h-full flex-1 min-w-0 flex flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto">
-            {confirmed ? (
-              <div className="px-6 py-5"><DaXacNhanSection onNav={onNav} /></div>
+            {confirmed && acceptedWorkflow ? (
+              <div className="px-6 py-5">
+                <DaXacNhanSection onNav={onNav} workflow={acceptedWorkflow} loaiDonName={acceptedLoaiDonName} />
+              </div>
             ) : (
               <>
                 <AiAnalyzingHeader job={job} onSelectStep={setJob} onRerun={handleRerun} />
@@ -135,7 +146,7 @@ function BanPhanTich({ luotNhan, onNav }: { luotNhan: LuotNhan; onNav: (s: Scree
                     </div>
                   )}
 
-                  {/* Bước 2: GỘP BƯỚC 2, 3, 4 - Tra cứu hệ thống, Phân tích đơn liên quan & Đề xuất xử lý */}
+                  {/* Bước 2: Tra cứu hệ thống, Phân tích đơn liên quan */}
                   {job >= 2 && (
                     <div className="slide-in">
                       <TraCuuVaPhanTichSection
@@ -147,10 +158,16 @@ function BanPhanTich({ luotNhan, onNav }: { luotNhan: LuotNhan; onNav: (s: Scree
                     </div>
                   )}
 
-                  {/* Bước 3: Xác định hướng xử lý */}
+                  {/* Bước 3: Đề xuất giải quyết & Xác nhận */}
                   {job >= 3 && (
                     <div className="slide-in">
-                      <ThongTinXuLySection huong={huong} setHuong={setHuong} donVi={donViXL} setDonVi={setDonViXL} />
+                      <ThongTinXuLySection
+                        huong={huong}
+                        setHuong={setHuong}
+                        donVi={donViXL}
+                        setDonVi={setDonViXL}
+                        onAccept={handleAccept}
+                      />
                     </div>
                   )}
 
@@ -162,8 +179,6 @@ function BanPhanTich({ luotNhan, onNav }: { luotNhan: LuotNhan; onNav: (s: Scree
               </>
             )}
           </div>
-
-
         </div>
       </div>
 

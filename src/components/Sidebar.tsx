@@ -1,4 +1,6 @@
 import React from 'react';
+import { IcoBriefcase, IcoInbox, IcoBook, IcoChart } from "./icons";
+import { Screen } from "../types";
 function Sidebar({ screen, onNav }: { screen: Screen; onNav: (s: Screen) => void }) {
   const navs: { id: Screen; icon: React.ReactNode; label: string }[] = [
     { id: "cong-viec", icon: <IcoBriefcase />, label: "Công việc của tôi" },

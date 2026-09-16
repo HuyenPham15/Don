@@ -1,4 +1,5 @@
 import React from 'react';
+import { DrawerState } from "../types";
 function JobCard05({ visible, onOpen }: { visible: boolean; onOpen: (d: DrawerState) => void }) {
   if (!visible) return null;
 

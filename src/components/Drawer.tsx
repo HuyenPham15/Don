@@ -3,6 +3,7 @@ import AiBadge from "./AiBadge";
 import DrawerField from "./DrawerField";
 import DrawerSection from "./DrawerSection";
 import MatchFactor from "./MatchFactor";
+import { DrawerState, DrawerType } from "../types";
 function Drawer({ drawer, onClose, onOpenDrawer }: {
   drawer: DrawerState;
   onClose: () => void;

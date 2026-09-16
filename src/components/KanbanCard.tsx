@@ -1,4 +1,6 @@
 import React from 'react';
+import { JOB_LABELS } from "../constants";
+import { LuotNhan } from "../types";
 function KanbanCard({ card, onOpen }: { card: LuotNhan; onOpen: () => void }) {
   const done = card.aiJob === 5;
   const running = card.aiJob > 0 && card.aiJob < 5;

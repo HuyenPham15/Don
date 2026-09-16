@@ -3,6 +3,8 @@ import FieldLabel from "../components/FieldLabel";
 import OptTag from "../components/OptTag";
 import ReadonlyField from "../components/ReadonlyField";
 import SectionCard from "../components/SectionCard";
+import { UploadedFile, Screen } from "../types";
+import { IcoFilePdf, IcoArrowRight, IcoInfo, IcoScan } from "../components/icons";
 function NhanDonThem({ onNav, onSubmit }: { onNav: (s: Screen) => void; onSubmit: () => void }) {
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [dragging, setDragging] = useState(false);

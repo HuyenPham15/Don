@@ -1,4 +1,5 @@
 import React from 'react';
+import { AIJob } from "../types";
 function AiAnalyzingHeader({
   job,
   onSelectStep,

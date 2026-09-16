@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { ALL_LUOT_NHAN } from "../constants";
+import { LuotNhan, AIJob, Screen } from "../types";
+import { IcoSearch } from "../components/icons";
 function NhanDonList({ onNav, onSelect }: { onNav: (s: Screen) => void; onSelect: (ln: LuotNhan) => void }) {
   const [q, setQ] = useState("");
   const filtered = ALL_LUOT_NHAN.filter((l) => !q || l.id.toLowerCase().includes(q.toLowerCase()) || l.nguoiNop.toLowerCase().includes(q.toLowerCase()));

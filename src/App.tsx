@@ -6,6 +6,8 @@ import CongViecCuaToi from "./screens/CongViecCuaToi";
 import DonTiepNhan from "./screens/DonTiepNhan";
 import NhanDonList from "./screens/NhanDonList";
 import NhanDonThem from "./screens/NhanDonThem";
+import { LN19 } from "./constants";
+import { LuotNhan, Screen } from "./types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 // ─── Demo data ────────────────────────────────────────────────────────────────

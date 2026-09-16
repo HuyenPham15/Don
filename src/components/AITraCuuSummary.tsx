@@ -1,4 +1,5 @@
 import React from 'react';
+import { DrawerState } from "../types";
 function AITraCuuSummary({ onOpen }: { onOpen: (d: DrawerState) => void }) {
   const items: { icon: string; label: string; drawer: DrawerState }[] = [
     { icon: "👤", label: "02 lượt nhận trước", drawer: { type: "nguoi-gui" } },

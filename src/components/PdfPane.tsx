@@ -68,7 +68,7 @@ function PdfPane({
       </div>
 
       {/* Highlights Quick Bar */}
-      <div className="px-4 py-2 bg-slate-50 border-b flex items-center gap-2 flex-wrap overflow-x-auto text-xs" style={{ borderColor: "#E2E8F0" }}>
+      {/* <div className="px-4 py-2 bg-slate-50 border-b flex items-center gap-2 flex-wrap overflow-x-auto text-xs" style={{ borderColor: "#E2E8F0" }}>
         <span className="text-slate-500 font-medium flex-shrink-0">Điểm bóc tách:</span>
         {Object.entries(hlMap).map(([key, item]) => {
           const isActive = highlight === key;
@@ -88,7 +88,7 @@ function PdfPane({
             </button>
           );
         })}
-      </div>
+      </div> */}
 
       {/* Scrollable PDF Document Canvas */}
       <div className="flex-1 overflow-auto p-4 sm:p-6 flex justify-center bg-slate-200/70">

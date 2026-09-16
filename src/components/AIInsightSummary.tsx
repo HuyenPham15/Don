@@ -1,4 +1,5 @@
 import React from 'react';
+import { DrawerState } from "../types";
 function AIInsightSummary({ onOpen }: { onOpen: (d: DrawerState) => void }) {
   const items: { icon: string; label: string; color: string; drawer: DrawerState }[] = [
     { icon: "👤", label: "01 người gửi đã xác định", color: "#1E40AF", drawer: { type: "nguoi-gui" } },

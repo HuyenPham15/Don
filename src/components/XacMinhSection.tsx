@@ -1,5 +1,6 @@
 import React from 'react';
 import SectionTitle from "./SectionTitle";
+import { DrawerState } from "../types";
 function XacMinhSection({ onOpen }: { onOpen: (d: DrawerState) => void }) {
   const issues = [
     { text: "Chưa có số điện thoại người nộp đơn", action: "Bổ sung", drawer: { type: "mau-thuan" } as DrawerState },

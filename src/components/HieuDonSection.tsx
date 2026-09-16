@@ -1,6 +1,7 @@
 import React from 'react';
 import EntityAvatar from "./EntityAvatar";
 import SectionTitle from "./SectionTitle";
+import { AIJob } from "../types";
 function HieuDonSection({ job }: { job: AIJob }) {
   const visible = job >= 1;
   if (!visible) return null;

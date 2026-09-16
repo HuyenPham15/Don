@@ -1,4 +1,5 @@
 import React from 'react';
+import { AIJob } from "../types";
 function AIStatusBadge({ job, confirmed }: { job: AIJob; confirmed?: boolean }) {
   if (confirmed) return (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold" style={{ background: "#D1FAE5", color: "#15803D" }}>

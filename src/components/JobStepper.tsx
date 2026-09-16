@@ -1,4 +1,6 @@
 import React from 'react';
+import { JOB_LABELS } from "../constants";
+import { AIJob } from "../types";
 function JobStepper({ currentJob }: { currentJob: AIJob }) {
   return (
     <div className="flex items-center gap-0">

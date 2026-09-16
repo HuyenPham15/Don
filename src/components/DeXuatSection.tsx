@@ -1,5 +1,6 @@
 import React from 'react';
 import SectionTitle from "./SectionTitle";
+import { DrawerState } from "../types";
 function DeXuatSection({ onOpen }: { onOpen: (d: DrawerState) => void }) {
   const conditions = [
     { label: "Có người gửi", ok: true },

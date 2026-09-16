@@ -1,4 +1,6 @@
 import React from 'react';
+import { PIPELINE_STEPS } from "../constants";
+import { AIJob } from "../types";
 function AIPipeline({ currentJob }: { currentJob: AIJob }) {
   return (
     <div className="flex items-center gap-0">

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Screen } from "../types";
 function QuyTrinhProgressCard({ onNav }: { onNav: (s: Screen) => void }) {
   const steps = [
     { n: "01", label: "Tiếp nhận", state: "done" },

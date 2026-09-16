@@ -1,5 +1,6 @@
 import React from 'react';
 import SectionTitle from "./SectionTitle";
+import { AIJob, DrawerState } from "../types";
 function TimThaySection({ job, onOpen }: { job: AIJob; onOpen: (d: DrawerState) => void }) {
   type Metric = { label: string; count: string; sub: string; drawer: DrawerState; warn?: boolean; loading: boolean };
   const metrics: Metric[] = [

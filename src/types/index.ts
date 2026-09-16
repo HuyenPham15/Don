@@ -1,13 +1,13 @@
-export interface Screen { /* TODO */ }
-type Screen = "cong-viec" | "nhan-don-list" | "nhan-don-them" | "ban-phan-tich" | "don-tiep-nhan" | "thu-vien" | "bao-cao";
 
-type AIJob = 0 | 1 | 2 | 3 | 4 | 5;
+export type Screen = "cong-viec" | "nhan-don-list" | "nhan-don-them" | "ban-phan-tich" | "don-tiep-nhan" | "thu-vien" | "bao-cao";
 
-type DrawerType = "nguoi-gui" | "don-lien-quan" | "so-sanh" | "vu-viec" | "trung-don" | "mau-thuan" | "xem-nguon" | "rule" | "knowledge" | "can-cu";
+export type AIJob = 0 | 1 | 2 | 3 | 4 | 5;
 
-interface DrawerState { type: DrawerType; field?: string; }
+export type DrawerType = "nguoi-gui" | "don-lien-quan" | "so-sanh" | "vu-viec" | "trung-don" | "mau-thuan" | "xem-nguon" | "rule" | "knowledge" | "can-cu";
 
-interface LuotNhan {
+export interface DrawerState { type: DrawerType; field?: string; }
+
+export interface LuotNhan {
   id: string;
   ngayNhan: string;
   nguoiNop: string;
@@ -17,11 +17,37 @@ interface LuotNhan {
   aiJob: AIJob;
 }
 
-interface UploadedFile { name: string; size: string; category: "main" | "attach" | "extra"; }
+export interface UploadedFile { name: string; size: string; category: "main" | "attach" | "extra"; }
 
-type FieldType = "text" | "textarea" | "date" | "select" | "search";
+export type FieldType = "text" | "textarea" | "date" | "select" | "search";
 
-interface DonField { key: string; label: string; ai: string | null; type: FieldType; options?: string[]; needsCheck?: boolean; full?: boolean; hlKey?: string; }
+export interface DonField { key: string; label: string; ai: string | null; type: FieldType; options?: string[]; needsCheck?: boolean; full?: boolean; hlKey?: string; }
 
-interface Acks { info: boolean; traCuu: boolean }
+export interface Acks { info: boolean; traCuu: boolean }
 
+// ─── Workflow types ───────────────────────────────────────────────────────────
+
+export interface WorkflowStep {
+  id: string;
+  name: string;
+  responsible: string;
+  status: "done" | "active" | "pending";
+}
+
+export interface WorkflowConfig {
+  id: string;
+  name: string;
+  version: string;
+  loaiDonId: string;
+  effectiveDate: string;
+  status: "active" | "inactive";
+  scope: string;
+  steps: Omit<WorkflowStep, "status">[];
+}
+
+export interface LoaiDon {
+  id: string;
+  name: string;
+}
+
+export type AcceptanceState = "idle" | "confirming" | "summary" | "success";

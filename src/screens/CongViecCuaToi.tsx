@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import KanbanCard from "../components/KanbanCard";
+import { LN19, ALL_LUOT_NHAN } from "../constants";
+import { LuotNhan, AIJob, Screen } from "../types";
 function CongViecCuaToi({ onSelect, onNav, extraCard }: {
   onSelect: (ln: LuotNhan) => void; onNav: (s: Screen) => void; extraCard: LuotNhan | null;
 }) {

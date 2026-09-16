@@ -1,4 +1,5 @@
 import React from 'react';
+import { DrawerState } from "../types";
 function AIDeXuatCard({ onOpen, confirmed }: { onOpen: (d: DrawerState) => void; confirmed: boolean }) {
   const conditions = [
     { label: "Có người gửi", ok: true },
