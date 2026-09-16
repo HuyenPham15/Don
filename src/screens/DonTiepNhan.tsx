@@ -51,9 +51,7 @@ export default function DonTiepNhan({ onNav }: { onNav: (s: Screen) => void }) {
             </h1>
             <div className="flex items-center gap-2 text-[13px] text-slate-500 font-medium">
               <span>Lượt tiếp nhận số <span className="font-semibold">LN-45/2026-GOVEX</span></span>
-              <span>•</span>
               <span>Người đứng đơn: <span className="font-semibold text-slate-800">Lê Văn Hùng</span></span>
-              <span>•</span>
               <span>Nộp ngày: 15/09/2026 09:15</span>
             </div>
           </div>
@@ -96,8 +94,8 @@ export default function DonTiepNhan({ onNav }: { onNav: (s: Screen) => void }) {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 py-3 border-b-2 text-sm font-bold transition-colors ${isActive
-                    ? "border-red-600 text-red-600"
-                    : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
+                  ? "border-red-600 text-red-600"
+                  : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
                   }`}
               >
                 <span className={isActive ? "text-red-600" : "text-slate-400"}>{tab.icon}</span>
