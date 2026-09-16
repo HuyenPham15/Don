@@ -1,0 +1,100 @@
+1
+00:00:00,000 --> 00:00:15,000
+Sau khi đăng nhập vào hệ thống Quản lý đơn, người dùng được đưa đến màn hình Trang chủ.
+Tại menu bên trái, người dùng chọn chức năng Nhận đơn.
+
+2
+00:00:15,000 --> 00:00:30,000
+Màn hình Nhận đơn quản lý toàn bộ các lượt tiếp nhận đơn.
+Tại đây, cán bộ có thể theo dõi thông tin người gửi, hình thức nhận, trạng thái và các thao tác trên hồ sơ.
+
+3
+00:00:30,000 --> 00:00:42,000
+Để tạo một lượt tiếp nhận mới, cán bộ nhấn nút Nhận đơn mới.
+
+4
+00:00:42,000 --> 00:01:00,000
+Tại màn hình Nhận đơn mới, cán bộ ghi nhận thông tin tiếp nhận gồm ngày nhận, hình thức nhận,
+cán bộ nhận và đơn vị nhận.
+
+5
+00:01:00,000 --> 00:01:15,000
+Hệ thống hỗ trợ nhiều hình thức nhận như trực tiếp, bưu chính, email, dịch vụ công,
+liên thông và nội bộ. Trong kịch bản này, cán bộ thực hiện tiếp nhận đơn trực tiếp tại cơ quan.
+
+6
+00:01:15,000 --> 00:01:30,000
+Tiếp theo, cán bộ xác định loại người nộp đơn.
+Hệ thống hỗ trợ ba trường hợp: Cá nhân, Tổ chức và Không rõ.
+
+7
+00:01:30,000 --> 00:02:00,000
+Với trường hợp Cá nhân, cán bộ nhập thông tin người nộp đơn gồm họ tên,
+số định danh cá nhân hoặc căn cước công dân, ngày sinh, số điện thoại, email và địa chỉ.
+
+8
+00:02:00,000 --> 00:02:20,000
+Sau khi nhập thông tin cá nhân, cán bộ xác định tư cách nộp đơn gồm Người đứng đơn,
+Người đại diện hoặc Người được ủy quyền.
+
+9
+00:02:20,000 --> 00:02:38,000
+Nếu người trực tiếp nộp đơn cũng là người đứng tên trên đơn,
+cán bộ lựa chọn tư cách Người đứng đơn.
+
+10
+00:02:38,000 --> 00:03:05,000
+Trường hợp người nộp đơn là Người được ủy quyền, cán bộ lựa chọn Người được ủy quyền,
+nhập thông tin người được ủy quyền và đính kèm giấy ủy quyền làm căn cứ kiểm tra hồ sơ.
+
+11
+00:03:05,000 --> 00:03:20,000
+Đối với trường hợp Tổ chức, cán bộ nhập thông tin tổ chức gồm tên tổ chức,
+mã số thuế hoặc mã định danh, loại hình tổ chức và địa chỉ.
+
+12
+00:03:20,000 --> 00:03:38,000
+Tiếp theo, cán bộ khai báo thông tin người đại diện của tổ chức,
+gồm họ tên, chức vụ, số định danh, số điện thoại và email.
+
+13
+00:03:38,000 --> 00:04:08,000
+Nếu tổ chức ủy quyền cho một cá nhân thực hiện việc nộp đơn,
+cán bộ lựa chọn Người được ủy quyền, nhập thông tin người được ủy quyền
+và đính kèm giấy ủy quyền để làm căn cứ.
+
+14
+00:04:08,000 --> 00:04:25,000
+Đối với trường hợp chưa xác định được người nộp đơn hoặc thông tin chưa đầy đủ,
+cán bộ lựa chọn Không rõ và có thể bổ sung nội dung tại trường Ghi chú.
+
+15
+00:04:25,000 --> 00:04:45,000
+Sau khi hoàn tất thông tin người nộp đơn, cán bộ đính kèm các tài liệu liên quan
+bằng chức năng Tải tệp hoặc Quét tài liệu.
+
+16
+00:04:45,000 --> 00:05:00,000
+Cán bộ kiểm tra lại toàn bộ thông tin và nhấn Lưu.
+Hệ thống tạo mã lượt nhận và ghi nhận trạng thái Mới nhận.
+
+17
+00:05:00,000 --> 00:05:20,000
+Sau khi hoàn tất việc ghi nhận, cán bộ thực hiện chuyển lượt nhận sang phân hệ
+Tiếp nhận và xử lý đơn để thực hiện các bước nghiệp vụ tiếp theo.
+
+18
+00:05:20,000 --> 00:05:50,000
+Tại phân hệ Tiếp nhận và xử lý, cán bộ có thể sử dụng Trợ lý ảo để hỗ trợ phân tích hồ sơ,
+xác định loại đơn, nội dung chính và đề xuất quy trình xử lý phù hợp.
+
+19
+00:05:50,000 --> 00:06:10,000
+Kết quả do AI đưa ra mang tính chất hỗ trợ.
+Cán bộ kiểm tra, điều chỉnh và xác nhận trước khi thực hiện nghiệp vụ chính thức.
+
+20
+00:06:10,000 --> 00:06:25,000
+Như vậy, quy trình được thực hiện xuyên suốt từ nhận đơn,
+ghi nhận thông tin người nộp, tài liệu kèm theo đến chuyển sang tiếp nhận và xử lý,
+với AI hỗ trợ cán bộ trong quá trình nghiệp vụ.

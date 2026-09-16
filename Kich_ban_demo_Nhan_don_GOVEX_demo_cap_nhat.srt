@@ -1,0 +1,217 @@
+1
+00:00:00,000 --> 00:00:15,000
+Sau khi đăng nhập vào hệ thống Quản lý đơn, người dùng được đưa đến màn hình Trang chủ.
+Tại menu bên trái, người dùng chọn chức năng Nhận đơn.
+
+2
+00:00:15,000 --> 00:00:30,000
+Màn hình Nhận đơn quản lý toàn bộ các lượt tiếp nhận đơn.
+Tại đây, cán bộ có thể theo dõi thông tin người gửi, hình thức nhận, trạng thái và các thao tác trên hồ sơ.
+
+3
+00:00:30,000 --> 00:00:42,000
+Để tạo một lượt tiếp nhận mới, cán bộ nhấn nút Nhận đơn mới.
+
+4
+00:00:42,000 --> 00:01:00,000
+Tại màn hình Nhận đơn mới, cán bộ ghi nhận thông tin tiếp nhận gồm ngày nhận, hình thức nhận,
+cán bộ nhận và đơn vị nhận.
+
+5
+00:01:00,000 --> 00:01:15,000
+Hệ thống hỗ trợ nhiều hình thức nhận như trực tiếp, bưu chính, email, dịch vụ công,
+liên thông và nội bộ. Trong kịch bản này, cán bộ thực hiện tiếp nhận đơn trực tiếp tại cơ quan.
+
+6
+00:01:15,000 --> 00:01:30,000
+Tiếp theo, cán bộ xác định loại người nộp đơn.
+Hệ thống hỗ trợ ba trường hợp: Cá nhân, Tổ chức và Không rõ.
+
+7
+00:01:30,000 --> 00:02:00,000
+Với trường hợp Cá nhân, cán bộ nhập thông tin người nộp đơn gồm họ tên,
+số định danh cá nhân hoặc căn cước công dân, ngày sinh, số điện thoại, email và địa chỉ.
+
+8
+00:02:00,000 --> 00:02:18,000
+Sau khi nhập thông tin cá nhân, cán bộ xác định tư cách nộp đơn gồm Người đứng đơn,
+Người đại diện hoặc Người được ủy quyền.
+
+9
+00:02:18,000 --> 00:02:38,000
+Nếu người trực tiếp nộp đơn cũng là người đứng tên trên đơn,
+cán bộ lựa chọn tư cách Người đứng đơn.
+Thông tin cá nhân đã khai báo sẽ được sử dụng để tự động điền vào đơn.
+
+10
+00:02:38,000 --> 00:02:58,000
+Trường hợp chọn Người đại diện, cán bộ xác định tư cách tương ứng theo hồ sơ.
+Thông tin của người đại diện đã được khai báo cũng sẽ được hệ thống sử dụng để tự động điền vào đơn.
+
+11
+00:02:58,000 --> 00:03:18,000
+Lưu ý, tại màn hình Nhận đơn mới này hệ thống chưa hiển thị trực tiếp phần thông tin được tự động điền vào đơn.
+Nội dung tự động điền sẽ được kiểm tra ở bước hiển thị và xử lý thông tin của đơn sau đó.
+
+12
+00:03:18,000 --> 00:03:42,000
+Trường hợp cá nhân là Người được ủy quyền, cán bộ lựa chọn Người được ủy quyền,
+nhập thông tin theo hồ sơ và đính kèm giấy ủy quyền làm căn cứ kiểm tra.
+
+13
+00:03:42,000 --> 00:04:05,000
+Sau khi hoàn tất thông tin người nộp đơn, cán bộ kiểm tra lại dữ liệu và tài liệu kèm theo.
+Các thông tin đã khai báo sẽ được sử dụng xuyên suốt trong các bước xử lý tiếp theo.
+
+14
+00:04:10,000 --> 00:04:28,000
+Đối với trường hợp Tổ chức, cán bộ nhập thông tin tổ chức gồm tên tổ chức,
+mã số thuế hoặc mã định danh, loại hình tổ chức và địa chỉ.
+
+15
+00:04:28,000 --> 00:04:45,000
+Tiếp theo, cán bộ khai báo thông tin người đại diện của tổ chức,
+gồm họ tên, chức vụ, số định danh, số điện thoại và email.
+
+16
+00:04:45,000 --> 00:05:10,000
+Nếu tổ chức ủy quyền cho một cá nhân thực hiện việc nộp đơn,
+cán bộ lựa chọn Người được ủy quyền, nhập thông tin người được ủy quyền
+và đính kèm giấy ủy quyền để làm căn cứ.
+
+17
+00:05:10,000 --> 00:05:28,000
+Đối với trường hợp chưa xác định được người nộp đơn hoặc thông tin chưa đầy đủ,
+cán bộ lựa chọn Không rõ và có thể bổ sung nội dung tại trường Ghi chú.
+
+18
+00:05:28,000 --> 00:05:48,000
+Sau khi hoàn tất thông tin người nộp đơn, cán bộ đính kèm các tài liệu liên quan
+bằng chức năng Tải tệp hoặc Quét tài liệu.
+
+19
+00:05:48,000 --> 00:06:03,000
+Cán bộ kiểm tra lại toàn bộ thông tin và nhấn Lưu.
+Hệ thống tạo mã lượt nhận, lưu thông tin và ghi nhận trạng thái Mới nhận.
+
+20
+00:06:03,000 --> 00:06:18,000
+Sau khi lưu thành công, lượt nhận mới được hiển thị tại danh sách Nhận đơn.
+Cán bộ có thể theo dõi mã lượt nhận, thông tin tiếp nhận, người gửi,
+số lượng tài liệu, trạng thái và thời gian cập nhật gần nhất.
+
+21
+00:06:18,000 --> 00:06:35,000
+Cán bộ nhấn vào mã lượt nhận hoặc chức năng Xem để mở màn hình Chi tiết đầu vào.
+Tại đây, hệ thống hiển thị đầy đủ thông tin đã ghi nhận
+và trạng thái hiện tại là Mới nhận.
+
+22
+00:06:35,000 --> 00:06:52,000
+Nếu phát hiện thông tin tiếp nhận chưa chính xác hoặc cần bổ sung,
+cán bộ nhấn Chỉnh sửa để cập nhật lại các thông tin đã nhập ban đầu
+và lưu lại sau khi hoàn tất.
+
+23
+00:06:52,000 --> 00:07:10,000
+Sau khi kiểm tra và xác nhận thông tin đã đầy đủ, chính xác,
+cán bộ có thể lựa chọn một trong hai hướng xử lý:
+Bàn giao hoặc Chuyển tiếp nhận và xử lý.
+
+24
+00:07:10,000 --> 00:07:32,000
+Trường hợp cần bàn giao lượt nhận cho cán bộ hoặc đơn vị khác,
+cán bộ chọn chức năng Bàn giao.
+Tại cửa sổ Bàn giao đơn, cán bộ lựa chọn Đơn vị nhận và Người nhận,
+nhập ghi chú nếu cần và có thể tải lên Biên nhận bàn giao.
+
+25
+00:07:32,000 --> 00:07:48,000
+Sau khi kiểm tra thông tin bàn giao, cán bộ nhấn Xác nhận bàn giao.
+Hệ thống ghi nhận thông tin bàn giao, cập nhật lịch sử xử lý
+và chuyển lượt nhận tới đơn vị, cán bộ được lựa chọn.
+
+26
+00:07:48,000 --> 00:08:05,000
+Trường hợp lượt nhận đã đủ điều kiện để đưa vào xử lý nghiệp vụ,
+cán bộ chọn chức năng Chuyển tiếp nhận và xử lý.
+
+27
+00:08:05,000 --> 00:08:20,000
+Tại cửa sổ Chuyển tiếp nhận và xử lý, cán bộ có thể nhập ghi chú
+và nhấn Chuyển xử lý để xác nhận thao tác.
+
+28
+00:08:20,000 --> 00:08:38,000
+Sau khi chuyển thành công, hệ thống cập nhật trạng thái của lượt nhận
+và tạo dữ liệu đầu vào tại phân hệ Tiếp nhận và xử lý đơn
+để cán bộ thực hiện các bước nghiệp vụ tiếp theo.
+
+29
+00:08:38,000 --> 00:08:55,000
+Tại menu Tiếp nhận và xử lý đơn, hệ thống hiển thị một bản ghi mới
+với trạng thái Chờ tiếp nhận.
+
+30
+00:08:55,000 --> 00:09:12,000
+Cán bộ nhấn Xem để mở chi tiết đơn.
+Tại bước Tiếp nhận chuyên môn, hệ thống hiển thị các chức năng
+Trả lại đầu vào, Tiếp nhận chuyên môn và Chỉnh sửa thông tin.
+
+31
+00:09:12,000 --> 00:09:32,000
+Cán bộ kiểm tra lại các thông tin đã được chuyển từ bước nhận đơn.
+Nếu phát hiện thông tin chưa phù hợp hoặc chưa đủ điều kiện tiếp nhận,
+cán bộ có thể chọn Trả lại đầu vào để chuyển đơn về bộ phận tiếp nhận ban đầu.
+
+32
+00:09:32,000 --> 00:09:47,000
+Việc trả lại đầu vào được thực hiện theo hình thức tiếp nhận tương ứng
+với thông tin của người nộp đơn đã được ghi nhận trước đó.
+
+33
+00:09:47,000 --> 00:10:05,000
+Nếu thông tin hợp lệ và đủ điều kiện tiếp nhận,
+cán bộ nhấn Tiếp nhận chuyên môn.
+Hệ thống hiển thị thông báo xác nhận trước khi thực hiện.
+
+34
+00:10:05,000 --> 00:10:20,000
+Sau khi cán bộ xác nhận, hệ thống cấp số tiếp nhận cho đơn
+và chuyển đơn sang bước Phân loại và xử lý.
+
+35
+00:10:20,000 --> 00:10:42,000
+Tại bước Phân loại và xử lý, cán bộ tiếp tục kiểm tra
+và hoàn thiện thông tin của đơn.
+Cán bộ có thể chỉnh sửa Thông tin chung, Thông tin nhận đơn,
+Phân loại đơn và các thông tin liên quan của hồ sơ.
+
+36
+00:10:42,000 --> 00:11:02,000
+Tùy theo nội dung hồ sơ, cán bộ có thể lựa chọn phân loại đơn mới,
+hoặc gắn đơn vào vụ việc hoặc đơn đã có trên hệ thống.
+
+37
+00:11:02,000 --> 00:11:22,000
+Trường hợp cần phân loại đơn, cán bộ nhấn chức năng Phân loại.
+Hệ thống hiển thị danh sách các loại đơn đã được cấu hình
+để cán bộ tìm kiếm và lựa chọn loại đơn phù hợp.
+
+38
+00:11:22,000 --> 00:11:40,000
+Sau khi lựa chọn loại đơn, hệ thống ghi nhận kết quả phân loại
+và làm căn cứ xác định các bước xử lý nghiệp vụ tiếp theo của đơn.
+
+39
+00:11:40,000 --> 00:12:00,000
+Ngoài các chức năng nghiệp vụ chính, tại góc dưới bên phải màn hình
+có chức năng Chatbot hỗ trợ.
+Cán bộ có thể sử dụng Chatbot trong quá trình tiếp nhận và xử lý đơn.
+
+40
+00:12:00,000 --> 00:12:20,000
+Chatbot hỗ trợ tra cứu, phân tích thông tin hồ sơ, gợi ý loại đơn
+và hỗ trợ cán bộ trong quá trình thực hiện nghiệp vụ.
+Kết quả từ Chatbot mang tính chất hỗ trợ
+và cần được cán bộ kiểm tra trước khi xác nhận.

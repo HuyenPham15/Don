@@ -1,0 +1,10 @@
+{
+  "description": "Effortlessly scan and upload files for quick data extraction, streamlining workflows for users who need efficient document management.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
