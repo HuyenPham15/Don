@@ -282,7 +282,7 @@ Các cột:
 
 1. HÀNG ĐỢI TIẾP NHẬN
 2. CẦN THẨM ĐỊNH & XỬ LÝ
-3. CHỜ PHỐI HỢP LIÊN NGÀNH
+<!-- 3. CHỜ PHỐI HỢP LIÊN NGÀNH -->
 4. CHỜ KÝ & TRẢ KẾT QUẢ
 
 Không tạo cột riêng cho AI.

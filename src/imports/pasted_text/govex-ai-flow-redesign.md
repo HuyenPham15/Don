@@ -116,7 +116,7 @@ Kanban:
 
 HÀNG ĐỢI TIẾP NHẬN
 CẦN THẨM ĐỊNH & XỬ LÝ
-CHỜ PHỐI HỢP LIÊN NGÀNH
+<!-- CHỜ PHỐI HỢP LIÊN NGÀNH -->
 CHỜ KÝ & TRẢ KẾT QUẢ
 
 Không tạo cột riêng cho AI.

@@ -39,7 +39,7 @@ function DaXacNhanSection({ onNav, workflow, loaiDonName }: {
         <button onClick={() => onNav("nhan-don-list")} className="px-5 py-2.5 rounded-lg border text-sm font-semibold hover:bg-slate-50 transition-colors" style={{ borderColor: "#E2E8F0", color: "#475569" }}>
           Về danh sách
         </button>
-        <button onClick={() => onNav("don-tiep-nhan")} className="px-5 py-2.5 rounded-lg text-sm font-bold text-white transition-opacity hover:opacity-90 flex items-center gap-2" style={{ background: "#C62828" }}>
+        <button onClick={() => onNav("don-tiep-nhan")} className="px-5 py-2.5 rounded-lg text-sm font-bold text-white transition-opacity hover:opacity-90 flex items-center gap-2" style={{ background: "#004ac6" }}>
           Mở đơn
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="5" y1="12" x2="19" y2="12"></line>

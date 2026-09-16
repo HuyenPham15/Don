@@ -1,5 +1,5 @@
 
-export type Screen = "cong-viec" | "nhan-don-list" | "nhan-don-them" | "ban-phan-tich" | "don-tiep-nhan" | "thu-vien" | "bao-cao";
+export type Screen = "cong-viec" | "nhan-don-list" | "nhan-don-them" | "ban-phan-tich" | "don-tiep-nhan" | "quy-trinh-xu-ly" | "thu-vien" | "bao-cao";
 
 export type AIJob = 0 | 1 | 2 | 3 | 4 | 5;
 
@@ -15,6 +15,18 @@ export interface LuotNhan {
   noiDung: string;
   donVi: string;
   aiJob: AIJob;
+}
+
+export interface DonDetail {
+  id: string;
+  code: string;
+  title: string;
+  luotNhanId?: string;
+  nguoiNop: string;
+  ngayNhan?: string;
+  loaiDon?: string;
+  type?: 'VỤ VIỆC' | 'ĐƠN TIẾP NHẬN' | 'LƯỢT NHẬN';
+  statusBadge?: string;
 }
 
 export interface UploadedFile { name: string; size: string; category: "main" | "attach" | "extra"; }

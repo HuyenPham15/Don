@@ -31,12 +31,36 @@
 
 * { box-sizing: border-box; }
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Be Vietnam Pro', 'Inter', sans-serif;
   background: var(--bg);
   color: var(--text);
   margin: 0;
   font-size: 14px;
   line-height: 1.5;
+}
+
+.font-headline-md {
+  font-family: 'Be Vietnam Pro', sans-serif;
+}
+
+.font-label-technical {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+  vertical-align: middle;
 }
 
 .mono { font-family: 'JetBrains Mono', monospace; }
@@ -69,3 +93,21 @@ body {
   background-size: 200% 100%;
   animation: shimmer 1.4s ease-in-out infinite;
 }
+
+@keyframes laser-scan {
+  0% { top: 5%; opacity: 0.8; }
+  50% { top: 95%; opacity: 1; }
+  100% { top: 5%; opacity: 0.8; }
+}
+.laser-scanner {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #1d4ed8, #60a5fa, #1d4ed8, transparent);
+  box-shadow: 0 0 15px 4px rgba(37, 99, 235, 0.5);
+  animation: laser-scan 2.8s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 20;
+}
+

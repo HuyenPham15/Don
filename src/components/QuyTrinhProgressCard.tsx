@@ -34,7 +34,7 @@ function QuyTrinhProgressCard({ onNav }: { onNav: (s: Screen) => void }) {
             </div>
           ))}
         </div>
-        <button onClick={() => onNav("don-tiep-nhan")} className="w-full py-2 rounded text-sm font-bold text-white" style={{ background: "#C62828" }}>
+        <button onClick={() => onNav("don-tiep-nhan")} className="w-full py-2 rounded text-sm font-bold text-white transition-opacity hover:opacity-90" style={{ background: "#004ac6" }}>
           Xem đơn tiếp nhận ↗
         </button>
       </div>
