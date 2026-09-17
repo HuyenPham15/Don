@@ -1,27 +1,37 @@
 import React, { useState, useMemo } from "react";
-import PanelSection from "./PanelSection";
-import { SparkleIcon } from "./icons";
 import { DON_VI_OPTIONS, LOAI_DON_OPTIONS, WORKFLOW_CONFIGS } from "../constants";
-import { WorkflowConfig, AcceptanceState } from "../types";
+import { WorkflowConfig } from "../types";
 
-function ThongTinXuLySection({ huong, setHuong, donVi, setDonVi, onAccept }: {
-  huong: string; setHuong: (v: string) => void; donVi: string; setDonVi: (v: string) => void;
+function ThongTinXuLySection({
+  huong,
+  setHuong,
+  donVi,
+  setDonVi,
+  onAccept,
+}: {
+  huong: string;
+  setHuong: (v: string) => void;
+  donVi: string;
+  setDonVi: (v: string) => void;
   onAccept: (wf: WorkflowConfig, loaiDonName: string) => void;
 }) {
-  const options = [
-    { id: "tiep-nhan-xu-ly", title: "Tiếp nhận và xử lý", desc: "Tiếp nhận đơn, khởi tạo hồ sơ và bắt đầu quy trình xử lý" },
-    { id: "chuyen-tham-quyen", title: "Chuyển đơn vị có thẩm quyền", desc: "Chuyển cho đơn vị đúng thẩm quyền giải quyết" },
-    { id: "tra-lai-don", title: "Trả lại đơn", desc: "Không đủ điều kiện thụ lý, trả lại cho người gửi" },
-    { id: "ghep-don", title: "Ghép vào đơn / vụ việc đã có", desc: "Trùng với đơn hoặc vụ việc đang xử lý, ghép hồ sơ" },
-  ];
-  const donOptions = ["D-2026-00341 · Ông A · Dự án X", "D-2024-00187 · Ông A · Dự án X"];
-  const inputCls = "w-full px-3 py-2 rounded-lg border text-sm";
-  const needDonVi = huong === "chuyen-tham-quyen";
+  const [showCanCuModal, setShowCanCuModal] = useState(false);
+  const [expandedCanCu, setExpandedCanCu] = useState<string | null>(null);
+  const [officerNote, setOfficerNote] = useState(
+    "Qua phân tích, đề xuất tiếp nhận đơn và chuyển Phòng Cảnh sát kinh tế để xem xét, giải quyết theo thẩm quyền."
+  );
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
 
-  // ─── Acceptance workflow state ────────────────────────────────────────────
-  const [selectedLoaiDon, setSelectedLoaiDon] = useState("khieu-nai"); // AI pre-selects
-  const [selectedWfId, setSelectedWfId] = useState("");
-  const [acceptState, setAcceptState] = useState<AcceptanceState>("idle");
+  const showToast = (msg: string) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(null), 3000);
+  };
+
+  // Mặc định chọn hướng 1 nếu chưa chọn
+  const activeHuong = huong || "tiep-nhan-xu-ly";
+
+  const selectedLoaiDon = "to-giac";
+  const loaiDonName = "Tố giác tội phạm";
 
   const availableWorkflows = useMemo(
     () => WORKFLOW_CONFIGS.filter((wf) => wf.loaiDonId === selectedLoaiDon && wf.status === "active"),
@@ -29,142 +39,369 @@ function ThongTinXuLySection({ huong, setHuong, donVi, setDonVi, onAccept }: {
   );
 
   const selectedWorkflow = useMemo(() => {
-    return availableWorkflows[0] ?? null;
+    return availableWorkflows[0] ?? WORKFLOW_CONFIGS[0] ?? null;
   }, [availableWorkflows]);
-
-  const loaiDonName = LOAI_DON_OPTIONS.find((l) => l.id === selectedLoaiDon)?.name ?? "";
-
-  const handleLoaiDonChange = (id: string) => {
-    setSelectedLoaiDon(id);
-    setSelectedWfId("");
-    setAcceptState("idle");
-  };
 
   const canConfirm = selectedWorkflow !== null;
 
   return (
-    <PanelSection index={3} title="Đề xuất giải quyết và Xác nhận">
-      {/* ─── THÔNG TIN AI PHÂN TÍCH VÀ ĐỀ XUẤT ─── */}
-      <div className="mb-5 grid grid-cols-1 xl:grid-cols-2 gap-4">
-        {/* Tóm tắt */}
-        <div className="rounded-xl border p-4 bg-white shadow-sm flex flex-col" style={{ borderColor: "#E5E7EB" }}>
-          <div className="flex items-center justify-between mb-3">
-            <span className="font-bold text-sm text-slate-800 flex items-center gap-1.5">
-              <span className="w-5 h-5 rounded flex items-center justify-center bg-blue-100 text-blue-700">
-                <SparkleIcon size={12} />
-              </span>
-              Tóm tắt và phân tích (AI)
-            </span>
-            <button className="text-xs font-medium flex items-center gap-1.5 text-slate-500 hover:text-slate-700 transition-colors bg-slate-50 px-2 py-1 rounded border">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-              Sao chép
-            </button>
-          </div>
-          <div className="text-sm leading-relaxed text-slate-700 bg-slate-50 p-3.5 rounded-lg border flex-1" style={{ borderColor: "#F1F5F9" }}>
-            Nguyễn Văn A tố giác ông Trần Văn B - Giám đốc Công ty Cổ phần X có hành vi lừa đảo chiếm đoạt tài sản thông qua việc huy động vốn tại Dự án Khu đô thị Y ở Hà Nội trong giai đoạn 2024 - 2025. Người gửi đề nghị cơ quan điều tra xác minh, điều tra, bảo vệ quyền lợi và thông báo kết quả.
-          </div>
+    <div className="space-y-4">
+      {/* Toast Notification */}
+      {toastMsg && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-3.5 py-2.5 bg-slate-900 text-white rounded-xl shadow-xl text-xs font-medium animate-fade-in">
+          <span className="material-symbols-outlined text-blue-400 text-base">info</span>
+          <span>{toastMsg}</span>
+        </div>
+      )}
+
+      {/* =================================================================== */}
+      {/* 4. PHÂN LOẠI GỢI Ý (AI + RULES)                                     */}
+      {/* =================================================================== */}
+      <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs space-y-3">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+          <h3 className="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-1.5 font-headline-md">
+            <span>4. Phân loại gợi ý</span>
+          </h3>
+          <button
+            type="button"
+            onClick={() => setShowCanCuModal(true)}
+            className="text-[11px] text-slate-600 hover:text-slate-900 font-medium flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[14px]">menu_book</span>
+            <span>Căn cứ gợi ý</span>
+          </button>
         </div>
 
-        {/* Gợi ý */}
-        <div className="rounded-xl border p-4 bg-white shadow-sm flex flex-col" style={{ borderColor: "#E5E7EB" }}>
-          <div className="flex items-center justify-between mb-3">
-            <span className="font-bold text-sm text-slate-800 flex items-center gap-1.5">
-              <span className="w-5 h-5 rounded flex items-center justify-center bg-emerald-100 text-emerald-700">
-                <SparkleIcon size={12} />
-              </span>
-              Gợi ý hướng xử lý (AI + Quy định)
-            </span>
-            <button className="text-xs font-medium flex items-center gap-1.5 text-emerald-600 hover:text-emerald-700 transition-colors bg-emerald-50 px-2 py-1 rounded border border-emerald-100">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
-              Căn cứ gợi ý
-            </button>
-          </div>
-          <div className="text-sm text-slate-700 bg-emerald-50/50 p-3.5 rounded-lg border flex-1" style={{ borderColor: "#D1FAE5" }}>
-            <div className="space-y-2.5">
-              <p><strong className="text-emerald-800">1. Đề xuất phân loại:</strong> Tố giác tội phạm về lừa đảo chiếm đoạt tài sản.</p>
-              <p><strong className="text-emerald-800">2. Kiểm tra đơn trùng:</strong> Có 01 đơn tương tự (D-2025-00341), đề nghị xem xét hợp nhất.</p>
-              <div>
-                <strong className="text-emerald-800">3. Đề xuất hướng xử lý:</strong>
-                <ul className="list-disc pl-5 mt-1 space-y-1 text-emerald-900/80">
-                  <li>Chuyển Phòng Cảnh sát kinh tế để xác minh, giải quyết theo thẩm quyền.</li>
-                  <li>Trường hợp có đủ dấu hiệu tội phạm, thụ lý nguồn tin về tội phạm.</li>
-                </ul>
+        <div className="space-y-2.5 text-xs">
+          {/* Hàng 1: Đề xuất loại đơn */}
+          <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-50/50 border border-emerald-100/90">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 shadow-2xs">
+                <span className="material-symbols-outlined text-[18px]">description</span>
               </div>
-              <p><strong className="text-emerald-800">4. Lưu ý:</strong> Người gửi đã có 03 đơn, cần kiểm tra kết quả các đơn trước và các vụ việc liên quan.</p>
+              <div>
+                <span className="text-[10.5px] text-slate-500 font-medium block">Đề xuất loại đơn</span>
+                <span className="text-sm font-bold text-slate-900">Tố giác tội phạm</span>
+              </div>
+            </div>
+            <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs border border-emerald-200 shrink-0">
+              Độ tin cậy: 92%
+            </span>
+          </div>
+
+          {/* Hàng 2: Nhóm nội dung */}
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50/70 border border-slate-200/70">
+            <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0 shadow-2xs">
+              <span className="material-symbols-outlined text-[18px]">calendar_month</span>
+            </div>
+            <div>
+              <span className="text-[10.5px] text-slate-500 font-medium block">Nhóm nội dung</span>
+              <span className="text-xs sm:text-sm font-medium text-slate-800">Lừa đảo chiếm đoạt tài sản</span>
+            </div>
+          </div>
+
+          {/* Hàng 3: Lĩnh vực */}
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50/70 border border-slate-200/70">
+            <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center shrink-0 shadow-2xs">
+              <span className="material-symbols-outlined text-[18px]">category</span>
+            </div>
+            <div>
+              <span className="text-[10.5px] text-slate-500 font-medium block">Lĩnh vực</span>
+              <span className="text-xs sm:text-sm font-medium text-slate-800">Kinh tế</span>
             </div>
           </div>
         </div>
       </div>
-      <div className="text-sm font-bold text-slate-800 mb-3">Cán bộ xác nhận hướng xử lý:</div>
-      <div className="mb-4 space-y-2">
-        {options.map((o) => {
-          const active = huong === o.id;
-          const isAiPick = o.id === "tiep-nhan-xu-ly";
-          return (
-            <button key={o.id} onClick={() => setHuong(o.id)} className="w-full flex items-start gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors"
-              style={{ borderColor: active ? "#1D4ED8" : "#E5E7EB", background: active ? "#EFF6FF" : "#fff" }}>
-              <span className="w-4 h-4 rounded-full border-2 flex-shrink-0 mt-0.5 flex items-center justify-center" style={{ borderColor: active ? "#1D4ED8" : "#CBD5E1" }}>
-                {active && <span className="w-2 h-2 rounded-full" style={{ background: "#1D4ED8" }} />}
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="flex items-center gap-2">
-                  <span className="text-sm font-semibold" style={{ color: active ? "#1D4ED8" : "#0F172A" }}>{o.title}</span>
-                  {isAiPick && (
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-1" style={{ background: "#DBEAFE", color: "#1D4ED8" }}>
-                      <SparkleIcon color="#1D4ED8" size={10} /> AI đề xuất
-                    </span>
-                  )}
-                </span>
-                <span className="block text-xs mt-0.5" style={{ color: "#64748B" }}>{o.desc}</span>
-              </span>
-            </button>
-          );
-        })}
+
+      {/* =================================================================== */}
+      {/* 5. GỢI Ý HƯỚNG XỬ LÝ                                                */}
+      {/* =================================================================== */}
+      <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs space-y-3">
+        <h3 className="text-sm font-bold text-slate-900 tracking-tight border-b border-slate-100 pb-2 font-headline-md">
+          5. Gợi ý hướng xử lý
+        </h3>
+
+        <div className="space-y-2.5 text-xs">
+          {/* Tùy chọn 1: Tiếp nhận, chuyển đơn vị điều tra theo thẩm quyền (92%) */}
+          <div
+            onClick={() => setHuong("tiep-nhan-xu-ly")}
+            className={`p-3.5 rounded-xl border transition-all cursor-pointer ${activeHuong === "tiep-nhan-xu-ly"
+                ? "bg-emerald-50/40 border-emerald-400 ring-1 ring-emerald-200"
+                : "bg-white border-slate-200 hover:border-slate-300"
+              }`}
+          >
+            <div className="flex items-start gap-3">
+              <div className="pt-0.5 shrink-0">
+                {activeHuong === "tiep-nhan-xu-ly" ? (
+                  <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shadow-2xs">
+                    ✓
+                  </span>
+                ) : (
+                  <span className="w-5 h-5 rounded-full border-2 border-slate-300 block" />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-2">
+                  <h4 className="text-xs sm:text-sm font-bold text-slate-900">
+                    Tiếp nhận, chuyển đơn vị điều tra theo thẩm quyền
+                  </h4>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold shrink-0">
+                    92%
+                  </span>
+                </div>
+                <ul className="text-slate-600 space-y-0.5 mt-1.5 pl-0.5 leading-relaxed">
+                  <li>• Có dấu hiệu tội phạm theo quy định.</li>
+                  <li>• Thuộc thẩm quyền của Cơ quan CSĐT Công an TP Hà Nội.</li>
+                  <li className="text-slate-500">Có đơn tương tự đã tiếp nhận trước đây, cần xem xét, tổng hợp.</li>
+                </ul>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setExpandedCanCu(expandedCanCu === "op1" ? null : "op1");
+                  }}
+                  className="text-[11px] text-blue-600 hover:underline font-semibold flex items-center gap-0.5 mt-2 cursor-pointer"
+                >
+                  <span>Xem căn cứ</span>
+                  <span className="material-symbols-outlined text-[13px]">
+                    {expandedCanCu === "op1" ? "expand_less" : "expand_more"}
+                  </span>
+                </button>
+                {expandedCanCu === "op1" && (
+                  <div className="mt-2 p-2.5 bg-slate-50 rounded-lg border border-slate-200 text-[11px] text-slate-700 space-y-1 animate-fade-in">
+                    <p>• <strong>Điều 145 Bộ luật Tố tụng Hình sự 2015:</strong> Thẩm quyền và trách nhiệm tiếp nhận, giải quyết tố giác tội phạm.</p>
+                    <p>• <strong>Thông tư liên tịch 01/2017:</strong> Quy định phối hợp tiếp nhận, thụ lý nguồn tin tội phạm.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Tùy chọn 2: Kiểm tra, xác minh thông tin bổ sung (68%) */}
+          <div
+            onClick={() => setHuong("kiem-tra-bo-sung")}
+            className={`p-3.5 rounded-xl border transition-all cursor-pointer ${activeHuong === "kiem-tra-bo-sung"
+                ? "bg-blue-50/40 border-blue-400 ring-1 ring-blue-200"
+                : "bg-white border-slate-200 hover:border-slate-300"
+              }`}
+          >
+            <div className="flex items-start gap-3">
+              <div className="pt-0.5 shrink-0">
+                {activeHuong === "kiem-tra-bo-sung" ? (
+                  <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shadow-2xs">
+                    ✓
+                  </span>
+                ) : (
+                  <span className="w-5 h-5 rounded-full border-2 border-slate-300 block" />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-2">
+                  <h4 className="text-xs sm:text-sm font-bold text-slate-900">
+                    Kiểm tra, xác minh thông tin bổ sung
+                  </h4>
+                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[11px] font-bold shrink-0">
+                    68%
+                  </span>
+                </div>
+                <ul className="text-slate-600 space-y-0.5 mt-1.5 pl-0.5 leading-relaxed">
+                  <li>• Cần làm rõ một số nội dung, tài liệu kèm theo.</li>
+                  <li>• Có liên quan đến vụ việc đang điều tra.</li>
+                  <li>• Đề nghị liên hệ người gửi để bổ sung tài liệu liên quan.</li>
+                </ul>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setExpandedCanCu(expandedCanCu === "op2" ? null : "op2");
+                  }}
+                  className="text-[11px] text-blue-600 hover:underline font-semibold flex items-center gap-0.5 mt-2 cursor-pointer"
+                >
+                  <span>Xem căn cứ</span>
+                  <span className="material-symbols-outlined text-[13px]">
+                    {expandedCanCu === "op2" ? "expand_less" : "expand_more"}
+                  </span>
+                </button>
+                {expandedCanCu === "op2" && (
+                  <div className="mt-2 p-2.5 bg-slate-50 rounded-lg border border-slate-200 text-[11px] text-slate-700 space-y-1 animate-fade-in">
+                    <p>• <strong>Khoản 2 Điều 147 Bộ luật Tố tụng Hình sự 2015:</strong> Thời hạn và thủ tục xác minh nguồn tin về tội phạm.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Tùy chọn 3: Chuyển đơn đến đơn vị khác (35%) */}
+          <div
+            onClick={() => setHuong("chuyen-tham-quyen")}
+            className={`p-3.5 rounded-xl border transition-all cursor-pointer ${activeHuong === "chuyen-tham-quyen"
+                ? "bg-amber-50/40 border-amber-400 ring-1 ring-amber-200"
+                : "bg-white border-slate-200 hover:border-slate-300"
+              }`}
+          >
+            <div className="flex items-start gap-3">
+              <div className="pt-0.5 shrink-0">
+                {activeHuong === "chuyen-tham-quyen" ? (
+                  <span className="w-5 h-5 rounded-full bg-amber-600 text-white flex items-center justify-center text-xs font-bold shadow-2xs">
+                    ✓
+                  </span>
+                ) : (
+                  <span className="w-5 h-5 rounded-full border-2 border-slate-300 block" />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-2">
+                  <h4 className="text-xs sm:text-sm font-bold text-slate-900">
+                    Chuyển đơn đến đơn vị khác
+                  </h4>
+                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[11px] font-bold shrink-0">
+                    35%
+                  </span>
+                </div>
+                <ul className="text-slate-600 space-y-0.5 mt-1.5 pl-0.5 leading-relaxed">
+                  <li>• Không thuộc thẩm quyền giải quyết.</li>
+                  <li>• Đề nghị chuyển đến cơ quan có thẩm quyền.</li>
+                </ul>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setExpandedCanCu(expandedCanCu === "op3" ? null : "op3");
+                  }}
+                  className="text-[11px] text-blue-600 hover:underline font-semibold flex items-center gap-0.5 mt-2 cursor-pointer"
+                >
+                  <span>Xem căn cứ</span>
+                  <span className="material-symbols-outlined text-[13px]">
+                    {expandedCanCu === "op3" ? "expand_less" : "expand_more"}
+                  </span>
+                </button>
+                {expandedCanCu === "op3" && (
+                  <div className="mt-2 p-2.5 bg-slate-50 rounded-lg border border-slate-200 text-[11px] text-slate-700 space-y-1 animate-fade-in">
+                    <p>• <strong>Điều 146 Bộ luật Tố tụng Hình sự:</strong> Chuyển tố giác, tin báo theo đúng thẩm quyền thụ lý.</p>
+                  </div>
+                )}
+                {activeHuong === "chuyen-tham-quyen" && (
+                  <div className="mt-2.5 pt-2.5 border-t border-slate-100" onClick={(e) => e.stopPropagation()}>
+                    <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                      Đơn vị nhận chuyển đơn:
+                    </label>
+                    <select
+                      value={donVi}
+                      onChange={(e) => setDonVi(e.target.value)}
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:border-amber-500"
+                    >
+                      <option value="">— Chọn đơn vị —</option>
+                      {DON_VI_OPTIONS.map((o) => (
+                        <option key={o} value={o}>
+                          {o}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      {huong === "tiep-nhan-xu-ly" && (
-        <div className="space-y-4 slide-in mt-2">
+
+      {/* =================================================================== */}
+      {/* 6. Ý KIẾN CỦA CÁN BỘ TIẾP NHẬN                                       */}
+      {/* =================================================================== */}
+      <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs space-y-3">
+        <h3 className="text-sm font-bold text-slate-900 tracking-tight border-b border-slate-100 pb-2 font-headline-md">
+          6. Ý kiến của cán bộ tiếp nhận
+        </h3>
+
+        <div>
+          <textarea
+            rows={3}
+            value={officerNote}
+            onChange={(e) => setOfficerNote(e.target.value)}
+            placeholder="Nhập ý kiến đề xuất xử lý của cán bộ..."
+            maxLength={500}
+            className="w-full p-3 bg-slate-50/70 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-blue-500 transition-all resize-none leading-relaxed"
+          />
+          <div className="flex justify-end pt-1">
+            <span className="text-[11px] text-slate-400 font-label-technical">
+              {officerNote.length}/500
+            </span>
+          </div>
+        </div>
+
+        {/* Nhóm các nút hành động */}
+        <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
           <button
+            type="button"
+            onClick={() => showToast("Đã lưu nháp ý kiến cán bộ tiếp nhận.")}
+            className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold cursor-pointer shadow-2xs transition-colors"
+          >
+            Lưu nháp
+          </button>
+          <button
+            type="button"
+            onClick={() => showToast("Đã gửi hồ sơ trình lãnh đạo phê duyệt.")}
+            className="px-3.5 py-2 rounded-xl border border-blue-200 bg-blue-50/70 hover:bg-blue-100 text-blue-700 text-xs font-semibold cursor-pointer shadow-2xs transition-colors"
+          >
+            Trình lãnh đạo phê duyệt
+          </button>
+          <button
+            type="button"
             onClick={() => {
               if (selectedWorkflow) onAccept(selectedWorkflow, loaiDonName);
             }}
             disabled={!canConfirm}
-            className="w-full py-2.5 rounded-lg text-sm font-bold text-white transition-opacity shadow-sm"
-            style={{ background: canConfirm ? "#1D4ED8" : "#94A3B8", cursor: canConfirm ? "pointer" : "not-allowed" }}>
-            Xác nhận tiếp nhận
+            className="px-4 py-2 rounded-xl bg-[#0052cc] hover:bg-[#0043a8] text-white text-xs font-bold shadow-xs cursor-pointer disabled:opacity-50 transition-all"
+          >
+            Hoàn tất tiếp nhận
           </button>
         </div>
-      )}
+      </div>
 
-      {/* ─── Other options ─── */}
-      {huong !== "" && huong !== "tiep-nhan-xu-ly" && (
-        <div className="space-y-3.5 slide-in">
-          {huong === "ghep-don" && (
-            <div>
-              <div className="text-sm font-medium mb-1.5" style={{ color: "#374151" }}>Đơn / Vụ việc liên quan <span style={{ color: "#C62828" }}>*</span></div>
-              <select className={inputCls} style={{ borderColor: "#D1D9E3" }} value={donVi} onChange={(e) => setDonVi(e.target.value)}>
-                <option value="">— Chọn hồ sơ —</option>
-                {donOptions.map((o) => <option key={o}>{o}</option>)}
-              </select>
+      {/* =================================================================== */}
+      {/* MODAL CĂN CỨ GỢI Ý                                                  */}
+      {/* =================================================================== */}
+      {showCanCuModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full p-6 space-y-4 animate-scale-up">
+            <div className="flex items-center justify-between border-b pb-3">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-blue-600 text-xl">menu_book</span>
+                <h3 className="font-bold text-slate-900 text-base">Căn cứ pháp lý gợi ý xử lý</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCanCuModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-lg">close</span>
+              </button>
             </div>
-          )}
-
-          {needDonVi && (
-            <div>
-              <div className="text-sm font-medium mb-1.5" style={{ color: "#374151" }}>Đơn vị nhận <span style={{ color: "#C62828" }}>*</span></div>
-              <select className={inputCls} style={{ borderColor: "#D1D9E3" }} value={donVi} onChange={(e) => setDonVi(e.target.value)}>
-                <option value="">— Chọn đơn vị —</option>
-                {DON_VI_OPTIONS.map((o) => <option key={o}>{o}</option>)}
-              </select>
+            <div className="text-xs text-slate-700 space-y-2.5 leading-relaxed">
+              <p>
+                <strong>1. Điều 145 Bộ luật Tố tụng Hình sự 2015:</strong> Thẩm quyền và trách nhiệm tiếp nhận, giải quyết tố giác, tin báo về tội phạm.
+              </p>
+              <p>
+                <strong>2. Thông tư liên tịch 01/2017/TTLT-BCA-BQP-BTC-BNN&amp;PTNT-VKSNDTC:</strong> Phối hợp giữa các cơ quan trong việc tiếp nhận, thụ lý nguồn tin tội phạm.
+              </p>
+              <p>
+                <strong>3. Điều 174 Bộ luật Hình sự 2015 (sửa đổi 2017):</strong> Tội lừa đảo chiếm đoạt tài sản.
+              </p>
             </div>
-          )}
-
-          <div>
-            <div className="text-sm font-medium mb-1.5" style={{ color: "#374151" }}>Ghi chú xử lý</div>
-            <textarea rows={3} className={inputCls + " resize-none"} style={{ borderColor: "#D1D9E3" }} placeholder={huong === "tra-lai-don" ? "Nêu rõ lý do trả lại đơn…" : "Ghi chú thêm cho hướng xử lý…"} />
+            <div className="flex justify-end pt-2 border-t">
+              <button
+                type="button"
+                onClick={() => setShowCanCuModal(false)}
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer"
+              >
+                Đóng
+              </button>
+            </div>
           </div>
         </div>
       )}
-    </PanelSection>
+    </div>
   );
 }
+
 export default ThongTinXuLySection;

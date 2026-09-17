@@ -62,19 +62,20 @@ export default function Sidebar({ screen, onNav }: SidebarProps) {
             </div>
           </button>
 
-          {/* Thư viện pháp luật */}
+          {/* Trò chuyện trợ lý AI */}
           <button
             type="button"
             onClick={() => onNav('thu-vien')}
             className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer ${screen === 'thu-vien'
-                ? 'bg-blue-50 text-[#004ac6] font-semibold border border-blue-100/60'
+                ? 'bg-blue-50 text-[#004ac6] font-semibold border border-blue-100/60 shadow-2xs'
                 : 'text-slate-700 hover:bg-slate-50'
               }`}
           >
             <div className="flex items-center gap-2.5">
-              <span className="material-symbols-outlined text-[20px] text-slate-600">menu_book</span>
-              <span className="text-[13.5px] font-medium">Thư viện pháp luật</span>
+              <span className={`material-symbols-outlined text-[20px] ${screen === 'thu-vien' ? 'text-[#004ac6]' : 'text-slate-600'}`}>chat</span>
+              <span className="text-[13.5px] font-medium">Trò chuyện trợ lý AI</span>
             </div>
+            {screen === 'thu-vien' && <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>}
           </button>
 
           {/* Báo cáo thông minh */}

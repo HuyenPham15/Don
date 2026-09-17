@@ -218,8 +218,8 @@ export default function CongViecCuaToi({ onSelect, onNav, extraCard, onSelectDon
               type="button"
               onClick={() => setFilterType(filterType === 'urgent' ? 'all' : 'urgent')}
               className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md border text-[11.5px] font-semibold transition-all ${filterType === 'urgent'
-                  ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
-                  : 'bg-rose-50 border-red-200 text-rose-600 hover:bg-rose-100/70'
+                ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
+                : 'bg-rose-50 border-red-200 text-rose-600 hover:bg-rose-100/70'
                 }`}
             >
               <span className="material-symbols-outlined text-[14px]">warning</span>
@@ -230,8 +230,8 @@ export default function CongViecCuaToi({ onSelect, onNav, extraCard, onSelectDon
               type="button"
               onClick={() => setFilterType(filterType === 'collab' ? 'all' : 'collab')}
               className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md border text-[11.5px] font-semibold transition-all ${filterType === 'collab'
-                  ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
-                  : 'bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100/70'
+                ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
+                : 'bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100/70'
                 }`}
             >
               <span className="material-symbols-outlined text-[14px]">hourglass_top</span>
@@ -242,8 +242,8 @@ export default function CongViecCuaToi({ onSelect, onNav, extraCard, onSelectDon
               type="button"
               onClick={() => setFilterType(filterType === 'qualified' ? 'all' : 'qualified')}
               className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md border text-[11.5px] font-semibold transition-all ${filterType === 'qualified'
-                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
-                  : 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100/70'
+                ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                : 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100/70'
                 }`}
             >
               <span className="material-symbols-outlined text-[14px]">verified</span>
@@ -266,7 +266,7 @@ export default function CongViecCuaToi({ onSelect, onNav, extraCard, onSelectDon
                     HÀNG ĐỢI TIẾP NHẬN
                   </h2>
                 </div>
-                <div className="flex items-center gap-1.5">
+                {/* <div className="flex items-center gap-1.5">
                   <span
                     className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[10.5px] font-semibold font-label-technical"
                     title="AI đang phân tích"
@@ -285,12 +285,12 @@ export default function CongViecCuaToi({ onSelect, onNav, extraCard, onSelectDon
                     </span>
                     {Math.max(0, 2 - acceptedLuotNhanIds.length)} đã xong
                   </span>
-                </div>
+                </div> */}
               </div>
             </div>
-            <p className="text-[11px] text-slate-500 px-1 -mt-1">
+            {/* <p className="text-[11px] text-slate-500 px-1 -mt-1">
               Phân loại tiếp nhận theo tiến trình AI phân tích hồ sơ &amp; trích xuất dữ liệu
-            </p>
+            </p> */}
 
             <div className="flex flex-col gap-2.5">
               {/* Dynamic extra card if user just submitted new intake */}
@@ -622,9 +622,9 @@ export default function CongViecCuaToi({ onSelect, onNav, extraCard, onSelectDon
                 {String(3 + extraProcessingItems.length + (acceptedDons?.length || 0)).padStart(2, '0')}
               </span>
             </div>
-            <p className="text-[11px] text-slate-500 px-1 -mt-1">
+            {/* <p className="text-[11px] text-slate-500 px-1 -mt-1">
               Hồ sơ đang trong thời hạn thẩm tra chuyên môn
-            </p>
+            </p> */}
 
             <div className="flex flex-col gap-2.5">
               {/* CÁC ĐƠN MỚI ĐƯỢC TIẾP NHẬN TỪ LƯỢT NHẬN HOẶC TỪ MÀN PHÂN TÍCH */}
@@ -944,9 +944,9 @@ export default function CongViecCuaToi({ onSelect, onNav, extraCard, onSelectDon
                 02
               </span>
             </div>
-            <p className="text-[11px] text-slate-500 px-1 -mt-1">
+            {/* <p className="text-[11px] text-slate-500 px-1 -mt-1">
               Đã ký nháy, chờ Lãnh đạo ký số &amp; trả Một cửa
-            </p>
+            </p> */}
 
             <div className="flex flex-col gap-2.5">
               {/* Card 1: VV-2025-0612 */}

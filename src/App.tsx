@@ -6,11 +6,12 @@ import CongViecCuaToi from "./screens/CongViecCuaToi";
 import DonTiepNhan from "./screens/DonTiepNhan";
 import NhanDonList from "./screens/NhanDonList";
 import NhanDonThem from "./screens/NhanDonThem";
+import TroChuyenScreen from "./screens/TroChuyenScreen";
 import { LN19 } from "./constants";
 import { LuotNhan, Screen, DonDetail } from "./types";
 import QuyTrinhXuLyDon from "./screens/QuyTrinhXuLyDon";
 import { ActiveWorkflowState } from "./types/workflow";
-import { WORKFLOW_DEFINITIONS } from "./constants/workflows";
+import { WORKFLOW_DEFINITIONS, matchWorkflowByLoaiDon } from "./constants/workflows";
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>("cong-viec");
@@ -54,6 +55,27 @@ export default function App() {
     setScreen("cong-viec");
   }, []);
 
+  const handleSelectDon = useCallback((don: DonDetail) => {
+    setSelectedDon(don);
+    const loaiDon = don.loaiDon || 'Đơn tố giác về tội phạm';
+    const wfDef = matchWorkflowByLoaiDon(loaiDon);
+    setActiveWorkflow({
+      donCode: don.code,
+      donTitle: don.title,
+      luotNhanId: don.luotNhanId || 'LN-45/2026-GOVEX',
+      nguoiNop: don.nguoiNop,
+      loaiDonConfirmed: loaiDon,
+      workflow: wfDef,
+      activeStepId: wfDef.steps[1]?.id || wfDef.steps[0].id,
+      tasks: wfDef.defaultTasks,
+      missingInfoList: wfDef.potentialMissingInfo,
+      status: 'dang_xu_ly',
+      startedAt: '16/09/2026 09:30',
+      assignedOfficer: 'Nguyễn Minh Anh',
+      historyLogs: [],
+    });
+  }, []);
+
   const handleAcceptFromBanPhanTich = useCallback((don: DonDetail, wfState?: ActiveWorkflowState) => {
     setAcceptedDons((prev) => [don, ...prev.filter((d) => d.code !== don.code)]);
     setSelectedDon(don);
@@ -67,98 +89,96 @@ export default function App() {
     <div className="flex flex-col h-screen overflow-hidden bg-[#f4f7fb] text-[#0b1c30] font-body-md antialiased selection:bg-[#004ac6] selection:text-white">
       {/* 1. ADMINISTRATIVE HEADER */}
       <header className="h-16 shrink-0 bg-white border-b border-slate-200/90 px-4 sm:px-6 flex items-center justify-between z-30 shadow-2xs">
-          {/* Brand & Authority Level */}
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-[#004ac6] text-white font-extrabold text-sm flex items-center justify-center shadow-xs tracking-tight shrink-0">
-              GV
-            </div>
-            <div className="flex flex-col min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-slate-900 text-[14px] tracking-tight font-headline-md uppercase">
-                  GOVEX TECH
-                </span>
-                <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-500 font-mono text-[10.5px] border border-slate-200 font-semibold">
-                  v2.6.4
-                </span>
-              </div>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-label-technical">
-                HỆ THỐNG TIẾP NHẬN &amp; QUẢN LÝ ĐƠN THƯ
+        {/* Brand & Authority Level */}
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-9 h-9 rounded-xl bg-[#004ac6] text-white font-extrabold text-sm flex items-center justify-center shadow-xs tracking-tight shrink-0">
+            GV
+          </div>
+          <div className="flex flex-col min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="font-extrabold text-slate-900 text-[14px] tracking-tight font-headline-md uppercase">
+                GOVEX TECH
+              </span>
+              <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-500 font-mono text-[10.5px] border border-slate-200 font-semibold">
+                v2.6.4
               </span>
             </div>
-          </div>
-
-          {/* Center Search Bar */}
-          <div className="hidden md:flex w-96 relative">
-            <span className="material-symbols-outlined absolute left-3 top-2 text-[17px] text-slate-400">
-              search
-            </span>
-            <input
-              type="text"
-              placeholder="Tìm kiếm đơn, mã hồ sơ, người liên quan... (Ctrl + K)"
-              className="w-full pl-9 pr-12 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-blue-500 transition-all"
-            />
-            <span className="absolute right-2.5 top-2 text-[10px] font-mono text-slate-400 bg-white px-1.5 py-0.5 rounded border border-slate-200">
-              ⌘K
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-label-technical">
+              HỆ THỐNG TIẾP NHẬN &amp; QUẢN LÝ ĐƠN THƯ
             </span>
           </div>
+        </div>
 
-          {/* Operational & Officer Status */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center p-1 bg-slate-100 border border-slate-200/80 rounded-xl shadow-2xs">
-              <button
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-lg font-medium text-[12.5px] transition-all cursor-pointer ${
-                  screen === "thu-vien"
-                    ? "bg-white text-blue-700 font-semibold shadow-xs"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+        {/* Center Search Bar */}
+        <div className="hidden md:flex w-96 relative">
+          <span className="material-symbols-outlined absolute left-3 top-2 text-[17px] text-slate-400">
+            search
+          </span>
+          <input
+            type="text"
+            placeholder="Tìm kiếm đơn, mã hồ sơ, người liên quan... (Ctrl + K)"
+            className="w-full pl-9 pr-12 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-blue-500 transition-all"
+          />
+          <span className="absolute right-2.5 top-2 text-[10px] font-mono text-slate-400 bg-white px-1.5 py-0.5 rounded border border-slate-200">
+            ⌘K
+          </span>
+        </div>
+
+        {/* Operational & Officer Status */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center p-1 bg-slate-100 border border-slate-200/80 rounded-xl shadow-2xs">
+            <button
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg font-medium text-[12.5px] transition-all cursor-pointer ${screen === "thu-vien"
+                ? "bg-white text-blue-700 font-semibold shadow-xs"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                 }`}
-                onClick={() => setScreen("thu-vien")}
-                type="button"
-              >
-                <span className="material-symbols-outlined text-[17px] text-slate-500">chat</span>
-                <span>Trò chuyện</span>
-              </button>
-              <button
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-lg font-medium text-[12.5px] transition-all cursor-pointer ${
-                  screen === "cong-viec" || screen === "don-tiep-nhan"
-                    ? "bg-white text-blue-700 font-semibold shadow-xs"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+              onClick={() => setScreen("thu-vien")}
+              type="button"
+            >
+              <span className="material-symbols-outlined text-[17px] text-slate-500">chat</span>
+              <span>Trò chuyện</span>
+            </button>
+            <button
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg font-medium text-[12.5px] transition-all cursor-pointer ${screen === "cong-viec" || screen === "don-tiep-nhan"
+                ? "bg-white text-blue-700 font-semibold shadow-xs"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                 }`}
-                onClick={() => setScreen("cong-viec")}
-                type="button"
-              >
-                <span className="material-symbols-outlined text-[17px] text-blue-700">task_alt</span>
-                <span>Công việc</span>
-              </button>
+              onClick={() => setScreen("cong-viec")}
+              type="button"
+            >
+              <span className="material-symbols-outlined text-[17px] text-blue-700">task_alt</span>
+              <span>Công việc</span>
+            </button>
+          </div>
+
+          <button
+            type="button"
+            className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg cursor-pointer"
+            title="Lịch công tác"
+          >
+            <span className="material-symbols-outlined text-[19px]">calendar_today</span>
+          </button>
+
+          <button
+            type="button"
+            className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg relative cursor-pointer"
+            title="Thông báo"
+          >
+            <span className="material-symbols-outlined text-[19px]">notifications</span>
+            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500"></span>
+          </button>
+
+          <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
+            <div className="w-8 h-8 rounded-full bg-[#004ac6] text-white font-bold text-xs flex items-center justify-center shadow-xs">
+              MA
             </div>
-
-            <button
-              type="button"
-              className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg cursor-pointer"
-              title="Lịch công tác"
-            >
-              <span className="material-symbols-outlined text-[19px]">calendar_today</span>
-            </button>
-
-            <button
-              type="button"
-              className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg relative cursor-pointer"
-              title="Thông báo"
-            >
-              <span className="material-symbols-outlined text-[19px]">notifications</span>
-              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500"></span>
-            </button>
-
-            <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
-              <div className="w-8 h-8 rounded-full bg-[#004ac6] text-white font-bold text-xs flex items-center justify-center shadow-xs">
-                MA
-              </div>
-              <div className="hidden lg:flex flex-col text-left">
-                <span className="text-xs font-bold text-slate-900 leading-tight">Nguyễn Minh Anh</span>
-                <span className="text-[10px] text-slate-400 leading-tight">Cán bộ thụ lý hồ sơ</span>
-              </div>
+            <div className="hidden lg:flex flex-col text-left">
+              <span className="text-xs font-bold text-slate-900 leading-tight">Nguyễn Minh Anh</span>
+              <span className="text-[10px] text-slate-400 leading-tight">Cán bộ thụ lý hồ sơ</span>
             </div>
           </div>
-        </header>
+        </div>
+      </header>
 
       {/* 2. BODY: SIDEBAR + MAIN WORKSPACE */}
       <div className="flex flex-1 overflow-hidden">
@@ -169,7 +189,7 @@ export default function App() {
               onSelect={setSelected}
               onNav={setScreen}
               extraCard={extraCard}
-              onSelectDon={setSelectedDon}
+              onSelectDon={handleSelectDon}
               acceptedDons={acceptedDons}
             />
           )}
@@ -192,7 +212,7 @@ export default function App() {
               onUpdateWorkflowState={setActiveWorkflow}
             />
           )}
-          {screen === "thu-vien" && <Placeholder title="Thư viện pháp luật" />}
+          {screen === "thu-vien" && <TroChuyenScreen onNav={setScreen} />}
           {screen === "bao-cao" && <Placeholder title="Báo cáo thông minh" />}
         </main>
       </div>

@@ -118,14 +118,6 @@ export default function DonTiepNhan({ onNav, donDetail }: DonTiepNhanProps) {
           <div className="flex items-center gap-2.5 shrink-0">
             <button
               type="button"
-              onClick={() => onNav('quy-trinh-xu-ly')}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-blue-200 bg-blue-50/70 hover:bg-blue-100 text-[#004ac6] text-xs font-bold shadow-2xs transition-colors cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[16px]">account_tree</span>
-              <span>Quy trình xử lý đơn</span>
-            </button>
-            <button
-              type="button"
               onClick={() => showToast('Đã gắn liên kết hồ sơ vào vụ việc liên quan.')}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
             >

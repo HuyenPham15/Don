@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { LuotNhan, Screen } from '../types';
-import KhoiTaoQuyTrinhModal from '../components/workflow/KhoiTaoQuyTrinhModal';
 import { matchWorkflowByLoaiDon } from '../constants/workflows';
-import { WorkflowDefinition, ActiveWorkflowState } from '../types/workflow';
+import { ActiveWorkflowState } from '../types/workflow';
+import { DON_VI_OPTIONS } from '../constants';
+import NguonTraCuuModal, { NguonTraCuuTabType } from '../components/modals/NguonTraCuuModal';
 
 interface BanPhanTichProps {
   luotNhan: LuotNhan;
@@ -24,22 +25,34 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
   const [activeHighlightKey, setActiveHighlightKey] = useState<string | null>(null);
 
   // Officer inputs
-  const [officerNote, setOfficerNote] = useState<string>('');
+  const [officerNote, setOfficerNote] = useState<string>(
+    'Qua phân tích, đề xuất tiếp nhận đơn và chuyển Phòng Cảnh sát kinh tế để xem xét, giải quyết theo thẩm quyền.'
+  );
+  const [huongXuLy, setHuongXuLy] = useState<'tiep-nhan' | 'xac-minh' | 'chuyen'>('tiep-nhan');
+  const [expandedCanCu, setExpandedCanCu] = useState<string | null>(null);
+  const [donViChuyen, setDonViChuyen] = useState<string>('');
+  const [banGiaoUnit, setBanGiaoUnit] = useState<string>('Phòng Cảnh sát kinh tế (PC03) - Công an TP. Hà Nội');
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [showSubmitModal, setShowSubmitModal] = useState<boolean>(false);
-  const [showKhoiTaoModal, setShowKhoiTaoModal] = useState<boolean>(false);
   const [showTraLaiModal, setShowTraLaiModal] = useState<boolean>(false);
   const [showBanGiaoModal, setShowBanGiaoModal] = useState<boolean>(false);
   const [traLaiReason, setTraLaiReason] = useState<string>('Không thuộc thẩm quyền giải quyết');
   const [showCanCuModal, setShowCanCuModal] = useState<boolean>(false);
+  const [showNguonTraCuuModal, setShowNguonTraCuuModal] = useState<boolean>(false);
+  const [nguonTraCuuTab, setNguonTraCuuTab] = useState<NguonTraCuuTabType>('nguoi-gui');
+
+  const openNguonTraCuu = (tab: NguonTraCuuTabType) => {
+    setNguonTraCuuTab(tab);
+    setShowNguonTraCuuModal(true);
+  };
 
   // Chỉnh sửa trực tiếp dạng text cho Khối 2: Thông tin trích xuất từ đơn
   const [isEditingExtract, setIsEditingExtract] = useState<boolean>(false);
   const [extractData, setExtractData] = useState({
     nguoiGui: 'Nguyễn Văn A',
     namSinh: '1988',
-    cccd: '001088019482',
-    sdt: '0912 345 678',
+    cccd: '001088012345',
+    sdt: '0983 123 456',
     diaChi: 'Số 12, ngõ 45, Cầu Giấy, Hà Nội',
     dongNguoiGui: 'Trần Thị C (Đồng đứng đơn)',
     cccdDongNguoiGui: '001190028391',
@@ -47,19 +60,20 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
     theLuatSu: 'LS-0928/ĐLS-HN',
     loaiNoiDung: 'Tố giác tội phạm',
     dauHieu: 'Lừa đảo chiếm đoạt tài sản',
-    congTyBiToGiac: 'Công ty Cổ phần Đầu tư & Phát triển Đô thị X',
+    congTyBiToGiac: 'Công ty Cổ phần X',
     mstCongTy: '0108293847',
-    doiTuong: 'Ông Trần Văn B',
-    chucVu: 'Chủ tịch HĐQT kiêm TGĐ',
-    donVi: 'Công ty Cổ phần Đầu tư & Phát triển Đô thị X',
+    doiTuong: 'Trần Văn B',
+    chucVu: 'Giám đốc',
+    donVi: 'Công ty Cổ phần X',
     nguoiLienQuan: 'Bà Vũ Mai H (Kế toán trưởng kiêm Thủ quỹ)',
     cccdNguoiLienQuan: '001183002910',
     thoiGian: 'Khoảng năm 2024 – 2025',
     duAn: 'Dự án Khu đô thị Y',
     diaDiem: 'Quận Hà Đông, Hà Nội',
-    yeuCau1: 'Xác minh, điều tra làm rõ hành vi chiếm đoạt 3,5 tỷ VNĐ.',
-    yeuCau2: 'Bảo vệ quyền và lợi ích hợp pháp của các bị hại.',
-    yeuCau3: 'Áp dụng biện pháp phong tỏa tài khoản và thông báo kết quả giải quyết.',
+    noiDungTomTat: 'Phản ánh ông Trần Văn B và Công ty Cổ phần X có hành vi lừa đảo chiếm đoạt tài sản thông qua việc huy động vốn tại Dự án Khu đô thị Y... không thực hiện cam kết và không hoàn trả tiền cho các nhà đầu tư.',
+    yeuCau1: 'Xác minh, điều tra làm rõ hành vi.',
+    yeuCau2: 'Bảo vệ quyền và lợi ích hợp pháp.',
+    yeuCau3: 'Thông báo kết quả giải quyết.',
   });
   const [savedExtractData, setSavedExtractData] = useState(extractData);
 
@@ -100,58 +114,6 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
     }, 3500);
   };
 
-  const handleConfirmWorkflowFromModal = (wf: WorkflowDefinition) => {
-    const now = new Date();
-    const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} ngày ${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
-
-    const donCode = 'Đ-2026-00125';
-    const donTitle = `Tố giác vi phạm lừa đảo chiếm đoạt tài sản (${extractData.duAn || 'Dự án Khu đô thị Y'})`;
-
-    const activeWfState: ActiveWorkflowState = {
-      donCode: donCode,
-      donTitle: donTitle,
-      luotNhanId: luotNhan.id || 'LN-2025-0819',
-      nguoiNop: extractData.nguoiGui || 'Nguyễn Văn A',
-      loaiDonConfirmed: extractData.loaiNoiDung || 'Đơn tố giác về tội phạm',
-      workflow: wf,
-      activeStepId: wf.steps[1]?.id || wf.steps[0].id,
-      tasks: wf.defaultTasks,
-      missingInfoList: wf.potentialMissingInfo,
-      status: 'dang_xu_ly',
-      startedAt: timeStr,
-      assignedOfficer: 'Nguyễn Minh Anh',
-      historyLogs: [
-        {
-          id: `log-${Date.now()}`,
-          timestamp: timeStr,
-          actor: 'Nguyễn Minh Anh (Cán bộ tiếp nhận)',
-          action: 'Tiếp nhận hồ sơ & Khởi tạo quy trình xử lý đơn',
-          newValue: `${extractData.loaiNoiDung} (${wf.name})`,
-          reason: 'Cán bộ kiểm tra hồ sơ và xác nhận quy trình xử lý theo thẩm quyền',
-        }
-      ],
-    };
-
-    setShowKhoiTaoModal(false);
-    showToast(`✓ Đã tiếp nhận và khởi tạo quy trình "${wf.name}" thành công!`);
-
-    onAcceptAndProcess?.(
-      {
-        id: donCode,
-        code: donCode,
-        title: donTitle,
-        luotNhanId: luotNhan.id || 'LN-2025-0819',
-        nguoiNop: extractData.nguoiGui || 'Nguyễn Văn A',
-        ngayNhan: luotNhan.ngayNhan || '16/09/2026 09:15',
-        loaiDon: extractData.loaiNoiDung,
-        type: 'ĐƠN TIẾP NHẬN',
-        statusBadge: 'Đang xử lý',
-        isNew: true,
-      },
-      activeWfState
-    );
-  };
-
   // Mô phỏng AI đang quét đọc tài liệu
   useEffect(() => {
     if (!isSimulating || aiState === 'done') return;
@@ -181,9 +143,9 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
 
   const handleCopySummary = () => {
     navigator.clipboard?.writeText(
-      'Nguyễn Văn A tố giác ông Trần Văn B – Giám đốc Công ty Cổ phần X có hành vi lừa đảo chiếm đoạt tài sản thông qua việc huy động vốn tại Dự án Khu đô thị Y (Hà Nội) trong giai đoạn 2024 – 2025. Người gửi đề nghị cơ quan điều tra xác minh, điều tra, bảo vệ quyền lợi và thông báo kết quả.'
+      'Nguyễn Văn A tố giác ông Trần Văn B (Giám đốc Công ty Cổ phần X) có hành vi lừa đảo chiếm đoạt tài sản qua huy động vốn tại Dự án Khu đô thị Y (Hà Nội) giai đoạn 2024 – 2025. Đề xuất hướng xử lý: Phân loại đơn Tố giác tội phạm; chuyển Phòng Cảnh sát kinh tế thụ lý, xác minh theo thẩm quyền; đồng thời rà soát hợp nhất với 01 đơn tương tự (D-2025-00341) và kiểm tra tiền sử 03 đơn đã gửi của người đứng đơn.'
     );
-    showToast('Đã sao chép nội dung tóm tắt của AI vào khay nhớ tạm.');
+    showToast('Đã sao chép nội dung tóm tắt & đề xuất xử lý vào khay nhớ tạm.');
   };
 
   return (
@@ -345,7 +307,7 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0052cc] hover:bg-[#0043a8] active:scale-95 text-white text-xs font-semibold shadow-sm transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span className="material-symbols-outlined text-[16px]">task_alt</span>
-            <span>Tiếp nhận và xử lý</span>
+            <span>Tiếp nhận đơn</span>
           </button>
         </div>
       </div>
@@ -767,8 +729,8 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
                       suppressContentEditableWarning
                       onBlur={(e) => updateExtractField('nguoiGui', e.currentTarget.textContent || '')}
                       className={`font-bold text-slate-900 text-[12.5px] outline-none transition-all inline-block ${isEditingExtract
-                          ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 py-0.5 rounded cursor-text focus:bg-white focus:border-solid focus:border-[#004ac6] focus:ring-1 focus:ring-blue-300'
-                          : ''
+                        ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 py-0.5 rounded cursor-text focus:bg-white focus:border-solid focus:border-[#004ac6] focus:ring-1 focus:ring-blue-300'
+                        : ''
                         }`}
                       title={isEditingExtract ? 'Nhấp vào chữ để sửa' : undefined}
                     >
@@ -782,8 +744,8 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
                       suppressContentEditableWarning
                       onBlur={(e) => updateExtractField('namSinh', e.currentTarget.textContent || '')}
                       className={`outline-none transition-all ${isEditingExtract
-                          ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 rounded cursor-text focus:ring-1 focus:ring-blue-300'
-                          : ''
+                        ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 rounded cursor-text focus:ring-1 focus:ring-blue-300'
+                        : ''
                         }`}
                       title={isEditingExtract ? 'Nhấp vào chữ để sửa' : undefined}
                     >
@@ -795,8 +757,8 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
                       suppressContentEditableWarning
                       onBlur={(e) => updateExtractField('cccd', e.currentTarget.textContent || '')}
                       className={`font-label-technical font-semibold text-slate-800 outline-none transition-all ${isEditingExtract
-                          ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 rounded cursor-text focus:ring-1 focus:ring-blue-300'
-                          : ''
+                        ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 rounded cursor-text focus:ring-1 focus:ring-blue-300'
+                        : ''
                         }`}
                       title={isEditingExtract ? 'Nhấp vào chữ để sửa' : undefined}
                     >
@@ -810,8 +772,8 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
                       suppressContentEditableWarning
                       onBlur={(e) => updateExtractField('sdt', e.currentTarget.textContent || '')}
                       className={`font-label-technical outline-none transition-all ${isEditingExtract
-                          ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 rounded cursor-text focus:ring-1 focus:ring-blue-300'
-                          : ''
+                        ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 rounded cursor-text focus:ring-1 focus:ring-blue-300'
+                        : ''
                         }`}
                       title={isEditingExtract ? 'Nhấp vào chữ để sửa' : undefined}
                     >
@@ -825,8 +787,8 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
                       suppressContentEditableWarning
                       onBlur={(e) => updateExtractField('diaChi', e.currentTarget.textContent || '')}
                       className={`outline-none transition-all ${isEditingExtract
-                          ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 rounded cursor-text focus:ring-1 focus:ring-blue-300'
-                          : ''
+                        ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 rounded cursor-text focus:ring-1 focus:ring-blue-300'
+                        : ''
                         }`}
                       title={isEditingExtract ? 'Nhấp vào chữ để sửa' : undefined}
                     >
@@ -857,8 +819,8 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
                           suppressContentEditableWarning
                           onBlur={(e) => updateExtractField('loaiNoiDung', e.currentTarget.textContent || '')}
                           className={`outline-none transition-all ${isEditingExtract
-                              ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 py-0.5 rounded cursor-text focus:ring-1 focus:ring-blue-300'
-                              : ''
+                            ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 py-0.5 rounded cursor-text focus:ring-1 focus:ring-blue-300'
+                            : ''
                             }`}
                           title={isEditingExtract ? 'Nhấp vào chữ để sửa' : undefined}
                         >
@@ -872,8 +834,8 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
                           suppressContentEditableWarning
                           onBlur={(e) => updateExtractField('dauHieu', e.currentTarget.textContent || '')}
                           className={`text-slate-800 font-medium outline-none transition-all ${isEditingExtract
-                              ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 rounded cursor-text focus:ring-1 focus:ring-blue-300'
-                              : ''
+                            ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 rounded cursor-text focus:ring-1 focus:ring-blue-300'
+                            : ''
                             }`}
                           title={isEditingExtract ? 'Nhấp vào chữ để sửa' : undefined}
                         >
@@ -897,11 +859,10 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
                               updateExtractField('loaiNoiDung', ld);
                               showToast(`Đã chuyển loại đơn sang: "${ld}"`);
                             }}
-                            className={`text-[10px] px-1.5 py-0.5 rounded border transition-colors cursor-pointer ${
-                              extractData.loaiNoiDung === ld
-                                ? 'bg-rose-50 text-rose-700 border-rose-300 font-bold'
-                                : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
-                            }`}
+                            className={`text-[10px] px-1.5 py-0.5 rounded border transition-colors cursor-pointer ${extractData.loaiNoiDung === ld
+                              ? 'bg-rose-50 text-rose-700 border-rose-300 font-bold'
+                              : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+                              }`}
                           >
                             {ld}
                           </button>
@@ -931,8 +892,8 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
                       suppressContentEditableWarning
                       onBlur={(e) => updateExtractField('doiTuong', e.currentTarget.textContent || '')}
                       className={`font-bold text-slate-900 text-[12.5px] outline-none transition-all inline-block ${isEditingExtract
-                          ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 py-0.5 rounded cursor-text focus:ring-1 focus:ring-blue-300'
-                          : ''
+                        ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 py-0.5 rounded cursor-text focus:ring-1 focus:ring-blue-300'
+                        : ''
                         }`}
                       title={isEditingExtract ? 'Nhấp vào chữ để sửa' : undefined}
                     >
@@ -946,8 +907,8 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
                       suppressContentEditableWarning
                       onBlur={(e) => updateExtractField('chucVu', e.currentTarget.textContent || '')}
                       className={`outline-none transition-all ${isEditingExtract
-                          ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 rounded cursor-text focus:ring-1 focus:ring-blue-300'
-                          : ''
+                        ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 rounded cursor-text focus:ring-1 focus:ring-blue-300'
+                        : ''
                         }`}
                       title={isEditingExtract ? 'Nhấp vào chữ để sửa' : undefined}
                     >
@@ -961,8 +922,8 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
                       suppressContentEditableWarning
                       onBlur={(e) => updateExtractField('donVi', e.currentTarget.textContent || '')}
                       className={`outline-none transition-all ${isEditingExtract
-                          ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 rounded cursor-text focus:ring-1 focus:ring-blue-300'
-                          : ''
+                        ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 rounded cursor-text focus:ring-1 focus:ring-blue-300'
+                        : ''
                         }`}
                       title={isEditingExtract ? 'Nhấp vào chữ để sửa' : undefined}
                     >
@@ -990,8 +951,8 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
                         suppressContentEditableWarning
                         onBlur={(e) => updateExtractField('thoiGian', e.currentTarget.textContent || '')}
                         className={`outline-none transition-all ${isEditingExtract
-                            ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 py-0.5 rounded cursor-text focus:ring-1 focus:ring-blue-300'
-                            : ''
+                          ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 py-0.5 rounded cursor-text focus:ring-1 focus:ring-blue-300'
+                          : ''
                           }`}
                         title={isEditingExtract ? 'Nhấp vào chữ để sửa' : undefined}
                       >
@@ -1022,8 +983,8 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
                       suppressContentEditableWarning
                       onBlur={(e) => updateExtractField('duAn', e.currentTarget.textContent || '')}
                       className={`outline-none transition-all ${isEditingExtract
-                          ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 py-0.5 rounded cursor-text focus:ring-1 focus:ring-blue-300'
-                          : ''
+                        ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 py-0.5 rounded cursor-text focus:ring-1 focus:ring-blue-300'
+                        : ''
                         }`}
                       title={isEditingExtract ? 'Nhấp vào chữ để sửa' : undefined}
                     >
@@ -1036,8 +997,8 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
                       suppressContentEditableWarning
                       onBlur={(e) => updateExtractField('diaDiem', e.currentTarget.textContent || '')}
                       className={`outline-none transition-all ${isEditingExtract
-                          ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 rounded cursor-text focus:ring-1 focus:ring-blue-300'
-                          : ''
+                        ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 rounded cursor-text focus:ring-1 focus:ring-blue-300'
+                        : ''
                         }`}
                       title={isEditingExtract ? 'Nhấp vào chữ để sửa' : undefined}
                     >
@@ -1069,8 +1030,8 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
                           suppressContentEditableWarning
                           onBlur={(e) => updateExtractField('yeuCau1', e.currentTarget.textContent || '')}
                           className={`outline-none transition-all ${isEditingExtract
-                              ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 rounded cursor-text focus:ring-1 focus:ring-blue-300'
-                              : ''
+                            ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 rounded cursor-text focus:ring-1 focus:ring-blue-300'
+                            : ''
                             }`}
                           title={isEditingExtract ? 'Nhấp vào chữ để sửa' : undefined}
                         >
@@ -1083,8 +1044,8 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
                           suppressContentEditableWarning
                           onBlur={(e) => updateExtractField('yeuCau2', e.currentTarget.textContent || '')}
                           className={`outline-none transition-all ${isEditingExtract
-                              ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 rounded cursor-text focus:ring-1 focus:ring-blue-300'
-                              : ''
+                            ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 rounded cursor-text focus:ring-1 focus:ring-blue-300'
+                            : ''
                             }`}
                           title={isEditingExtract ? 'Nhấp vào chữ để sửa' : undefined}
                         >
@@ -1097,8 +1058,8 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
                           suppressContentEditableWarning
                           onBlur={(e) => updateExtractField('yeuCau3', e.currentTarget.textContent || '')}
                           className={`outline-none transition-all ${isEditingExtract
-                              ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 rounded cursor-text focus:ring-1 focus:ring-blue-300'
-                              : ''
+                            ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 rounded cursor-text focus:ring-1 focus:ring-blue-300'
+                            : ''
                             }`}
                           title={isEditingExtract ? 'Nhấp vào chữ để sửa' : undefined}
                         >
@@ -1116,33 +1077,45 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
           {/* KHỐI ③: KẾT QUẢ TRA CỨU TRONG HỆ THỐNG                              */}
           {/* =================================================================== */}
           <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2 flex-wrap gap-2">
               <div className="flex items-center gap-2">
                 <h3 className="text-xs font-bold text-slate-900 font-headline-md tracking-tight">
                   Kết quả tra cứu trong hệ thống
                 </h3>
+                <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  AI đã đối soát 3 nguồn CSDL
+                </span>
               </div>
               <button
                 type="button"
-                onClick={() => showToast('Mở xem chi tiết đối soát toàn bộ hệ thống tra cứu...')}
-                className="text-[11px] text-blue-600 hover:underline font-semibold flex items-center gap-0.5 cursor-pointer"
+                onClick={() => openNguonTraCuu('nguoi-gui')}
+                className="text-[11px] text-[#004ac6] hover:underline font-bold flex items-center gap-1 cursor-pointer bg-blue-50/70 hover:bg-blue-100 px-2.5 py-1 rounded-lg border border-blue-200 shadow-2xs transition-all"
               >
-                <span>Xem chi tiết</span>
+                <span className="material-symbols-outlined text-[14px]">database</span>
+                <span>Xem nguồn thông tin gốc</span>
                 <span className="material-symbols-outlined text-[13px]">arrow_forward</span>
               </button>
             </div>
 
             {/* 3 Thẻ kết quả */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {/* Thẻ 1: Lịch sử người gửi */}
-              <div className="p-3 rounded-2xl bg-blue-50/70 border border-blue-100 flex items-start gap-2.5 relative">
-                <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+              <div
+                onClick={() => openNguonTraCuu('nguoi-gui')}
+                className="p-3 rounded-2xl bg-blue-50/70 border border-blue-100 hover:border-blue-300 hover:bg-blue-50 transition-all flex items-start gap-2.5 relative cursor-pointer group shadow-2xs"
+              >
+                <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
                   <span className="material-symbols-outlined text-[17px]">badge</span>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <span className="text-[11px] font-semibold text-slate-600 block leading-tight">
-                    Lịch sử người gửi
-                  </span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-slate-600 block leading-tight">
+                      Lịch sử người gửi
+                    </span>
+                    <span className="text-[9.5px] font-bold text-blue-700 bg-blue-100/70 px-1.5 py-0.2 rounded font-mono">
+                      CSDL Tiếp dân
+                    </span>
+                  </div>
                   {aiState === 'reading' && readingProgress < 60 ? (
                     <div className="h-5 w-8 bg-blue-200 rounded skel my-1" />
                   ) : (
@@ -1150,27 +1123,39 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
                       3
                     </div>
                   )}
-                  <p className="text-[10.5px] text-slate-500">đơn đã gửi</p>
+                  <p className="text-[10.5px] text-slate-500">đơn đã gửi trước đây</p>
                   <button
                     type="button"
-                    onClick={() => showToast('Mở danh sách 3 đơn của người gửi Nguyễn Văn A...')}
-                    className="text-[10.5px] text-blue-600 hover:underline font-semibold flex items-center gap-0.5 mt-1 cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openNguonTraCuu('nguoi-gui');
+                    }}
+                    className="text-[10.5px] text-[#004ac6] hover:underline font-bold flex items-center gap-1 mt-1.5 cursor-pointer bg-white/90 hover:bg-white px-2 py-0.5 rounded-md border border-blue-200 shadow-2xs transition-all"
                   >
-                    <span>Xem danh sách</span>
+                    <span className="material-symbols-outlined text-[13px]">visibility</span>
+                    <span>Xem 03 đơn gốc</span>
                     <span className="material-symbols-outlined text-[11px]">arrow_forward</span>
                   </button>
                 </div>
               </div>
 
               {/* Thẻ 2: Đơn tương tự */}
-              <div className="p-3 rounded-2xl bg-amber-50/70 border border-amber-200/80 flex items-start gap-2.5 relative">
-                <div className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-2xs">
+              <div
+                onClick={() => openNguonTraCuu('don-tuong-tu')}
+                className="p-3 rounded-2xl bg-amber-50/70 border border-amber-200/80 hover:border-amber-400 hover:bg-amber-50 transition-all flex items-start gap-2.5 relative cursor-pointer group shadow-2xs"
+              >
+                <div className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
                   <span className="material-symbols-outlined text-[17px]">description</span>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <span className="text-[11px] font-semibold text-slate-600 block leading-tight">
-                    Đơn tương tự
-                  </span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-slate-600 block leading-tight">
+                      Đơn tương tự
+                    </span>
+                    <span className="text-[9.5px] font-bold text-amber-900 bg-amber-100 px-1.5 py-0.2 rounded font-mono">
+                      Đ-2025-00341
+                    </span>
+                  </div>
                   {aiState === 'reading' && readingProgress < 75 ? (
                     <div className="h-5 w-8 bg-amber-200 rounded skel my-1" />
                   ) : (
@@ -1181,27 +1166,39 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
                   <p className="text-[10.5px] text-slate-500 leading-tight">
                     đơn có nội dung tương tự
                   </p>
-                  <p className="text-[10px] text-amber-800 font-medium">Độ tương đồng cao (86%)</p>
+                  <p className="text-[10px] text-amber-800 font-bold">Độ tương đồng cao (86%)</p>
                   <button
                     type="button"
-                    onClick={() => showToast('Mở đơn tương tự mã D-2025-00341 (86%)...')}
-                    className="text-[10.5px] text-amber-800 hover:underline font-semibold flex items-center gap-0.5 mt-1 cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openNguonTraCuu('don-tuong-tu');
+                    }}
+                    className="text-[10.5px] text-amber-900 hover:underline font-bold flex items-center gap-1 mt-1.5 cursor-pointer bg-white/90 hover:bg-white px-2 py-0.5 rounded-md border border-amber-300 shadow-2xs transition-all"
                   >
-                    <span>Xem chi tiết</span>
+                    <span className="material-symbols-outlined text-[13px]">visibility</span>
+                    <span>Đối chiếu đơn gốc (86%)</span>
                     <span className="material-symbols-outlined text-[11px]">arrow_forward</span>
                   </button>
                 </div>
               </div>
 
               {/* Thẻ 3: Vụ việc liên quan */}
-              <div className="p-3 rounded-2xl bg-purple-50/70 border border-purple-200/80 flex items-start gap-2.5 relative">
-                <div className="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+              <div
+                onClick={() => openNguonTraCuu('vu-viec')}
+                className="p-3 rounded-2xl bg-purple-50/70 border border-purple-200/80 hover:border-purple-400 hover:bg-purple-50 transition-all flex items-start gap-2.5 relative cursor-pointer group shadow-2xs"
+              >
+                <div className="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
                   <span className="material-symbols-outlined text-[17px]">folder</span>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <span className="text-[11px] font-semibold text-slate-600 block leading-tight">
-                    Vụ việc liên quan
-                  </span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-slate-600 block leading-tight">
+                      Vụ việc liên quan
+                    </span>
+                    <span className="text-[9.5px] font-bold text-purple-800 bg-purple-100 px-1.5 py-0.2 rounded font-mono">
+                      VV-2026-0042
+                    </span>
+                  </div>
                   {aiState === 'reading' && readingProgress < 85 ? (
                     <div className="h-5 w-8 bg-purple-200 rounded skel my-1" />
                   ) : (
@@ -1209,14 +1206,18 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
                       1
                     </div>
                   )}
-                  <p className="text-[10.5px] text-slate-500 leading-tight">vụ việc đang xử lý</p>
-                  <p className="text-[10px] text-purple-800 font-medium">Có cùng đối tượng / dự án</p>
+                  <p className="text-[10.5px] text-slate-500 leading-tight">vụ việc đang xử lý (PC03)</p>
+                  <p className="text-[10px] text-purple-800 font-medium">Cùng dự án Khu đô thị Y</p>
                   <button
                     type="button"
-                    onClick={() => showToast('Mở vụ việc liên quan Dự án Khu đô thị Y...')}
-                    className="text-[10.5px] text-purple-800 hover:underline font-semibold flex items-center gap-0.5 mt-1 cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openNguonTraCuu('vu-viec');
+                    }}
+                    className="text-[10.5px] text-purple-900 hover:underline font-bold flex items-center gap-1 mt-1.5 cursor-pointer bg-white/90 hover:bg-white px-2 py-0.5 rounded-md border border-purple-200 shadow-2xs transition-all"
                   >
-                    <span>Xem chi tiết</span>
+                    <span className="material-symbols-outlined text-[13px]">visibility</span>
+                    <span>Xem hồ sơ vụ việc gốc</span>
                     <span className="material-symbols-outlined text-[11px]">arrow_forward</span>
                   </button>
                 </div>
@@ -1225,223 +1226,352 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
           </div>
 
           {/* =================================================================== */}
-          {/* KHỐI ④: TÓM TẮT VÀ PHÂN TÍCH (AI)                                  */}
+          {/* 4. PHÂN LOẠI GỢI Ý (AI + RULES)                                     */}
           {/* =================================================================== */}
-          <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs space-y-2.5">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <div className="flex items-center gap-2">
-                <h3 className="text-xs font-bold text-slate-900 font-headline-md tracking-tight">
-                  Tóm tắt và phân tích (AI)
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={handleCopySummary}
-                className="text-[11px] text-slate-600 hover:text-slate-900 font-medium flex items-center gap-1 cursor-pointer px-2 py-0.5 rounded border border-slate-200 hover:bg-slate-50"
-              >
-                <span className="material-symbols-outlined text-[13px]">content_copy</span>
-                <span>Sao chép</span>
-              </button>
-            </div>
-
-            {aiState === 'reading' && readingProgress < 75 ? (
-              <div className="p-3 bg-slate-50 rounded-xl space-y-1.5">
-                <div className="h-3 w-full bg-slate-200 rounded skel" />
-                <div className="h-3 w-full bg-slate-200 rounded skel" />
-                <div className="h-3 w-2/3 bg-slate-200 rounded skel" />
-              </div>
-            ) : (
-              <p className="text-[11.5px] text-slate-700 leading-relaxed text-justify bg-slate-50/60 p-3 rounded-xl border border-slate-100">
-                <strong>Nguyễn Văn A</strong> tố giác ông <strong>Trần Văn B</strong> – Giám đốc Công ty Cổ phần X có hành vi lừa đảo chiếm đoạt tài sản thông qua việc huy động vốn tại <strong>Dự án Khu đô thị Y (Hà Nội)</strong> trong giai đoạn 2024 – 2025. Người gửi đề nghị cơ quan điều tra xác minh, điều tra, bảo vệ quyền lợi và thông báo kết quả.
-              </p>
-            )}
-          </div>
-
-          {/* =================================================================== */}
-          {/* KHỐI ⑤: GỢI Ý HƯỚNG XỬ LÝ (AI + QUY ĐỊNH NGHIỆP VỤ)                 */}
-          {/* =================================================================== */}
-          <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs space-y-2.5">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <div className="flex items-center gap-2">
-                <h3 className="text-xs font-bold text-slate-900 font-headline-md tracking-tight">
-                  Gợi ý hướng xử lý (AI + Quy định nghiệp vụ)
-                </h3>
-              </div>
+          <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs space-y-3">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <h3 className="text-xs sm:text-sm font-bold text-slate-900 tracking-tight flex items-center gap-1.5 font-headline-md">
+                <span>4. Phân loại gợi ý</span>
+              </h3>
               <button
                 type="button"
                 onClick={() => setShowCanCuModal(true)}
-                className="text-[11px] text-slate-600 hover:text-slate-900 font-medium flex items-center gap-1 cursor-pointer px-2 py-0.5 rounded border border-slate-200 hover:bg-slate-50"
+                className="text-[11px] text-slate-600 hover:text-slate-900 font-medium flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer"
               >
-                <span className="material-symbols-outlined text-[13px]">menu_book</span>
+                <span className="material-symbols-outlined text-[14px]">menu_book</span>
                 <span>Căn cứ gợi ý</span>
               </button>
             </div>
 
-            {aiState === 'reading' && readingProgress < 90 ? (
-              <div className="p-3 bg-emerald-50/40 rounded-xl space-y-1.5">
-                <div className="h-3 w-full bg-emerald-100 rounded skel" />
-                <div className="h-3 w-5/6 bg-emerald-100 rounded skel" />
-                <div className="h-3 w-4/5 bg-emerald-100 rounded skel" />
+            {aiState === 'reading' && readingProgress < 85 ? (
+              <div className="p-3 bg-slate-50 rounded-xl space-y-2">
+                <div className="h-10 bg-slate-200 rounded-lg skel" />
+                <div className="h-10 bg-slate-200 rounded-lg skel" />
+                <div className="h-10 bg-slate-200 rounded-lg skel" />
               </div>
             ) : (
-              <div className="text-[11.5px] text-slate-800 space-y-2 leading-relaxed bg-emerald-50/30 p-3 rounded-xl border border-emerald-100">
-                <p>
-                  <strong>1. Đề xuất phân loại:</strong> Tố giác tội phạm về lừa đảo chiếm đoạt tài sản.
-                </p>
-                <p>
-                  <strong>2. Kiểm tra đơn trùng:</strong> Có 01 đơn tương tự (D-2025-00341), đề nghị xem xét hợp nhất.
-                </p>
-                <div>
-                  <strong className="block">3. Đề xuất hướng xử lý:</strong>
-                  <ul className="list-disc list-inside space-y-0.5 pl-2 text-slate-700">
-                    <li>Chuyển Phòng Cảnh sát kinh tế để xác minh, giải quyết theo thẩm quyền.</li>
-                    <li>Trường hợp có đủ dấu hiệu tội phạm, thụ lý nguồn tin về tội phạm.</li>
-                  </ul>
+              <div className="space-y-2.5 text-xs">
+                {/* Hàng 1: Đề xuất loại đơn */}
+                <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-50/50 border border-emerald-100/90">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 shadow-2xs">
+                      <span className="material-symbols-outlined text-[18px]">description</span>
+                    </div>
+                    <div>
+                      <span className="text-[10.5px] text-slate-500 font-medium block">Đề xuất loại đơn</span>
+                      <span className="text-sm font-bold text-slate-900">{extractData.loaiNoiDung || 'Tố giác tội phạm'}</span>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs border border-emerald-200 shrink-0">
+                    Độ tin cậy: 92%
+                  </span>
                 </div>
-                <p className="text-slate-600 pt-0.5 border-t border-emerald-100/80">
-                  <strong>4. Lưu ý:</strong> Người gửi đã có 03 đơn, cần kiểm tra kết quả các đơn trước và các vụ việc liên quan.
-                </p>
+
+                {/* Hàng 2: Nhóm nội dung */}
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50/70 border border-slate-200/70">
+                  <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0 shadow-2xs">
+                    <span className="material-symbols-outlined text-[18px]">calendar_month</span>
+                  </div>
+                  <div>
+                    <span className="text-[10.5px] text-slate-500 font-medium block">Nhóm nội dung</span>
+                    <span className="text-xs sm:text-sm font-medium text-slate-800">{extractData.dauHieu || 'Lừa đảo chiếm đoạt tài sản'}</span>
+                  </div>
+                </div>
+
+                {/* Hàng 3: Lĩnh vực */}
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50/70 border border-slate-200/70">
+                  <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center shrink-0 shadow-2xs">
+                    <span className="material-symbols-outlined text-[18px]">category</span>
+                  </div>
+                  <div>
+                    <span className="text-[10.5px] text-slate-500 font-medium block">Lĩnh vực</span>
+                    <span className="text-xs sm:text-sm font-medium text-slate-800">Kinh tế</span>
+                  </div>
+                </div>
               </div>
             )}
           </div>
 
           {/* =================================================================== */}
-          {/* KHỐI ⑥: AI ĐÃ NGẦM CHUẨN BỊ XỬ LÝ THEO QUY TRÌNH (PRE-PROCESSED)     */}
+          {/* 5. GỢI Ý HƯỚNG XỬ LÝ                                                */}
           {/* =================================================================== */}
-          <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-50/90 via-indigo-50/60 to-slate-50 border border-blue-200/90 shadow-2xs space-y-3">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-[#004ac6] text-white flex items-center justify-center shadow-xs">
-                  <span className={`material-symbols-outlined text-[17px] ${isPreProcessing ? 'animate-spin' : 'animate-pulse'}`}>
-                    {isPreProcessing ? 'autorenew' : 'neurology'}
-                  </span>
+          <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs space-y-3">
+            <h3 className="text-xs sm:text-sm font-bold text-slate-900 tracking-tight border-b border-slate-100 pb-2 font-headline-md">
+              5. Gợi ý hướng xử lý
+            </h3>
+
+            {aiState === 'reading' && readingProgress < 85 ? (
+              <div className="p-3 bg-slate-50 rounded-xl space-y-2">
+                <div className="h-16 bg-slate-200 rounded-lg skel" />
+                <div className="h-16 bg-slate-200 rounded-lg skel" />
+                <div className="h-16 bg-slate-200 rounded-lg skel" />
+              </div>
+            ) : (
+              <div className="space-y-2.5 text-xs">
+                {/* Tùy chọn 1: Tiếp nhận, chuyển đơn vị điều tra theo thẩm quyền (92%) */}
+                <div
+                  onClick={() => {
+                    setHuongXuLy('tiep-nhan');
+                    setOfficerNote('Qua phân tích, đề xuất tiếp nhận đơn và chuyển Phòng Cảnh sát kinh tế để xem xét, giải quyết theo thẩm quyền.');
+                  }}
+                  className={`p-3.5 rounded-xl border transition-all cursor-pointer ${huongXuLy === 'tiep-nhan'
+                    ? 'bg-emerald-50/40 border-emerald-400 ring-1 ring-emerald-200'
+                    : 'bg-white border-slate-200 hover:border-slate-300'
+                    }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="pt-0.5 shrink-0">
+                      {huongXuLy === 'tiep-nhan' ? (
+                        <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shadow-2xs">
+                          ✓
+                        </span>
+                      ) : (
+                        <span className="w-5 h-5 rounded-full border-2 border-slate-300 block" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <h4 className="text-xs sm:text-sm font-bold text-slate-900">
+                          Tiếp nhận, chuyển đơn vị điều tra theo thẩm quyền
+                        </h4>
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold shrink-0">
+                          92%
+                        </span>
+                      </div>
+                      <ul className="text-slate-600 space-y-0.5 mt-1.5 pl-0.5 leading-relaxed">
+                        <li>• Có dấu hiệu tội phạm theo quy định.</li>
+                        <li>• Thuộc thẩm quyền của Cơ quan CSĐT Công an TP Hà Nội.</li>
+                        <li className="text-slate-500">Có đơn tương tự đã tiếp nhận trước đây, cần xem xét, tổng hợp.</li>
+                      </ul>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setExpandedCanCu(expandedCanCu === 'op1' ? null : 'op1');
+                        }}
+                        className="text-[11px] text-blue-600 hover:underline font-semibold flex items-center gap-0.5 mt-2 cursor-pointer"
+                      >
+                        <span>Xem căn cứ</span>
+                        <span className="material-symbols-outlined text-[13px]">
+                          {expandedCanCu === 'op1' ? 'expand_less' : 'expand_more'}
+                        </span>
+                      </button>
+                      {expandedCanCu === 'op1' && (
+                        <div className="mt-2 p-2.5 bg-slate-50 rounded-lg border border-slate-200 text-[11px] text-slate-700 space-y-1 animate-fade-in">
+                          <p>• <strong>Điều 145 Bộ luật Tố tụng Hình sự 2015:</strong> Thẩm quyền và trách nhiệm tiếp nhận, giải quyết tố giác tội phạm.</p>
+                          <p>• <strong>Thông tư liên tịch 01/2017:</strong> Quy định phối hợp tiếp nhận, thụ lý nguồn tin tội phạm.</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-xs font-bold text-slate-900 font-headline-md tracking-tight uppercase">
-                    AI ĐÃ NGẦM CHẠY XỬ LÝ THEO QUY TRÌNH
-                  </h3>
-                  <span className="text-[10.5px] text-slate-500 font-medium">
-                    Tự động kích hoạt ngay khi phân loại: "{extractData.loaiNoiDung}"
-                  </span>
+
+                {/* Tùy chọn 2: Kiểm tra, xác minh thông tin bổ sung (68%) */}
+                <div
+                  onClick={() => {
+                    setHuongXuLy('xac-minh');
+                    setOfficerNote('Cần tiến hành kiểm tra, xác minh làm rõ thêm tài liệu kèm theo trước khi quyết định thụ lý chính thức.');
+                  }}
+                  className={`p-3.5 rounded-xl border transition-all cursor-pointer ${huongXuLy === 'xac-minh'
+                    ? 'bg-blue-50/40 border-blue-400 ring-1 ring-blue-200'
+                    : 'bg-white border-slate-200 hover:border-slate-300'
+                    }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="pt-0.5 shrink-0">
+                      {huongXuLy === 'xac-minh' ? (
+                        <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shadow-2xs">
+                          ✓
+                        </span>
+                      ) : (
+                        <span className="w-5 h-5 rounded-full border-2 border-slate-300 block" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <h4 className="text-xs sm:text-sm font-bold text-slate-900">
+                          Kiểm tra, xác minh thông tin bổ sung
+                        </h4>
+                        <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[11px] font-bold shrink-0">
+                          68%
+                        </span>
+                      </div>
+                      <ul className="text-slate-600 space-y-0.5 mt-1.5 pl-0.5 leading-relaxed">
+                        <li>• Cần làm rõ một số nội dung, tài liệu kèm theo.</li>
+                        <li>• Có liên quan đến vụ việc đang điều tra.</li>
+                        <li>• Đề nghị liên hệ người gửi để bổ sung tài liệu liên quan.</li>
+                      </ul>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setExpandedCanCu(expandedCanCu === 'op2' ? null : 'op2');
+                        }}
+                        className="text-[11px] text-blue-600 hover:underline font-semibold flex items-center gap-0.5 mt-2 cursor-pointer"
+                      >
+                        <span>Xem căn cứ</span>
+                        <span className="material-symbols-outlined text-[13px]">
+                          {expandedCanCu === 'op2' ? 'expand_less' : 'expand_more'}
+                        </span>
+                      </button>
+                      {expandedCanCu === 'op2' && (
+                        <div className="mt-2 p-2.5 bg-slate-50 rounded-lg border border-slate-200 text-[11px] text-slate-700 space-y-1 animate-fade-in">
+                          <p>• <strong>Khoản 2 Điều 147 Bộ luật Tố tụng Hình sự 2015:</strong> Thời hạn và thủ tục xác minh nguồn tin về tội phạm.</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tùy chọn 3: Chuyển đơn đến đơn vị khác (35%) */}
+                <div
+                  onClick={() => {
+                    setHuongXuLy('chuyen');
+                    setOfficerNote('Vụ việc không thuộc thẩm quyền giải quyết của đơn vị, đề xuất lập phiếu chuyển đơn đến cơ quan có thẩm quyền.');
+                  }}
+                  className={`p-3.5 rounded-xl border transition-all cursor-pointer ${huongXuLy === 'chuyen'
+                    ? 'bg-amber-50/40 border-amber-400 ring-1 ring-amber-200'
+                    : 'bg-white border-slate-200 hover:border-slate-300'
+                    }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="pt-0.5 shrink-0">
+                      {huongXuLy === 'chuyen' ? (
+                        <span className="w-5 h-5 rounded-full bg-amber-600 text-white flex items-center justify-center text-xs font-bold shadow-2xs">
+                          ✓
+                        </span>
+                      ) : (
+                        <span className="w-5 h-5 rounded-full border-2 border-slate-300 block" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <h4 className="text-xs sm:text-sm font-bold text-slate-900">
+                          Chuyển đơn đến đơn vị khác
+                        </h4>
+                        <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[11px] font-bold shrink-0">
+                          35%
+                        </span>
+                      </div>
+                      <ul className="text-slate-600 space-y-0.5 mt-1.5 pl-0.5 leading-relaxed">
+                        <li>• Không thuộc thẩm quyền giải quyết.</li>
+                        <li>• Đề nghị chuyển đến cơ quan có thẩm quyền.</li>
+                      </ul>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setExpandedCanCu(expandedCanCu === 'op3' ? null : 'op3');
+                        }}
+                        className="text-[11px] text-blue-600 hover:underline font-semibold flex items-center gap-0.5 mt-2 cursor-pointer"
+                      >
+                        <span>Xem căn cứ</span>
+                        <span className="material-symbols-outlined text-[13px]">
+                          {expandedCanCu === 'op3' ? 'expand_less' : 'expand_more'}
+                        </span>
+                      </button>
+                      {expandedCanCu === 'op3' && (
+                        <div className="mt-2 p-2.5 bg-slate-50 rounded-lg border border-slate-200 text-[11px] text-slate-700 space-y-1 animate-fade-in">
+                          <p>• <strong>Điều 146 Bộ luật Tố tụng Hình sự:</strong> Chuyển tố giác, tin báo theo đúng thẩm quyền thụ lý.</p>
+                        </div>
+                      )}
+                      {huongXuLy === 'chuyen' && (
+                        <div className="mt-2.5 pt-2.5 border-t border-slate-100" onClick={(e) => e.stopPropagation()}>
+                          <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                            Đơn vị nhận chuyển đơn:
+                          </label>
+                          <select
+                            value={donViChuyen}
+                            onChange={(e) => setDonViChuyen(e.target.value)}
+                            className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:border-amber-500"
+                          >
+                            <option value="">— Chọn đơn vị tiếp nhận —</option>
+                            {DON_VI_OPTIONS.map((o) => (
+                              <option key={o} value={o}>
+                                {o}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
-
-              {isPreProcessing ? (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-[#004ac6] border border-blue-200">
-                  <span className="w-2 h-2 rounded-full bg-[#004ac6] animate-ping"></span>
-                  Đang ngầm nạp quy trình...
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                  <span className="material-symbols-outlined text-[14px]">check_circle</span>
-                  Sẵn sàng áp dụng (Zero-delay)
-                </span>
-              )}
-            </div>
-
-            <div className="p-3 bg-white/90 rounded-xl border border-blue-100 space-y-2 text-xs">
-              <div className="flex items-center justify-between text-[11.5px] text-slate-700">
-                <span>Quy trình được khớp nối: <strong className="text-[#004ac6]">{matchWorkflowByLoaiDon(extractData.loaiNoiDung).name}</strong></span>
-                <span className="font-bold text-slate-500">{matchWorkflowByLoaiDon(extractData.loaiNoiDung).totalSteps} bước</span>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2 pt-1 border-t border-slate-100 text-[11px]">
-                <div className="flex items-center gap-1.5 text-slate-600">
-                  <span className="material-symbols-outlined text-blue-600 text-[16px]">task_alt</span>
-                  <span><strong>{matchWorkflowByLoaiDon(extractData.loaiNoiDung).defaultTasks.length}</strong> việc tạo sẵn</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-slate-600">
-                  <span className="material-symbols-outlined text-amber-600 text-[16px]">warning</span>
-                  <span><strong>{matchWorkflowByLoaiDon(extractData.loaiNoiDung).potentialMissingInfo.length}</strong> điểm thiếu sót</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-slate-600">
-                  <span className="material-symbols-outlined text-emerald-600 text-[16px]">description</span>
-                  <span><strong>2</strong> dự thảo mẫu</span>
-                </div>
-              </div>
-            </div>
-
-            <p className="text-[11px] text-slate-500 italic flex items-center justify-between">
-              <span>* AI đã hoàn tất các phân tích ngầm, cán bộ không phải chờ thiết lập lại từ đầu khi bấm Tiếp nhận.</span>
-              <button
-                type="button"
-                onClick={() => setShowKhoiTaoModal(true)}
-                className="font-bold text-[#004ac6] hover:underline cursor-pointer not-italic ml-2 shrink-0"
-              >
-                Xem quy trình ngầm →
-              </button>
-            </p>
+            )}
           </div>
 
           {/* =================================================================== */}
-          {/* KHỐI: Ý KIẾN CỦA CÁN BỘ TIẾP NHẬN & QUYẾT ĐỊNH XỬ LÝ                */}
+          {/* 6. Ý KIẾN CỦA CÁN BỘ TIẾP NHẬN                                       */}
           {/* =================================================================== */}
           <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs space-y-3">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[17px] text-slate-600">edit_note</span>
-                <h3 className="text-xs font-bold text-slate-900 font-headline-md tracking-tight">
-                  Ý kiến của cán bộ tiếp nhận
-                </h3>
-              </div>
+              <h3 className="text-xs sm:text-sm font-bold text-slate-900 tracking-tight font-headline-md">
+                6. Ý kiến của cán bộ tiếp nhận
+              </h3>
               <span className="text-[11px] text-slate-400 font-medium">Quyết định xử lý hồ sơ</span>
             </div>
 
-            <div className="space-y-3">
-              {/* Textarea nhập ý kiến */}
+            <div>
               <textarea
-                rows={2}
+                rows={3}
                 value={officerNote}
                 onChange={(e) => setOfficerNote(e.target.value)}
-                placeholder="Nhập ý kiến, nhận xét, căn cứ đề xuất của cán bộ tiếp nhận (tùy chọn)..."
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white resize-none transition-all"
+                placeholder="Nhập ý kiến đề xuất xử lý của cán bộ..."
+                maxLength={500}
+                className="w-full p-3 bg-slate-50/70 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-blue-500 transition-all resize-none leading-relaxed"
               />
+              <div className="flex justify-end pt-1">
+                <span className="text-[11px] text-slate-400 font-mono">
+                  {officerNote.length}/500
+                </span>
+              </div>
+            </div>
 
-              {/* Nhóm các nút hành động: Trả lại, Bàn giao, Tiếp nhận và xử lý */}
-              <div className="flex items-center justify-between pt-1">
+            {/* Nhóm các nút hành động: Trả lại, Bàn giao, Tiếp nhận và xử lý */}
+            <div className="flex items-center justify-between pt-1 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => showToast('Đã lưu tạm ý kiến cán bộ tiếp nhận.')}
+                className="px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[15px]">save</span>
+                <span>Lưu nháp</span>
+              </button>
+
+              <div className="flex items-center gap-2">
+                {/* Nút 1: Trả lại */}
                 <button
                   type="button"
-                  onClick={() => showToast('Đã lưu tạm ý kiến cán bộ tiếp nhận.')}
-                  className="px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer"
+                  onClick={() => setShowTraLaiModal(true)}
+                  disabled={aiState === 'reading'}
+                  className="px-3.5 py-2 rounded-xl border border-rose-200 bg-rose-50/80 hover:bg-rose-100 text-rose-700 active:scale-95 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs"
                 >
-                  <span className="material-symbols-outlined text-[15px]">save</span>
-                  <span>Lưu nháp</span>
+                  <span className="material-symbols-outlined text-[16px]">assignment_return</span>
+                  <span>Trả lại</span>
                 </button>
 
-                <div className="flex items-center gap-2.5">
-                  {/* Nút 1: Trả lại */}
-                  <button
-                    type="button"
-                    onClick={() => setShowTraLaiModal(true)}
-                    disabled={aiState === 'reading'}
-                    className="px-4 py-2 rounded-xl border border-rose-200 bg-rose-50/80 hover:bg-rose-100 text-rose-700 active:scale-95 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">assignment_return</span>
-                    <span>Trả lại</span>
-                  </button>
+                {/* Nút 2: Bàn giao */}
+                <button
+                  type="button"
+                  onClick={() => setShowBanGiaoModal(true)}
+                  disabled={aiState === 'reading'}
+                  className="px-3.5 py-2 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 active:scale-95 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs"
+                >
+                  <span className="material-symbols-outlined text-[16px]">swap_horiz</span>
+                  <span>Bàn giao</span>
+                </button>
 
-                  {/* Nút 2: Bàn giao */}
-                  <button
-                    type="button"
-                    onClick={() => setShowBanGiaoModal(true)}
-                    disabled={aiState === 'reading'}
-                    className="px-4 py-2 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 active:scale-95 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">swap_horiz</span>
-                    <span>Bàn giao</span>
-                  </button>
-
-                  {/* Nút 3: Tiếp nhận & bắt đầu xử lý */}
-                  <button
-                    type="button"
-                    onClick={() => setShowKhoiTaoModal(true)}
-                    disabled={aiState === 'reading'}
-                    className="px-5 py-2 rounded-xl bg-[#004ac6] hover:bg-[#003da8] active:scale-95 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">task_alt</span>
-                    <span>Tiếp nhận &amp; bắt đầu xử lý</span>
-                  </button>
-                </div>
+                {/* Nút 3: Tiếp nhận */}
+                <button
+                  type="button"
+                  onClick={() => setShowSubmitModal(true)}
+                  disabled={aiState === 'reading'}
+                  className="px-5 py-2.5 rounded-xl bg-[#004ac6] hover:bg-[#003da8] active:scale-95 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="material-symbols-outlined text-[16px]">task_alt</span>
+                  <span>Tiếp nhận</span>
+                </button>
               </div>
             </div>
           </div>
@@ -1634,29 +1764,35 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full p-6 space-y-4 animate-scale-up">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200 text-[#0052cc] flex items-center justify-center shrink-0">
+              <div className="w-11 h-11 rounded-2xl bg-blue-50 border border-blue-200 text-[#004ac6] flex items-center justify-center shrink-0 shadow-2xs">
                 <span className="material-symbols-outlined text-2xl">task_alt</span>
               </div>
               <div>
-                <h3 className="font-bold text-slate-900 text-base">Xác nhận tiếp nhận và xử lý</h3>
-                <p className="text-xs text-slate-500">Đơn số: D-2026-00125</p>
+                <h3 className="font-bold text-slate-900 text-base">Xác nhận tiếp nhận đơn</h3>
+                <p className="text-xs text-slate-500 font-mono">Mã đơn: Đ-2026-00125 • Lượt nhận: {luotNhan.id || 'LN-2025-0819'}</p>
               </div>
             </div>
 
-            <div className="p-3 bg-slate-50 rounded-xl border text-xs text-slate-700 space-y-1.5">
-              <p>
-                Người gửi: <strong>Nguyễn Văn A</strong>
-              </p>
-              <p>
-                Phân loại: <strong>Tố giác tội phạm (Lừa đảo chiếm đoạt tài sản)</strong>
-              </p>
-              <p>
-                Hướng xử lý: <strong>Thụ lý đơn, phân công cán bộ điều tra xác minh</strong>
-              </p>
+            <div className="p-3.5 bg-slate-50/80 rounded-xl border border-slate-200/80 text-xs text-slate-700 space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-slate-500 shrink-0">Người gửi:</span>
+                <strong className="text-slate-900 text-right">{extractData.nguoiGui || 'Nguyễn Văn A'}</strong>
+              </div>
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-slate-500 shrink-0">Phân loại đơn:</span>
+                <strong className="text-slate-900 text-right">{extractData.loaiNoiDung || 'Đơn tố giác về tội phạm'}</strong>
+              </div>
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-slate-500 shrink-0">Hướng xử lý:</span>
+                <span className="font-semibold text-blue-700 text-right">Thụ lý đơn &amp; phân công xác minh</span>
+              </div>
               {officerNote && (
-                <p className="pt-1 text-slate-600 border-t border-slate-200">
-                  Ý kiến cán bộ: <em>{officerNote}</em>
-                </p>
+                <div className="pt-2 border-t border-slate-200/80 text-slate-600">
+                  <span className="text-slate-500 block mb-0.5 font-medium">Ý kiến cán bộ tiếp nhận:</span>
+                  <p className="italic text-slate-700 leading-relaxed bg-white p-2 rounded-lg border border-slate-200/60">
+                    "{officerNote}"
+                  </p>
+                </div>
               )}
             </div>
 
@@ -1664,7 +1800,7 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
               <button
                 type="button"
                 onClick={() => setShowSubmitModal(false)}
-                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer transition-colors"
               >
                 Hủy
               </button>
@@ -1672,21 +1808,22 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
                 type="button"
                 onClick={() => {
                   setShowSubmitModal(false);
-                  showToast('Đã tiếp nhận và đưa đơn Đ-2026-00125 vào danh sách Tiếp nhận & Xử lý thành công!');
+                  showToast('✓ Đã tiếp nhận đơn Đ-2026-00125 thành công!');
                   onAcceptAndProcess?.({
                     id: 'Đ-2026-00125',
                     code: 'Đ-2026-00125',
-                    title: 'Tố giác vi phạm lừa đảo chiếm đoạt tài sản (Dự án Khu đô thị Y)',
-                    luotNhanId: 'LN-2025-0819',
-                    nguoiNop: 'Nguyễn Văn A',
-                    ngayNhan: '16/09/2026 09:15',
-                    loaiDon: 'Đơn tố giác tội phạm',
+                    title: `Tố giác vi phạm lừa đảo chiếm đoạt tài sản (${extractData.duAn || 'Dự án Khu đô thị Y'})`,
+                    luotNhanId: luotNhan.id || 'LN-2025-0819',
+                    nguoiNop: extractData.nguoiGui || 'Nguyễn Văn A',
+                    ngayNhan: luotNhan.ngayNhan || '16/09/2026 09:15',
+                    loaiDon: extractData.loaiNoiDung || 'Đơn tố giác tội phạm',
                     type: 'ĐƠN TIẾP NHẬN',
+                    statusBadge: 'Đã tiếp nhận',
                     isNew: true,
                   });
-                  setTimeout(() => onNav('cong-viec'), 1200);
+                  setTimeout(() => onNav('cong-viec'), 1000);
                 }}
-                className="px-5 py-2 rounded-xl bg-[#0052cc] hover:bg-[#0043a8] text-white text-xs font-semibold cursor-pointer flex items-center gap-1"
+                className="px-5 py-2 rounded-xl bg-[#004ac6] hover:bg-[#003da8] text-white text-xs font-bold cursor-pointer flex items-center gap-1.5 transition-all shadow-xs active:scale-95"
               >
                 <span className="material-symbols-outlined text-[16px]">check</span>
                 <span>Xác nhận tiếp nhận</span>
@@ -1697,17 +1834,19 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL KHỞI TẠO QUY TRÌNH TỰ ĐỘNG THEO LOẠI ĐƠN                            */}
+      {/* MODAL NGUỒN THÔNG TIN GỐC TRA CỨU TRONG HỆ THỐNG                          */}
       {/* ========================================================================= */}
-      <KhoiTaoQuyTrinhModal
-        isOpen={showKhoiTaoModal}
-        onClose={() => setShowKhoiTaoModal(false)}
-        loaiDonConfirmed={extractData.loaiNoiDung || 'Đơn tố giác về tội phạm'}
-        workflow={matchWorkflowByLoaiDon(extractData.loaiNoiDung)}
-        donCode="Đ-2026-00125"
-        donTitle={`Tố giác vi phạm lừa đảo chiếm đoạt tài sản (${extractData.duAn || 'Dự án Khu đô thị Y'})`}
-        nguoiNop={extractData.nguoiGui || 'Nguyễn Văn A'}
-        onConfirmAndEnterProcess={handleConfirmWorkflowFromModal}
+      <NguonTraCuuModal
+        isOpen={showNguonTraCuuModal}
+        onClose={() => setShowNguonTraCuuModal(false)}
+        initialTab={nguonTraCuuTab}
+        currentDonCode="Đ-2026-00125"
+        currentNguoiGui={extractData.nguoiGui || 'Nguyễn Văn A'}
+        currentCccd={extractData.cccd || '001088012345'}
+        onApplyRecommendation={(recText) => {
+          setOfficerNote(recText);
+          showToast('✓ Đã áp dụng đề xuất từ nguồn tra cứu vào Ý kiến cán bộ!');
+        }}
       />
     </div>
   );
