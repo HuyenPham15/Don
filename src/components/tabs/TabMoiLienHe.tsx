@@ -278,7 +278,7 @@ export default function TabMoiLienHe({ currentDon }: TabMoiLienHeProps) {
                   <div className="font-bold text-slate-900 text-sm">
                     {isToGiac ? 'Nguyễn Văn A' : 'Lê Văn Hùng'}
                   </div>
-                  <span className="text-[10.5px] text-emerald-700 font-semibold">Đã xác thực VNeID Mức 2</span>
+                  <span className="text-[10.5px] text-emerald-700 font-semibold">Đã xác thực </span>
                 </div>
               </div>
 

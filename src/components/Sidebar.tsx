@@ -20,8 +20,8 @@ export default function Sidebar({ screen, onNav }: SidebarProps) {
             type="button"
             onClick={() => onNav('cong-viec')}
             className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer ${isCongViec
-                ? 'bg-blue-50 text-[#004ac6] font-semibold border border-blue-100/60 shadow-2xs'
-                : 'text-slate-700 hover:bg-slate-50'
+              ? 'bg-blue-50 text-[#004ac6] font-semibold border border-blue-100/60 shadow-2xs'
+              : 'text-slate-700 hover:bg-slate-50'
               }`}
           >
             <div className="flex items-center gap-2.5">
@@ -41,8 +41,8 @@ export default function Sidebar({ screen, onNav }: SidebarProps) {
             type="button"
             onClick={() => onNav('nhan-don-list')}
             className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer ${isNhanDon
-                ? 'bg-blue-50 text-[#004ac6] font-semibold border border-blue-100/60 shadow-2xs'
-                : 'text-slate-700 hover:bg-slate-50'
+              ? 'bg-blue-50 text-[#004ac6] font-semibold border border-blue-100/60 shadow-2xs'
+              : 'text-slate-700 hover:bg-slate-50'
               }`}
           >
             <div className="flex items-center gap-2.5">
@@ -67,8 +67,8 @@ export default function Sidebar({ screen, onNav }: SidebarProps) {
             type="button"
             onClick={() => onNav('thu-vien')}
             className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer ${screen === 'thu-vien'
-                ? 'bg-blue-50 text-[#004ac6] font-semibold border border-blue-100/60 shadow-2xs'
-                : 'text-slate-700 hover:bg-slate-50'
+              ? 'bg-blue-50 text-[#004ac6] font-semibold border border-blue-100/60 shadow-2xs'
+              : 'text-slate-700 hover:bg-slate-50'
               }`}
           >
             <div className="flex items-center gap-2.5">
@@ -83,8 +83,8 @@ export default function Sidebar({ screen, onNav }: SidebarProps) {
             type="button"
             onClick={() => onNav('bao-cao')}
             className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer ${screen === 'bao-cao'
-                ? 'bg-blue-50 text-[#004ac6] font-semibold border border-blue-100/60'
-                : 'text-slate-700 hover:bg-slate-50'
+              ? 'bg-blue-50 text-[#004ac6] font-semibold border border-blue-100/60'
+              : 'text-slate-700 hover:bg-slate-50'
               }`}
           >
             <div className="flex items-center gap-2.5">
@@ -209,40 +209,7 @@ export default function Sidebar({ screen, onNav }: SidebarProps) {
         </div>
       </div>
 
-      {/* Sidebar Footer: Officer Badge & Status */}
-      <div className="p-3 bg-slate-50/90 border-t border-slate-200">
-        <div className="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200/70 shadow-2xs">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <img
-              alt="Đ/c Nguyễn Thị Hải Yến"
-              className="w-8 h-8 rounded-full object-cover border border-slate-200 shrink-0"
-              src="https://lh3.googleusercontent.com/aida/AEtjO1Vm8AmQo9VS0i0OU3LAMhsUuKtUCDjclJf2bj1YUtpprazrhuIJVsTqgqRNCCxQVPXb5Ua6R3isc0PvgdNR0oe3_nAFqcnDGYqLTe1YPyHmU-1B4MJqkPPF24_Go8JUXhDIHmNNiVK7g1JgxEf0euZX8a4syr1kbsv8qD985iCrJmA2se-U3WY8STZNUyABcKMR5Jn6IaQsZsEgpk8bIuIzHu_VoUzxgFNNUsjG5LmSLxZV4EXS3_4Ot2vu"
-            />
-            <div className="flex flex-col min-w-0">
-              <span className="text-[12px] font-bold text-slate-800 truncate">Nguyễn Thị Hải Yến</span>
-              <span className="text-[10.5px] text-slate-500 font-label-technical truncate">
-                Chuyên viên chính (Bậc 4)
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center gap-0.5">
-            <button
-              type="button"
-              className="p-1.5 text-slate-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-              title="Cài đặt ca trực"
-            >
-              <span className="material-symbols-outlined text-[18px]">tune</span>
-            </button>
-            <button
-              type="button"
-              className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-              title="Đăng xuất an toàn"
-            >
-              <span className="material-symbols-outlined text-[18px]">lock</span>
-            </button>
-          </div>
-        </div>
-      </div>
+
     </aside>
   );
 }

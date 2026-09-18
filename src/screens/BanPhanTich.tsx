@@ -4,6 +4,7 @@ import { matchWorkflowByLoaiDon } from '../constants/workflows';
 import { ActiveWorkflowState } from '../types/workflow';
 import { DON_VI_OPTIONS } from '../constants';
 import NguonTraCuuModal, { NguonTraCuuTabType } from '../components/modals/NguonTraCuuModal';
+import { getSuggestedActionsForWorkflow } from '../components/workflow/QuyTrinhSuggestedActions';
 
 interface BanPhanTichProps {
   luotNhan: LuotNhan;
@@ -77,6 +78,144 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
   });
   const [savedExtractData, setSavedExtractData] = useState(extractData);
 
+  // ─── ĐỒNG BỘ THÔNG TIN BÓC TÁCH KHI MỞ TỪ MÀN HÌNH "CÔNG VIỆC CỦA TÔI" ─────
+  useEffect(() => {
+    if (!luotNhan) return;
+
+    if (luotNhan.id.includes('LN-56') || luotNhan.noiDung?.includes('môi trường')) {
+      const data = {
+        nguoiGui: luotNhan.nguoiNop || 'Đại diện khu dân cư số 4',
+        namSinh: '1975',
+        cccd: '001075018392',
+        sdt: '0984 556 789',
+        diaChi: 'Khu dân cư số 4, Cầu Giấy, Hà Nội',
+        dongNguoiGui: 'Ông Trần Văn Nam (Tổ phó TDP 4)',
+        cccdDongNguoiGui: '001175029182',
+        luatSu: 'Không có',
+        theLuatSu: 'N/A',
+        loaiNoiDung: 'Đơn phản ánh kiến nghị',
+        dauHieu: 'Ô nhiễm môi trường tiếng ồn và khí thải công nghiệp',
+        congTyBiToGiac: 'Cơ sở thu gom & tái chế phế liệu Minh Phát',
+        mstCongTy: '0109283746',
+        doiTuong: 'Cơ sở tái chế Minh Phát',
+        chucVu: 'Chủ cơ sở sản xuất',
+        donVi: 'Cơ sở tư nhân',
+        nguoiLienQuan: 'Các hộ dân liền kề Khu dân cư số 4',
+        cccdNguoiLienQuan: 'N/A',
+        thoiGian: 'Tháng 8/2026 - nay',
+        duAn: 'Khu dân cư số 4',
+        diaDiem: 'Quận Cầu Giấy, Hà Nội',
+        noiDungTomTat: luotNhan.noiDung || 'Phản ánh cơ sở tái chế phế liệu xả khói bụi và tiếng ồn ban đêm vượt quy chuẩn kỹ thuật môi trường tại Khu dân cư số 4, gây ảnh hưởng nghiêm trọng đến đời sống sinh hoạt của các hộ dân.',
+        yeuCau1: 'Kiểm tra hiện trạng môi trường và đo đạc chỉ số khí thải.',
+        yeuCau2: 'Yêu cầu tạm đình chỉ hoạt động gây tiếng ồn sau 22h.',
+        yeuCau3: 'Buộc di dời cơ sở ra khỏi khu dân cư theo quy hoạch.',
+      };
+      setExtractData(data);
+      setSavedExtractData(data);
+      setAiState('done');
+      setReadingProgress(100);
+      setOfficerNote('Đề xuất tiếp nhận đơn phản ánh kiến nghị, chuyển Phòng TN&MT phối hợp UBND Phường kiểm tra hiện trường.');
+    } else if (luotNhan.id.includes('0430') || luotNhan.noiDung?.includes('Đội Cấn') || luotNhan.noiDung?.includes('cấp phép')) {
+      const data = {
+        nguoiGui: luotNhan.nguoiNop || 'Nguyễn Hải Phong',
+        namSinh: '1982',
+        cccd: '001082019482',
+        sdt: '0912 889 922',
+        diaChi: 'Số 14 ngõ 128 Đội Cấn, Ba Đình, Hà Nội',
+        dongNguoiGui: 'Bà Lê Thúy Hằng (Đồng sở hữu)',
+        cccdDongNguoiGui: '001184019283',
+        luatSu: 'Không có',
+        theLuatSu: 'N/A',
+        loaiNoiDung: 'Hồ sơ cấp phép xây dựng',
+        dauHieu: 'Chồng lấn chỉ giới xây dựng với ngõ đi chung (Độ tin cậy 68%)',
+        congTyBiToGiac: 'N/A',
+        mstCongTy: 'N/A',
+        doiTuong: 'Công trình nhà ở riêng lẻ tại số 14 ngõ 128 Đội Cấn',
+        chucVu: 'Chủ đầu tư công trình',
+        donVi: 'Cá nhân',
+        nguoiLienQuan: 'Các hộ dân sử dụng chung ngõ 128 Đội Cấn',
+        cccdNguoiLienQuan: 'N/A',
+        thoiGian: 'Tháng 09/2026',
+        duAn: 'Nhà ở gia đình (5 tầng + 1 lửng)',
+        diaDiem: 'Ngõ 128 Đội Cấn, Ba Đình, Hà Nội',
+        noiDungTomTat: luotNhan.noiDung || 'Thẩm định hồ sơ xin cấp phép xây dựng nhà ở riêng lẻ ngõ 128 Đội Cấn. AI phát hiện bản vẽ hiện trạng có dấu hiệu chồng lấn 0.35m với chỉ giới ngõ đi chung của TDP số 3, cần cán bộ kiểm tra thực địa trước khi tiếp nhận.',
+        yeuCau1: 'Kiểm tra trích lục bản đồ địa chính và mốc chỉ giới ngõ đi chung.',
+        yeuCau2: 'Thẩm định tính hợp lệ của bản vẽ thiết kế thi công.',
+        yeuCau3: 'Cán bộ xác nhận kết quả kiểm tra thực địa và quyết định thụ lý/bổ sung hồ sơ.',
+      };
+      setExtractData(data);
+      setSavedExtractData(data);
+      setAiState('done');
+      setReadingProgress(100);
+      setOfficerNote('Đề xuất tiếp nhận hồ sơ để tiến hành thẩm tra, đồng thời gửi phiếu yêu cầu công dân làm rõ phần ban công nhô ra ngõ đi chung 0.35m.');
+    } else if (luotNhan.id.includes('LN-57') || luotNhan.aiJob === 3) {
+      setAiState('reading');
+      setReadingProgress(75);
+      const data = {
+        nguoiGui: luotNhan.nguoiNop || 'Bà Hoàng Thị Lựu',
+        namSinh: '1948',
+        cccd: '001048002918',
+        sdt: '0903 221 445',
+        diaChi: 'Phường Dịch Vọng Hậu, Cầu Giấy, Hà Nội',
+        dongNguoiGui: 'Không có',
+        cccdDongNguoiGui: 'N/A',
+        luatSu: 'Không có',
+        theLuatSu: 'N/A',
+        loaiNoiDung: 'Thủ tục chính sách xã hội',
+        dauHieu: 'Đang đối soát CSDL Dân cư VNeID',
+        congTyBiToGiac: 'N/A',
+        mstCongTy: 'N/A',
+        doiTuong: 'Chế độ trợ cấp xã hội người cao tuổi',
+        chucVu: 'Đối tượng bảo trợ',
+        donVi: 'UBND Phường',
+        nguoiLienQuan: 'N/A',
+        cccdNguoiLienQuan: 'N/A',
+        thoiGian: '16/09/2026',
+        duAn: 'Trợ cấp an sinh xã hội',
+        diaDiem: 'Cầu Giấy, Hà Nội',
+        noiDungTomTat: luotNhan.noiDung || 'Đề nghị hỗ trợ chính sách an sinh xã hội đối với người cao tuổi có hoàn cảnh neo đơn.',
+        yeuCau1: 'Đối soát thông tin công dân trên CSDL Quốc gia về dân cư.',
+        yeuCau2: 'Xác minh điều kiện hoàn cảnh bảo trợ xã hội.',
+        yeuCau3: 'Hoàn thiện hồ sơ chi trả chế độ theo quy định.',
+      };
+      setExtractData(data);
+      setSavedExtractData(data);
+      setOfficerNote('Hồ sơ đang chờ kết nối CSDL dân cư VNeID bóc tách tự động.');
+    } else if (luotNhan.id.includes('LN-58')) {
+      const data = {
+        nguoiGui: luotNhan.nguoiNop || 'Ông Đỗ Viết Thắng',
+        namSinh: '1965',
+        cccd: '001065009182',
+        sdt: '0913 229 118',
+        diaChi: 'Quận Cầu Giấy, Hà Nội',
+        dongNguoiGui: 'Không có',
+        cccdDongNguoiGui: 'N/A',
+        luatSu: 'Không có',
+        theLuatSu: 'N/A',
+        loaiNoiDung: 'Đơn phản ánh kiến nghị',
+        dauHieu: 'Tranh chấp ranh giới ngõ đi chung',
+        congTyBiToGiac: 'N/A',
+        mstCongTy: 'N/A',
+        doiTuong: 'Hộ liền kề số 16',
+        chucVu: 'Cá nhân',
+        donVi: 'Tổ dân phố',
+        nguoiLienQuan: 'UBND Phường sở tại',
+        cccdNguoiLienQuan: 'N/A',
+        thoiGian: 'Tháng 9/2026',
+        duAn: 'Ranh giới ngõ đi chung',
+        diaDiem: 'Quận Cầu Giấy, Hà Nội',
+        noiDungTomTat: luotNhan.noiDung || 'Phản ánh tranh chấp ranh giới sử dụng đất ngõ đi chung. Tài liệu scan kèm theo bị nghiêng mờ, cần cán bộ kiểm tra bản chính tại Một cửa.',
+        yeuCau1: 'Đối chiếu bản đồ địa chính gốc.',
+        yeuCau2: 'Xác minh thực địa hiện trạng.',
+        yeuCau3: 'Hòa giải tranh chấp ranh giới lối đi.',
+      };
+      setExtractData(data);
+      setSavedExtractData(data);
+      setAiState('done');
+      setOfficerNote('Tài liệu scan kèm theo mờ, cán bộ đã liên hệ yêu cầu công dân xuất trình bản chính để kiểm tra.');
+    }
+  }, [luotNhan]);
+
   // ─── TRẠNG THÁI AI NGẦM CHUẨN BỊ THEO QUY TRÌNH (BACKGROUND PRE-PROCESSING) ─
   const [isPreProcessing, setIsPreProcessing] = useState<boolean>(false);
   const [preProcessNotice, setPreProcessNotice] = useState<string>('');
@@ -91,6 +230,10 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
     }, 400);
     return () => clearTimeout(timer);
   }, [extractData.loaiNoiDung]);
+
+  const { workflow: currentWf, actions: suggestedWfActions } = getSuggestedActionsForWorkflow(
+    extractData.loaiNoiDung || 'Đơn tố giác về tội phạm'
+  );
 
   const handleSaveExtract = () => {
     setSavedExtractData({ ...extractData });
@@ -220,22 +363,32 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
       <div className="bg-white border-b border-slate-200 px-6 py-3.5 flex flex-wrap items-center justify-between gap-4 shrink-0 shadow-2xs">
         <div className="flex flex-col gap-1 min-w-0">
           {/* Breadcrumb */}
-          <div className="flex items-center gap-1.5 text-xs text-slate-500">
+          <div className="flex items-center gap-2 text-xs">
+            <button
+              type="button"
+              onClick={() => onNav('cong-viec')}
+              className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer transition-colors flex items-center gap-1 shadow-2xs"
+              title="Quay lại Bàn làm việc Công việc của tôi"
+            >
+              <span className="material-symbols-outlined text-[15px]">arrow_back</span>
+              <span>Công việc của tôi</span>
+            </button>
+            <span className="text-slate-300">/</span>
             <button
               type="button"
               onClick={() => onNav('nhan-don-list')}
-              className="hover:text-blue-600 hover:underline cursor-pointer"
+              className="text-slate-500 hover:text-blue-600 hover:underline cursor-pointer"
             >
               Tiếp nhận đơn
             </button>
-            <span>&gt;</span>
-            <span className="text-slate-700 font-medium">Phân tích đơn</span>
+            <span className="text-slate-300">/</span>
+            <span className="text-slate-800 font-bold">Màn hình AI đã phân tích</span>
           </div>
 
           {/* Title & Badge */}
           <div className="flex items-center gap-3">
             <h1 className="text-[20px] font-bold text-slate-900 font-headline-md tracking-tight">
-              Đơn số: D-2026-00125
+              {luotNhan?.id ? (luotNhan.id.startsWith('LN') ? `Lượt nhận: ${luotNhan.id}` : `Hồ sơ: ${luotNhan.id}`) : 'Đơn số: D-2026-00125'}
             </h1>
 
             {aiState === 'reading' ? (
@@ -243,12 +396,17 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
                 <span className="material-symbols-outlined text-[14px] animate-spin text-amber-600">
                   sync
                 </span>
-                <span>Đang phân tích ({readingProgress}%)</span>
+                <span>AI đang phân tích ({readingProgress}%)</span>
+              </span>
+            ) : (luotNhan?.id?.includes('0430') || extractData.dauHieu.includes('68%')) ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-orange-50 text-orange-800 border border-orange-300 text-[11.5px] font-semibold font-label-technical">
+                <span className="material-symbols-outlined text-[14px] text-orange-600">warning</span>
+                <span>AI cần kiểm tra (Độ tin cậy 68%)</span>
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[11.5px] font-semibold font-label-technical">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
-                <span>Đang phân tích</span>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300 text-[11.5px] font-semibold font-label-technical">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>🟢 AI đã phân tích xong</span>
               </span>
             )}
           </div>
@@ -258,19 +416,19 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
             <div className="flex items-center gap-1">
               <span className="material-symbols-outlined text-[16px] text-slate-400">schedule</span>
               <span>Ngày nhận:</span>
-              <strong className="text-slate-700 font-label-technical">15/09/2026 10:24</strong>
+              <strong className="text-slate-700 font-label-technical">{luotNhan?.ngayNhan || '15/09/2026 10:24'}</strong>
             </div>
             <span>•</span>
             <div>
-              <span>Hình thức:</span> <strong className="text-slate-700">Trực tiếp</strong>
+              <span>Hình thức:</span> <strong className="text-slate-700">{luotNhan?.hinhThuc || 'Trực tiếp'}</strong>
             </div>
             <span>•</span>
             <div>
-              <span>Số trang:</span> <strong className="text-slate-700 font-label-technical">3</strong>
+              <span>Người gửi/nộp:</span> <strong className="text-slate-800 font-semibold">{extractData.nguoiGui || luotNhan?.nguoiNop}</strong>
             </div>
             <span>•</span>
             <div>
-              <span>Trạng thái:</span> <strong className="text-slate-700">Chưa phân loại</strong>
+              <span>Trạng thái:</span> <strong className="text-[#C62828] font-bold">Chờ kiểm tra &amp; tiếp nhận</strong>
             </div>
           </div>
         </div>
@@ -451,132 +609,164 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
               {/* Tiêu đề Đơn */}
               <div className="text-center py-1">
                 <h3 className="text-[15px] font-bold uppercase text-slate-950 tracking-wide">
-                  ĐƠN TỐ GIÁC
+                  {extractData.loaiNoiDung === 'Hồ sơ cấp phép xây dựng'
+                    ? 'ĐƠN ĐỀ NGHỊ CẤP GIẤY PHÉP XÂY DỰNG'
+                    : extractData.loaiNoiDung === 'Đơn phản ánh kiến nghị'
+                    ? 'ĐƠN PHẢN ÁNH KIẾN NGHỊ'
+                    : 'ĐƠN TỐ GIÁC'}
                 </h3>
+                {extractData.loaiNoiDung === 'Hồ sơ cấp phép xây dựng' && (
+                  <p className="text-[10.5px] italic text-slate-600">(Công trình: Nhà ở riêng lẻ đô thị - 5 tầng + 1 lửng)</p>
+                )}
+                {extractData.loaiNoiDung === 'Đơn phản ánh kiến nghị' && (
+                  <p className="text-[10.5px] italic text-slate-600">(V/v: Cơ sở tái chế phế liệu xả khói bụi và tiếng ồn ban đêm)</p>
+                )}
               </div>
 
               {/* Kính gửi */}
               <p className="font-semibold text-slate-900">
                 Kính gửi:{' '}
                 <span className="font-normal text-slate-800">
-                  Cơ quan Cảnh sát điều tra Công an thành phố Hà Nội
+                  {extractData.loaiNoiDung === 'Hồ sơ cấp phép xây dựng'
+                    ? 'Ủy ban nhân dân Quận Ba Đình - Phòng Quản lý Đô thị'
+                    : extractData.loaiNoiDung === 'Đơn phản ánh kiến nghị'
+                    ? 'Ủy ban nhân dân Quận Cầu Giấy - Phòng Tài nguyên và Môi trường'
+                    : 'Cơ quan Cảnh sát điều tra Công an thành phố Hà Nội'}
                 </span>
               </p>
 
-              {/* Thông tin người tố giác & đồng đứng đơn */}
+              {/* Thông tin người làm đơn */}
               <div className="space-y-1 pt-0.5 border-b border-slate-200/60 pb-2">
                 <p>
                   <strong>1. Người làm đơn: </strong>
                   <span
-                    className={`font-semibold text-slate-900 px-1 py-0.5 rounded transition-colors ${activeHighlightKey === 'nguoiGui' ? 'bg-amber-200 ring-2 ring-amber-400' : ''
-                      }`}
+                    className={`font-semibold text-slate-900 px-1 py-0.5 rounded transition-colors ${
+                      activeHighlightKey === 'nguoiGui' ? 'bg-amber-200 ring-2 ring-amber-400' : ''
+                    }`}
                   >
-                    Nguyễn Văn A
+                    {extractData.nguoiGui}
                   </span>{' '}
-                  (Sinh năm: 1988 | CCCD:{' '}
+                  (Sinh năm: {extractData.namSinh} | CCCD:{' '}
                   <span
-                    className={`font-label-technical px-1 py-0.5 rounded transition-colors ${activeHighlightKey === 'cccd' ? 'bg-amber-200 ring-2 ring-amber-400' : ''
-                      }`}
+                    className={`font-label-technical px-1 py-0.5 rounded transition-colors ${
+                      activeHighlightKey === 'cccd' ? 'bg-amber-200 ring-2 ring-amber-400' : ''
+                    }`}
                   >
-                    001088019482
+                    {extractData.cccd}
                   </span>
                   )
                 </p>
                 <p>
                   Địa chỉ thường trú:{' '}
                   <span
-                    className={`px-1 py-0.5 rounded transition-colors ${activeHighlightKey === 'diaChi' ? 'bg-amber-200 ring-2 ring-amber-400' : ''
-                      }`}
+                    className={`px-1 py-0.5 rounded transition-colors ${
+                      activeHighlightKey === 'diaChi' ? 'bg-amber-200 ring-2 ring-amber-400' : ''
+                    }`}
                   >
-                    Số 12, ngõ 45, Cầu Giấy, Hà Nội
+                    {extractData.diaChi}
                   </span>{' '}
-                  | SĐT: <span className="font-label-technical">0912 345 678</span>
+                  | SĐT: <span className="font-label-technical">{extractData.sdt}</span>
                 </p>
-                <p>
-                  <strong>2. Người cùng đứng đơn: </strong>
-                  <span className="font-semibold text-slate-900">Bà Trần Thị C</span> (Vợ kiêm đồng sở hữu tài sản | CCCD:{' '}
-                  <span className="font-label-technical">001190028391</span>)
-                </p>
-                <p>
-                  <strong>3. Người đại diện theo ủy quyền: </strong>
-                  <span className="font-semibold text-purple-900">Luật sư Lê Quang Đ</span> (Văn phòng Luật sư Ánh Dương, Thẻ LS số{' '}
-                  <span className="font-label-technical">LS-0928/ĐLS-HN</span> theo Giấy ủy quyền số 12/2026/UQ đính kèm).
-                </p>
+                {extractData.dongNguoiGui && extractData.dongNguoiGui !== 'Không có' && (
+                  <p>
+                    <strong>2. Người cùng đứng đơn / Đồng sở hữu: </strong>
+                    <span className="font-semibold text-slate-900">{extractData.dongNguoiGui}</span> (CCCD:{' '}
+                    <span className="font-label-technical">{extractData.cccdDongNguoiGui}</span>)
+                  </p>
+                )}
+                {extractData.luatSu && extractData.luatSu !== 'Không có' && (
+                  <p>
+                    <strong>3. Người đại diện theo ủy quyền: </strong>
+                    <span className="font-semibold text-purple-900">{extractData.luatSu}</span> (Thẻ LS:{' '}
+                    <span className="font-label-technical">{extractData.theLuatSu}</span>)
+                  </p>
+                )}
               </div>
 
-              {/* Nội dung tố giác */}
+              {/* HỘP CẢNH BÁO / KẾT QUẢ AI DÀNH RIÊNG CHO TỪNG LOẠI ĐƠN */}
+              {extractData.loaiNoiDung === 'Hồ sơ cấp phép xây dựng' && (
+                <div className="p-2.5 rounded-lg bg-orange-50/90 border border-orange-300 text-[11px] text-orange-950 space-y-1 animate-pulse">
+                  <div className="flex items-center gap-1 font-bold text-orange-900">
+                    <span className="material-symbols-outlined text-[15px] text-orange-600">warning</span>
+                    <span>CẢNH BÁO AI TỰ ĐỘNG (Độ tin cậy 68% - Cần kiểm tra thực địa):</span>
+                  </div>
+                  <p className="leading-relaxed">
+                    Đối soát với CSDL Quy hoạch &amp; bản đồ chỉ giới đường đỏ ngõ 128 Đội Cấn: Phần ban công từ tầng 2 đến tầng 5 và mép móng công trình theo bản vẽ hiện trạng có dấu hiệu chồng lấn <strong>0.35m</strong> với chỉ giới ngõ đi chung của TDP số 3. Đề nghị cán bộ kiểm tra thực địa trước khi tiếp nhận.
+                  </p>
+                </div>
+              )}
+
+              {extractData.loaiNoiDung === 'Đơn phản ánh kiến nghị' && (
+                <div className="p-2.5 rounded-lg bg-emerald-50/90 border border-emerald-300 text-[11px] text-emerald-950 space-y-1">
+                  <div className="flex items-center gap-1 font-bold text-emerald-900">
+                    <span className="material-symbols-outlined text-[15px] text-emerald-600">verified</span>
+                    <span>KẾT QUẢ AI BÓC TÁCH VĂN BẢN (Độ tin cậy 94% - Sẵn sàng tiếp nhận):</span>
+                  </div>
+                  <p className="leading-relaxed">
+                    AI đã nhận diện chính xác 03 nội dung phản ánh về hành vi xả thải khói bụi và tiếng ồn ban đêm vượt quy chuẩn kỹ thuật quốc gia QCVN 26:2010/BTNMT; đối tượng bị phản ánh là Cơ sở thu gom &amp; tái chế Minh Phát.
+                  </p>
+                </div>
+              )}
+
+              {/* Nội dung chi tiết */}
               <div className="space-y-1 pt-1 text-justify leading-relaxed">
                 <p>
-                  Chúng tôi làm đơn này tố giác hành vi có dấu hiệu lừa đảo chiếm đoạt tài sản của:{' '}
+                  <strong>Nội dung trình bày: </strong>
+                  {extractData.noiDungTomTat}
                 </p>
                 <div className="p-2 rounded bg-slate-100/70 border border-slate-200/80 space-y-1">
                   <p>
-                    • <strong>Tổ chức bị tố giác: </strong>
-                    <span className="font-bold text-slate-900">Công ty Cổ phần Đầu tư & Phát triển Đô thị X</span> (Mã số thuế:{' '}
-                    <span className="font-label-technical">0108293847</span>; Trụ sở: Tòa nhà Landmark, Nam Từ Liêm, Hà Nội).
-                  </p>
-                  <p>
-                    • <strong>Cá nhân trực tiếp chỉ đạo: </strong>
+                    • <strong>Đối tượng liên quan: </strong>
                     <span
-                      className={`font-semibold text-slate-900 px-1 py-0.5 rounded transition-colors ${activeHighlightKey === 'doiTuong' ? 'bg-amber-200 ring-2 ring-amber-400' : ''
-                        }`}
+                      className={`font-semibold text-slate-900 px-1 py-0.5 rounded transition-colors ${
+                        activeHighlightKey === 'doiTuong' ? 'bg-amber-200 ring-2 ring-amber-400' : ''
+                      }`}
                     >
-                      Ông Trần Văn B – Chủ tịch HĐQT kiêm Tổng Giám đốc
+                      {extractData.doiTuong}
                     </span>
                   </p>
                   <p>
-                    • <strong>Cá nhân liên đới: </strong>
-                    <span className="font-semibold text-slate-900">Bà Vũ Mai H</span> – Kế toán trưởng (Người trực tiếp ký phiếu thu 3,5 tỷ VNĐ).
+                    • <strong>Địa điểm phát sinh: </strong>
+                    <span
+                      className={`font-semibold text-slate-900 px-1 py-0.5 rounded transition-colors ${
+                        activeHighlightKey === 'diaDiem' ? 'bg-amber-200 ring-2 ring-amber-400' : ''
+                      }`}
+                    >
+                      {extractData.diaDiem}
+                    </span>
                   </p>
                 </div>
-                <p className="pt-1">
-                  Cụ thể về việc huy động vốn trái phép tại{' '}
-                  <span
-                    className={`font-semibold text-slate-900 px-1 py-0.5 rounded transition-colors ${activeHighlightKey === 'diaDiem' ? 'bg-amber-200 ring-2 ring-amber-400' : ''
-                      }`}
-                  >
-                    Dự án Khu đô thị Y
-                  </span>{' '}
-                  thông qua Hợp đồng góp vốn số 88/2024/HĐGV nhưng không bàn giao đất và có dấu hiệu tẩu tán tài sản...
-                </p>
               </div>
 
               {/* Yêu cầu */}
               <div className="space-y-1 pt-1">
-                <p className="font-semibold text-slate-900">Chúng tôi kính đề nghị Quý Cơ quan:</p>
+                <p className="font-semibold text-slate-900">Kính đề nghị Quý Cơ quan xem xét, giải quyết:</p>
                 <ol className="list-decimal list-inside space-y-0.5 pl-1 text-slate-700">
-                  <li>Xác minh, khởi tố điều tra làm rõ hành vi chiếm đoạt 3,5 tỷ VNĐ của ông Trần Văn B và các đối tượng liên quan.</li>
-                  <li>Bảo vệ quyền và lợi ích hợp pháp của các nạn nhân; áp dụng biện pháp khẩn cấp phong tỏa tài khoản Công ty X.</li>
-                  <li>Thông báo kết quả giải quyết cho chúng tôi và Luật sư đại diện theo quy định pháp luật.</li>
+                  <li>{extractData.yeuCau1}</li>
+                  <li>{extractData.yeuCau2}</li>
+                  <li>{extractData.yeuCau3}</li>
                 </ol>
               </div>
 
               <p className="italic text-slate-600 pt-1 text-[11px]">
-                Chúng tôi xin cam đoan những nội dung trên là đúng sự thật và chịu trách nhiệm trước pháp luật về nội dung đơn thư của mình.
+                Tôi/Chúng tôi xin cam đoan những nội dung trên là đúng sự thật và chịu trách nhiệm trước pháp luật về nội dung đơn thư của mình.
               </p>
 
-              {/* Chữ ký đa đương sự */}
-              <div className="pt-4 grid grid-cols-3 gap-2 text-center text-[11px]">
+              {/* Chữ ký */}
+              <div className="pt-4 grid grid-cols-2 gap-4 text-center text-[11px]">
                 <div className="space-y-0.5">
-                  <p className="font-semibold text-slate-800">Luật sư đại diện</p>
-                  <div className="h-7 flex items-center justify-center italic text-purple-900 font-script text-sm">
-                    LeQuangD
+                  <p className="font-semibold text-slate-800">Cán bộ một cửa tiếp nhận sơ bộ</p>
+                  <div className="h-7 flex items-center justify-center italic text-slate-600 font-script text-sm">
+                    NguyenMinhAnh
                   </div>
-                  <p className="font-semibold text-slate-900">LS. Lê Quang Đ</p>
-                </div>
-                <div className="space-y-0.5">
-                  <p className="font-semibold text-slate-800">Người cùng đứng đơn</p>
-                  <div className="h-7 flex items-center justify-center italic text-indigo-900 font-script text-sm">
-                    TranThiC
-                  </div>
-                  <p className="font-semibold text-slate-900">Trần Thị C</p>
+                  <p className="font-semibold text-slate-700">Nguyễn Minh Anh</p>
                 </div>
                 <div className="space-y-0.5">
                   <p className="font-semibold text-slate-800">Người làm đơn</p>
                   <div className="h-7 flex items-center justify-center italic text-blue-900 font-script text-sm">
-                    NguyenVanA
+                    {extractData.nguoiGui.replace(/\s+/g, '')}
                   </div>
-                  <p className="font-semibold text-slate-900">Nguyễn Văn A</p>
+                  <p className="font-semibold text-slate-900">{extractData.nguoiGui}</p>
                 </div>
               </div>
             </div>
@@ -1528,6 +1718,8 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
               </div>
             </div>
 
+
+
             {/* Nhóm các nút hành động: Trả lại, Bàn giao, Tiếp nhận và xử lý */}
             <div className="flex items-center justify-between pt-1 border-t border-slate-100">
               <button
@@ -1769,7 +1961,9 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
               </div>
               <div>
                 <h3 className="font-bold text-slate-900 text-base">Xác nhận tiếp nhận đơn</h3>
-                <p className="text-xs text-slate-500 font-mono">Mã đơn: Đ-2026-00125 • Lượt nhận: {luotNhan.id || 'LN-2025-0819'}</p>
+                <p className="text-xs text-slate-500 font-mono">
+                  Mã đơn: {luotNhan?.id ? (luotNhan.id.startsWith('LN-') ? `Đ-${luotNhan.id.replace('LN-', '')}` : luotNhan.id) : 'Đ-2026-00125'} • Lượt nhận: {luotNhan?.id || 'LN-2025-0819'}
+                </p>
               </div>
             </div>
 
@@ -1786,6 +1980,24 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
                 <span className="text-slate-500 shrink-0">Hướng xử lý:</span>
                 <span className="font-semibold text-blue-700 text-right">Thụ lý đơn &amp; phân công xác minh</span>
               </div>
+              {/* Gợi ý bước tiếp theo theo quy trình */}
+              <div className="p-3 bg-blue-50/80 rounded-xl border border-blue-200 text-blue-950 space-y-1.5">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-[#004ac6]">
+                  <span className="material-symbols-outlined text-[15px]">bolt</span>
+                  <span>Sau khi tiếp nhận, quy trình gợi ý các nút xử lý tiếp theo:</span>
+                </div>
+                <div className="space-y-1 text-[11px] text-blue-900">
+                  {suggestedWfActions.slice(0, 3).map((act, i) => (
+                    <div key={act.id} className="flex items-center gap-1.5">
+                      <span className="w-4 h-4 rounded-full bg-blue-200 text-blue-800 text-[10px] font-bold flex items-center justify-center shrink-0">
+                        {i + 2}
+                      </span>
+                      <span className="font-semibold text-slate-800">{act.title}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {officerNote && (
                 <div className="pt-2 border-t border-slate-200/80 text-slate-600">
                   <span className="text-slate-500 block mb-0.5 font-medium">Ý kiến cán bộ tiếp nhận:</span>
@@ -1796,38 +2008,67 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
               )}
             </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+            <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 flex-wrap">
               <button
                 type="button"
                 onClick={() => setShowSubmitModal(false)}
-                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer transition-colors"
+                className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer transition-colors"
               >
                 Hủy
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowSubmitModal(false);
-                  showToast('✓ Đã tiếp nhận đơn Đ-2026-00125 thành công!');
-                  onAcceptAndProcess?.({
-                    id: 'Đ-2026-00125',
-                    code: 'Đ-2026-00125',
-                    title: `Tố giác vi phạm lừa đảo chiếm đoạt tài sản (${extractData.duAn || 'Dự án Khu đô thị Y'})`,
-                    luotNhanId: luotNhan.id || 'LN-2025-0819',
-                    nguoiNop: extractData.nguoiGui || 'Nguyễn Văn A',
-                    ngayNhan: luotNhan.ngayNhan || '16/09/2026 09:15',
-                    loaiDon: extractData.loaiNoiDung || 'Đơn tố giác tội phạm',
-                    type: 'ĐƠN TIẾP NHẬN',
-                    statusBadge: 'Đã tiếp nhận',
-                    isNew: true,
-                  });
-                  setTimeout(() => onNav('cong-viec'), 1000);
-                }}
-                className="px-5 py-2 rounded-xl bg-[#004ac6] hover:bg-[#003da8] text-white text-xs font-bold cursor-pointer flex items-center gap-1.5 transition-all shadow-xs active:scale-95"
-              >
-                <span className="material-symbols-outlined text-[16px]">check</span>
-                <span>Xác nhận tiếp nhận</span>
-              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const dynamicCode = luotNhan?.id ? (luotNhan.id.startsWith('LN-') ? `Đ-${luotNhan.id.replace('LN-', '')}` : luotNhan.id) : 'Đ-2026-00125';
+                    setShowSubmitModal(false);
+                    showToast(`✓ Đã tiếp nhận đơn ${dynamicCode} thành công! Đang chuyển về Bàn việc...`);
+                    onAcceptAndProcess?.({
+                      id: dynamicCode,
+                      code: dynamicCode,
+                      title: extractData.noiDungTomTat || luotNhan?.noiDung || `Hồ sơ ${dynamicCode}`,
+                      luotNhanId: luotNhan?.id || 'LN-2025-0819',
+                      nguoiNop: extractData.nguoiGui || luotNhan?.nguoiNop || 'Công dân',
+                      ngayNhan: luotNhan?.ngayNhan || '16/09/2026 09:15',
+                      loaiDon: extractData.loaiNoiDung || 'Đơn tiếp nhận hành chính',
+                      type: dynamicCode.startsWith('VV') ? 'VỤ VIỆC' : 'ĐƠN TIẾP NHẬN',
+                      statusBadge: 'Đã tiếp nhận',
+                      isNew: true,
+                    });
+                    setTimeout(() => onNav('cong-viec'), 600);
+                  }}
+                  className="px-3.5 py-2 rounded-xl border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-semibold cursor-pointer transition-all"
+                >
+                  Tiếp nhận &amp; Về Bàn việc
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const dynamicCode = luotNhan?.id ? (luotNhan.id.startsWith('LN-') ? `Đ-${luotNhan.id.replace('LN-', '')}` : luotNhan.id) : 'Đ-2026-00125';
+                    setShowSubmitModal(false);
+                    showToast(`✓ Đã tiếp nhận đơn ${dynamicCode}. Mở màn hình gợi ý xử lý tiếp theo...`);
+                    onAcceptAndProcess?.({
+                      id: dynamicCode,
+                      code: dynamicCode,
+                      title: extractData.noiDungTomTat || luotNhan?.noiDung || `Hồ sơ ${dynamicCode}`,
+                      luotNhanId: luotNhan?.id || 'LN-2025-0819',
+                      nguoiNop: extractData.nguoiGui || luotNhan?.nguoiNop || 'Công dân',
+                      ngayNhan: luotNhan?.ngayNhan || '16/09/2026 09:15',
+                      loaiDon: extractData.loaiNoiDung || 'Đơn tiếp nhận hành chính',
+                      type: dynamicCode.startsWith('VV') ? 'VỤ VIỆC' : 'ĐƠN TIẾP NHẬN',
+                      statusBadge: 'Đã tiếp nhận',
+                      isNew: true,
+                    });
+                    setTimeout(() => onNav('don-tiep-nhan'), 600);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-[#004ac6] hover:bg-[#003da8] text-white text-xs font-bold cursor-pointer flex items-center gap-1.5 transition-all shadow-xs active:scale-95"
+                >
+                  <span className="material-symbols-outlined text-[16px]">task_alt</span>
+                  <span>Tiếp nhận &amp; Xử lý bước tiếp theo ➔</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

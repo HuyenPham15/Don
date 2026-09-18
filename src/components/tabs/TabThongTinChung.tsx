@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { DonDetail } from '../../types';
+import QuyTrinhSuggestedActions from '../workflow/QuyTrinhSuggestedActions';
+import { matchWorkflowByLoaiDon } from '../../constants/workflows';
 
 export interface DuongSuItem {
   id: string;
@@ -127,7 +129,7 @@ export default function TabThongTinChung({
         isPrimary: true,
         dinhDanh: '001088019482',
         dinhDanhLabel: 'CCCD',
-        xacThucBadge: 'VNeID Mức 2',
+        xacThucBadge: '',
         xacThucColor: 'emerald',
         tuCach: 'Người làm đơn tố giác / Bị hại',
         sdt: '0912 345 678',
@@ -147,7 +149,7 @@ export default function TabThongTinChung({
         vaiTroColor: 'indigo',
         dinhDanh: '001190028391',
         dinhDanhLabel: 'CCCD',
-        xacThucBadge: 'VNeID Mức 2',
+        xacThucBadge: '',
         xacThucColor: 'emerald',
         tuCach: 'Đồng bị hại / Vợ đồng sở hữu tài sản',
         sdt: '0978 654 321',
@@ -253,7 +255,7 @@ export default function TabThongTinChung({
         isPrimary: true,
         dinhDanh: '081089002891',
         dinhDanhLabel: 'CCCD',
-        xacThucBadge: 'VNeID Mức 2',
+        xacThucBadge: '',
         xacThucColor: 'emerald',
         tuCach: 'Chủ sở hữu Thửa đất số 45 / Người đứng đơn',
         sdt: '0983 847 291',
@@ -273,7 +275,7 @@ export default function TabThongTinChung({
         vaiTroColor: 'indigo',
         dinhDanh: '081182003921',
         dinhDanhLabel: 'CCCD',
-        xacThucBadge: 'VNeID Mức 2',
+        xacThucBadge: '',
         xacThucColor: 'emerald',
         tuCach: 'Vợ đồng sở hữu quyền sử dụng đất',
         sdt: '0918 374 829',
@@ -467,7 +469,7 @@ export default function TabThongTinChung({
     vaiTroColor: 'indigo',
     dinhDanh: '',
     dinhDanhLabel: 'CCCD',
-    xacThucBadge: 'VNeID Mức 2',
+    xacThucBadge: '',
     xacThucColor: 'emerald',
     tuCach: '',
     sdt: '',
@@ -490,7 +492,7 @@ export default function TabThongTinChung({
       vaiTroColor: 'indigo',
       dinhDanh: '',
       dinhDanhLabel: 'CCCD',
-      xacThucBadge: 'VNeID Mức 2',
+      xacThucBadge: '',
       xacThucColor: 'emerald',
       tuCach: 'Người cùng quyền lợi / Đồng đứng đơn',
       sdt: '',
@@ -582,7 +584,7 @@ export default function TabThongTinChung({
     ? {
       luotNhanGoc: currentDon?.luotNhanId || 'LN-2025-0819',
       ngayNhan: currentDon?.ngayNhan || '16/09/2026 09:15',
-      hinhThuc: 'Trực tiếp tại bộ phận Một cửa',
+      hinhThuc: 'Trực tiếp',
       canBo: 'Nguyễn Minh Anh',
       chucVu: 'Cán bộ thụ lý',
       donViTiepNhan:
@@ -600,7 +602,7 @@ export default function TabThongTinChung({
     : {
       luotNhanGoc: currentDon?.luotNhanId || 'LN-45/2026-GOVEX',
       ngayNhan: currentDon?.ngayNhan || '15/09/2026 09:15',
-      hinhThuc: 'Trực tiếp tại bộ phận Một cửa',
+      hinhThuc: 'Trực tiếp',
       canBo: 'Nguyễn Minh Anh',
       chucVu: 'Cán bộ thụ lý',
       donViTiepNhan:
@@ -678,15 +680,7 @@ export default function TabThongTinChung({
               {duongSuList.length} người &amp; đối tượng
             </span>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-semibold font-label-technical">
-              <span className="material-symbols-outlined text-[14px] text-emerald-600">check_circle</span>
-              Đã xác thực định danh điện tử
-            </span>
-            <span className="text-[11.5px] text-slate-500 font-medium hidden sm:inline">
-              Bộ phận Tiếp dân &amp; Xử lý đơn
-            </span>
-          </div>
+
         </div>
 
         <div className="p-6 space-y-5">
@@ -858,12 +852,9 @@ export default function TabThongTinChung({
                   <thead>
                     <tr className="bg-slate-50/90 border-b border-slate-200 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
                       <th className="py-2.5 px-3 text-center w-10">#</th>
-                      <th className="py-2.5 px-3 min-w-[200px]">Họ tên / Tổ chức</th>
-                      <th className="py-2.5 px-3 min-w-[180px]">Vai trò trong vụ việc</th>
-                      <th className="py-2.5 px-3 min-w-[120px]">Số định danh</th>
-                      <th className="py-2.5 px-3 min-w-[190px]">Tư cách tố tụng &amp; Quan hệ</th>
+                      <th className="py-2.5 px-3 min-w-[220px]">Họ tên / Tổ chức &amp; Số định danh</th>
+                      <th className="py-2.5 px-3 min-w-[240px]">Vai trò &amp; Tư cách tham gia tố tụng</th>
                       <th className="py-2.5 px-3 min-w-[180px]">Thông tin liên hệ &amp; Địa chỉ</th>
-                      <th className="py-2.5 px-3 min-w-[170px]">Nguồn đọc từ file (AI)</th>
                       <th className="py-2.5 px-3 text-center w-24">Thao tác</th>
                     </tr>
                   </thead>
@@ -884,11 +875,11 @@ export default function TabThongTinChung({
                             {idx + 1}
                           </td>
 
-                          {/* 2. Họ tên & Phân loại */}
+                          {/* 2. Họ tên / Tổ chức & Số định danh */}
                           <td className="py-3 px-3">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-start gap-2.5">
                               <div
-                                className={`w-7 h-7 rounded-full ${avatarBg} flex items-center justify-center shrink-0 shadow-2xs`}
+                                className={`w-7 h-7 rounded-full ${avatarBg} flex items-center justify-center shrink-0 shadow-2xs mt-0.5`}
                               >
                                 <span className="material-symbols-outlined text-[15px]">
                                   {roleIcon}
@@ -898,7 +889,16 @@ export default function TabThongTinChung({
                                 <div className="font-bold text-slate-900 text-[12.5px] leading-tight">
                                   {item.hoTen}
                                 </div>
-                                <div className="flex items-center gap-1.5 mt-0.5">
+                                <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                                  {item.dinhDanh && (
+                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 text-[10.5px] font-label-technical">
+                                      <span className="text-slate-400 font-normal">{item.dinhDanhLabel || 'ĐD'}:</span>
+                                      <span className="font-semibold text-slate-800">{item.dinhDanh}</span>
+                                    </span>
+                                  )}
+                                  <span className="text-[10px] text-slate-400 font-label-technical">
+                                    {item.loaiDoiTuong === 'to_chuc' ? 'Tổ chức' : 'Cá nhân'}
+                                  </span>
                                   {item.xacThucBadge && (
                                     <span
                                       className={`inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[9.5px] font-semibold border ${item.xacThucColor === 'emerald'
@@ -914,51 +914,39 @@ export default function TabThongTinChung({
                                       {item.xacThucBadge}
                                     </span>
                                   )}
-                                  <span className="text-[10px] text-slate-400 font-label-technical">
-                                    {item.loaiDoiTuong === 'to_chuc' ? 'Tổ chức' : 'Cá nhân'}
-                                  </span>
                                 </div>
                               </div>
                             </div>
                           </td>
 
-                          {/* 3. Vai trò */}
-                          <td className="py-3 px-3">
-                            <span
-                              className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-bold border ${roleBadgeClass}`}
-                            >
-                              {item.vaiTro}
-                            </span>
-                            {item.chucVu && (
-                              <div className="text-[10.5px] text-slate-500 mt-0.5">
-                                {item.chucVu}
-                              </div>
-                            )}
-                          </td>
-
-                          {/* 4. Số định danh */}
-                          <td className="py-3 px-3">
-                            <span className="text-[10px] text-slate-400 block font-medium">
-                              {item.dinhDanhLabel}:
-                            </span>
-                            <span className="font-semibold text-slate-800 font-label-technical text-[11.5px]">
-                              {item.dinhDanh || '—'}
-                            </span>
-                          </td>
-
-                          {/* 5. Tư cách tố tụng & Quan hệ vụ việc */}
+                          {/* 3. Vai trò & Tư cách tham gia tố tụng */}
                           <td className="py-3 px-3 text-[11px]">
-                            <div className="font-semibold text-slate-800 leading-tight">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span
+                                className={`inline-block px-2 py-0.5 rounded-md text-[10.5px] font-bold border ${roleBadgeClass}`}
+                              >
+                                {item.vaiTro}
+                              </span>
+                              {item.chucVu && (
+                                <span className="text-[10.5px] text-slate-500 font-medium">
+                                  • {item.chucVu}
+                                </span>
+                              )}
+                            </div>
+                            <div className="font-semibold text-slate-800 mt-1 leading-tight">
                               {item.tuCach}
                             </div>
                             {item.quanHeLienDoi && (
-                              <div className="text-[10.5px] text-slate-500 mt-0.5 leading-snug line-clamp-2">
+                              <div
+                                className="text-[10.5px] text-slate-500 mt-0.5 leading-snug line-clamp-2"
+                                title={item.quanHeLienDoi}
+                              >
                                 {item.quanHeLienDoi}
                               </div>
                             )}
                           </td>
 
-                          {/* 6. Liên hệ & Địa chỉ */}
+                          {/* 4. Liên hệ & Địa chỉ */}
                           <td className="py-3 px-3 text-[11px]">
                             {item.sdt && (
                               <div className="flex items-center gap-1 font-semibold text-slate-800 font-label-technical">
@@ -970,24 +958,6 @@ export default function TabThongTinChung({
                               {item.diaChi}
                             </div>
                           </td>
-
-                          {/* 7. Nguồn AI bóc tách từ file */}
-                          <td className="py-3 px-3">
-                            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-100/90 text-slate-700 border border-slate-200 text-[10.5px]">
-                              <span className="material-symbols-outlined text-[12px] text-blue-600">
-                                description
-                              </span>
-                              <span className="truncate max-w-[140px]" title={item.nguonTrichXuat}>
-                                {item.nguonTrichXuat || 'Đơn_to_giac.pdf'}
-                              </span>
-                              {item.doTinCai && (
-                                <span className="font-bold text-emerald-700 font-label-technical pl-0.5">
-                                  {item.doTinCai}
-                                </span>
-                              )}
-                            </div>
-                          </td>
-
                           {/* 8. Thao tác */}
                           <td className="py-3 px-3 text-center">
                             <div className="flex items-center justify-center gap-1">
@@ -1613,6 +1583,16 @@ export default function TabThongTinChung({
       </div>
 
       {/* ========================================================================= */}
+      {/* KHỐI 3: GỢI Ý CÁC NÚT XỬ LÝ TIẾP THEO DỰA TRÊN QUY TRÌNH PHÁP LUẬT         */}
+      {/* ========================================================================= */}
+      <QuyTrinhSuggestedActions
+        loaiDon={phanLoai.loaiDon}
+        donCode={currentDon?.code || 'Đ-2026-00125'}
+        currentNguoiGui={currentDon?.nguoiNop || (isToGiac ? 'Nguyễn Văn A' : 'Lê Văn Hùng')}
+        onActionSuccess={(actTitle) => showToast(`✓ Đã hoàn tất và lưu thao tác: ${actTitle}`)}
+      />
+
+      {/* ========================================================================= */}
       {/* MODAL THÊM / CHỈNH SỬA ĐƯƠNG SỰ VÀ VAI TRÒ                                */}
       {/* ========================================================================= */}
       {showModal && (
@@ -1788,7 +1768,7 @@ export default function TabThongTinChung({
                     Trạng thái xác thực
                   </label>
                   <select
-                    value={formData.xacThucBadge || 'VNeID Mức 2'}
+                    value={formData.xacThucBadge || ''}
                     onChange={(e) => {
                       const val = e.target.value;
                       let col: DuongSuItem['xacThucColor'] = 'emerald';
@@ -1805,7 +1785,7 @@ export default function TabThongTinChung({
                     }}
                     className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white font-medium focus:outline-none focus:border-[#004ac6]"
                   >
-                    <option value="VNeID Mức 2">VNeID Mức 2</option>
+                    <option value=""></option>
                     <option value="VNeID Mức 1">VNeID Mức 1</option>
                     <option value="Đang hoạt động">Đang hoạt động (Doanh nghiệp)</option>
                     <option value="Đoàn Luật sư HN">Đoàn Luật sư HN</option>

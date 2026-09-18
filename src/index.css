@@ -63,6 +63,14 @@ body {
   vertical-align: middle;
 }
 
+/* Ngăn triệt để Google Translate dịch tên ligature của biểu tượng */
+.notranslate,
+[translate="no"],
+.material-symbols-outlined {
+  -webkit-translate: no !important;
+  translate: no !important;
+}
+
 .mono { font-family: 'JetBrains Mono', monospace; }
 
 ::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -109,5 +117,18 @@ body {
   animation: laser-scan 2.8s ease-in-out infinite;
   pointer-events: none;
   z-index: 20;
+}
+
+@keyframes drawer-slide-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-drawer-slide-in {
+  animation: drawer-slide-in 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
