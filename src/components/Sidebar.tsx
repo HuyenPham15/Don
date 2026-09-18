@@ -9,6 +9,7 @@ interface SidebarProps {
 export default function Sidebar({ screen, onNav }: SidebarProps) {
   const isNhanDon = ["nhan-don-list", "nhan-don-them", "ban-phan-tich"].includes(screen);
   const isCongViec = screen === "cong-viec" || screen === "don-tiep-nhan" || screen === "quy-trinh-xu-ly";
+  const isTiepNhan = screen === "tiep-nhan-xu-ly";
 
   return (
     <aside className="w-72 bg-white border-r border-slate-200/90 flex flex-col justify-between select-none h-full shrink-0 shadow-2xs">
@@ -59,6 +60,32 @@ export default function Sidebar({ screen, onNav }: SidebarProps) {
                 4
               </span>
               {isNhanDon && <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>}
+            </div>
+          </button>
+
+          {/* Tiếp nhận & xử lý (Hàng chờ phân công của đơn vị) */}
+          <button
+            type="button"
+            onClick={() => onNav('tiep-nhan-xu-ly')}
+            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer ${isTiepNhan
+              ? 'bg-blue-50 text-[#004ac6] font-semibold border border-blue-100/60 shadow-2xs'
+              : 'text-slate-700 hover:bg-slate-50'
+              }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <span
+                className={`material-symbols-outlined text-[20px] ${isTiepNhan ? 'text-[#004ac6]' : 'text-slate-600'
+                  }`}
+              >
+                folder_shared
+              </span>
+              <span className="text-[13.5px] font-medium">Tiếp nhận &amp; xử lý</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="px-1.5 py-0.5 rounded-md bg-amber-500 text-white text-[11px] font-semibold font-label-technical">
+                Chờ giao
+              </span>
+              {isTiepNhan && <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>}
             </div>
           </button>
 

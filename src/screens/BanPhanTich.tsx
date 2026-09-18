@@ -3,6 +3,8 @@ import { LuotNhan, Screen } from '../types';
 import { matchWorkflowByLoaiDon } from '../constants/workflows';
 import { ActiveWorkflowState } from '../types/workflow';
 import { DON_VI_OPTIONS } from '../constants';
+import { TiepNhanDonItem } from '../constants/departments';
+import ChuyenTiepNhanModal, { ChuyenTiepNhanSubmitData } from '../components/modals/ChuyenTiepNhanModal';
 import NguonTraCuuModal, { NguonTraCuuTabType } from '../components/modals/NguonTraCuuModal';
 import { getSuggestedActionsForWorkflow } from '../components/workflow/QuyTrinhSuggestedActions';
 
@@ -10,9 +12,10 @@ interface BanPhanTichProps {
   luotNhan: LuotNhan;
   onNav: (s: Screen) => void;
   onAcceptAndProcess?: (don: any, wfState?: ActiveWorkflowState) => void;
+  onChuyenTiepNhan?: (item: TiepNhanDonItem, isDirect: boolean, assignedOfficerName?: string) => void;
 }
 
-export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: BanPhanTichProps) {
+export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess, onChuyenTiepNhan }: BanPhanTichProps) {
   // ─── 1. TRẠNG THÁI AI: "reading" (Đang đọc) vs "done" (Đã đọc xong) ───────
   const [aiState, setAiState] = useState<'reading' | 'done'>('done');
   const [readingProgress, setReadingProgress] = useState<number>(100);
@@ -35,6 +38,7 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
   const [banGiaoUnit, setBanGiaoUnit] = useState<string>('Phòng Cảnh sát kinh tế (PC03) - Công an TP. Hà Nội');
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [showSubmitModal, setShowSubmitModal] = useState<boolean>(false);
+  const [showChuyenModal, setShowChuyenModal] = useState<boolean>(false);
   const [showTraLaiModal, setShowTraLaiModal] = useState<boolean>(false);
   const [showBanGiaoModal, setShowBanGiaoModal] = useState<boolean>(false);
   const [traLaiReason, setTraLaiReason] = useState<string>('Không thuộc thẩm quyền giải quyết');
@@ -291,6 +295,54 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
     showToast('Đã sao chép nội dung tóm tắt & đề xuất xử lý vào khay nhớ tạm.');
   };
 
+  const handleChuyenTiepNhanSubmit = (data: ChuyenTiepNhanSubmitData) => {
+    setShowChuyenModal(false);
+    const dynamicCode = luotNhan?.id
+      ? luotNhan.id.startsWith('LN-')
+        ? `Đ-${luotNhan.id.replace('LN-', '')}`
+        : luotNhan.id
+      : 'Đ-2026-00125';
+
+    const newItem: TiepNhanDonItem = {
+      id: `TN-${dynamicCode.replace('Đ-', '')}`,
+      code: dynamicCode,
+      luotNhanId: luotNhan?.id || 'LN-2025-0819',
+      nguoiNop: extractData.nguoiGui || luotNhan?.nguoiNop || 'Nguyễn Văn A',
+      loaiDon: extractData.loaiNoiDung || 'Đơn tố giác về tội phạm',
+      ngayNhan: luotNhan?.ngayNhan || '16/09/2026 09:15',
+      ngayChuyenDen: 'Vừa xong (16/09/2026)',
+      donViHienTai: 'Bộ phận Tiếp nhận đơn (Một cửa)',
+      donViTiepNhanId: data.donViTiepNhanId,
+      donViTiepNhan: data.donViTiepNhanName,
+      hanXuLy: 'Còn 3 ngày',
+      hanXuLyFull: '19/09/2026 - 17:00',
+      trangThai: data.hinhThuc === 'hang_cho' ? 'cho_phan_cong' : 'dang_xu_ly',
+      noiDungTomTat: extractData.noiDungTomTat || luotNhan?.noiDung || `Hồ sơ ${dynamicCode}`,
+      ghiChuChuyen: data.ghiChu,
+      nguoiChuyen: 'Cán bộ thụ lý (Nguyễn Minh Anh)',
+      canBoXuLy: data.canBoNhan?.name,
+      canBoXuLyId: data.canBoNhan?.id,
+      chucVuCanBo: data.canBoNhan?.role,
+      ngayPhanCong: data.hinhThuc === 'truc_tiep' ? '16/09/2026' : undefined,
+      nguoiPhanCong: data.hinhThuc === 'truc_tiep' ? 'Nguyễn Minh Anh (Giao trực tiếp)' : undefined,
+      hinhThucChuyen: data.hinhThuc,
+    };
+
+    if (data.hinhThuc === 'hang_cho') {
+      showToast(`Chuyển tiếp nhận thành công. Đơn đang chờ phân công tại ${data.donViTiepNhanName}.`);
+      onChuyenTiepNhan?.(newItem, false);
+      setTimeout(() => {
+        onNav('tiep-nhan-xu-ly');
+      }, 600);
+    } else {
+      showToast(`Đã chuyển và giao đơn cho cán bộ ${data.canBoNhan?.name}.`);
+      onChuyenTiepNhan?.(newItem, true, data.canBoNhan?.name);
+      setTimeout(() => {
+        onNav('cong-viec');
+      }, 600);
+    }
+  };
+
   return (
     <div className="flex-1 flex flex-col h-full bg-[#f1f5f9] text-[#1e293b] font-body-md overflow-hidden select-none">
       {/* Toast Notification */}
@@ -443,29 +495,29 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
             <span className="material-symbols-outlined text-[16px] text-slate-500">download</span>
             <span>Tải xuống</span>
           </button>
-          <button
+          {/* <button
             type="button"
             onClick={() => showToast('Đã tạo liên kết chia sẻ hồ sơ đơn.')}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
           >
             <span className="material-symbols-outlined text-[16px] text-slate-500">share</span>
             <span>Chia sẻ</span>
-          </button>
-          <button
+          </button> */}
+          {/* <button
             type="button"
             className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 hover:text-slate-800 text-xs shadow-2xs cursor-pointer"
             title="Thêm tùy chọn"
           >
             <span className="material-symbols-outlined text-[16px]">more_horiz</span>
-          </button>
+          </button> */}
           <button
             type="button"
-            onClick={() => setShowSubmitModal(true)}
+            onClick={() => setShowChuyenModal(true)}
             disabled={aiState === 'reading'}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0052cc] hover:bg-[#0043a8] active:scale-95 text-white text-xs font-semibold shadow-sm transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#C62828] hover:bg-[#b71c1c] active:scale-95 text-white text-xs font-bold shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <span className="material-symbols-outlined text-[16px]">task_alt</span>
-            <span>Tiếp nhận đơn</span>
+            <span className="material-symbols-outlined text-[17px]">forward_to_inbox</span>
+            <span>Chuyển tiếp nhận và xử lý</span>
           </button>
         </div>
       </div>
@@ -612,8 +664,8 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
                   {extractData.loaiNoiDung === 'Hồ sơ cấp phép xây dựng'
                     ? 'ĐƠN ĐỀ NGHỊ CẤP GIẤY PHÉP XÂY DỰNG'
                     : extractData.loaiNoiDung === 'Đơn phản ánh kiến nghị'
-                    ? 'ĐƠN PHẢN ÁNH KIẾN NGHỊ'
-                    : 'ĐƠN TỐ GIÁC'}
+                      ? 'ĐƠN PHẢN ÁNH KIẾN NGHỊ'
+                      : 'ĐƠN TỐ GIÁC'}
                 </h3>
                 {extractData.loaiNoiDung === 'Hồ sơ cấp phép xây dựng' && (
                   <p className="text-[10.5px] italic text-slate-600">(Công trình: Nhà ở riêng lẻ đô thị - 5 tầng + 1 lửng)</p>
@@ -630,8 +682,8 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
                   {extractData.loaiNoiDung === 'Hồ sơ cấp phép xây dựng'
                     ? 'Ủy ban nhân dân Quận Ba Đình - Phòng Quản lý Đô thị'
                     : extractData.loaiNoiDung === 'Đơn phản ánh kiến nghị'
-                    ? 'Ủy ban nhân dân Quận Cầu Giấy - Phòng Tài nguyên và Môi trường'
-                    : 'Cơ quan Cảnh sát điều tra Công an thành phố Hà Nội'}
+                      ? 'Ủy ban nhân dân Quận Cầu Giấy - Phòng Tài nguyên và Môi trường'
+                      : 'Cơ quan Cảnh sát điều tra Công an thành phố Hà Nội'}
                 </span>
               </p>
 
@@ -640,17 +692,15 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
                 <p>
                   <strong>1. Người làm đơn: </strong>
                   <span
-                    className={`font-semibold text-slate-900 px-1 py-0.5 rounded transition-colors ${
-                      activeHighlightKey === 'nguoiGui' ? 'bg-amber-200 ring-2 ring-amber-400' : ''
-                    }`}
+                    className={`font-semibold text-slate-900 px-1 py-0.5 rounded transition-colors ${activeHighlightKey === 'nguoiGui' ? 'bg-amber-200 ring-2 ring-amber-400' : ''
+                      }`}
                   >
                     {extractData.nguoiGui}
                   </span>{' '}
                   (Sinh năm: {extractData.namSinh} | CCCD:{' '}
                   <span
-                    className={`font-label-technical px-1 py-0.5 rounded transition-colors ${
-                      activeHighlightKey === 'cccd' ? 'bg-amber-200 ring-2 ring-amber-400' : ''
-                    }`}
+                    className={`font-label-technical px-1 py-0.5 rounded transition-colors ${activeHighlightKey === 'cccd' ? 'bg-amber-200 ring-2 ring-amber-400' : ''
+                      }`}
                   >
                     {extractData.cccd}
                   </span>
@@ -659,9 +709,8 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
                 <p>
                   Địa chỉ thường trú:{' '}
                   <span
-                    className={`px-1 py-0.5 rounded transition-colors ${
-                      activeHighlightKey === 'diaChi' ? 'bg-amber-200 ring-2 ring-amber-400' : ''
-                    }`}
+                    className={`px-1 py-0.5 rounded transition-colors ${activeHighlightKey === 'diaChi' ? 'bg-amber-200 ring-2 ring-amber-400' : ''
+                      }`}
                   >
                     {extractData.diaChi}
                   </span>{' '}
@@ -683,27 +732,39 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
                 )}
               </div>
 
-              {/* HỘP CẢNH BÁO / KẾT QUẢ AI DÀNH RIÊNG CHO TỪNG LOẠI ĐƠN */}
+              {/* HỘP CẢNH BÁO / KẾT QUẢ AI PHÂN TÍCH */}
               {extractData.loaiNoiDung === 'Hồ sơ cấp phép xây dựng' && (
-                <div className="p-2.5 rounded-lg bg-orange-50/90 border border-orange-300 text-[11px] text-orange-950 space-y-1 animate-pulse">
+                <div className="p-2.5 rounded-lg bg-orange-50 border border-orange-300 text-[11px] text-orange-950 space-y-1">
                   <div className="flex items-center gap-1 font-bold text-orange-900">
                     <span className="material-symbols-outlined text-[15px] text-orange-600">warning</span>
-                    <span>CẢNH BÁO AI TỰ ĐỘNG (Độ tin cậy 68% - Cần kiểm tra thực địa):</span>
+                    <span>AI PHÂN TÍCH &amp; CẢNH BÁO (Độ tin cậy 68%):</span>
                   </div>
                   <p className="leading-relaxed">
-                    Đối soát với CSDL Quy hoạch &amp; bản đồ chỉ giới đường đỏ ngõ 128 Đội Cấn: Phần ban công từ tầng 2 đến tầng 5 và mép móng công trình theo bản vẽ hiện trạng có dấu hiệu chồng lấn <strong>0.35m</strong> với chỉ giới ngõ đi chung của TDP số 3. Đề nghị cán bộ kiểm tra thực địa trước khi tiếp nhận.
+                    Đối soát với CSDL Quy hoạch &amp; bản đồ chỉ giới: Bản vẽ hiện trạng có dấu hiệu chồng lấn <strong>0.35m</strong> với chỉ giới ngõ đi chung. Cần cán bộ kiểm tra thực địa trước khi tiếp nhận.
                   </p>
                 </div>
               )}
 
               {extractData.loaiNoiDung === 'Đơn phản ánh kiến nghị' && (
-                <div className="p-2.5 rounded-lg bg-emerald-50/90 border border-emerald-300 text-[11px] text-emerald-950 space-y-1">
+                <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-300 text-[11px] text-emerald-950 space-y-1">
                   <div className="flex items-center gap-1 font-bold text-emerald-900">
                     <span className="material-symbols-outlined text-[15px] text-emerald-600">verified</span>
-                    <span>KẾT QUẢ AI BÓC TÁCH VĂN BẢN (Độ tin cậy 94% - Sẵn sàng tiếp nhận):</span>
+                    <span>AI ĐÃ PHÂN TÍCH &amp; BÓC TÁCH (Độ tin cậy 94%):</span>
                   </div>
                   <p className="leading-relaxed">
-                    AI đã nhận diện chính xác 03 nội dung phản ánh về hành vi xả thải khói bụi và tiếng ồn ban đêm vượt quy chuẩn kỹ thuật quốc gia QCVN 26:2010/BTNMT; đối tượng bị phản ánh là Cơ sở thu gom &amp; tái chế Minh Phát.
+                    Đã bóc tách tự động hành vi phản ánh về môi trường tiếng ồn và khí thải. Đối tượng liên quan: {extractData.doiTuong}.
+                  </p>
+                </div>
+              )}
+
+              {extractData.loaiNoiDung !== 'Hồ sơ cấp phép xây dựng' && extractData.loaiNoiDung !== 'Đơn phản ánh kiến nghị' && (
+                <div className="p-2.5 rounded-lg bg-blue-50 border border-blue-200 text-[11px] text-blue-950 space-y-1">
+                  <div className="flex items-center gap-1 font-bold text-blue-900">
+                    <span className="material-symbols-outlined text-[15px] text-blue-600">smart_toy</span>
+                    <span>AI ĐÃ PHÂN TÍCH VĂN BẢN (Độ tin cậy 92%):</span>
+                  </div>
+                  <p className="leading-relaxed">
+                    Đã trích xuất tự động thông tin người gửi, đối tượng liên quan và các yêu cầu cụ thể của đương sự.
                   </p>
                 </div>
               )}
@@ -718,9 +779,8 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
                   <p>
                     • <strong>Đối tượng liên quan: </strong>
                     <span
-                      className={`font-semibold text-slate-900 px-1 py-0.5 rounded transition-colors ${
-                        activeHighlightKey === 'doiTuong' ? 'bg-amber-200 ring-2 ring-amber-400' : ''
-                      }`}
+                      className={`font-semibold text-slate-900 px-1 py-0.5 rounded transition-colors ${activeHighlightKey === 'doiTuong' ? 'bg-amber-200 ring-2 ring-amber-400' : ''
+                        }`}
                     >
                       {extractData.doiTuong}
                     </span>
@@ -728,9 +788,8 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
                   <p>
                     • <strong>Địa điểm phát sinh: </strong>
                     <span
-                      className={`font-semibold text-slate-900 px-1 py-0.5 rounded transition-colors ${
-                        activeHighlightKey === 'diaDiem' ? 'bg-amber-200 ring-2 ring-amber-400' : ''
-                      }`}
+                      className={`font-semibold text-slate-900 px-1 py-0.5 rounded transition-colors ${activeHighlightKey === 'diaDiem' ? 'bg-amber-200 ring-2 ring-amber-400' : ''
+                        }`}
                     >
                       {extractData.diaDiem}
                     </span>
@@ -1949,9 +2008,6 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
         </div>
       )}
 
-      {/* ========================================================================= */}
-      {/* MODAL TIẾP NHẬN VÀ XỬ LÝ ĐƠN                                              */}
-      {/* ========================================================================= */}
       {showSubmitModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full p-6 space-y-4 animate-scale-up">
@@ -2074,9 +2130,6 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
         </div>
       )}
 
-      {/* ========================================================================= */}
-      {/* MODAL NGUỒN THÔNG TIN GỐC TRA CỨU TRONG HỆ THỐNG                          */}
-      {/* ========================================================================= */}
       <NguonTraCuuModal
         isOpen={showNguonTraCuuModal}
         onClose={() => setShowNguonTraCuuModal(false)}
@@ -2087,6 +2140,20 @@ export default function BanPhanTich({ luotNhan, onNav, onAcceptAndProcess }: Ban
         onApplyRecommendation={(recText) => {
           setOfficerNote(recText);
           showToast('✓ Đã áp dụng đề xuất từ nguồn tra cứu vào Ý kiến cán bộ!');
+        }}
+      />
+
+      <ChuyenTiepNhanModal
+        isOpen={showChuyenModal}
+        onClose={() => setShowChuyenModal(false)}
+        onSubmit={handleChuyenTiepNhanSubmit}
+        donInfo={{
+          code: luotNhan?.id ? (luotNhan.id.startsWith('LN-') ? `Đ-${luotNhan.id.replace('LN-', '')}` : luotNhan.id) : 'Đ-2026-00125',
+          loaiDon: extractData.loaiNoiDung || 'Đơn tố giác về tội phạm',
+          nguoiNop: extractData.nguoiGui || luotNhan?.nguoiNop || 'Nguyễn Văn A',
+          ngayNhan: luotNhan?.ngayNhan || '16/09/2026 09:15',
+          donViHienTai: 'Bộ phận Tiếp nhận đơn (Một cửa)',
+          noiDungTomTat: extractData.noiDungTomTat || luotNhan?.noiDung,
         }}
       />
     </div>

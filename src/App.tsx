@@ -7,11 +7,14 @@ import DonTiepNhan from "./screens/DonTiepNhan";
 import NhanDonList from "./screens/NhanDonList";
 import NhanDonThem from "./screens/NhanDonThem";
 import TroChuyenScreen from "./screens/TroChuyenScreen";
+import TiepNhanVaXuLyScreen from "./screens/TiepNhanVaXuLyScreen";
 import { LN19 } from "./constants";
 import { LuotNhan, Screen, DonDetail } from "./types";
 import QuyTrinhXuLyDon from "./screens/QuyTrinhXuLyDon";
 import { ActiveWorkflowState } from "./types/workflow";
 import { WORKFLOW_DEFINITIONS, matchWorkflowByLoaiDon } from "./constants/workflows";
+import { INITIAL_TIEP_NHAN_ITEMS, TiepNhanDonItem } from "./constants/departments";
+import { PhanCongSubmitData } from "./components/modals/PhanCongModal";
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>("cong-viec");
@@ -19,6 +22,7 @@ export default function App() {
   const [selectedDon, setSelectedDon] = useState<DonDetail | null>(null);
   const [acceptedDons, setAcceptedDons] = useState<DonDetail[]>([]);
   const [extraCard, setExtraCard] = useState<LuotNhan | null>(null);
+  const [tiepNhanItems, setTiepNhanItems] = useState<TiepNhanDonItem[]>(INITIAL_TIEP_NHAN_ITEMS);
 
   // Trạng thái Quy trình xử lý đơn đang chạy
   const [activeWorkflow, setActiveWorkflow] = useState<ActiveWorkflowState>(() => {
@@ -82,6 +86,74 @@ export default function App() {
     if (wfState) {
       setActiveWorkflow(wfState);
       setScreen("quy-trinh-xu-ly");
+    }
+  }, []);
+
+  // Xử lý khi cán bộ nhấn "Chuyển tiếp nhận và xử lý" từ Bàn phân tích
+  const handleChuyenTiepNhan = useCallback((item: TiepNhanDonItem, isDirect: boolean, assignedOfficerName?: string) => {
+    setTiepNhanItems((prev) => [item, ...prev.filter((d) => d.id !== item.id && d.code !== item.code)]);
+
+    // BR-01 & BR-02: Nếu chuyển về hàng chờ đơn vị, KHÔNG sinh task trong Công việc của tôi của cán bộ chuyên môn!
+    // BR-04 & BR-05: Nếu giao trực tiếp cho Cán bộ hiện tại (Nguyễn Minh Anh), sinh task trong Công việc của tôi
+    if (isDirect && (assignedOfficerName?.includes('Minh Anh') || !assignedOfficerName)) {
+      setAcceptedDons((prev) => [
+        {
+          id: item.code,
+          code: item.code,
+          title: item.noiDungTomTat,
+          luotNhanId: item.luotNhanId,
+          nguoiNop: item.nguoiNop,
+          ngayNhan: item.ngayNhan,
+          loaiDon: item.loaiDon,
+          type: 'ĐƠN TIẾP NHẬN',
+          statusBadge: 'Đang xử lý',
+        },
+        ...prev.filter((d) => d.code !== item.code),
+      ]);
+    }
+  }, []);
+
+  // Xử lý sau khi Trưởng phòng hoặc người có quyền phân công cán bộ (BR-03, BR-04, BR-07)
+  const handlePhanCongDone = useCallback((data: PhanCongSubmitData) => {
+    setTiepNhanItems((prev) =>
+      prev.map((it) => {
+        if (data.itemIds.includes(it.id)) {
+          return {
+            ...it,
+            trangThai: 'dang_xu_ly',
+            canBoXuLy: data.canBo.name,
+            canBoXuLyId: data.canBo.id,
+            chucVuCanBo: data.canBo.role,
+            ngayPhanCong: '16/09/2026',
+            nguoiPhanCong: 'Trần Trọng Giáp (Trưởng phòng)',
+            ghiChuPhanCong: data.ghiChu,
+          };
+        }
+        return it;
+      })
+    );
+
+    // BR-04 & BR-07: Nếu cán bộ được giao là user hiện tại (Nguyễn Minh Anh) hoặc tự phân công cho mình
+    if (data.canBo.name.includes('Minh Anh') || data.canBo.isCurrentUser) {
+      setTiepNhanItems((currItems) => {
+        const assignedItems = currItems.filter((it) => data.itemIds.includes(it.id));
+        const newDons: DonDetail[] = assignedItems.map((item) => ({
+          id: item.code,
+          code: item.code,
+          title: item.noiDungTomTat,
+          luotNhanId: item.luotNhanId,
+          nguoiNop: item.nguoiNop,
+          ngayNhan: item.ngayNhan,
+          loaiDon: item.loaiDon,
+          type: 'ĐƠN TIẾP NHẬN',
+          statusBadge: 'Đang xử lý',
+        }));
+        setAcceptedDons((prev) => [
+          ...newDons,
+          ...prev.filter((d) => !data.itemIds.some((id) => id.includes(d.code))),
+        ]);
+        return currItems;
+      });
     }
   }, []);
 
@@ -200,6 +272,15 @@ export default function App() {
               luotNhan={selected}
               onNav={setScreen}
               onAcceptAndProcess={handleAcceptFromBanPhanTich}
+              onChuyenTiepNhan={handleChuyenTiepNhan}
+            />
+          )}
+          {screen === "tiep-nhan-xu-ly" && (
+            <TiepNhanVaXuLyScreen
+              onNav={setScreen}
+              items={tiepNhanItems}
+              onPhanCongDone={handlePhanCongDone}
+              onSelectDon={handleSelectDon}
             />
           )}
           {screen === "don-tiep-nhan" && (

@@ -3,6 +3,9 @@ import { LuotNhan, Screen, DonDetail } from "../types";
 import { WorkItem, WorkItemColumn, AIProcessingStatus } from '../types/work';
 import { INITIAL_WORK_ITEMS } from '../constants/workItems';
 import { LN19, ALL_LUOT_NHAN } from '../constants';
+import ChuyenTiepNhanModal, { ChuyenTiepNhanSubmitData } from '../components/modals/ChuyenTiepNhanModal';
+import PhanCongModal, { PhanCongSubmitData } from '../components/modals/PhanCongModal';
+import { TiepNhanDonItem } from '../constants/departments';
 
 interface CongViecCuaToiProps {
   onSelect: (ln: LuotNhan) => void;
@@ -43,12 +46,182 @@ export default function CongViecCuaToi({
   const [showDropdown, setShowDropdown] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
+  // States cho Modal Tiếp nhận xử lý & Phân công xử lý từ Task Card
+  const [selectedItemForAction, setSelectedItemForAction] = useState<WorkItem | null>(null);
+  const [isChuyenModalOpen, setIsChuyenModalOpen] = useState(false);
+  const [isPhanCongModalOpen, setIsPhanCongModalOpen] = useState(false);
+
   const showToast = (msg: string) => {
     setToastMsg(msg);
     setTimeout(() => {
       setToastMsg((current) => (current === msg ? null : current));
     }, 3500);
   };
+
+  // 1. Nhấn Tiếp nhận xử lý: chuyển hồ sơ về phần "Tiếp nhận & xử lý" của cá nhân (Cột 2)
+  const handleTiepNhanXuLyCaNhan = (item: WorkItem) => {
+    setItems((prev) => {
+      const exists = prev.some((it) => it.id === item.id);
+      const updatedItem: WorkItem = {
+        ...item,
+        column: 'processing',
+        holder: {
+          role: 'Đang xử lý',
+          name: 'Tôi (Nguyễn Minh Anh)',
+          department: 'Phòng Tiếp công dân & Xử lý đơn',
+        },
+        nextAction: item.progress?.stepName ? `${item.progress.stepName}` : 'Xử lý hồ sơ chuyên môn',
+        cta: { label: 'Xử lý', actionType: 'continue', variant: 'primary' },
+      };
+      if (exists) {
+        return prev.map((it) => (it.id === item.id ? updatedItem : it));
+      }
+      return [updatedItem, ...prev];
+    });
+    showToast(`✓ Đã tiếp nhận hồ sơ ${item.code} vào phần "Tiếp nhận & xử lý" của cá nhân!`);
+  };
+
+  // 2. Nhấn Bàn giao: mở Modal Chuyển tiếp nhận và xử lý để chuyển sang "Đã bàn giao / theo dõi" (Cột 4)
+  const handleOpenBanGiao = (item: WorkItem) => {
+    setSelectedItemForAction(item);
+    setIsChuyenModalOpen(true);
+  };
+
+  // 3. Nhấn Phân công xử lý: mở Modal phân công cán bộ
+  const handleOpenPhanCong = (item: WorkItem) => {
+    setSelectedItemForAction(item);
+    setIsPhanCongModalOpen(true);
+  };
+
+  // Xử lý submit Modal Chuyển tiếp nhận (Bàn giao sang đơn vị tiếp nhận -> Đã bàn giao / theo dõi)
+  const handleChuyenTiepNhanSubmit = (data: ChuyenTiepNhanSubmitData) => {
+    if (selectedItemForAction) {
+      const isMe = data.canBoNhan?.isCurrentUser || data.canBoNhan?.name.includes('Tôi');
+
+      setItems((prev) => {
+        const exists = prev.some((it) => it.id === selectedItemForAction.id);
+        const updatedItem: WorkItem = isMe
+          ? {
+            ...selectedItemForAction,
+            column: 'processing',
+            nguoiGiao: 'Trần Trọng Giáp (Trưởng phòng)',
+            ngayDuocGiao: '18/09/2026',
+            holder: {
+              role: 'Đang xử lý',
+              name: 'Tôi (Nguyễn Minh Anh)',
+              department: data.donViTiepNhanName,
+            },
+            nextAction: `Tôi (Nguyễn Minh Anh) đang trực tiếp giải quyết`,
+            cta: { label: 'Xử lý', actionType: 'continue', variant: 'primary' },
+          }
+          : {
+            ...selectedItemForAction,
+            column: 'handed_over',
+            holder: {
+              role: 'Đã bàn giao cho',
+              name: data.hinhThuc === 'truc_tiep' && data.canBoNhan
+                ? `${data.canBoNhan.name} (${data.donViTiepNhanName})`
+                : data.donViTiepNhanName,
+              department: data.donViTiepNhanName,
+            },
+            nextAction: data.hinhThuc === 'truc_tiep' && data.canBoNhan
+              ? `Cán bộ ${data.canBoNhan.name} đang thụ lý giải quyết`
+              : `Chờ Lãnh đạo ${data.donViTiepNhanName} phân công cán bộ xử lý`,
+            cta: { label: 'Xem tiến độ', actionType: 'view_progress', variant: 'neutral' },
+          };
+
+        if (exists) {
+          return prev.map((it) => (it.id === selectedItemForAction.id ? updatedItem : it));
+        }
+        return [updatedItem, ...prev];
+      });
+
+      if (isMe) {
+        showToast(`✓ Đã tiếp nhận hồ sơ ${selectedItemForAction.code} vào phần "Tiếp nhận & xử lý" của cá nhân!`);
+      } else {
+        showToast(`✓ Đã bàn giao hồ sơ ${selectedItemForAction.code} sang ${data.donViTiepNhanName}, chuyển đến mục "Đã bàn giao / Theo dõi"!`);
+      }
+    }
+    setIsChuyenModalOpen(false);
+    setSelectedItemForAction(null);
+  };
+
+  const handlePhanCongSubmit = (data: PhanCongSubmitData) => {
+    if (selectedItemForAction) {
+      const isMe = data.canBo?.isCurrentUser || data.canBo?.name.includes('Tôi');
+      setItems((prev) => {
+        const exists = prev.some((it) => it.id === selectedItemForAction.id);
+        const updatedItem: WorkItem = {
+          ...selectedItemForAction,
+          column: isMe ? 'processing' : 'waiting',
+          nguoiGiao: 'Trần Trọng Giáp (Trưởng phòng)',
+          ngayDuocGiao: '18/09/2026',
+          holder: {
+            role: isMe ? 'Đang xử lý' : 'Đang chờ',
+            name: data.canBo.name,
+            department: data.canBo.departmentName || 'Phòng Tiếp công dân & Xử lý đơn',
+          },
+          nextAction: isMe
+            ? `Tôi (${data.canBo.name}) đang trực tiếp giải quyết`
+            : `Cán bộ ${data.canBo.name} (${data.canBo.role}) giải quyết theo thẩm quyền`,
+          cta: isMe
+            ? { label: 'Xử lý', actionType: 'continue', variant: 'primary' }
+            : { label: 'Xem tiến độ', actionType: 'view_progress', variant: 'outline' },
+        };
+
+        if (exists) {
+          return prev.map((it) => (it.id === selectedItemForAction.id ? updatedItem : it));
+        }
+        return [updatedItem, ...prev];
+      });
+      showToast(`✓ Đã phân công xử lý hồ sơ ${selectedItemForAction.code} cho ${data.canBo.name} (${data.canBo.role})`);
+    }
+    setIsPhanCongModalOpen(false);
+    setSelectedItemForAction(null);
+  };
+
+  const itemsToAssign: TiepNhanDonItem[] = useMemo(() => {
+    if (!selectedItemForAction) return [];
+    return [
+      {
+        id: selectedItemForAction.id,
+        code: selectedItemForAction.code,
+        luotNhanId: selectedItemForAction.luotNhanId || selectedItemForAction.code,
+        nguoiNop: selectedItemForAction.sender,
+        loaiDon: selectedItemForAction.loaiDon || 'Hồ sơ / Đơn',
+        ngayNhan: selectedItemForAction.timeReceived || '18/09/2026',
+        ngayChuyenDen: '18/09/2026',
+        donViHienTai: 'Phòng Tiếp công dân & Xử lý đơn',
+        donViTiepNhanId: 'tiep-dan',
+        donViTiepNhan: 'Phòng Tiếp công dân & Xử lý đơn',
+        hanXuLy: selectedItemForAction.deadlineText || 'Còn 2 ngày',
+        hanXuLyFull: selectedItemForAction.deadlineFull || 'Còn 2 ngày',
+        trangThai: 'cho_phan_cong',
+        noiDungTomTat: selectedItemForAction.title,
+      },
+    ];
+  }, [selectedItemForAction]);
+
+  const donInfoForChuyen = useMemo(() => {
+    if (!selectedItemForAction) {
+      return {
+        code: '',
+        loaiDon: '',
+        nguoiNop: '',
+        ngayNhan: '',
+        donViHienTai: '',
+        noiDungTomTat: '',
+      };
+    }
+    return {
+      code: selectedItemForAction.code,
+      loaiDon: selectedItemForAction.loaiDon || 'Hồ sơ / Đơn',
+      nguoiNop: selectedItemForAction.sender,
+      ngayNhan: selectedItemForAction.timeReceived || '18/09/2026',
+      donViHienTai: 'Phòng Tiếp công dân & Xử lý đơn',
+      noiDungTomTat: selectedItemForAction.title,
+    };
+  }, [selectedItemForAction]);
 
   // Xử lý nút Thử lại AI (Retry AI analysis)
   const handleRetryAI = (e: React.MouseEvent, item: WorkItem) => {
@@ -102,35 +275,37 @@ export default function CongViecCuaToi({
           code: ad.code,
           title: ad.title,
           sender: ad.nguoiNop,
-          source: 'Cổng DVC Quốc gia',
+          source: 'Tiếp nhận & phân công',
           timeReceived: ad.ngayNhan || 'Vừa xong',
           priority: 'normal',
           deadlineType: 'today',
           deadlineText: 'Hôm nay - 17:00',
           deadlineFull: 'Hôm nay - 17:00',
           column: 'processing',
-          nextAction: 'Phân công cán bộ thụ lý & xác minh thông tin đơn',
+          nextAction: 'Thực hiện thẩm tra & giải quyết đơn theo thẩm quyền',
           holder: {
             role: 'Đang xử lý',
             name: 'Tôi (Nguyễn Minh Anh)',
-            department: 'Tổ Tiếp nhận & Xử lý',
+            department: 'Phòng Tiếp công dân & Xử lý đơn',
           },
           progress: {
             currentStep: 2,
             totalSteps: 5,
-            stepName: 'Phân loại thụ lý',
+            stepName: 'Thụ lý giải quyết',
             steps: ['Tiếp nhận', 'Phân loại', 'Thẩm tra', 'Trình ký', 'Trả kết quả'],
           },
           docCount: 5,
           cta: {
-            label: 'Tiếp tục xử lý',
+            label: 'Mở xử lý',
             actionType: 'continue',
             variant: 'primary',
           },
-          category: 'Đơn mới tiếp nhận',
-          tags: ['Mới tiếp nhận', 'Đã tiếp nhận'],
-          loaiDon: ad.loaiDon,
+          category: 'Tiếp nhận & xử lý',
+          tags: ['Đã phân công', 'Đang xử lý'],
+          loaiDon: ad.loaiDon || 'Đơn tiếp nhận hành chính',
           luotNhanId: ad.luotNhanId,
+          nguoiGiao: 'Trần Trọng Giáp (Trưởng phòng)',
+          ngayDuocGiao: '16/09/2026',
           aiStatus: 'completed',
           taskReadiness: 'action_required',
         });
@@ -431,15 +606,6 @@ export default function CongViecCuaToi({
 
           {/* Tùy chọn tạo tiếp nhận */}
           <div className="relative inline-block text-left">
-            <button
-              type="button"
-              onClick={() => setShowDropdown(!showDropdown)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#C62828] hover:bg-[#B71C1C] active:scale-95 text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[16px]">add</span>
-              <span>Tạo việc / Tiếp nhận</span>
-              <span className="material-symbols-outlined text-[14px]">expand_more</span>
-            </button>
 
             {showDropdown && (
               <div
@@ -521,15 +687,15 @@ export default function CongViecCuaToi({
         >
           <div className="flex items-center justify-between text-[11.5px] font-bold">
             <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
-              Cần làm hôm nay
+              <span className={`w-2 h-2 rounded-full ${quickFilter === 'today' ? 'bg-white' : 'bg-rose-500'} animate-pulse`}></span>
+              <span>Cần làm hôm nay</span>
             </span>
-            <span className="material-symbols-outlined text-[16px] text-rose-600">alarm</span>
+            <span className={`material-symbols-outlined text-[16px] ${quickFilter === 'today' ? 'text-white' : 'text-rose-600'}`}>alarm</span>
           </div>
-          <div className="text-2xl font-bold font-label-technical mt-2 text-rose-700 tracking-tight">
+          <div className={`text-2xl font-bold font-label-technical mt-2 tracking-tight ${quickFilter === 'today' ? 'text-white' : 'text-rose-700'}`}>
             {String(kpiStats.today).padStart(2, '0')}
           </div>
-          <span className="text-[10px] text-rose-700 font-medium mt-1">
+          <span className={`text-[10px] font-medium mt-1 ${quickFilter === 'today' ? 'text-white/90' : 'text-rose-700'}`}>
             Gồm {kpiStats.overdue} quá hạn &amp; {kpiStats.dueTodayOnly} trong ngày
           </span>
         </button>
@@ -539,21 +705,21 @@ export default function CongViecCuaToi({
           type="button"
           onClick={() => setQuickFilter(quickFilter === 'upcoming' ? 'all' : 'upcoming')}
           className={`p-3 rounded-2xl border text-left transition-all cursor-pointer shadow-2xs flex flex-col justify-between ${quickFilter === 'upcoming'
-            ? 'bg-yellow-600 text-white border-yellow-600 ring-2 ring-yellow-600/30 shadow-sm'
-            : 'bg-yellow-50/70 border-yellow-200 hover:border-yellow-300 text-yellow-950'
+            ? 'bg-amber-600 text-white border-amber-600 ring-2 ring-amber-600/30 shadow-sm'
+            : 'bg-amber-50/70 border-amber-200 hover:border-amber-300 text-amber-950'
             }`}
         >
           <div className="flex items-center justify-between text-[11.5px] font-bold">
             <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
-              Sắp quá hạn
+              <span className={`w-2 h-2 rounded-full ${quickFilter === 'upcoming' ? 'bg-white' : 'bg-amber-500'}`}></span>
+              <span>Sắp quá hạn</span>
             </span>
-            <span className="material-symbols-outlined text-[16px] text-yellow-600">schedule</span>
+            <span className={`material-symbols-outlined text-[16px] ${quickFilter === 'upcoming' ? 'text-white' : 'text-amber-600'}`}>schedule</span>
           </div>
-          <div className="text-2xl font-bold font-label-technical mt-2 text-yellow-700 tracking-tight">
+          <div className={`text-2xl font-bold font-label-technical mt-2 tracking-tight ${quickFilter === 'upcoming' ? 'text-white' : 'text-amber-700'}`}>
             {String(kpiStats.upcoming).padStart(2, '0')}
           </div>
-          <span className="text-[10px] text-yellow-700 font-medium mt-1">Hạn trong 24h – 48h tới</span>
+          <span className={`text-[10px] font-medium mt-1 ${quickFilter === 'upcoming' ? 'text-white/90' : 'text-amber-700'}`}>Hạn trong 24h – 48h tới</span>
         </button>
 
         {/* KPI 5: 👤 Cần tôi xử lý */}
@@ -567,15 +733,15 @@ export default function CongViecCuaToi({
         >
           <div className="flex items-center justify-between text-[11.5px] font-bold">
             <span className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-[15px] text-[#004ac6]">person</span>
-              Cần tôi xử lý
+              <span className={`material-symbols-outlined text-[15px] ${quickFilter === 'action_required' ? 'text-white' : 'text-[#004ac6]'}`}>person</span>
+              <span>Cần tôi xử lý</span>
             </span>
-            <span className="material-symbols-outlined text-[16px] text-blue-600">bolt</span>
+            <span className={`material-symbols-outlined text-[16px] ${quickFilter === 'action_required' ? 'text-white' : 'text-blue-600'}`}>bolt</span>
           </div>
-          <div className="text-2xl font-bold font-label-technical mt-2 text-[#004ac6] tracking-tight">
+          <div className={`text-2xl font-bold font-label-technical mt-2 tracking-tight ${quickFilter === 'action_required' ? 'text-white' : 'text-[#004ac6]'}`}>
             {String(kpiStats.actionRequired).padStart(2, '0')}
           </div>
-          <span className="text-[10px] text-blue-600 font-medium mt-1">Hồ sơ chờ bạn trực tiếp làm</span>
+          <span className={`text-[10px] font-medium mt-1 ${quickFilter === 'action_required' ? 'text-white/90' : 'text-blue-600'}`}>Hồ sơ chờ bạn trực tiếp làm</span>
         </button>
 
         {/* KPI 6: 🔵 Đang chờ người khác */}
@@ -589,15 +755,15 @@ export default function CongViecCuaToi({
         >
           <div className="flex items-center justify-between text-[11.5px] font-bold">
             <span className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-[15px] text-sky-600">hourglass_top</span>
-              Đang chờ người khác
+              <span className={`material-symbols-outlined text-[15px] ${quickFilter === 'waiting_sign' ? 'text-white' : 'text-sky-600'}`}>hourglass_top</span>
+              <span>Đang chờ người khác</span>
             </span>
-            <span className="material-symbols-outlined text-[16px] text-sky-600">sync_alt</span>
+            <span className={`material-symbols-outlined text-[16px] ${quickFilter === 'waiting_sign' ? 'text-white' : 'text-sky-600'}`}>sync_alt</span>
           </div>
-          <div className="text-2xl font-bold font-label-technical mt-2 text-sky-800 tracking-tight">
+          <div className={`text-2xl font-bold font-label-technical mt-2 tracking-tight ${quickFilter === 'waiting_sign' ? 'text-white' : 'text-sky-800'}`}>
             {String(kpiStats.waiting).padStart(2, '0')}
           </div>
-          <span className="text-[10px] text-sky-700 font-medium mt-1">Chờ ký duyệt, phối hợp</span>
+          <span className={`text-[10px] font-medium mt-1 ${quickFilter === 'waiting_sign' ? 'text-white/90' : 'text-sky-700'}`}>Chờ ký duyệt, phối hợp</span>
         </button>
       </div>
 
@@ -690,60 +856,36 @@ export default function CongViecCuaToi({
             Cần tôi xử lý ({kpiStats.actionRequired})
           </button>
 
-          {/* Dải lọc AI Status theo đúng yêu cầu */}
+          {/* Bộ lọc nhanh AI đã phân tích */}
           <span className="text-slate-300">|</span>
 
           <button
             type="button"
             onClick={() => setQuickFilter(quickFilter === 'ai_completed' ? 'all' : 'ai_completed')}
-            className={`px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer flex items-center gap-1 ${quickFilter === 'ai_completed'
+            className={`px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${quickFilter === 'ai_completed'
               ? 'bg-emerald-600 text-white shadow-2xs'
               : 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100'
               }`}
-            title="AI đã phân tích xong, sẵn sàng xử lý bước tiếp theo"
           >
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-            🟢 AI đã xong ({kpiStats.aiCompleted})
+            <span>AI đã phân tích ({kpiStats.aiCompleted})</span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => setQuickFilter(quickFilter === 'ai_processing' ? 'all' : 'ai_processing')}
-            className={`px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer flex items-center gap-1 ${quickFilter === 'ai_processing'
-              ? 'bg-amber-600 text-white shadow-2xs'
-              : 'bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100'
-              }`}
-            title="AI đang bóc tách/phân tích dữ liệu, chờ hệ thống"
-          >
-            <span className="material-symbols-outlined text-[12px] animate-spin">sync</span>
-            🟡 AI đang phân tích ({kpiStats.aiProcessing})
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setQuickFilter(quickFilter === 'ai_needs_review' ? 'all' : 'ai_needs_review')}
-            className={`px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer flex items-center gap-1 ${quickFilter === 'ai_needs_review'
-              ? 'bg-orange-600 text-white shadow-2xs'
-              : 'bg-orange-50 text-orange-900 border border-orange-200 hover:bg-orange-100'
-              }`}
-            title="AI có kết quả nhưng confidence thấp hoặc cần user xác nhận"
-          >
-            <span className="material-symbols-outlined text-[12px]">warning</span>
-            🟠 AI cần kiểm tra ({kpiStats.aiNeedsReview})
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setQuickFilter(quickFilter === 'ai_failed' ? 'all' : 'ai_failed')}
-            className={`px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer flex items-center gap-1 ${quickFilter === 'ai_failed'
-              ? 'bg-rose-700 text-white shadow-2xs'
-              : 'bg-rose-50 text-rose-900 border border-rose-200 hover:bg-rose-100'
-              }`}
-            title="AI phân tích thất bại, cần xử lý thủ công hoặc thử lại"
-          >
-            <span className="material-symbols-outlined text-[12px]">error</span>
-            🔴 AI lỗi ({kpiStats.aiFailed})
-          </button>
+          {/* Bộ lọc kiểm tra nghiệp vụ nếu có hồ sơ cần rà soát */}
+          {(kpiStats.aiNeedsReview > 0 || kpiStats.aiFailed > 0) && (
+            <button
+              type="button"
+              onClick={() => setQuickFilter(quickFilter === 'ai_needs_review' ? 'all' : 'ai_needs_review')}
+              className={`px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${quickFilter === 'ai_needs_review'
+                ? 'bg-amber-600 text-white shadow-2xs'
+                : 'bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100'
+                }`}
+              title="Hồ sơ cần cán bộ kiểm tra, rà soát lại thông tin"
+            >
+              <span className="material-symbols-outlined text-[13px]">warning</span>
+              <span>AI cần kiểm tra ({kpiStats.aiNeedsReview + kpiStats.aiFailed})</span>
+            </button>
+          )}
 
           <span className="text-slate-300">|</span>
 
@@ -772,13 +914,8 @@ export default function CongViecCuaToi({
           </button>
         </div>
       </div>
-
-      {/* ========================================================================= */}
-      {/* 4. CHẾ ĐỘ HIỂN THỊ KANBAN (4 CỘT HÀNH ĐỘNG) HOẶC DANH SÁCH                */}
-      {/* ========================================================================= */}
       {viewMode === 'kanban' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3.5 items-start">
-          {/* ──────────────── CỘT 1: 🔴 CẦN TÔI XỬ LÝ ──────────────── */}
           <div className="bg-rose-50/40 rounded-2xl p-3 border border-rose-200/80 flex flex-col gap-2.5 shadow-2xs">
             <div className="flex items-center justify-between px-1">
               <div className="flex items-center gap-2">
@@ -791,9 +928,6 @@ export default function CongViecCuaToi({
                 {String(columnItems.action_required.length).padStart(2, '0')}
               </span>
             </div>
-            <p className="text-[11px] text-rose-800/80 px-1 -mt-1 font-medium">
-              Ưu tiên cao nhất • Cán bộ cần thực hiện trực tiếp
-            </p>
 
             <div className="flex flex-col gap-2.5">
               {columnItems.action_required.length === 0 ? (
@@ -809,28 +943,28 @@ export default function CongViecCuaToi({
                     item={item}
                     onClick={() => handleItemClick(item)}
                     onRetryAI={(e) => handleRetryAI(e, item)}
+                    onTiepNhanXuLy={handleTiepNhanXuLyCaNhan}
+                    onBanGiao={handleOpenBanGiao}
+                    onPhanCong={handleOpenPhanCong}
                   />
                 ))
               )}
             </div>
           </div>
 
-          {/* ──────────────── CỘT 2: 🟡 ĐANG XỬ LÝ ──────────────── */}
           <div className="bg-amber-50/40 rounded-2xl p-3 border border-amber-200/80 flex flex-col gap-2.5 shadow-2xs">
             <div className="flex items-center justify-between px-1">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
                 <h2 className="text-[13px] font-bold text-amber-950 uppercase tracking-tight font-headline-md">
-                  ĐANG XỬ LÝ
+                  TIẾP NHẬN &amp; XỬ LÝ
                 </h2>
               </div>
               <span className="px-2 py-0.5 rounded-full bg-amber-600 text-white font-bold text-[11px] font-label-technical">
                 {String(columnItems.processing.length).padStart(2, '0')}
               </span>
             </div>
-            <p className="text-[11px] text-amber-800/80 px-1 -mt-1 font-medium">
-              Đã tiếp nhận • Đang thực hiện các bước thẩm tra
-            </p>
+
 
             <div className="flex flex-col gap-2.5">
               {columnItems.processing.length === 0 ? (
@@ -846,6 +980,9 @@ export default function CongViecCuaToi({
                     item={item}
                     onClick={() => handleItemClick(item)}
                     onRetryAI={(e) => handleRetryAI(e, item)}
+                    onTiepNhanXuLy={handleTiepNhanXuLyCaNhan}
+                    onBanGiao={handleOpenBanGiao}
+                    onPhanCong={handleOpenPhanCong}
                   />
                 ))
               )}
@@ -865,10 +1002,6 @@ export default function CongViecCuaToi({
                 {String(columnItems.waiting.length).padStart(2, '0')}
               </span>
             </div>
-            <p className="text-[11px] text-sky-800/80 px-1 -mt-1 font-medium">
-              Chờ người khác • Chờ lãnh đạo duyệt, chờ phối hợp
-            </p>
-
             <div className="flex flex-col gap-2.5">
               {columnItems.waiting.length === 0 ? (
                 <div className="p-6 bg-white/80 rounded-xl border border-dashed border-sky-200 text-center flex flex-col items-center justify-center">
@@ -883,6 +1016,9 @@ export default function CongViecCuaToi({
                     item={item}
                     onClick={() => handleItemClick(item)}
                     onRetryAI={(e) => handleRetryAI(e, item)}
+                    onTiepNhanXuLy={handleTiepNhanXuLyCaNhan}
+                    onBanGiao={handleOpenBanGiao}
+                    onPhanCong={handleOpenPhanCong}
                   />
                 ))
               )}
@@ -902,9 +1038,6 @@ export default function CongViecCuaToi({
                 {String(columnItems.handed_over.length).padStart(2, '0')}
               </span>
             </div>
-            <p className="text-[11px] text-emerald-800/80 px-1 -mt-1 font-medium">
-              Đã chuyển đơn vị khác • Theo dõi tiến độ giải quyết
-            </p>
 
             <div className="flex flex-col gap-2.5">
               {columnItems.handed_over.length === 0 ? (
@@ -920,6 +1053,9 @@ export default function CongViecCuaToi({
                     item={item}
                     onClick={() => handleItemClick(item)}
                     onRetryAI={(e) => handleRetryAI(e, item)}
+                    onTiepNhanXuLy={handleTiepNhanXuLyCaNhan}
+                    onBanGiao={handleOpenBanGiao}
+                    onPhanCong={handleOpenPhanCong}
                   />
                 ))
               )}
@@ -1052,318 +1188,462 @@ export default function CongViecCuaToi({
           </div>
         </div>
       )}
+
+      {/* ========================================================================= */}
+      {/* 6. MODAL TIẾP NHẬN XỬ LÝ & PHÂN CÔNG XỬ LÝ TỪ TASK CARD                  */}
+      {/* ========================================================================= */}
+      {selectedItemForAction && (
+        <ChuyenTiepNhanModal
+          isOpen={isChuyenModalOpen}
+          onClose={() => {
+            setIsChuyenModalOpen(false);
+            setSelectedItemForAction(null);
+          }}
+          onSubmit={handleChuyenTiepNhanSubmit}
+          donInfo={donInfoForChuyen}
+        />
+      )}
+
+      {selectedItemForAction && (
+        <PhanCongModal
+          isOpen={isPhanCongModalOpen}
+          onClose={() => {
+            setIsPhanCongModalOpen(false);
+            setSelectedItemForAction(null);
+          }}
+          onSubmit={handlePhanCongSubmit}
+          itemsToAssign={itemsToAssign}
+          currentDepartmentId="tiep-dan"
+          departmentName="Phòng Tiếp công dân & Xử lý đơn"
+        />
+      )}
     </div>
   );
 }
 
 // =========================================================================
-// THÀNH PHẦN CON: TASK CARD THIẾT KẾ MỚI TẬP TRUNG HÀNH ĐỘNG & TRẠNG THÁI AI
+// THÀNH PHẦN CON: CÁC HÀM TIỆN ÍCH CHO TASK CARD REDESIGN (QUY TẮC 3-5 GIÂY)
+// =========================================================================
+
+function getTaskTypeBadge(item: WorkItem): string {
+  const code = item.code?.toUpperCase() || '';
+  if (code.startsWith('VV')) return 'VỤ VIỆC';
+  if (code.startsWith('LN')) return 'LƯỢT NHẬN';
+  if (code.startsWith('KN')) return 'KHIẾU NẠI';
+  if (code.startsWith('TG')) return 'TỐ GIÁC';
+  if (item.loaiDon?.toLowerCase().includes('vụ việc')) return 'VỤ VIỆC';
+  if (item.loaiDon?.toLowerCase().includes('lượt nhận')) return 'LƯỢT NHẬN';
+  return 'HỒ SƠ / ĐƠN';
+}
+
+function getViecCanLam(item: WorkItem): string {
+  // 1. Khớp các mẫu card đặc thù theo chuẩn thiết kế
+  if (item.id === 'VV-2025-0430') return 'Thẩm định hiện trạng';
+  if (item.id === 'Đ-2025-0105') return 'Thẩm tra mã ngành';
+  if (item.id === 'VV-2025-0612') return 'Trình lãnh đạo ký';
+
+  // 2. Theo trạng thái AI
+  if (item.aiStatus === 'failed') return 'Xử lý và phân loại thủ công';
+  if (item.aiStatus === 'needs_review') return 'Kiểm tra và xác minh hồ sơ';
+  if (item.aiStatus === 'processing') return 'Chờ AI bóc tách thông tin';
+
+  // 3. Phân theo tiến độ / tên bước
+  if (item.progress?.stepName) {
+    const s = item.progress.stepName.toLowerCase();
+    if (s.includes('trình') || s.includes('ký')) return 'Trình lãnh đạo ký';
+    if (s.includes('thẩm định')) return 'Thẩm định hiện trạng';
+    if (s.includes('thẩm tra')) return 'Thẩm tra mã ngành';
+    if (s.includes('phân loại')) return 'Phân loại đơn';
+    if (s.includes('tiếp nhận')) return 'Tiếp nhận lượt nhận';
+    if (s.includes('chứng thực')) return 'Đối chiếu chứng thực và trả kết quả';
+    if (s.includes('thu thập')) return 'Thu thập và xác minh chứng cứ';
+    if (s.includes('lấy ý kiến') || s.includes('phối hợp')) return 'Theo dõi ý kiến thẩm định phối hợp';
+    if (s.includes('xác minh')) return 'Xác minh thông tin';
+    if (s.includes('bổ sung')) return 'Bổ sung hồ sơ';
+    if (s.includes('nhận kết quả') || s.includes('trả kết quả')) return 'Bàn giao trả kết quả cho công dân';
+  }
+
+  // 4. Trích xuất ngắn gọn từ nextAction nếu có
+  if (item.nextAction) {
+    if (item.nextAction.length <= 35) return item.nextAction;
+    const short = item.nextAction.split(' - ')[0].split(' (')[0];
+    if (short.length <= 35) return short;
+  }
+
+  return item.progress?.stepName || 'Xử lý hồ sơ';
+}
+
+function getDeadlineInfo(item: WorkItem) {
+  if (item.deadlineType === 'overdue') {
+    return {
+      icon: '🔴',
+      text: item.deadlineText?.includes('Quá hạn') ? item.deadlineText : `Quá hạn ${item.deadlineText || '2 giờ'}`,
+      colorClass: 'text-rose-700 font-bold',
+    };
+  }
+  if (item.deadlineType === 'today' || item.deadlineType === 'upcoming') {
+    return {
+      icon: '🟠',
+      text: item.deadlineText || 'Sắp quá hạn',
+      colorClass: 'text-amber-700 font-bold',
+    };
+  }
+  return {
+    icon: '🟢',
+    text: item.deadlineText || 'Còn hạn',
+    colorClass: 'text-emerald-700 font-bold',
+  };
+}
+
+function getPrimaryCta(item: WorkItem): {
+  label: string;
+  icon?: string;
+  className: string;
+} {
+  // 1. Các mẫu theo quy chuẩn yêu cầu
+  if (item.id === 'VV-2025-0430') {
+    return {
+      label: 'Kiểm tra',
+      icon: 'checklist',
+      className: 'bg-amber-600 hover:bg-amber-700 text-white shadow-2xs',
+    };
+  }
+  if (item.id === 'Đ-2025-0105') {
+    return {
+      label: 'Xử lý ngay',
+      icon: 'bolt',
+      className: 'bg-[#C62828] hover:bg-[#b71c1c] text-white shadow-2xs',
+    };
+  }
+  if (item.id === 'VV-2025-0612') {
+    return {
+      label: 'Xem hồ sơ',
+      icon: 'description',
+      className: 'border border-slate-300 hover:bg-slate-50 text-slate-700 bg-white shadow-2xs',
+    };
+  }
+
+  // 2. Theo trạng thái AI
+  if (item.aiStatus === 'needs_review') {
+    return {
+      label: 'Kiểm tra',
+      icon: 'checklist',
+      className: 'bg-amber-600 hover:bg-amber-700 text-white shadow-2xs',
+    };
+  }
+  if (item.aiStatus === 'failed') {
+    return {
+      label: 'Xử lý thủ công',
+      icon: 'edit',
+      className: 'bg-rose-700 hover:bg-rose-800 text-white shadow-2xs',
+    };
+  }
+  if (item.aiStatus === 'processing') {
+    return {
+      label: 'Xem hồ sơ',
+      icon: 'visibility',
+      className: 'border border-slate-300 hover:bg-slate-50 text-slate-700 bg-white shadow-2xs',
+    };
+  }
+
+  // 3. Quá hạn -> Xử lý ngay
+  if (item.deadlineType === 'overdue') {
+    return {
+      label: 'Xử lý ngay',
+      icon: 'bolt',
+      className: 'bg-rose-700 hover:bg-rose-800 text-white shadow-2xs',
+    };
+  }
+
+  // 4. Theo cột Kanban & Loại việc
+  if (item.column === 'action_required') {
+    if (item.code.startsWith('LN')) {
+      return {
+        label: 'Tiếp nhận',
+        icon: 'move_to_inbox',
+        className: 'bg-[#C62828] hover:bg-[#b71c1c] text-white shadow-2xs',
+      };
+    }
+    return {
+      label: 'Xử lý ngay',
+      icon: 'bolt',
+      className: 'bg-[#C62828] hover:bg-[#b71c1c] text-white shadow-2xs',
+    };
+  }
+
+  if (item.column === 'processing') {
+    return {
+      label: 'Xử lý',
+      icon: 'task_alt',
+      className: 'bg-[#C62828] hover:bg-[#b71c1c] text-white shadow-2xs',
+    };
+  }
+
+  if (item.column === 'waiting') {
+    if (item.progress?.stepName?.toLowerCase().includes('ký')) {
+      return {
+        label: 'Xem hồ sơ',
+        icon: 'description',
+        className: 'border border-slate-300 hover:bg-slate-50 text-slate-700 bg-white shadow-2xs',
+      };
+    }
+    return {
+      label: 'Xem tiến độ',
+      icon: 'visibility',
+      className: 'border border-slate-300 hover:bg-slate-50 text-slate-700 bg-white shadow-2xs',
+    };
+  }
+
+  if (item.column === 'handed_over') {
+    return {
+      label: 'Xem tiến độ',
+      icon: 'visibility',
+      className: 'border border-slate-300 hover:bg-slate-50 text-slate-700 bg-white shadow-2xs',
+    };
+  }
+
+  return {
+    label: 'Xử lý',
+    icon: 'task_alt',
+    className: 'bg-[#C62828] hover:bg-[#b71c1c] text-white shadow-2xs',
+  };
+}
+
+// =========================================================================
+// THÀNH PHẦN CON: TASK CARD THIẾT KẾ MỚI TẬP TRUNG HÀNH ĐỘNG (QUY TẮC 3-5s)
 // =========================================================================
 interface TaskCardProps {
   item: WorkItem;
   onClick: () => void;
   onRetryAI: (e: React.MouseEvent) => void;
+  onTiepNhanXuLy?: (item: WorkItem) => void;
+  onBanGiao?: (item: WorkItem) => void;
+  onPhanCong?: (item: WorkItem) => void;
 }
 
-function TaskCard({ item, onClick, onRetryAI }: TaskCardProps) {
+function TaskCard({ item, onClick, onRetryAI, onTiepNhanXuLy, onBanGiao, onPhanCong }: TaskCardProps) {
+  const [showMenu, setShowMenu] = useState(false);
   const isUrgent = item.priority === 'urgent';
   const isOverdue = item.deadlineType === 'overdue';
+  const taskType = getTaskTypeBadge(item);
+  const viecCanLam = getViecCanLam(item);
+  const deadline = getDeadlineInfo(item);
+  const cta = getPrimaryCta(item);
 
   return (
     <div
       onClick={onClick}
-      className={`bg-white rounded-xl p-3.5 shadow-2xs hover:shadow-md transition-all flex flex-col gap-2.5 relative overflow-hidden cursor-pointer group/card border ${isOverdue
+      className={`bg-white rounded-xl p-3 shadow-2xs hover:shadow-md transition-all flex flex-col gap-2 relative cursor-pointer group/card border ${isOverdue
         ? 'border-rose-300 hover:border-rose-500'
         : isUrgent
-          ? 'border-amber-300 hover:border-blue-600'
-          : 'border-slate-200 hover:border-blue-600'
+          ? 'border-amber-200 hover:border-[#C62828]'
+          : 'border-slate-200 hover:border-[#C62828]'
         }`}
     >
-      {/* Hàng 1: Entity Type Tag + Mã công việc + Priority + Giờ nhận */}
-      <div className="flex items-center justify-between gap-1.5 text-xs">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase font-label-technical bg-slate-100 text-slate-700 border border-slate-200">
-            {item.code.startsWith('LN')
-              ? '[ LƯỢT NHẬN ]'
-              : item.code.startsWith('VV')
-                ? '[ VỤ VIỆC ]'
-                : item.code.startsWith('KN')
-                  ? '[ KHIẾU NẠI ]'
-                  : '[ HỒ SƠ / ĐƠN ]'}
+      {/* DÒNG 1: [PRIORITY] [TASK TYPE] [MÃ HỒ SƠ] + (BADGE AI CẦN KIỂM TRA) */}
+      <div className="flex items-center gap-1.5 text-xs flex-wrap">
+        {/* PRIORITY */}
+        {isUrgent ? (
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 tracking-wider uppercase shrink-0">
+            KHẨN
           </span>
-          <span className="font-mono text-[11.5px] font-bold text-slate-800 group-hover/card:text-[#004ac6] transition-colors">
-            {item.code}
+        ) : (
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 tracking-wider uppercase shrink-0">
+            BÌNH THƯỜNG
           </span>
-          {item.priority === 'urgent' && (
-            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[9.5px] font-bold bg-rose-100 text-rose-700 border border-rose-200">
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse"></span>
-              KHẨN CẤP
-            </span>
-          )}
-        </div>
+        )}
 
-        <span className="text-[11px] font-mono text-slate-400 shrink-0">{item.timeReceived}</span>
+        {/* TASK TYPE */}
+        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-blue-50 text-blue-800 border border-blue-200 shrink-0 font-label-technical">
+          {taskType}
+        </span>
+
+        {/* MÃ HỒ SƠ */}
+        <span className="font-mono text-[11px] font-bold text-slate-800 group-hover/card:text-[#C62828] transition-colors truncate">
+          {item.code}
+        </span>
+
+        {/* AI BADGE NHỎ (NẾU CẦN KIỂM TRA) */}
+        {item.aiStatus === 'needs_review' && (
+          <span className="ml-auto inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 shrink-0">
+            <span className="material-symbols-outlined text-[11px] text-amber-600">warning</span>
+            <span>AI cần kiểm tra</span>
+          </span>
+        )}
       </div>
 
-      {/* Hàng 2: Tên công việc / Tên đơn */}
-      <h3 className="text-[13px] font-bold text-slate-900 leading-snug group-hover/card:text-[#004ac6] transition-colors">
+      {/* DÒNG 2: TÊN CÔNG VIỆC / TÊN HỒ SƠ (MAX 2 DÒNG) */}
+      <h3 className="text-[13px] font-bold text-slate-900 leading-snug line-clamp-2 group-hover/card:text-[#C62828] transition-colors">
         {item.title}
       </h3>
 
-      {/* Hàng 3: Người gửi & Nguồn việc */}
-      <div className="text-[11.5px] text-slate-500 flex items-center justify-between gap-2 border-b border-slate-100 pb-2">
-        <span className="truncate">
-          Người gửi: <strong className="text-slate-700 font-semibold">{item.sender}</strong>
-        </span>
-        <span className="text-[10.5px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 shrink-0">
-          {item.source}
-        </span>
+      {/* DÒNG 3: NGƯỜI GỬI */}
+      <div className="text-[11.5px] text-slate-500 truncate">
+        <span>Người gửi: </span>
+        <strong className="text-slate-800 font-semibold">{item.sender}</strong>
       </div>
 
-      {/* Hàng 4: KHỐI TRẠNG THÁI AI (NẾU CÓ) THEO 4 TRƯỜNG HỢP NGHIỆP VỤ */}
-      {item.aiStatus === 'completed' && (
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 w-fit">
-          <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-          <span>🟢 AI đã phân tích</span>
+      {/* DÒNG 4 – QUAN TRỌNG NHẤT: VIỆC CẦN LÀM (BLOCK NỔI BẬT) */}
+      {/* <div className="bg-slate-50/90 rounded-lg p-2 border-l-[3px] border-[#C62828] text-xs">
+        <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
+          VIỆC CẦN LÀM
         </div>
-      )}
-
-      {item.aiStatus === 'processing' && (
-        <div className="flex flex-col gap-1.5 p-2.5 bg-amber-50/90 border border-amber-200 rounded-xl">
-          <div className="flex items-center justify-between text-[11px] font-bold text-amber-950">
-            <span className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[14px] text-amber-600 animate-spin">sync</span>
-              <span>🟡 AI đang phân tích</span>
-            </span>
-            <span className="font-mono font-bold text-amber-800">{item.aiProgress || 75}%</span>
-          </div>
-          <div className="w-full bg-amber-200/70 h-1.5 rounded-full overflow-hidden">
-            <div
-              className="bg-amber-500 h-full rounded-full transition-all duration-500"
-              style={{ width: `${item.aiProgress || 75}%` }}
-            ></div>
-          </div>
-          <span className="text-[11px] text-amber-900 font-medium">“Đang phân tích nội dung...”</span>
+        <div className="font-bold text-slate-900 leading-tight">
+          {viecCanLam}
         </div>
-      )}
+      </div> */}
 
-      {item.aiStatus === 'failed' && (
-        <div className="flex flex-col gap-1.5 p-2.5 bg-rose-50 border border-rose-200 rounded-xl">
-          <div className="flex items-center gap-1.5 text-[11.5px] font-bold text-rose-700">
-            <span className="material-symbols-outlined text-[15px]">error</span>
-            <span>🔴 AI phân tích không thành công</span>
-          </div>
-          {item.aiFailureReason && (
-            <p className="text-[11px] text-rose-900 leading-snug">
-              <strong>Lý do:</strong> {item.aiFailureReason}
-            </p>
-          )}
-        </div>
-      )}
-
-      {item.aiStatus === 'needs_review' && (
-        <div className="flex flex-col gap-1.5 p-2.5 bg-orange-50 border border-orange-200 rounded-xl">
-          <div className="flex items-center gap-1.5 text-[11.5px] font-bold text-orange-900">
-            <span className="material-symbols-outlined text-[15px] text-orange-600">warning</span>
-            <span>🟠 AI cần kiểm tra</span>
-          </div>
-          {item.aiReviewNote && (
-            <p className="text-[11px] text-orange-950 leading-snug">
-              {item.aiReviewNote}
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* Hàng 6: TIẾN ĐỘ WORKFLOW (MINI PROGRESS) */}
+      {/* DÒNG 5: BƯỚC HIỆN TẠI (TEXT NGẮN + MINI PROGRESS BAR MẢNH) */}
       <div className="space-y-1">
-        <div className="flex items-center justify-between text-[10.5px] text-slate-500">
-          <span className="font-semibold text-slate-700">Tiến độ quy trình:</span>
-          <span className="font-mono text-[10px] font-bold text-slate-600">
-            Bước {item.progress.currentStep}/{item.progress.totalSteps} ({item.progress.stepName})
+        <div className="flex items-center justify-between text-[11px] text-slate-600">
+          <span className="text-slate-400">Bước hiện tại:</span>
+          <span className="font-semibold text-slate-800">
+            {item.progress.currentStep}/{item.progress.totalSteps} · {item.progress.stepName}
           </span>
         </div>
-        <div className="flex items-center gap-1 w-full">
-          {item.progress.steps.map((step, idx) => {
-            const stepNum = idx + 1;
-            const isCompleted = stepNum < item.progress.currentStep;
-            const isCurrent = stepNum === item.progress.currentStep;
-
-            return (
-              <div
-                key={idx}
-                className="flex-1 flex flex-col gap-0.5"
-                title={`Bước ${stepNum}: ${step}`}
-              >
-                <div
-                  className={`h-1.5 rounded-full transition-all ${isCompleted
-                    ? 'bg-emerald-500'
-                    : isCurrent
-                      ? 'bg-[#004ac6]'
-                      : 'bg-slate-200'
-                    }`}
-                ></div>
-              </div>
-            );
-          })}
+        <div className="w-full bg-slate-100 h-1 rounded-full overflow-hidden">
+          <div
+            className="bg-[#C62828] h-full rounded-full transition-all"
+            style={{ width: `${Math.min(100, Math.max(10, (item.progress.currentStep / item.progress.totalSteps) * 100))}%` }}
+          />
         </div>
       </div>
 
-      {/* Hàng 7: Hạn xử lý & Số tài liệu */}
-      <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100 text-[11px]">
+      {/* DÒNG 6: DEADLINE & SỐ TÀI LIỆU */}
+      <div className="flex items-center justify-between text-[11.5px] pt-0.5">
         <div className="flex items-center gap-1.5">
-          <span className="text-slate-400">⏱</span>
-          <DeadlineBadge type={item.deadlineType} text={item.deadlineText} />
+          <span className="text-slate-500 text-[11px]">Hạn xử lý:</span>
+          <span className={`inline-flex items-center gap-1 font-bold ${deadline.colorClass}`}>
+            <span>{deadline.text}</span>
+          </span>
         </div>
 
-        <span className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
-          <span className="text-slate-400">📎</span>
-          <span>{item.docCount} tài liệu</span>
-        </span>
+        {item.docCount ? (
+          <span className="text-[10.5px] text-slate-400 font-medium shrink-0">
+            {item.docCount} tài liệu
+          </span>
+        ) : null}
       </div>
 
-      {/* Hàng 8: Người giữ việc & Nút CTA theo ngữ cảnh AI */}
-      <div className="flex items-center justify-between gap-2 pt-0.5">
-        <div className="text-left text-[11px] truncate max-w-[135px]">
-          <span className="text-slate-400">{item.holder.role}: </span>
-          <span className="font-semibold text-slate-700">{item.holder.name}</span>
-        </div>
+      {/* FOOTER: [CTA CHÍNH] [...] */}
+      <div className="flex items-center gap-1.5 pt-1.5 border-t border-slate-100 relative">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onClick();
+          }}
+          className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-1 cursor-pointer ${cta.className}`}
+        >
+          {cta.icon && <span className="material-symbols-outlined text-[14px]">{cta.icon}</span>}
+          <span>{cta.label}</span>
+        </button>
 
-        <div className="flex items-center gap-1.5 shrink-0">
-          {/* TRƯỜNG HỢP 1: AI ĐÃ PHÂN TÍCH -> [ XỬ LÝ NGAY ] [...] */}
-          {item.aiStatus === 'completed' && (
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
+        {/* NÚT [...] MỞ OPTION TIẾP NHẬN XỬ LÝ & PHÂN CÔNG XỬ LÝ */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowMenu((prev) => !prev);
+            }}
+            className={`p-1.5 px-2 rounded-lg border transition-all shrink-0 flex items-center justify-center cursor-pointer ${showMenu
+              ? 'bg-slate-200 border-slate-400 text-slate-800 ring-2 ring-slate-300'
+              : 'border-slate-200 hover:bg-slate-100 text-slate-500 hover:text-slate-800'
+              }`}
+            title="Tùy chọn thao tác"
+          >
+            <span className="material-symbols-outlined text-[16px]">more_horiz</span>
+          </button>
+
+          {showMenu && (
+            <>
+              {/* Lớp nền trong suốt đóng popup khi click ra ngoài */}
+              <div
+                className="fixed inset-0 z-40"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onClick();
+                  setShowMenu(false);
                 }}
-                className="py-1.5 px-3 rounded-lg bg-[#C62828] hover:bg-[#B71C1C] text-white text-xs font-bold transition-all shadow-xs active:scale-95 flex items-center gap-1 cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[14px]">bolt</span>
-                <span>Xử lý ngay</span>
-                <span className="material-symbols-outlined text-[13px] opacity-80">arrow_forward</span>
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onClick();
-                }}
-                className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 text-xs font-bold cursor-pointer transition-colors"
-                title="Tùy chọn khác"
-              >
-                <span className="material-symbols-outlined text-[16px]">more_horiz</span>
-              </button>
-            </div>
-          )}
+              />
 
-          {/* TRƯỜNG HỢP 2: AI ĐANG PHÂN TÍCH -> KHÔNG HIỂN THỊ "XỬ LÝ NGAY", CHỈ HIỂN THỊ "XEM HỒ SƠ" */}
-          {item.aiStatus === 'processing' && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onClick();
-              }}
-              className="py-1.5 px-3.5 rounded-lg border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-semibold transition-all cursor-pointer shadow-2xs flex items-center gap-1"
-            >
-              <span className="material-symbols-outlined text-[14px]">visibility</span>
-              <span>Xem hồ sơ</span>
-            </button>
-          )}
+              {/* Menu dropdown mở lên phía trên */}
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="absolute right-0 bottom-full mb-1.5 w-64 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100 text-left"
+              >
+                <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 mb-1 flex items-center justify-between">
+                  <span>Tùy chọn thao tác</span>
+                  <span className="text-[10px] text-slate-400 font-mono font-normal">#{item.code}</span>
+                </div>
 
-          {/* TRƯỜNG HỢP 3: AI THẤT BẠI -> 2 NÚT: [ XỬ LÝ THỦ CÔNG ] [ THỬ LẠI ] */}
-          {item.aiStatus === 'failed' && (
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onClick();
-                }}
-                className="py-1.5 px-3 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all shadow-xs active:scale-95 flex items-center gap-1 cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[14px]">edit</span>
-                <span>Xử lý thủ công</span>
-              </button>
-              <button
-                type="button"
-                onClick={onRetryAI}
-                className="py-1.5 px-2.5 rounded-lg border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-semibold transition-all cursor-pointer shadow-2xs flex items-center gap-1"
-                title="Yêu cầu AI Agent quét và phân tích lại"
-              >
-                <span className="material-symbols-outlined text-[14px]">refresh</span>
-                <span>Thử lại</span>
-              </button>
-            </div>
-          )}
+                {/* Option 1: Tiếp nhận xử lý (Chuyển về cá nhân) */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMenu(false);
+                    onTiepNhanXuLy?.(item);
+                  }}
+                  className="w-full px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-800 flex items-center gap-2.5 transition-colors cursor-pointer group"
+                >
+                  <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                    <span className="material-symbols-outlined text-[17px]">
+                      task_alt
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-slate-900 group-hover:text-emerald-800 flex items-center justify-between">
+                      <span>Tiếp nhận xử lý</span>
+                      <span className="text-[9.5px] px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 font-medium">Cá nhân</span>
+                    </div>
+                    <div className="text-[10.5px] text-slate-500 font-normal truncate">Chuyển về tiếp nhận &amp; xử lý của cá nhân</div>
+                  </div>
+                </button>
 
-          {/* TRƯỜNG HỢP 4: AI CẦN KIỂM TRA -> NÚT [ KIỂM TRA ] [...] */}
-          {item.aiStatus === 'needs_review' && (
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onClick();
-                }}
-                className="py-1.5 px-3.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold transition-all shadow-xs active:scale-95 flex items-center gap-1 cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[14px]">checklist</span>
-                <span>Kiểm tra</span>
-                <span className="material-symbols-outlined text-[13px] opacity-80">arrow_forward</span>
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onClick();
-                }}
-                className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 text-xs font-bold cursor-pointer transition-colors"
-                title="Tùy chọn khác"
-              >
-                <span className="material-symbols-outlined text-[16px]">more_horiz</span>
-              </button>
-            </div>
-          )}
+                {/* Option 2: Bàn giao xử lý (Chuyển sang Đã bàn giao / theo dõi) */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMenu(false);
+                    onBanGiao?.(item);
+                  }}
+                  className="w-full px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-rose-50 hover:text-[#C62828] flex items-center gap-2.5 transition-colors cursor-pointer group"
+                >
+                  <div className="w-7 h-7 rounded-lg bg-rose-50 text-[#C62828] flex items-center justify-center shrink-0 group-hover:bg-[#C62828] group-hover:text-white transition-colors">
+                    <span className="material-symbols-outlined text-[17px]">
+                      outbox
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-slate-900 group-hover:text-[#C62828] flex items-center justify-between">
+                      <span>Bàn giao xử lý</span>
+                      <span className="text-[9.5px] px-1.5 py-0.2 rounded bg-rose-100 text-rose-800 font-medium">Bàn giao</span>
+                    </div>
+                    <div className="text-[10.5px] text-slate-500 font-normal truncate">Chuyển đến đã bàn giao / theo dõi</div>
+                  </div>
+                </button>
 
-          {/* TRƯỜNG HỢP CÁC HỒ SƠ KHÁC KHÔNG CÓ AI PROCESSING HOẶC TRUYỀN THỐNG */}
-          {(!item.aiStatus || item.aiStatus === 'none') && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onClick();
-              }}
-              className={`py-1.5 px-3.5 rounded-lg text-xs font-bold transition-all shadow-xs active:scale-95 flex items-center gap-1 cursor-pointer ${item.cta.variant === 'urgent'
-                ? 'bg-rose-600 hover:bg-rose-700 text-white'
-                : item.cta.variant === 'primary'
-                  ? 'bg-[#004ac6] hover:bg-[#003ea8] text-white'
-                  : item.cta.variant === 'outline'
-                    ? 'border border-slate-300 hover:bg-slate-100 text-slate-700'
-                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                }`}
-            >
-              {item.cta.variant === 'urgent' && (
-                <span className="material-symbols-outlined text-[14px]">bolt</span>
-              )}
-              {item.cta.actionType === 'continue' && (
-                <span className="material-symbols-outlined text-[14px]">edit_document</span>
-              )}
-              {item.cta.actionType === 'supplement' && (
-                <span className="material-symbols-outlined text-[14px]">note_add</span>
-              )}
-              {item.cta.actionType === 'view_progress' && (
-                <span className="material-symbols-outlined text-[14px]">visibility</span>
-              )}
-              {item.cta.actionType === 'view_doc' && (
-                <span className="material-symbols-outlined text-[14px]">description</span>
-              )}
-              <span>{item.cta.label}</span>
-              <span className="material-symbols-outlined text-[13px] opacity-80">arrow_forward</span>
-            </button>
+                {/* Option 3: Phân công xử lý */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMenu(false);
+                    onPhanCong?.(item);
+                  }}
+                  className="w-full px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-700 flex items-center gap-2.5 transition-colors cursor-pointer group"
+                >
+                  <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                    <span className="material-symbols-outlined text-[17px]">
+                      assignment_ind
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-slate-900 group-hover:text-blue-700">Phân công xử lý</div>
+                    <div className="text-[10.5px] text-slate-500 font-normal truncate">Giao cán bộ chuyên môn phụ trách</div>
+                  </div>
+                </button>
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -1416,32 +1696,24 @@ function AIStatusBadge({ status, progress }: { status?: AIProcessingStatus; prog
 function DeadlineBadge({ type, text }: { type: string; text: string }) {
   if (type === 'overdue') {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-rose-100 text-rose-700 border border-rose-200 font-label-technical">
-        <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse"></span>
-        {text}
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-rose-50 text-rose-700 border border-rose-200 font-label-technical">
+        <span>🔴</span>
+        <span>{text?.includes('Quá hạn') ? text : `Quá hạn ${text || '2 giờ'}`}</span>
       </span>
     );
   }
-  if (type === 'today') {
+  if (type === 'today' || type === 'upcoming') {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-amber-100 text-amber-900 border border-amber-200 font-label-technical">
-        <span className="material-symbols-outlined text-[12px] text-amber-700">schedule</span>
-        {text}
-      </span>
-    );
-  }
-  if (type === 'upcoming') {
-    return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-yellow-100 text-yellow-900 border border-yellow-200 font-label-technical">
-        <span className="material-symbols-outlined text-[12px] text-yellow-700">hourglass_top</span>
-        {text}
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-amber-50 text-amber-900 border border-amber-200 font-label-technical">
+        <span>🟠</span>
+        <span>{text}</span>
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200 font-label-technical">
-      <span className="material-symbols-outlined text-[12px] text-emerald-700">check</span>
-      {text}
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 font-label-technical">
+      <span>🟢</span>
+      <span>{text}</span>
     </span>
   );
 }

@@ -1,5 +1,5 @@
 
-export type Screen = "cong-viec" | "nhan-don-list" | "nhan-don-them" | "ban-phan-tich" | "don-tiep-nhan" | "quy-trinh-xu-ly" | "thu-vien" | "bao-cao";
+export type Screen = "cong-viec" | "nhan-don-list" | "nhan-don-them" | "ban-phan-tich" | "don-tiep-nhan" | "quy-trinh-xu-ly" | "thu-vien" | "bao-cao" | "tiep-nhan-xu-ly";
 
 export type AIJob = 0 | 1 | 2 | 3 | 4 | 5;
 

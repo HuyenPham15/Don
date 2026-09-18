@@ -161,7 +161,7 @@ export const INITIAL_WORK_ITEMS: WorkItem[] = [
     taskReadiness: 'manual_required',
   },
 
-  // ================= COLUMN 2: ĐANG XỬ LÝ (2 việc) =================
+  // ================= COLUMN 2: TIẾP NHẬN & XỬ LÝ (2 việc) =================
   {
     id: 'Đ-2025-0105',
     code: 'Đ-2025-0105',
@@ -178,7 +178,7 @@ export const INITIAL_WORK_ITEMS: WorkItem[] = [
     holder: {
       role: 'Đang xử lý',
       name: 'Tôi (Nguyễn Minh Anh)',
-      department: 'Phòng Đăng ký kinh doanh',
+      department: 'Phòng Tiếp công dân & Xử lý đơn',
     },
     progress: {
       currentStep: 3,
@@ -188,14 +188,16 @@ export const INITIAL_WORK_ITEMS: WorkItem[] = [
     },
     docCount: 3,
     cta: {
-      label: 'Tiếp tục xử lý',
+      label: 'Mở xử lý',
       actionType: 'continue',
       variant: 'primary',
     },
     category: 'Hộ kinh doanh',
-    tags: ['Hộ cá thể', 'Đăng ký KD'],
-    loaiDon: 'Đăng ký kinh doanh hộ cá thể',
+    tags: ['Đã phân công', 'Đang xử lý'],
+    loaiDon: 'Đơn đăng ký kinh doanh cá thể',
     luotNhanId: 'LN-2025-0105',
+    nguoiGiao: 'Trần Trọng Giáp (Trưởng phòng)',
+    ngayDuocGiao: '16/09/2026',
     aiStatus: 'completed',
     taskReadiness: 'action_required',
   },
@@ -215,7 +217,7 @@ export const INITIAL_WORK_ITEMS: WorkItem[] = [
     holder: {
       role: 'Đang xử lý',
       name: 'Tôi (Nguyễn Minh Anh)',
-      department: 'Tổ Tiếp công dân & Xử lý đơn',
+      department: 'Phòng Tiếp công dân & Xử lý đơn',
     },
     progress: {
       currentStep: 2,
@@ -225,14 +227,16 @@ export const INITIAL_WORK_ITEMS: WorkItem[] = [
     },
     docCount: 6,
     cta: {
-      label: 'Bổ sung',
-      actionType: 'supplement',
+      label: 'Mở xử lý',
+      actionType: 'continue',
       variant: 'primary',
     },
     category: 'Khiếu nại',
-    tags: ['Bồi thường GPMB', 'Đất đai'],
+    tags: ['Đã phân công', 'Đang xử lý'],
     loaiDon: 'Đơn khiếu nại đất đai',
     luotNhanId: 'LN-45/2026-GOVEX',
+    nguoiGiao: 'Trần Trọng Giáp (Trưởng phòng)',
+    ngayDuocGiao: '15/09/2026',
     aiStatus: 'completed',
     taskReadiness: 'action_required',
   },

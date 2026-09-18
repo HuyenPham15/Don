@@ -83,9 +83,9 @@ export default function KhoiTaoQuyTrinhModal({
                     <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-label-technical">
                       KẾT QUẢ KHỚP NỐI QUY TRÌNH TỰ ĐỘNG
                     </span>
-                    <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-[#f4ebff] text-[#6941c6] border border-[#e9d7fe] flex items-center gap-1">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-[#eff8ff] text-[#004ac6] border border-[#b2ddff] flex items-center gap-1">
                       <span className="material-symbols-outlined text-[13px]">bolt</span>
-                      <span>AI ĐÃ NGẦM XỬ LÝ TRƯỚC</span>
+                      <span>TỰ ĐỘNG THIẾT LẬP</span>
                     </span>
                   </div>
                   <h3 className="text-base sm:text-lg font-bold text-slate-900 mt-1 tracking-tight">

@@ -63,6 +63,10 @@ export interface WorkItem {
   luotNhanId?: string;
   loaiDon?: string;
 
+  // Thuộc tính Phân công nhiệm vụ (BR-04)
+  nguoiGiao?: string;
+  ngayDuocGiao?: string;
+
   // Thuộc tính AI Processing
   aiStatus?: AIProcessingStatus;
   aiProgress?: number; // 0..100
