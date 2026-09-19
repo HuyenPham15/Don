@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Screen } from "../types";
 
 interface SidebarProps {
@@ -10,6 +10,14 @@ export default function Sidebar({ screen, onNav }: SidebarProps) {
   const isNhanDon = ["nhan-don-list", "nhan-don-them", "ban-phan-tich"].includes(screen);
   const isCongViec = screen === "cong-viec" || screen === "don-tiep-nhan" || screen === "quy-trinh-xu-ly";
   const isTiepNhan = screen === "tiep-nhan-xu-ly";
+  const isQuanTri = [
+    "quan-tri-quy-trinh",
+    "quan-tri-loai-don",
+    "quan-tri-lich-lam-viec",
+    "quan-tri-bieu-mau",
+  ].includes(screen);
+
+  const [isQuanTriOpen, setIsQuanTriOpen] = useState(true);
 
   return (
     <aside className="w-72 bg-white border-r border-slate-200/90 flex flex-col justify-between select-none h-full shrink-0 shadow-2xs">
@@ -63,32 +71,6 @@ export default function Sidebar({ screen, onNav }: SidebarProps) {
             </div>
           </button>
 
-          {/* Tiếp nhận & xử lý (Hàng chờ phân công của đơn vị) */}
-          <button
-            type="button"
-            onClick={() => onNav('tiep-nhan-xu-ly')}
-            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer ${isTiepNhan
-              ? 'bg-blue-50 text-[#004ac6] font-semibold border border-blue-100/60 shadow-2xs'
-              : 'text-slate-700 hover:bg-slate-50'
-              }`}
-          >
-            <div className="flex items-center gap-2.5">
-              <span
-                className={`material-symbols-outlined text-[20px] ${isTiepNhan ? 'text-[#004ac6]' : 'text-slate-600'
-                  }`}
-              >
-                folder_shared
-              </span>
-              <span className="text-[13.5px] font-medium">Tiếp nhận &amp; xử lý</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="px-1.5 py-0.5 rounded-md bg-amber-500 text-white text-[11px] font-semibold font-label-technical">
-                Chờ giao
-              </span>
-              {isTiepNhan && <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>}
-            </div>
-          </button>
-
           {/* Trò chuyện trợ lý AI */}
           <button
             type="button"
@@ -120,6 +102,123 @@ export default function Sidebar({ screen, onNav }: SidebarProps) {
             </div>
             <span className="material-symbols-outlined text-slate-400 text-[16px]">chevron_right</span>
           </button>
+
+          {/* Nhóm: Quản trị nghiệp vụ (Bao gồm Quy trình, Loại đơn, Lịch làm việc, Biểu mẫu) */}
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={() => {
+                if (!isQuanTri) {
+                  onNav('quan-tri-quy-trinh');
+                }
+                setIsQuanTriOpen(!isQuanTriOpen);
+              }}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer ${
+                isQuanTri
+                  ? 'bg-blue-50/80 text-[#004ac6] font-bold border border-blue-100 shadow-2xs'
+                  : 'text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <span
+                  className={`material-symbols-outlined text-[20px] ${
+                    isQuanTri ? 'text-[#004ac6]' : 'text-slate-600'
+                  }`}
+                >
+                  settings_suggest
+                </span>
+                <span className="text-[13.5px] font-bold tracking-tight">Quản trị nghiệp vụ</span>
+              </div>
+              <span
+                className={`material-symbols-outlined text-[17px] text-slate-400 transition-transform duration-200 ${
+                  isQuanTriOpen ? 'rotate-90' : ''
+                }`}
+              >
+                chevron_right
+              </span>
+            </button>
+
+            {/* Sub-items list */}
+            {isQuanTriOpen && (
+              <div className="mt-1 pl-3 pr-1 space-y-0.5 border-l-2 border-blue-200/60 ml-4 py-0.5 animate-in fade-in duration-150">
+                {/* 1. Quy trình xử lý */}
+                <button
+                  type="button"
+                  onClick={() => onNav('quan-tri-quy-trinh')}
+                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-all cursor-pointer ${
+                    screen === 'quan-tri-quy-trinh'
+                      ? 'bg-blue-100/60 text-[#004ac6] font-bold'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="material-symbols-outlined text-[16px] text-blue-600">account_tree</span>
+                    <span className="text-[12.5px] truncate">Quy trình xử lý</span>
+                  </div>
+                  {screen === 'quan-tri-quy-trinh' && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                  )}
+                </button>
+
+                {/* 2. Loại đơn */}
+                <button
+                  type="button"
+                  onClick={() => onNav('quan-tri-loai-don')}
+                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-all cursor-pointer ${
+                    screen === 'quan-tri-loai-don'
+                      ? 'bg-blue-100/60 text-[#004ac6] font-bold'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="material-symbols-outlined text-[16px] text-blue-600">category</span>
+                    <span className="text-[12.5px] truncate">Loại đơn</span>
+                  </div>
+                  {screen === 'quan-tri-loai-don' && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                  )}
+                </button>
+
+                {/* 3. Lịch làm việc */}
+                <button
+                  type="button"
+                  onClick={() => onNav('quan-tri-lich-lam-viec')}
+                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-all cursor-pointer ${
+                    screen === 'quan-tri-lich-lam-viec'
+                      ? 'bg-blue-100/60 text-[#004ac6] font-bold'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="material-symbols-outlined text-[16px] text-blue-600">calendar_month</span>
+                    <span className="text-[12.5px] truncate">Lịch làm việc</span>
+                  </div>
+                  {screen === 'quan-tri-lich-lam-viec' && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                  )}
+                </button>
+
+                {/* 4. Biểu mẫu */}
+                <button
+                  type="button"
+                  onClick={() => onNav('quan-tri-bieu-mau')}
+                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-all cursor-pointer ${
+                    screen === 'quan-tri-bieu-mau'
+                      ? 'bg-blue-100/60 text-[#004ac6] font-bold'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="material-symbols-outlined text-[16px] text-blue-600">description</span>
+                    <span className="text-[12.5px] truncate">Biểu mẫu</span>
+                  </div>
+                  {screen === 'quan-tri-bieu-mau' && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
         </nav>
 
         <div className="my-3 border-t border-slate-200/70"></div>

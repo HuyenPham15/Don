@@ -15,6 +15,8 @@ import { ActiveWorkflowState } from "./types/workflow";
 import { WORKFLOW_DEFINITIONS, matchWorkflowByLoaiDon } from "./constants/workflows";
 import { INITIAL_TIEP_NHAN_ITEMS, TiepNhanDonItem } from "./constants/departments";
 import { PhanCongSubmitData } from "./components/modals/PhanCongModal";
+import ProcessWorkflowModule from "./screens/workflowAdmin/ProcessWorkflowModule";
+import QuanTriNghiepVuScreen from "./screens/workflowAdmin/QuanTriNghiepVuScreen";
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>("cong-viec");
@@ -292,6 +294,18 @@ export default function App() {
               workflowState={activeWorkflow}
               onUpdateWorkflowState={setActiveWorkflow}
             />
+          )}
+          {screen === "quan-tri-quy-trinh" && (
+            <QuanTriNghiepVuScreen onNav={setScreen} initialTab="quy-trinh" />
+          )}
+          {screen === "quan-tri-loai-don" && (
+            <QuanTriNghiepVuScreen onNav={setScreen} initialTab="loai-don" />
+          )}
+          {screen === "quan-tri-lich-lam-viec" && (
+            <QuanTriNghiepVuScreen onNav={setScreen} initialTab="lich-lam-viec" />
+          )}
+          {screen === "quan-tri-bieu-mau" && (
+            <QuanTriNghiepVuScreen onNav={setScreen} initialTab="bieu-mau" />
           )}
           {screen === "thu-vien" && <TroChuyenScreen onNav={setScreen} />}
           {screen === "bao-cao" && <Placeholder title="Báo cáo thông minh" />}

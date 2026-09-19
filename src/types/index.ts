@@ -1,5 +1,18 @@
 
-export type Screen = "cong-viec" | "nhan-don-list" | "nhan-don-them" | "ban-phan-tich" | "don-tiep-nhan" | "quy-trinh-xu-ly" | "thu-vien" | "bao-cao" | "tiep-nhan-xu-ly";
+export type Screen = 
+  | "cong-viec" 
+  | "nhan-don-list" 
+  | "nhan-don-them" 
+  | "ban-phan-tich" 
+  | "don-tiep-nhan" 
+  | "quy-trinh-xu-ly" 
+  | "quan-tri-quy-trinh"
+  | "quan-tri-loai-don"
+  | "quan-tri-lich-lam-viec"
+  | "quan-tri-bieu-mau"
+  | "thu-vien" 
+  | "bao-cao" 
+  | "tiep-nhan-xu-ly";
 
 export type AIJob = 0 | 1 | 2 | 3 | 4 | 5;
 
