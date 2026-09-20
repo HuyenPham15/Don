@@ -73,4 +73,7 @@ export interface WorkItem {
   aiFailureReason?: string;
   aiReviewNote?: string;
   taskReadiness?: TaskReadiness;
+  nguonXuLy?: 'file_ocr' | 'ghi_chu_thu_cong';
+  lyDoTraLai?: string;
+  lyDoBanGiao?: string;
 }

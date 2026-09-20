@@ -2,6 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { ProcessWorkflow, ProcessStatus } from '../../types/workflowConfig';
 import { LOAI_DON_OPTIONS } from '../../constants';
+import WorkflowVersionHistoryModal from './components/WorkflowVersionHistoryModal';
 
 interface ProcessWorkflowListProps {
   workflows: ProcessWorkflow[];
@@ -9,6 +10,7 @@ interface ProcessWorkflowListProps {
   onEditWorkflow: (wf: ProcessWorkflow, mode?: 'edit' | 'view') => void;
   onDuplicateWorkflow: (wf: ProcessWorkflow) => void;
   onToggleStatus: (wfId: string, nextStatus: ProcessStatus) => void;
+  onCreateNewVersion?: (wf: ProcessWorkflow) => void;
 }
 
 export default function ProcessWorkflowList({
@@ -17,6 +19,7 @@ export default function ProcessWorkflowList({
   onEditWorkflow,
   onDuplicateWorkflow,
   onToggleStatus,
+  onCreateNewVersion,
 }: ProcessWorkflowListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLoaiDon, setSelectedLoaiDon] = useState<string>('all');
@@ -133,9 +136,7 @@ export default function ProcessWorkflowList({
               <span className="material-symbols-outlined text-blue-600 text-[26px]">account_tree</span>
               Danh mục Quy trình xử lý
             </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Quản lý, chuẩn hóa các luồng xử lý đơn thư theo từng loại đơn, phân quyền nhóm trách nhiệm và giai đoạn
-            </p>
+
           </div>
 
           <div className="flex items-center gap-3">
@@ -150,115 +151,6 @@ export default function ProcessWorkflowList({
           </div>
         </div>
 
-        {/* STATS TILES */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5">
-          <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 flex items-center justify-between">
-            <div>
-              <span className="text-[11px] font-medium text-slate-500 block">Tổng số quy trình</span>
-              <span className="text-lg font-bold text-slate-800">{stats.total}</span>
-            </div>
-            <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
-              <span className="material-symbols-outlined text-[18px]">account_tree</span>
-            </div>
-          </div>
-
-          <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 flex items-center justify-between">
-            <div>
-              <span className="text-[11px] font-medium text-slate-500 block">Đang hiệu lực</span>
-              <span className="text-lg font-bold text-emerald-700">{stats.published}</span>
-            </div>
-            <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
-              <span className="material-symbols-outlined text-[18px]">verified</span>
-            </div>
-          </div>
-
-          <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 flex items-center justify-between">
-            <div>
-              <span className="text-[11px] font-medium text-slate-500 block">Bản nháp thiết kế</span>
-              <span className="text-lg font-bold text-amber-700">{stats.draft}</span>
-            </div>
-            <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center">
-              <span className="material-symbols-outlined text-[18px]">edit_document</span>
-            </div>
-          </div>
-
-          <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 flex items-center justify-between">
-            <div>
-              <span className="text-[11px] font-medium text-slate-500 block">Ngừng áp dụng</span>
-              <span className="text-lg font-bold text-slate-600">{stats.archived}</span>
-            </div>
-            <div className="w-8 h-8 rounded-lg bg-slate-200 text-slate-700 flex items-center justify-center">
-              <span className="material-symbols-outlined text-[18px]">inventory_2</span>
-            </div>
-          </div>
-        </div>
-
-        {/* 1.1 BANNER ÁNH XẠ: MỖI QUY TRÌNH GẮN VỚI 1 LOẠI ĐƠN & PHIÊN BẢN MỚI NHẤT */}
-        <div className="mt-5 p-4 rounded-2xl bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-slate-50 border border-blue-100 shadow-2xs space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-blue-600 shadow-xs"></span>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900">
-                Ánh xạ Loại đơn &amp; Phiên bản quy trình mới nhất
-              </h3>
-            </div>
-            <span className="text-[11px] text-slate-500 italic">
-              * Khi một quy trình được cập nhật/phát hành, Loại đơn sẽ tự động gắn theo phiên bản mới nhất
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {loaiDonBindings.map((b) => (
-              <div
-                key={b.loaiDonId}
-                onClick={() => {
-                  if (b.activeWorkflow) {
-                    onEditWorkflow(b.activeWorkflow, b.activeWorkflow.status === 'published' ? 'view' : 'edit');
-                  }
-                }}
-                className={`p-3 rounded-xl border transition-all cursor-pointer bg-white group ${
-                  selectedLoaiDon === b.loaiDonId
-                    ? 'border-blue-500 ring-2 ring-blue-200 shadow-xs'
-                    : 'border-slate-200/90 hover:border-blue-400 hover:shadow-2xs'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="font-extrabold text-slate-900 text-xs truncate group-hover:text-blue-700 transition-colors">
-                    {b.loaiDonName}
-                  </span>
-                  {b.activeWorkflow?.status === 'published' ? (
-                    <span className="px-1.5 py-0.2 rounded-full text-[9.5px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-0.5">
-                      <span className="w-1 h-1 rounded-full bg-emerald-500"></span>
-                      Đang hiệu lực
-                    </span>
-                  ) : b.activeWorkflow ? (
-                    <span className="px-1.5 py-0.2 rounded-full text-[9.5px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                      Bản nháp
-                    </span>
-                  ) : (
-                    <span className="text-[10px] text-slate-400">Chưa có</span>
-                  )}
-                </div>
-
-                {b.activeWorkflow ? (
-                  <div className="space-y-1">
-                    <p className="text-[11px] font-semibold text-slate-700 line-clamp-1 group-hover:text-blue-900">
-                      {b.activeWorkflow.name}
-                    </p>
-                    <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono pt-1 border-t border-slate-100">
-                      <span className="truncate max-w-[100px]">{b.activeWorkflow.code}</span>
-                      <span className="px-1.5 py-0.2 rounded bg-blue-50 text-blue-700 font-bold border border-blue-100">
-                        ★ {b.activeWorkflow.version}
-                      </span>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-[10.5px] text-slate-400 italic">Chưa cấu hình quy trình</p>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
 
       {/* 2. FILTER & CONTROLS */}
@@ -451,39 +343,35 @@ export default function ProcessWorkflowList({
                             <span className="material-symbols-outlined text-[15px] text-slate-400">label</span>
                             {wf.loaiDonName}
                           </span>
-                          {wf.isLatestForLoaiDon && wf.status === 'published' && (
-                            <span className="text-[10px] text-emerald-700 font-semibold flex items-center gap-0.5 mt-0.5">
-                              <span className="material-symbols-outlined text-[12px] text-emerald-600">check_circle</span>
-                              Đang gắn hiệu lực cho loại đơn
-                            </span>
-                          )}
-                          {wf.isLatestForLoaiDon && wf.status === 'draft' && (
-                            <span className="text-[10px] text-amber-700 font-medium flex items-center gap-0.5 mt-0.5">
-                              <span className="material-symbols-outlined text-[12px] text-amber-600">hourglass_top</span>
-                              Bản nháp mới nhất của loại đơn
-                            </span>
-                          )}
+
+
                         </div>
                       </td>
 
                       {/* Phiên bản */}
                       <td className="py-3.5 px-4 text-center">
-                        <div className="inline-flex flex-col items-center">
+                        <div
+                          onClick={() => setHistoryModalWf(wf)}
+                          className="inline-flex flex-col items-center group/ver cursor-pointer p-1 rounded-lg hover:bg-slate-100 transition-all"
+                          title="Nhấn để xem chi tiết lịch sử cập nhật phiên bản"
+                        >
                           {wf.isLatestForLoaiDon ? (
                             <>
-                              <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs">
+                              <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs group-hover/ver:border-emerald-400 group-hover/ver:bg-emerald-100 transition-all flex items-center gap-1">
                                 ★ {wf.version}
                               </span>
-                              <span className="text-[9.5px] font-semibold text-emerald-600 mt-0.5">
-                                Mới nhất
+                              <span className="text-[10px] text-blue-600 font-semibold mt-1 flex items-center gap-0.5 group-hover/ver:underline">
+                                <span className="material-symbols-outlined text-[13px]">history</span>
+                                {wf.versionHistory?.length ? `${wf.versionHistory.length} bản` : 'Lịch sử'}
                               </span>
                             </>
                           ) : (
                             <>
-                              <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+                              <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200 group-hover/ver:bg-slate-200 transition-all">
                                 {wf.version}
                               </span>
-                              <span className="text-[9.5px] text-slate-400 mt-0.5">
+                              <span className="text-[9.5px] text-slate-400 mt-0.5 flex items-center gap-0.5 group-hover/ver:text-blue-600">
+                                <span className="material-symbols-outlined text-[12px]">history</span>
                                 Bản cũ
                               </span>
                             </>
@@ -539,14 +427,31 @@ export default function ProcessWorkflowList({
                             <span className="material-symbols-outlined text-[17px]">content_copy</span>
                           </button>
 
+                          {/* Tạo phiên bản mới */}
+                          {onCreateNewVersion && (
+                            <button
+                              type="button"
+                              onClick={() => onCreateNewVersion(wf)}
+                              className="p-1.5 text-slate-500 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                              title="Tạo phiên bản mới từ quy trình này"
+                            >
+                              <span className="material-symbols-outlined text-[17px]">fork_right</span>
+                            </button>
+                          )}
+
                           {/* Xem lịch sử phiên bản */}
                           <button
                             type="button"
                             onClick={() => setHistoryModalWf(wf)}
-                            className="p-1.5 text-slate-500 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors cursor-pointer"
-                            title="Xem lịch sử phiên bản"
+                            className="p-1.5 text-slate-500 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors cursor-pointer relative"
+                            title="Xem chi tiết lịch sử cập nhật phiên bản quy trình"
                           >
                             <span className="material-symbols-outlined text-[17px]">history</span>
+                            {wf.versionHistory && wf.versionHistory.length > 1 && (
+                              <span className="absolute -top-1 -right-1 min-w-[15px] h-[15px] px-1 rounded-full bg-purple-600 text-white font-mono text-[8.5px] font-bold flex items-center justify-center">
+                                {wf.versionHistory.length}
+                              </span>
+                            )}
                           </button>
 
                           {/* Ngừng áp dụng / Kích hoạt lại */}
@@ -590,76 +495,20 @@ export default function ProcessWorkflowList({
         </div>
       </div>
 
-      {/* 4. MODAL LỊCH SỬ PHIÊN BẢN */}
+      {/* 4. MODAL LỊCH SỬ PHIÊN BẢN (NÂNG CẤP) */}
       {historyModalWf && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-lg w-full overflow-hidden flex flex-col max-h-[85vh]">
-            <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-purple-600 text-[22px]">history</span>
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900 leading-tight">Lịch sử phiên bản quy trình</h3>
-                  <span className="text-[11px] text-slate-500 font-mono">{historyModalWf.code} • {historyModalWf.name}</span>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setHistoryModalWf(null)}
-                className="p-1 text-slate-400 hover:text-slate-700 rounded-lg"
-              >
-                <span className="material-symbols-outlined text-[20px]">close</span>
-              </button>
-            </div>
-
-            <div className="p-5 overflow-y-auto space-y-4">
-              <div className="relative pl-6 border-l-2 border-blue-200 space-y-6">
-                {historyModalWf.versionHistory && historyModalWf.versionHistory.length > 0 ? (
-                  historyModalWf.versionHistory.map((v, idx) => (
-                    <div key={idx} className="relative">
-                      {/* Timeline dot */}
-                      <span
-                        className={`absolute -left-[31px] top-0 w-4 h-4 rounded-full border-2 border-white flex items-center justify-center ${
-                          v.isCurrentActive ? 'bg-emerald-500 ring-2 ring-emerald-200' : 'bg-slate-300'
-                        }`}
-                      ></span>
-
-                      <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3">
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
-                            Phiên bản {v.version}
-                            {v.isCurrentActive && (
-                              <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 font-semibold">
-                                Đang áp dụng
-                              </span>
-                            )}
-                          </span>
-                          <span className="text-[11px] text-slate-400 font-mono">{v.publishedAt}</span>
-                        </div>
-                        <p className="text-xs text-slate-600 mt-1.5">{v.notes || 'Không có ghi chú thay đổi'}</p>
-                        <div className="mt-2 text-[10.5px] text-slate-400 flex items-center gap-1">
-                          <span className="material-symbols-outlined text-[13px]">person</span>
-                          Người thực hiện: <strong>{v.publishedBy}</strong>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-xs text-slate-400">Chưa có lịch sử phát hành cho quy trình này.</p>
-                )}
-              </div>
-            </div>
-
-            <div className="px-5 py-3 border-t border-slate-200 bg-slate-50/80 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setHistoryModalWf(null)}
-                className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
-              >
-                Đóng
-              </button>
-            </div>
-          </div>
-        </div>
+        <WorkflowVersionHistoryModal
+          workflow={historyModalWf}
+          onClose={() => setHistoryModalWf(null)}
+          onViewVersion={(wf) => {
+            setHistoryModalWf(null);
+            onEditWorkflow(wf, 'view');
+          }}
+          onForkDraft={(wf) => {
+            setHistoryModalWf(null);
+            onDuplicateWorkflow(wf);
+          }}
+        />
       )}
     </div>
   );

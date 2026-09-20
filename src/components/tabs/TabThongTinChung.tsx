@@ -1552,15 +1552,6 @@ export default function TabThongTinChung({
 
             {/* BOTTOM ACTION BAR */}
             <div className="flex items-center justify-between pt-4 border-t border-slate-200/90 flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={handleRestoreAiPhanLoai}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition-all shadow-2xs cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[16px] text-indigo-600">auto_awesome</span>
-                <span>Khôi phục gợi ý AI ban đầu</span>
-              </button>
-
               <div className="flex items-center gap-2.5">
                 <button
                   type="button"

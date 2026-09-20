@@ -2,15 +2,21 @@ import React, { useState } from 'react';
 import { ALL_LUOT_NHAN } from "../constants";
 import { LuotNhan, AIJob, Screen } from "../types";
 
+interface NhanDonListProps {
+  onNav: (s: Screen) => void;
+  onSelect: (ln: LuotNhan) => void;
+  luotNhanList?: LuotNhan[];
+}
+
 export default function NhanDonList({
   onNav,
   onSelect,
-}: {
-  onNav: (s: Screen) => void;
-  onSelect: (ln: LuotNhan) => void;
-}) {
+  luotNhanList,
+}: NhanDonListProps) {
   const [q, setQ] = useState("");
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  const rawList = luotNhanList && luotNhanList.length > 0 ? luotNhanList : ALL_LUOT_NHAN;
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -19,7 +25,7 @@ export default function NhanDonList({
     }, 3500);
   };
 
-  const filtered = ALL_LUOT_NHAN.filter(
+  const filtered = rawList.filter(
     (l) =>
       !q ||
       l.id.toLowerCase().includes(q.toLowerCase()) ||
@@ -145,7 +151,7 @@ export default function NhanDonList({
                 <th className="py-3 px-4">HÌNH THỨC</th>
                 <th className="py-3 px-4 min-w-[240px]">NỘI DUNG CHÍNH</th>
                 <th className="py-3 px-4">ĐƠN VỊ TIẾP NHẬN</th>
-                <th className="py-3 px-4">TRẠNG THÁI AI</th>
+                <th className="py-3 px-4">TRẠNG THÁI</th>
                 <th className="py-3 px-4 text-center">THAO TÁC</th>
               </tr>
             </thead>
@@ -210,45 +216,61 @@ export default function NhanDonList({
                       <span className="font-medium">{ln.donVi}</span>
                     </td>
                     <td className="py-3.5 px-4 whitespace-nowrap">
-                      {isAnalyzing && (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[11.5px] font-semibold font-label-technical">
-                          <span className="material-symbols-outlined text-[14px] animate-spin text-amber-600">
-                            sync
-                          </span>
-                          AI đang phân tích
+                      {ln.status === 'da_chuyen' ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11.5px] font-semibold font-label-technical">
+                          <span className="material-symbols-outlined text-[14px] text-emerald-600">check_circle</span>
+                          <span>Đã chuyển xử lý</span>
                         </span>
-                      )}
-                      {isDone && (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11.5px] font-semibold font-label-technical">
-                          <span className="material-symbols-outlined text-[14px] text-emerald-600">
-                            verified
-                          </span>
-                          AI đã phân tích xong
+                      ) : ln.status === 'da_ban_giao' ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[11.5px] font-semibold font-label-technical">
+                          <span className="material-symbols-outlined text-[14px] text-amber-600">swap_horiz</span>
+                          <span>Đã bàn giao</span>
                         </span>
-                      )}
-                      {!isAnalyzing && !isDone && (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 text-[11.5px] font-semibold font-label-technical">
-                          <span className="material-symbols-outlined text-[14px] text-slate-500">
-                            schedule
-                          </span>
-                          Mới nhận
+                      ) : ln.status === 'da_tra_lai' ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 text-rose-800 border border-rose-200 text-[11.5px] font-semibold font-label-technical">
+                          <span className="material-symbols-outlined text-[14px] text-rose-600">assignment_return</span>
+                          <span>Đã trả lại</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-800 border border-blue-200 text-[11.5px] font-semibold font-label-technical">
+                          <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+                          <span>Chờ chuyển</span>
                         </span>
                       )}
                     </td>
                     <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                      <button
-                        type="button"
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-[#004ac6] text-[#004ac6] hover:text-white font-medium text-[12px] transition-all cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onSelect(ln);
-                          onNav('ban-phan-tich');
-                          showToast('Đang mở Chi tiết Lượt nhận & Phân tích AI đầy đủ...');
-                        }}
-                      >
-                        <span className="material-symbols-outlined text-[15px]">visibility</span>
-                        <span>Xem chi tiết</span>
-                      </button>
+                      <div className="flex items-center justify-center gap-1.5">
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-[12px] transition-all cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSelect(ln);
+                            onNav('ban-phan-tich');
+                            showToast('Đang mở Chi tiết Lượt nhận...');
+                          }}
+                        >
+                          <span className="material-symbols-outlined text-[15px]">visibility</span>
+                          <span>Chi tiết</span>
+                        </button>
+
+                        {(!ln.status || ln.status === 'cho_chuyen') && (
+                          <button
+                            type="button"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#C62828] hover:bg-[#b71c1c] text-white font-semibold text-[12px] shadow-2xs transition-all cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onSelect(ln);
+                              onNav('ban-phan-tich');
+                              showToast('Mở chi tiết lượt nhận để chuyển tiếp nhận & xử lý...');
+                            }}
+                            title="Chuyển tiếp nhận và xử lý (BR-03)"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">forward_to_inbox</span>
+                            <span>Chuyển</span>
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );

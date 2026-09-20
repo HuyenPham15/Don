@@ -34,7 +34,7 @@ export interface TiepNhanDonItem {
   donViTiepNhan: string;
   hanXuLy: string;
   hanXuLyFull: string;
-  trangThai: 'cho_phan_cong' | 'dang_xu_ly' | 'da_hoan_thanh';
+  trangThai: 'cho_phan_cong' | 'dang_xu_ly' | 'da_ban_giao' | 'da_tra_lai' | 'da_hoan_thanh';
   noiDungTomTat: string;
   ghiChuChuyen?: string;
   nguoiChuyen?: string;
@@ -45,6 +45,10 @@ export interface TiepNhanDonItem {
   nguoiPhanCong?: string;
   ghiChuPhanCong?: string;
   hinhThucChuyen?: 'hang_cho' | 'truc_tiep';
+  nguonXuLy?: 'file_ocr' | 'ghi_chu_thu_cong';
+  lyDoTraLai?: string;
+  lyDoBanGiao?: string;
+  lichSuPhanCong?: { time: string; nguoiGiao: string; nguoiNhan: string; ghiChu?: string }[];
 }
 
 export const DEPARTMENTS: Department[] = [

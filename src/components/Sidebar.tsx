@@ -9,7 +9,6 @@ interface SidebarProps {
 export default function Sidebar({ screen, onNav }: SidebarProps) {
   const isNhanDon = ["nhan-don-list", "nhan-don-them", "ban-phan-tich"].includes(screen);
   const isCongViec = screen === "cong-viec" || screen === "don-tiep-nhan" || screen === "quy-trinh-xu-ly";
-  const isTiepNhan = screen === "tiep-nhan-xu-ly";
   const isQuanTri = [
     "quan-tri-quy-trinh",
     "quan-tri-loai-don",

@@ -13,6 +13,9 @@ interface CongViecCuaToiProps {
   extraCard: LuotNhan | null;
   onSelectDon?: (don: DonDetail) => void;
   acceptedDons?: DonDetail[];
+  luotNhanList?: LuotNhan[];
+  tiepNhanItems?: TiepNhanDonItem[];
+  onBanGiaoDone?: (luotNhanId?: string, donViName?: string, canBoName?: string, lyDo?: string) => void;
 }
 
 type QuickFilter =
@@ -37,6 +40,9 @@ export default function CongViecCuaToi({
   extraCard,
   onSelectDon,
   acceptedDons = [],
+  luotNhanList = [],
+  tiepNhanItems = [],
+  onBanGiaoDone,
 }: CongViecCuaToiProps) {
   const [items, setItems] = useState<WorkItem[]>(INITIAL_WORK_ITEMS);
   const [searchQuery, setSearchQuery] = useState('');
@@ -58,7 +64,7 @@ export default function CongViecCuaToi({
     }, 3500);
   };
 
-  // 1. Nhấn Tiếp nhận xử lý: chuyển hồ sơ về phần "Tiếp nhận & xử lý" của cá nhân (Cột 2)
+  // 1. Nhấn Tiếp nhận xử lý: chuyển hồ sơ về phần "Tiếp nhận & xử lý" của cá nhân (Cột 2) và mở màn Chi tiết tiếp nhận & xử lý
   const handleTiepNhanXuLyCaNhan = (item: WorkItem) => {
     setItems((prev) => {
       const exists = prev.some((it) => it.id === item.id);
@@ -78,7 +84,23 @@ export default function CongViecCuaToi({
       }
       return [updatedItem, ...prev];
     });
-    showToast(`✓ Đã tiếp nhận hồ sơ ${item.code} vào phần "Tiếp nhận & xử lý" của cá nhân!`);
+
+    const donObj: DonDetail = {
+      id: item.id,
+      code: item.code,
+      title: item.title,
+      luotNhanId: item.luotNhanId || item.id,
+      nguoiNop: item.sender,
+      ngayNhan: item.timeReceived,
+      loaiDon: item.loaiDon || 'Đơn đăng ký hộ kinh doanh',
+      type: item.code.startsWith('VV') ? 'VỤ VIỆC' : 'ĐƠN TIẾP NHẬN',
+      statusBadge: 'Đang xử lý',
+    };
+    if (onSelectDon) {
+      onSelectDon(donObj);
+    }
+    showToast(`✓ Đã tiếp nhận hồ sơ ${item.code} vào phần "Tiếp nhận & xử lý"!`);
+    setTimeout(() => onNav('don-tiep-nhan'), 350);
   };
 
   // 2. Nhấn Bàn giao: mở Modal Chuyển tiếp nhận và xử lý để chuyển sang "Đã bàn giao / theo dõi" (Cột 4)
@@ -93,7 +115,7 @@ export default function CongViecCuaToi({
     setIsPhanCongModalOpen(true);
   };
 
-  // Xử lý submit Modal Chuyển tiếp nhận (Bàn giao sang đơn vị tiếp nhận -> Đã bàn giao / theo dõi)
+  // Xử lý submit Modal Chuyển tiếp nhận (Bàn giao sang đơn vị tiếp nhận -> Đã bàn giao / theo dõi và mở chi tiết)
   const handleChuyenTiepNhanSubmit = (data: ChuyenTiepNhanSubmitData) => {
     if (selectedItemForAction) {
       const isMe = data.canBoNhan?.isCurrentUser || data.canBoNhan?.name.includes('Tôi');
@@ -136,11 +158,28 @@ export default function CongViecCuaToi({
         return [updatedItem, ...prev];
       });
 
-      if (isMe) {
-        showToast(`✓ Đã tiếp nhận hồ sơ ${selectedItemForAction.code} vào phần "Tiếp nhận & xử lý" của cá nhân!`);
-      } else {
-        showToast(`✓ Đã bàn giao hồ sơ ${selectedItemForAction.code} sang ${data.donViTiepNhanName}, chuyển đến mục "Đã bàn giao / Theo dõi"!`);
+      const donObj: DonDetail = {
+        id: selectedItemForAction.id,
+        code: selectedItemForAction.code,
+        title: selectedItemForAction.title,
+        luotNhanId: selectedItemForAction.luotNhanId || selectedItemForAction.id,
+        nguoiNop: selectedItemForAction.sender,
+        ngayNhan: selectedItemForAction.timeReceived,
+        loaiDon: selectedItemForAction.loaiDon || 'Đơn đăng ký hộ kinh doanh',
+        type: selectedItemForAction.code.startsWith('VV') ? 'VỤ VIỆC' : 'ĐƠN TIẾP NHẬN',
+        statusBadge: isMe ? 'Đang xử lý' : 'Đã bàn giao',
+      };
+      if (onSelectDon) {
+        onSelectDon(donObj);
       }
+
+      if (isMe) {
+        showToast(`✓ Đã tiếp nhận hồ sơ ${selectedItemForAction.code} vào phần "Tiếp nhận & xử lý"!`);
+      } else {
+        onBanGiaoDone?.(selectedItemForAction.luotNhanId, data.donViTiepNhanName, data.canBoNhan?.name, data.ghiChu);
+        showToast(`✓ Đã bàn giao hồ sơ ${selectedItemForAction.code} sang ${data.donViTiepNhanName}!`);
+      }
+      setTimeout(() => onNav('don-tiep-nhan'), 350);
     }
     setIsChuyenModalOpen(false);
     setSelectedItemForAction(null);
@@ -174,7 +213,24 @@ export default function CongViecCuaToi({
         }
         return [updatedItem, ...prev];
       });
-      showToast(`✓ Đã phân công xử lý hồ sơ ${selectedItemForAction.code} cho ${data.canBo.name} (${data.canBo.role})`);
+
+      const donObj: DonDetail = {
+        id: selectedItemForAction.id,
+        code: selectedItemForAction.code,
+        title: selectedItemForAction.title,
+        luotNhanId: selectedItemForAction.luotNhanId || selectedItemForAction.id,
+        nguoiNop: selectedItemForAction.sender,
+        ngayNhan: selectedItemForAction.timeReceived,
+        loaiDon: selectedItemForAction.loaiDon || 'Đơn đăng ký hộ kinh doanh',
+        type: selectedItemForAction.code.startsWith('VV') ? 'VỤ VIỆC' : 'ĐƠN TIẾP NHẬN',
+        statusBadge: isMe ? 'Đang xử lý' : 'Chờ xử lý',
+      };
+      if (onSelectDon) {
+        onSelectDon(donObj);
+      }
+
+      showToast(`✓ Đã phân công hồ sơ ${selectedItemForAction.code} cho cán bộ ${data.canBo.name}!`);
+      setTimeout(() => onNav('don-tiep-nhan'), 350);
     }
     setIsPhanCongModalOpen(false);
     setSelectedItemForAction(null);
@@ -261,50 +317,66 @@ export default function CongViecCuaToi({
     }, 2800);
   };
 
-  // Tích hợp extraCard nếu người dùng vừa lập lượt nhận mới
+  // Tích hợp và lọc danh sách: chỉ hiển thị các lượt nhận ĐÃ ĐƯỢC CHUYỂN ĐẾN, tuyệt đối không có lượt nhận chưa chuyển tiếp (cho_chuyen)
   const allItemsWithExtra = useMemo(() => {
     let list = [...items];
 
-    // Thêm các đơn mới tiếp nhận từ màn Tiếp nhận đơn
+    // 1. Lọc bỏ hoàn toàn các lượt nhận chưa chuyển tiếp (status === 'cho_chuyen')
+    if (luotNhanList && luotNhanList.length > 0) {
+      const choChuyenIds = new Set(
+        luotNhanList.filter((ln) => ln.status === 'cho_chuyen').map((ln) => ln.id)
+      );
+      list = list.filter((it) => {
+        if (choChuyenIds.has(it.id) || (it.luotNhanId && choChuyenIds.has(it.luotNhanId))) {
+          return false;
+        }
+        return true;
+      });
+    }
+
+    // 2. Thêm các đơn/lượt nhận mới được chuyển đến từ Bàn phân tích hoặc Tiếp nhận đơn
     if (acceptedDons && acceptedDons.length > 0) {
       acceptedDons.forEach((ad) => {
-        // Loại bỏ lượt nhận hoặc đơn cũ ở cột 'action_required' nếu đã được tiếp nhận
+        // Tránh trùng lặp
         list = list.filter((it) => it.id !== ad.luotNhanId && it.code !== ad.luotNhanId && it.code !== ad.code && it.id !== ad.id);
+        const isChoTiepNhan = ad.statusBadge === 'Chờ tiếp nhận';
         list.unshift({
           id: ad.id,
           code: ad.code,
           title: ad.title,
           sender: ad.nguoiNop,
-          source: 'Tiếp nhận & phân công',
+          source: 'Tiếp nhận & phân công chuyển đến',
           timeReceived: ad.ngayNhan || 'Vừa xong',
           priority: 'normal',
           deadlineType: 'today',
           deadlineText: 'Hôm nay - 17:00',
           deadlineFull: 'Hôm nay - 17:00',
-          column: 'processing',
-          nextAction: 'Thực hiện thẩm tra & giải quyết đơn theo thẩm quyền',
+          column: isChoTiepNhan ? 'action_required' : 'processing',
+          nextAction: isChoTiepNhan
+            ? 'Kiểm tra kết quả AI và xác nhận tiếp nhận giải quyết'
+            : 'Thực hiện thẩm tra & giải quyết đơn theo thẩm quyền',
           holder: {
-            role: 'Đang xử lý',
+            role: isChoTiepNhan ? 'Chờ tiếp nhận' : 'Đang xử lý',
             name: 'Tôi (Nguyễn Minh Anh)',
             department: 'Phòng Tiếp công dân & Xử lý đơn',
           },
           progress: {
-            currentStep: 2,
+            currentStep: isChoTiepNhan ? 1 : 2,
             totalSteps: 5,
-            stepName: 'Thụ lý giải quyết',
+            stepName: isChoTiepNhan ? 'Tiếp nhận hồ sơ' : 'Thụ lý giải quyết',
             steps: ['Tiếp nhận', 'Phân loại', 'Thẩm tra', 'Trình ký', 'Trả kết quả'],
           },
-          docCount: 5,
+          docCount: 3,
           cta: {
-            label: 'Mở xử lý',
-            actionType: 'continue',
-            variant: 'primary',
+            label: isChoTiepNhan ? 'Tiếp nhận ngay' : 'Mở xử lý',
+            actionType: isChoTiepNhan ? 'handle_now' : 'continue',
+            variant: isChoTiepNhan ? 'urgent' : 'primary',
           },
-          category: 'Tiếp nhận & xử lý',
-          tags: ['Đã phân công', 'Đang xử lý'],
+          category: 'Đã chuyển tiếp nhận',
+          tags: ['Đã chuyển đến', isChoTiepNhan ? 'Chờ tiếp nhận' : 'Đang xử lý'],
           loaiDon: ad.loaiDon || 'Đơn tiếp nhận hành chính',
           luotNhanId: ad.luotNhanId,
-          nguoiGiao: 'Trần Trọng Giáp (Trưởng phòng)',
+          nguoiGiao: 'Bộ phận Tiếp nhận một cửa',
           ngayDuocGiao: '16/09/2026',
           aiStatus: 'completed',
           taskReadiness: 'action_required',
@@ -312,14 +384,96 @@ export default function CongViecCuaToi({
       });
     }
 
-    // Thêm extraCard nếu có
-    if (extraCard && !list.some((it) => it.id === extraCard.id)) {
+    // 3. Tích hợp toàn bộ hồ sơ Được tiếp nhận về hoặc Được bàn giao đến (tiepNhanItems)
+    if (tiepNhanItems && tiepNhanItems.length > 0) {
+      tiepNhanItems.forEach((tn) => {
+        // Tránh trùng lặp nếu đã có trong list
+        list = list.filter((it) => it.id !== tn.id && it.code !== tn.code && it.luotNhanId !== tn.luotNhanId);
+
+        let targetCol: WorkItemColumn = 'action_required';
+        let roleName = 'Chờ tiếp nhận';
+        let holderName = 'Tôi (Nguyễn Minh Anh)';
+        let ctaLabel = 'Tiếp nhận';
+        let ctaAction = 'handle_now';
+        let ctaVariant: 'urgent' | 'primary' | 'neutral' | 'outline' = 'urgent';
+        let nextActionText = 'Hồ sơ được tiếp nhận về hàng chờ đơn vị - Bấm để tiếp nhận xử lý';
+
+        if (tn.trangThai === 'da_ban_giao') {
+          targetCol = 'handed_over';
+          roleName = 'Đã bàn giao cho';
+          holderName = tn.canBoXuLy ? `${tn.canBoXuLy} (${tn.donViTiepNhan})` : tn.donViTiepNhan;
+          ctaLabel = 'Xem tiến độ';
+          ctaAction = 'view_progress';
+          ctaVariant = 'neutral';
+          nextActionText = tn.lyDoBanGiao
+            ? `Đã bàn giao: ${tn.lyDoBanGiao}`
+            : `Cán bộ ${tn.canBoXuLy || tn.donViTiepNhan} đang thụ lý giải quyết`;
+        } else if (tn.trangThai === 'dang_xu_ly') {
+          targetCol = 'processing';
+          roleName = 'Đang xử lý';
+          holderName = tn.canBoXuLy || 'Tôi (Nguyễn Minh Anh)';
+          ctaLabel = 'Xử lý';
+          ctaAction = 'continue';
+          ctaVariant = 'primary';
+          nextActionText = 'Thực hiện thẩm tra & giải quyết đơn theo thẩm quyền';
+        }
+
+        const isOverdue = tn.hanXuLy?.includes('Quá hạn');
+        const isToday = tn.hanXuLy?.includes('Hôm nay');
+
+        list.unshift({
+          id: tn.id,
+          code: tn.code,
+          title: tn.noiDungTomTat,
+          sender: tn.nguoiNop,
+          source: tn.trangThai === 'da_ban_giao' ? 'Bàn giao chuyển đến' : (tn.donViHienTai || 'Một cửa chuyển đến'),
+          timeReceived: tn.ngayNhan || 'Vừa xong',
+          priority: isOverdue ? 'urgent' : 'normal',
+          deadlineType: isOverdue ? 'overdue' : isToday ? 'today' : 'upcoming',
+          deadlineText: tn.hanXuLy || 'Còn 3 ngày',
+          deadlineFull: tn.hanXuLyFull || 'Còn 3 ngày',
+          column: targetCol,
+          nextAction: nextActionText,
+          holder: {
+            role: roleName,
+            name: holderName,
+            department: tn.donViTiepNhan || 'Phòng Tiếp công dân & Xử lý đơn',
+          },
+          progress: {
+            currentStep: targetCol === 'action_required' ? 1 : targetCol === 'processing' ? 2 : 4,
+            totalSteps: 5,
+            stepName: targetCol === 'action_required' ? 'Tiếp nhận hồ sơ' : targetCol === 'processing' ? 'Thụ lý giải quyết' : 'Bàn giao theo dõi',
+            steps: ['Tiếp nhận', 'Phân loại', 'Thẩm tra', 'Trình ký', 'Trả kết quả'],
+          },
+          docCount: 3,
+          cta: {
+            label: ctaLabel,
+            actionType: ctaAction as any,
+            variant: ctaVariant,
+          },
+          category: tn.trangThai === 'da_ban_giao' ? 'Đã bàn giao' : 'Được tiếp nhận về',
+          tags: [
+            tn.trangThai === 'da_ban_giao' ? 'Đã bàn giao' : 'Được tiếp nhận về',
+            tn.loaiDon || 'Đơn tiếp nhận',
+          ],
+          loaiDon: tn.loaiDon || 'Đơn tiếp nhận hành chính',
+          luotNhanId: tn.luotNhanId,
+          nguoiGiao: tn.nguoiChuyen || 'Bộ phận Tiếp nhận một cửa',
+          ngayDuocGiao: tn.ngayChuyenDen || '16/09/2026',
+          aiStatus: 'completed',
+          taskReadiness: 'action_required',
+        });
+      });
+    }
+
+    // 4. Chỉ thêm extraCard nếu lượt nhận đó ĐÃ ĐƯỢC CHUYỂN TIẾP (status !== 'cho_chuyen')
+    if (extraCard && extraCard.status !== 'cho_chuyen' && !list.some((it) => it.id === extraCard.id)) {
       list.unshift({
         id: extraCard.id,
         code: extraCard.id,
         title: extraCard.noiDung,
         sender: extraCard.nguoiNop,
-        source: 'Bộ phận Một cửa',
+        source: 'Bộ phận Một cửa chuyển đến',
         timeReceived: 'Vừa xong',
         priority: 'urgent',
         deadlineType: 'today',
@@ -345,7 +499,7 @@ export default function CongViecCuaToi({
           variant: 'urgent',
         },
         category: 'Hồ sơ mới',
-        tags: ['Mới tạo'],
+        tags: ['Đã chuyển đến'],
         luotNhanId: extraCard.id,
         aiStatus: 'completed',
         taskReadiness: 'action_required',
@@ -353,7 +507,7 @@ export default function CongViecCuaToi({
     }
 
     return list;
-  }, [items, acceptedDons, extraCard]);
+  }, [items, acceptedDons, extraCard, luotNhanList, tiepNhanItems]);
 
   // Tính toán KPI số liệu chuẩn xác 100% từ tập dữ liệu
   const kpiStats = useMemo(() => {
@@ -474,32 +628,15 @@ export default function CongViecCuaToi({
 
   // Điều hướng khi nhấp vào thẻ hoặc nút CTA
   const handleItemClick = (item: WorkItem) => {
-    // 1. Kiểm tra nếu là đơn / lượt nhận mà AI mới phân tích (cần kiểm tra và tiếp nhận)
-    // Các trường hợp chuyển đến màn AI đã phân tích (Bàn phân tích & bóc tách AI):
-    // - Trạng thái AI cần kiểm tra (needs_review) e.g. VV-2025-0430 (Độ tin cậy 68%)
-    // - Nút CTA là review_ai ('Kiểm tra')
-    // - AI đã phân tích (completed) ở giai đoạn cần tôi xử lý / tiếp nhận e.g. LN-56/2026-GOVEX
-    // - Các lượt nhận chuyển tiếp bắt đầu bằng LN-
-    // - Đang phân tích (processing) muốn xem tiến trình AI quét OCR
-    // - Phân tích lỗi (failed) muốn kiểm tra lại
-    const isAiAnalyzedForReview =
+    // 1. Kiểm tra nếu là đơn / lượt nhận mà AI mới phân tích cần rà soát bóc tách (Bàn phân tích & bóc tách AI):
+    const isAiRawReview =
       item.aiStatus === 'needs_review' ||
       item.cta.actionType === 'review_ai' ||
-      (item.aiStatus === 'completed' && (
-        item.column === 'action_required' ||
-        item.code.startsWith('LN') ||
-        item.progress.currentStep <= 2 ||
-        item.nextAction.toLowerCase().includes('kiểm tra') ||
-        item.nextAction.toLowerCase().includes('tiếp nhận')
-      )) ||
-      item.code.startsWith('LN') ||
-      item.nextAction.toLowerCase().includes('kiểm tra và xác nhận kết quả ai') ||
-      item.nextAction.toLowerCase().includes('kiểm tra kết quả ai') ||
-      item.id === 'LN-56/2026-GOVEX' ||
-      item.id === 'VV-2025-0430' ||
-      item.id === 'LN-2025-0819';
+      item.aiStatus === 'processing' ||
+      item.aiStatus === 'failed';
 
-    if (isAiAnalyzedForReview || item.aiStatus === 'processing' || item.aiStatus === 'failed') {
+    if (isAiRawReview) {
+      const matchedLn = luotNhanList?.find((ln) => ln.id === item.code || ln.id === item.luotNhanId);
       const targetLuotNhan: LuotNhan = {
         id: item.code,
         ngayNhan: item.timeReceived,
@@ -508,6 +645,7 @@ export default function CongViecCuaToi({
         noiDung: item.title,
         donVi: item.holder?.department || 'Tổ Tiếp nhận hồ sơ',
         aiJob: item.aiStatus === 'completed' || item.aiStatus === 'needs_review' ? 5 : item.aiStatus === 'processing' ? 3 : 0,
+        status: matchedLn?.status === 'da_ban_giao' ? 'da_ban_giao' : 'da_chuyen',
       };
 
       onSelect(targetLuotNhan);
@@ -517,13 +655,14 @@ export default function CongViecCuaToi({
     }
 
     if (item.id === 'Đ-2025-0982') {
-      onSelect(ALL_LUOT_NHAN[2] || LN19);
+      const matched = ALL_LUOT_NHAN[2] ? { ...ALL_LUOT_NHAN[2], status: 'da_chuyen' as const } : { ...LN19, status: 'da_chuyen' as const };
+      onSelect(matched);
       onNav('ban-phan-tich');
       showToast(`Đang xem chi tiết phối hợp liên ngành: ${item.code}`);
       return;
     }
 
-    // 2. Mở màn Tiếp nhận & Xử lý đơn chi tiết (cho các hồ sơ đang xử lý ở các bước sau hoặc đã bàn giao)
+    // 2. Mở màn Chi tiết tiếp nhận & Quy trình xử lý đơn (QuyTrinhXuLyDon) cho tất cả các hồ sơ đã tiếp nhận/đang xử lý
     const donObj: DonDetail = {
       id: item.id,
       code: item.code,
@@ -531,15 +670,16 @@ export default function CongViecCuaToi({
       luotNhanId: item.luotNhanId || item.id,
       nguoiNop: item.sender,
       ngayNhan: item.timeReceived,
-      loaiDon: item.loaiDon || 'Đơn tiếp nhận hành chính',
+      loaiDon: item.loaiDon || 'Đơn tố giác về tội phạm',
       type: item.code.startsWith('VV') ? 'VỤ VIỆC' : 'ĐƠN TIẾP NHẬN',
+      statusBadge: item.column === 'handed_over' ? 'Đã bàn giao' : 'Đang xử lý',
     };
 
     if (onSelectDon) {
       onSelectDon(donObj);
     }
-    onNav('don-tiep-nhan');
-    showToast(`Đang mở chi tiết hồ sơ: ${item.code}`);
+    onNav('quy-trinh-xu-ly');
+    showToast(`Đang mở chi tiết tiếp nhận & quy trình xử lý: ${item.code}`);
   };
 
   return (
@@ -1442,21 +1582,6 @@ function TaskCard({ item, onClick, onRetryAI, onTiepNhanXuLy, onBanGiao, onPhanC
     >
       {/* DÒNG 1: [PRIORITY] [TASK TYPE] [MÃ HỒ SƠ] + (BADGE AI CẦN KIỂM TRA) */}
       <div className="flex items-center gap-1.5 text-xs flex-wrap">
-        {/* PRIORITY */}
-        {isUrgent ? (
-          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 tracking-wider uppercase shrink-0">
-            KHẨN
-          </span>
-        ) : (
-          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 tracking-wider uppercase shrink-0">
-            BÌNH THƯỜNG
-          </span>
-        )}
-
-        {/* TASK TYPE */}
-        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-blue-50 text-blue-800 border border-blue-200 shrink-0 font-label-technical">
-          {taskType}
-        </span>
 
         {/* MÃ HỒ SƠ */}
         <span className="font-mono text-[11px] font-bold text-slate-800 group-hover/card:text-[#C62828] transition-colors truncate">

@@ -8,7 +8,7 @@ import NhanDonList from "./screens/NhanDonList";
 import NhanDonThem from "./screens/NhanDonThem";
 import TroChuyenScreen from "./screens/TroChuyenScreen";
 import TiepNhanVaXuLyScreen from "./screens/TiepNhanVaXuLyScreen";
-import { LN19 } from "./constants";
+import { LN19, ALL_LUOT_NHAN } from "./constants";
 import { LuotNhan, Screen, DonDetail } from "./types";
 import QuyTrinhXuLyDon from "./screens/QuyTrinhXuLyDon";
 import { ActiveWorkflowState } from "./types/workflow";
@@ -19,9 +19,20 @@ import ProcessWorkflowModule from "./screens/workflowAdmin/ProcessWorkflowModule
 import QuanTriNghiepVuScreen from "./screens/workflowAdmin/QuanTriNghiepVuScreen";
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>("cong-viec");
+  const [screen, setScreen] = useState<Screen>("don-tiep-nhan");
   const [selected, setSelected] = useState<LuotNhan>(LN19);
-  const [selectedDon, setSelectedDon] = useState<DonDetail | null>(null);
+  const [luotNhanList, setLuotNhanList] = useState<LuotNhan[]>(ALL_LUOT_NHAN);
+  const [selectedDon, setSelectedDon] = useState<DonDetail | null>({
+    id: "Đ-2025-0105",
+    code: "Đ-2025-0105",
+    title: "Thẩm tra thay đổi ngành nghề HKD cá thể",
+    luotNhanId: "LN-2025-0105",
+    nguoiNop: "Vũ Thị Thanh",
+    ngayNhan: "16/09/2026 09:30",
+    loaiDon: "Đơn khiếu nại đất đai",
+    type: "ĐƠN TIẾP NHẬN",
+    statusBadge: "Đang xử lý",
+  });
   const [acceptedDons, setAcceptedDons] = useState<DonDetail[]>([]);
   const [extraCard, setExtraCard] = useState<LuotNhan | null>(null);
   const [tiepNhanItems, setTiepNhanItems] = useState<TiepNhanDonItem[]>(INITIAL_TIEP_NHAN_ITEMS);
@@ -47,18 +58,32 @@ export default function App() {
   });
 
   const handleSubmit = useCallback((newRecord?: LuotNhan) => {
-    setExtraCard(
+    const record: LuotNhan =
       newRecord || {
-        id: "LN-20/2026-GOVEX_HC",
+        id: `LN-${Date.now().toString().slice(-4)}/2026-GOVEX_HC`,
         ngayNhan: "16/09/2026",
         nguoiNop: "Người vừa nộp",
         hinhThuc: "Trực tiếp",
-        noiDung: "Đơn vừa được tiếp nhận (Chờ tiếp nhận)",
-        donVi: "Phòng Hành chính - Tổng hợp",
+        noiDung: "Nội dung tiếp nhận mới",
+        donVi: "Phòng Tiếp công dân & Xử lý đơn",
         aiJob: 0,
-      }
+        status: 'cho_chuyen',
+        hasFile: true,
+        sourceType: 'file',
+      };
+    // BR-01, BR-02: Lưu lượt nhận vào danh sách, không tạo Task ngay
+    setLuotNhanList((prev) => [record, ...prev.filter((d) => d.id !== record.id)]);
+    // Không đưa vào extraCard vì lượt nhận chưa chuyển tiếp (status === 'cho_chuyen')
+    setExtraCard(null);
+    setSelected(record);
+    setScreen("ban-phan-tich");
+  }, []);
+
+  const handleUpdateLuotNhan = useCallback((updated: LuotNhan) => {
+    setLuotNhanList((prev) =>
+      prev.map((ln) => (ln.id === updated.id ? { ...ln, ...updated } : ln))
     );
-    setScreen("cong-viec");
+    setSelected((prev) => (prev.id === updated.id ? { ...prev, ...updated } : prev));
   }, []);
 
   const handleSelectDon = useCallback((don: DonDetail) => {
@@ -68,7 +93,7 @@ export default function App() {
     setActiveWorkflow({
       donCode: don.code,
       donTitle: don.title,
-      luotNhanId: don.luotNhanId || 'LN-45/2026-GOVEX',
+      luotNhanId: don.luotNhanId || 'LN-2025-0819',
       nguoiNop: don.nguoiNop,
       loaiDonConfirmed: loaiDon,
       workflow: wfDef,
@@ -87,19 +112,67 @@ export default function App() {
     setSelectedDon(don);
     if (wfState) {
       setActiveWorkflow(wfState);
-      setScreen("quy-trinh-xu-ly");
+    } else {
+      const loaiDon = don.loaiDon || 'Đơn tố giác về tội phạm';
+      const wfDef = matchWorkflowByLoaiDon(loaiDon);
+      setActiveWorkflow({
+        donCode: don.code,
+        donTitle: don.title,
+        luotNhanId: don.luotNhanId || 'LN-2025-0819',
+        nguoiNop: don.nguoiNop,
+        loaiDonConfirmed: loaiDon,
+        workflow: wfDef,
+        activeStepId: wfDef.steps[1]?.id || wfDef.steps[0].id,
+        tasks: wfDef.defaultTasks,
+        missingInfoList: wfDef.potentialMissingInfo,
+        status: 'dang_xu_ly',
+        startedAt: '16/09/2026 10:30',
+        assignedOfficer: 'Nguyễn Minh Anh',
+        historyLogs: [],
+      });
     }
+    setScreen("quy-trinh-xu-ly");
   }, []);
 
-  // Xử lý khi cán bộ nhấn "Chuyển tiếp nhận và xử lý" từ Bàn phân tích
+  // BR-06, BR-07: Xử lý khi cán bộ nhấn "Chuyển tiếp nhận và xử lý" từ Bàn phân tích
   const handleChuyenTiepNhan = useCallback((item: TiepNhanDonItem, isDirect: boolean, assignedOfficerName?: string) => {
+    // BR-06: Cập nhật trạng thái lượt nhận thành 'da_chuyen'
+    setLuotNhanList((prev) =>
+      prev.map((ln) =>
+        ln.id === item.luotNhanId
+          ? {
+              ...ln,
+              status: 'da_chuyen',
+              historyLogs: [
+                ...(ln.historyLogs || []),
+                {
+                  action: isDirect
+                    ? `Chuyển tiếp nhận trực tiếp cho cán bộ ${assignedOfficerName || 'Nguyễn Minh Anh'}`
+                    : `Chuyển tiếp nhận vào hàng chờ đơn vị ${item.donViTiepNhan}`,
+                  actor: 'Nguyễn Minh Anh (Cán bộ một cửa)',
+                  time: 'Hôm nay, vừa xong',
+                  note: item.ghiChuChuyen || 'Chuyển tiếp nhận xử lý hồ sơ',
+                },
+              ],
+            }
+          : ln
+      )
+    );
+    setSelected((prev) =>
+      prev.id === item.luotNhanId ? { ...prev, status: 'da_chuyen' } : prev
+    );
+
     setTiepNhanItems((prev) => [item, ...prev.filter((d) => d.id !== item.id && d.code !== item.code)]);
 
-    // BR-01 & BR-02: Nếu chuyển về hàng chờ đơn vị, KHÔNG sinh task trong Công việc của tôi của cán bộ chuyên môn!
-    // BR-04 & BR-05: Nếu giao trực tiếp cho Cán bộ hiện tại (Nguyễn Minh Anh), sinh task trong Công việc của tôi
-    if (isDirect && (assignedOfficerName?.includes('Minh Anh') || !assignedOfficerName)) {
-      setAcceptedDons((prev) => [
-        {
+    // BR-06 & BR-07 (Tính Idempotent):
+    // Lượt nhận được chuyển đến cán bộ Nguyễn Minh Anh hoặc hàng chờ đơn vị tiếp nhận (Phòng Tiếp dân)
+    if (
+      (isDirect && (assignedOfficerName?.includes('Minh Anh') || !assignedOfficerName)) ||
+      (!isDirect && (item.donViTiepNhanId === 'tiep-dan' || item.donViTiepNhan?.includes('Tiếp')))
+    ) {
+      setAcceptedDons((prev) => {
+        const existingIndex = prev.findIndex((d) => d.luotNhanId === item.luotNhanId || d.code === item.code);
+        const updatedTask: DonDetail = {
           id: item.code,
           code: item.code,
           title: item.noiDungTomTat,
@@ -108,11 +181,110 @@ export default function App() {
           ngayNhan: item.ngayNhan,
           loaiDon: item.loaiDon,
           type: 'ĐƠN TIẾP NHẬN',
-          statusBadge: 'Đang xử lý',
-        },
-        ...prev.filter((d) => d.code !== item.code),
-      ]);
+          statusBadge: isDirect ? 'Đang xử lý' : 'Chờ tiếp nhận',
+        };
+        if (existingIndex >= 0) {
+          const updated = [...prev];
+          updated[existingIndex] = updatedTask;
+          return updated;
+        }
+        return [updatedTask, ...prev];
+      });
     }
+  }, []);
+
+  // BR-19, BR-20, BR-21, BR-22: Xử lý Bàn giao hồ sơ
+  const handleBanGiao = useCallback((luotNhanId?: string, donViName?: string, canBoName?: string, lyDo?: string) => {
+    if (!luotNhanId) return;
+    setLuotNhanList((prev) =>
+      prev.map((ln) =>
+        ln.id === luotNhanId
+          ? {
+              ...ln,
+              status: 'da_ban_giao',
+              historyLogs: [
+                ...(ln.historyLogs || []),
+                {
+                  action: `Bàn giao hồ sơ cho ${donViName || 'đơn vị khác'}${canBoName ? ` (Cán bộ: ${canBoName})` : ''}`,
+                  actor: 'Nguyễn Minh Anh (Cán bộ thụ lý)',
+                  time: 'Hôm nay, vừa xong',
+                  note: lyDo || 'Bàn giao theo thẩm quyền nghiệp vụ',
+                },
+              ],
+            }
+          : ln
+      )
+    );
+    setSelected((prev) =>
+      prev.id === luotNhanId ? { ...prev, status: 'da_ban_giao' } : prev
+    );
+
+    // Cập nhật trạng thái trong Tiếp nhận và Công việc của tôi
+    setTiepNhanItems((prev) =>
+      prev.map((it) =>
+        it.luotNhanId === luotNhanId
+          ? {
+              ...it,
+              trangThai: 'da_ban_giao',
+              lyDoBanGiao: lyDo,
+              donViTiepNhan: donViName || it.donViTiepNhan,
+              canBoXuLy: canBoName || it.canBoXuLy,
+            }
+          : it
+      )
+    );
+
+    setAcceptedDons((prev) =>
+      prev.map((d) =>
+        d.luotNhanId === luotNhanId
+          ? { ...d, statusBadge: 'Đã bàn giao' }
+          : d
+      )
+    );
+  }, []);
+
+  // BR-23, BR-24: Xử lý Trả lại hồ sơ cho công dân / người nộp đơn (kết thúc Task)
+  const handleTraLai = useCallback((luotNhanId?: string, lyDo?: string) => {
+    if (!luotNhanId) return;
+    setLuotNhanList((prev) =>
+      prev.map((ln) =>
+        ln.id === luotNhanId
+          ? {
+              ...ln,
+              status: 'da_tra_lai',
+              historyLogs: [
+                ...(ln.historyLogs || []),
+                {
+                  action: 'Trả lại hồ sơ cho công dân / người nộp đơn',
+                  actor: 'Nguyễn Minh Anh (Cán bộ thụ lý)',
+                  time: 'Hôm nay, vừa xong',
+                  note: lyDo || 'Trả lại đơn theo quy định',
+                },
+              ],
+            }
+          : ln
+      )
+    );
+    setSelected((prev) =>
+      prev.id === luotNhanId ? { ...prev, status: 'da_tra_lai' } : prev
+    );
+
+    // Đóng / kết thúc Task trong danh sách thụ lý
+    setTiepNhanItems((prev) =>
+      prev.map((it) =>
+        it.luotNhanId === luotNhanId
+          ? { ...it, trangThai: 'da_tra_lai', lyDoTraLai: lyDo }
+          : it
+      )
+    );
+
+    setAcceptedDons((prev) =>
+      prev.map((d) =>
+        d.luotNhanId === luotNhanId
+          ? { ...d, statusBadge: 'Đã trả lại' }
+          : d
+      )
+    );
   }, []);
 
   // Xử lý sau khi Trưởng phòng hoặc người có quyền phân công cán bộ (BR-03, BR-04, BR-07)
@@ -258,16 +430,25 @@ export default function App() {
       <div className="flex flex-1 overflow-hidden">
         <Sidebar screen={screen} onNav={setScreen} />
         <main className="flex-1 overflow-y-auto flex flex-col bg-[#f4f7fb]">
-          {screen === "cong-viec" && (
+          {(screen === "cong-viec" || screen === "tiep-nhan-xu-ly") && (
             <CongViecCuaToi
               onSelect={setSelected}
               onNav={setScreen}
               extraCard={extraCard}
               onSelectDon={handleSelectDon}
               acceptedDons={acceptedDons}
+              luotNhanList={luotNhanList}
+              tiepNhanItems={tiepNhanItems}
+              onBanGiaoDone={handleBanGiao}
             />
           )}
-          {screen === "nhan-don-list" && <NhanDonList onNav={setScreen} onSelect={setSelected} />}
+          {screen === "nhan-don-list" && (
+            <NhanDonList
+              onNav={setScreen}
+              onSelect={setSelected}
+              luotNhanList={luotNhanList}
+            />
+          )}
           {screen === "nhan-don-them" && <NhanDonThem onNav={setScreen} onSubmit={handleSubmit} />}
           {screen === "ban-phan-tich" && (
             <BanPhanTich
@@ -275,14 +456,9 @@ export default function App() {
               onNav={setScreen}
               onAcceptAndProcess={handleAcceptFromBanPhanTich}
               onChuyenTiepNhan={handleChuyenTiepNhan}
-            />
-          )}
-          {screen === "tiep-nhan-xu-ly" && (
-            <TiepNhanVaXuLyScreen
-              onNav={setScreen}
-              items={tiepNhanItems}
-              onPhanCongDone={handlePhanCongDone}
-              onSelectDon={handleSelectDon}
+              onBanGiao={handleBanGiao}
+              onTraLai={handleTraLai}
+              onUpdateLuotNhan={handleUpdateLuotNhan}
             />
           )}
           {screen === "don-tiep-nhan" && (

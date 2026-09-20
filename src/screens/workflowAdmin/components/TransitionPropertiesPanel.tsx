@@ -62,28 +62,7 @@ export default function TransitionPropertiesPanel({
     });
   };
 
-  // Tạo tóm tắt biểu thức logic
-  const renderConditionFormula = () => {
-    if (transition.conditions.length === 0) return null;
-    return (
-      <div className="p-3 bg-blue-50/70 border border-blue-200/80 rounded-xl space-y-1.5">
-        <span className="text-[10.5px] font-bold uppercase tracking-wider text-blue-800 flex items-center gap-1">
-          <span className="material-symbols-outlined text-[13px]">code</span>
-          Biểu thức logic áp dụng:
-        </span>
-        <p className="text-xs font-mono text-blue-900 leading-relaxed break-words bg-white/80 p-2 rounded-lg border border-blue-100">
-          {transition.conditions.map((c, i) => {
-            const opLabel = CONDITION_OPERATORS.find((op) => op.id === c.operator)?.label || c.operator;
-            const expr = `${c.fieldName || '[Trường]'} ${opLabel} ${
-              c.operator === 'co_gia_tri' || c.operator === 'khong_co_gia_tri' ? '' : `"${c.value || '...'}"`
-            }`;
-            if (i === 0) return expr;
-            return ` ${c.logicOp} ${expr}`;
-          })}
-        </p>
-      </div>
-    );
-  };
+
 
   return (
     <aside className="w-96 bg-white border-l border-slate-200/90 flex flex-col h-full shrink-0 shadow-lg select-none z-20 animate-in slide-in-from-right duration-150">
@@ -91,9 +70,8 @@ export default function TransitionPropertiesPanel({
       <div className="px-5 py-3.5 border-b border-slate-200 flex items-center justify-between bg-slate-50/80">
         <div className="flex items-center gap-2 min-w-0">
           <span
-            className={`material-symbols-outlined text-[20px] ${
-              transition.type === 'return' ? 'text-amber-600' : 'text-blue-600'
-            }`}
+            className={`material-symbols-outlined text-[20px] ${transition.type === 'return' ? 'text-amber-600' : 'text-blue-600'
+              }`}
           >
             {transition.type === 'return' ? 'undo' : 'trending_flat'}
           </span>
@@ -188,11 +166,10 @@ export default function TransitionPropertiesPanel({
           <label className="block font-bold text-slate-800 mb-1.5">Loại đường chuyển</label>
           <div className="grid grid-cols-2 gap-2">
             <label
-              className={`flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition-all ${
-                transition.type === 'normal'
+              className={`flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition-all ${transition.type === 'normal'
                   ? 'bg-blue-50/70 border-blue-300 text-blue-900 font-bold shadow-2xs'
                   : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-              }`}
+                }`}
             >
               <input
                 type="radio"
@@ -206,11 +183,10 @@ export default function TransitionPropertiesPanel({
             </label>
 
             <label
-              className={`flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition-all ${
-                transition.type === 'return'
+              className={`flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition-all ${transition.type === 'return'
                   ? 'bg-amber-50/70 border-amber-300 text-amber-900 font-bold shadow-2xs'
                   : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-              }`}
+                }`}
             >
               <input
                 type="radio"
@@ -335,18 +311,16 @@ export default function TransitionPropertiesPanel({
                         <button
                           type="button"
                           onClick={() => handleUpdateCondition(cond.id, { logicOp: 'AND' })}
-                          className={`px-2 py-0.5 text-[10px] font-bold rounded ${
-                            cond.logicOp === 'AND' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'
-                          }`}
+                          className={`px-2 py-0.5 text-[10px] font-bold rounded ${cond.logicOp === 'AND' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'
+                            }`}
                         >
                           AND
                         </button>
                         <button
                           type="button"
                           onClick={() => handleUpdateCondition(cond.id, { logicOp: 'OR' })}
-                          className={`px-2 py-0.5 text-[10px] font-bold rounded ${
-                            cond.logicOp === 'OR' ? 'bg-amber-600 text-white' : 'text-slate-600 hover:bg-slate-100'
-                          }`}
+                          className={`px-2 py-0.5 text-[10px] font-bold rounded ${cond.logicOp === 'OR' ? 'bg-amber-600 text-white' : 'text-slate-600 hover:bg-slate-100'
+                            }`}
                         >
                           OR
                         </button>

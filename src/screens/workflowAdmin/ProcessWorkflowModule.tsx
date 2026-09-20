@@ -77,8 +77,8 @@ export default function ProcessWorkflowModule({ onNav }: ProcessWorkflowModulePr
     showToast(`✓ Đã nhân bản quy trình thành "${duplicated.name}".`);
   };
 
-  // Tạo phiên bản mới từ quy trình đã phát hành (Requirement 8)
-  const handleCreateNewVersion = (baseWf: ProcessWorkflow) => {
+  // Tạo phiên bản mới từ quy trình đã phát hành (Requirement 8 & 12)
+  const handleCreateNewVersion = (baseWf: ProcessWorkflow, versionNote?: string) => {
     const now = new Date();
     const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
@@ -94,15 +94,37 @@ export default function ProcessWorkflowModule({ onNav }: ProcessWorkflowModulePr
       updatedAt: dateStr,
       updatedBy: 'Nguyễn Minh Anh (Cán bộ thụ lý)',
       effectiveDate: undefined,
+      activeDonsCount: 0,
       versionHistory: [
         {
           version: nextVer,
           publishedAt: 'Bản nháp đang chỉnh sửa',
           publishedBy: 'Nguyễn Minh Anh',
-          notes: `Khởi tạo phiên bản mới từ phiên bản ${baseWf.version}`,
+          notes: versionNote || `Khởi tạo phiên bản mới từ phiên bản ${baseWf.version}`,
           isCurrentActive: true,
+          totalSteps: baseWf.steps.length,
+          slaDays: 20,
+          lanesCount: baseWf.lanes.length,
+          formsCount: 3,
         },
         ...baseWf.versionHistory.map((v) => ({ ...v, isCurrentActive: false })),
+      ],
+      auditLogs: [
+        {
+          id: `log-${Date.now()}`,
+          timestamp: dateStr,
+          authorName: 'Nguyễn Minh Anh',
+          authorRole: 'Cán bộ thụ lý hồ sơ',
+          actionType: 'create_version',
+          actionLabel: `Khởi tạo phiên bản mới ${nextVer}`,
+          targetName: `Quy trình ${baseWf.name}`,
+          targetId: baseWf.id,
+          targetType: 'workflow',
+          beforeValue: `Phiên bản gốc: ${baseWf.version}`,
+          afterValue: `Bản nháp mới: ${nextVer}`,
+          notes: versionNote || 'Sao chép cấu hình để tạo phiên bản sửa đổi mới',
+        },
+        ...(baseWf.auditLogs || []),
       ],
     };
 
@@ -215,6 +237,7 @@ export default function ProcessWorkflowModule({ onNav }: ProcessWorkflowModulePr
           onEditWorkflow={handleEditWorkflow}
           onDuplicateWorkflow={handleDuplicateWorkflow}
           onToggleStatus={handleToggleStatus}
+          onCreateNewVersion={handleCreateNewVersion}
         />
       )}
 

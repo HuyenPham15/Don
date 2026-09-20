@@ -533,38 +533,20 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
       newErrors.donViNhan = 'Vui lòng chọn/nhập đơn vị tiếp nhận';
     }
 
-    // Validate theo loại người nộp
+    // Validate theo loại người nộp (BR-04: Thông tin người nộp không bắt buộc)
     if (loaiNguoiNop === 'ca-nhan') {
-      if (!cnHoTen.trim()) {
-        newErrors.cnHoTen = 'Họ và tên cá nhân là bắt buộc';
-      }
       if (cnTuCach === 'nguoi-dai-dien') {
-        if (!cnUqHoTen.trim()) {
-          newErrors.cnUqHoTen = 'Họ và tên người đại diện là bắt buộc';
-        }
-        if (!cnUqCccd.trim()) {
-          newErrors.cnUqCccd = 'Số CCCD người đại diện là bắt buộc';
-        }
-        if (cnUqTaiLieuList.length === 0) {
-          newErrors.cnUqTaiLieu = 'Chưa có tài liệu chứng minh tư cách đại diện';
+        if (!cnUqHoTen.trim() && cnHoTen.trim()) {
+          newErrors.cnUqHoTen = 'Họ và tên người đại diện là bắt buộc khi chọn tư cách đại diện';
         }
         if (cnUqNgayHetHieuLuc && cnUqNgayHetHieuLuc < todayStr) {
           newErrors.cnUqHieuLuc = 'Văn bản ủy quyền đã hết hiệu lực';
         }
       }
     } else if (loaiNguoiNop === 'to-chuc') {
-      if (!tcTen.trim()) {
-        newErrors.tcTen = 'Tên tổ chức / doanh nghiệp là bắt buộc';
-      }
-      if (!tcDdHoTen.trim()) {
-        newErrors.tcDdHoTen = 'Họ và tên người đại diện là bắt buộc';
-      }
       if (tcTuCach === 'nguoi-duoc-uy-quyen') {
-        if (!tcUqHoTen.trim()) {
-          newErrors.tcUqHoTen = 'Họ và tên người được ủy quyền cho tổ chức là bắt buộc';
-        }
         if (!tcUqVanBan && files.every((f) => !f.name.toLowerCase().includes('uy_quyen'))) {
-          newErrors.tcUqVanBan = 'Bắt buộc tải lên giấy ủy quyền/công văn ủy quyền từ tổ chức';
+          // Gợi ý bổ sung giấy ủy quyền
         }
       }
     }
@@ -578,36 +560,74 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
     const randomCode = Math.floor(1000 + Math.random() * 9000);
     const generatedId = `LN-2026-${randomCode}_HC`;
 
-    let submitterName = 'Chưa xác định (Không rõ)';
+    let submitterName = 'Chưa xác định danh tính (Khuyết danh)';
+    let submitterCccd = cnCccd;
+    let submitterSdt = cnSdt;
+    let submitterDiaChi = [cnDiaChiChiTiet, cnPhuongXa, cnTinhThanh].filter(Boolean).join(', ');
+
     if (loaiNguoiNop === 'ca-nhan') {
       if (cnTuCach === 'nguoi-dai-dien' && cnUqHoTen.trim()) {
         submitterName = `${cnHoTen.trim() || 'Người đứng đơn'} (Đại diện: ${cnUqHoTen.trim()})`;
-      } else {
+        submitterCccd = cnUqCccd || cnCccd;
+        submitterSdt = cnUqSdt || cnSdt;
+        submitterDiaChi = [cnUqDiaChiChiTiet, cnUqPhuongXa, cnUqTinhThanh].filter(Boolean).join(', ') || submitterDiaChi;
+      } else if (cnHoTen.trim()) {
         submitterName = cnHoTen.trim();
       }
     } else if (loaiNguoiNop === 'to-chuc') {
-      submitterName = tcTen.trim();
+      if (tcTen.trim()) {
+        submitterName = tcTen.trim();
+      } else {
+        submitterName = 'Tổ chức chưa xác định';
+      }
+      submitterCccd = tcDdCccd || tcMst;
+      submitterSdt = tcSdt;
+      submitterDiaChi = [tcDiaChiChiTiet, tcPhuongXa, tcTinhThanh].filter(Boolean).join(', ');
     }
+
+    const hasAnyFile = files.length > 0;
+    const hasNote = Boolean(ghiChu.trim());
+    let srcType: 'file' | 'ghi_chu' | 'both' | undefined = undefined;
+    if (hasAnyFile && hasNote) srcType = 'both';
+    else if (hasAnyFile) srcType = 'file';
+    else if (hasNote) srcType = 'ghi_chu';
 
     const newRecord: LuotNhan = {
       id: generatedId,
       ngayNhan: ngayNhan.split('-').reverse().join('/'),
       nguoiNop: submitterName,
       hinhThuc: hinhThucNhan,
-      noiDung: ghiChu.trim() || 'Đơn tiếp nhận mới vào hàng đợi (Chờ tiếp nhận)',
+      noiDung: ghiChu.trim() || 'Đơn tiếp nhận mới vào hệ thống (Chờ xử lý)',
       donVi: donViNhan,
-      aiJob: 0, // Trạng thái ban đầu: "Chờ tiếp nhận"
+      aiJob: 0, // BR-08: Chuyển tiếp nhận & xử lý mới trigger OCR
+      status: 'cho_chuyen', // BR-01, BR-02: Lượt nhận mới có trạng thái cho_chuyen
+      hasFile: hasAnyFile,
+      fileCount: files.length,
+      files: files,
+      ghiChu: ghiChu.trim(),
+      sourceType: srcType,
+      cccd: submitterCccd,
+      sdt: submitterSdt,
+      diaChi: submitterDiaChi,
+      historyLogs: [
+        {
+          time: `${new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} ${todayStr.split('-').reverse().join('/')}`,
+          action: 'Ghi nhận lượt nhận',
+          actor: canBoNhan || 'Cán bộ tiếp nhận',
+          note: `Đã ghi nhận lượt nhận vào hệ thống (${hasAnyFile ? `${files.length} tệp tài liệu` : 'Không có tệp'}, ${hasNote ? 'Có ghi chú' : 'Không có ghi chú'})`,
+        },
+      ],
     };
 
-    showToast(`Đã lưu thành công đơn tiếp nhận ${generatedId}!`);
+    showToast(`Đã ghi nhận thành công lượt nhận ${generatedId}! Đang mở chi tiết lượt nhận...`);
 
     setTimeout(() => {
       if (onSubmit) {
         onSubmit(newRecord);
       } else {
-        onNav('cong-viec');
+        onNav('ban-phan-tich');
       }
-    }, 800);
+    }, 600);
   };
 
   return (
@@ -678,7 +698,7 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
             className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-[#004ac6] hover:bg-[#003ea8] active:scale-95 text-white font-semibold text-[13px] shadow-xs hover:shadow-md transition-all cursor-pointer"
           >
             <span className="material-symbols-outlined text-[18px]">save</span>
-            <span>Lưu đơn tiếp nhận</span>
+            <span>Ghi nhận lượt nhận</span>
           </button>
         </div>
       </div>
@@ -2253,32 +2273,6 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
           )}
         </section>
       </div>
-
-      {/* ─── STICKY FOOTER ACTION ─────────────────────────────── */}
-      <div className="bg-white border-t border-slate-200 px-6 py-3.5 flex items-center justify-between shrink-0 shadow-[0_-2px_10px_rgba(0,0,0,0.03)]">
-        <div className="text-[12px] text-slate-500">
-          Trạng thái ban đầu sau khi lưu: <strong className="text-blue-700 font-medium font-label-technical">Chờ tiếp nhận</strong>
-        </div>
-
-        <div className="flex items-center gap-2.5">
-          <button
-            type="button"
-            onClick={() => onNav('nhan-don-list')}
-            className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-[13px] transition-colors cursor-pointer"
-          >
-            Hủy
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            className="inline-flex items-center gap-1.5 px-6 py-2 rounded-xl bg-[#004ac6] hover:bg-[#003ea8] active:scale-95 text-white font-semibold text-[13px] shadow-xs hover:shadow-md transition-all cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[18px]">check_circle</span>
-            <span>Lưu</span>
-          </button>
-        </div>
-      </div>
-
       {/* ─── MODAL: XEM TRƯỚC TÀI LIỆU CHỨNG MINH ĐẠI DIỆN ─── */}
       {previewDoc && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 backdrop-blur-xs animate-in fade-in">

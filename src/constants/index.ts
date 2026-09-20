@@ -8,13 +8,17 @@ export const LN19: LuotNhan = {
   noiDung: "Khiếu nại về mức bồi thường giải phóng mặt bằng Dự án Khu dân cư X",
   donVi: "Phòng Hành chính - Tổng hợp",
   aiJob: 3,
+  status: 'cho_chuyen',
+  hasFile: true,
+  fileCount: 1,
+  sourceType: 'file',
 };
 
 export const ALL_LUOT_NHAN: LuotNhan[] = [
   LN19,
-  { id: "LN-18/2026-GOVEX_HC", ngayNhan: "14/09/2026", nguoiNop: "Trần Thị B", hinhThuc: "Bưu điện", noiDung: "Tố cáo vi phạm đất đai tại thửa 45, tờ bản đồ 12", donVi: "Thanh tra tỉnh", aiJob: 5 },
-  { id: "LN-17/2026-GOVEX_HC", ngayNhan: "13/09/2026", nguoiNop: "Cty TNHH Nam Phương", hinhThuc: "Trực tuyến", noiDung: "Phản ánh về chậm cấp phép xây dựng", donVi: "Sở Xây dựng", aiJob: 5 },
-  { id: "LN-16/2026-GOVEX_HC", ngayNhan: "12/09/2026", nguoiNop: "Lê Văn C", hinhThuc: "Trực tiếp", noiDung: "Khiếu nại quyết định xử phạt vi phạm hành chính", donVi: "Phòng Hành chính - Tổng hợp", aiJob: 0 },
+  { id: "LN-18/2026-GOVEX_HC", ngayNhan: "14/09/2026", nguoiNop: "Trần Thị B", hinhThuc: "Bưu điện", noiDung: "Tố cáo vi phạm đất đai tại thửa 45, tờ bản đồ 12", donVi: "Thanh tra tỉnh", aiJob: 5, status: 'da_chuyen', hasFile: true, fileCount: 2, sourceType: 'both' },
+  { id: "LN-17/2026-GOVEX_HC", ngayNhan: "13/09/2026", nguoiNop: "Cty TNHH Nam Phương", hinhThuc: "Trực tuyến", noiDung: "Phản ánh về chậm cấp phép xây dựng", donVi: "Sở Xây dựng", aiJob: 5, status: 'da_chuyen', hasFile: true, fileCount: 1, sourceType: 'file' },
+  { id: "LN-16/2026-GOVEX_HC", ngayNhan: "12/09/2026", nguoiNop: "Lê Văn C", hinhThuc: "Trực tiếp", noiDung: "Khiếu nại quyết định xử phạt vi phạm hành chính", donVi: "Phòng Hành chính - Tổng hợp", aiJob: 0, status: 'cho_chuyen', hasFile: false, ghiChu: "Công dân đến phản ánh về việc nhận quyết định xử phạt chưa thỏa đáng", sourceType: 'note' },
 ];
 
 export const JOB_LABELS = ["", "Đọc đơn", "Hiểu & Bóc tách", "Tìm Người / Tổ chức", "Tìm Đơn & Vụ việc", "Đối chiếu điều kiện", "Đề xuất hướng xử lý"];

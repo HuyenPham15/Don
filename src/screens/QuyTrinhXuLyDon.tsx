@@ -173,6 +173,17 @@ export default function QuyTrinhXuLyDon({
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            {/* Nút xem hồ sơ chi tiết */}
+            <button
+              type="button"
+              onClick={() => onNav('don-tiep-nhan')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+              title="Xem thông tin chi tiết, biểu mẫu đương sự và tài liệu đính kèm"
+            >
+              <span className="material-symbols-outlined text-[15px] text-blue-600">description</span>
+              <span>Hồ sơ chi tiết</span>
+            </button>
+
             {/* Nút thay đổi loại đơn (Rule 9) */}
             <button
               type="button"

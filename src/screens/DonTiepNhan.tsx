@@ -26,12 +26,12 @@ export default function DonTiepNhan({ onNav, donDetail }: DonTiepNhanProps) {
   };
 
   const currentDon = donDetail || {
-    id: "DS-39/2026-GOVEX",
-    code: "DS-39/2026-GOVEX",
-    title: "Xác lập lý do hồ sơ khiếu nại bồi thường thu hồi đất QL1A",
-    luotNhanId: "LN-45/2026-GOVEX",
-    nguoiNop: "Lê Văn Hùng",
-    ngayNhan: "15/09/2026 09:15",
+    id: "Đ-2025-0105",
+    code: "Đ-2025-0105",
+    title: "Thẩm tra thay đổi ngành nghề HKD cá thể",
+    luotNhanId: "LN-2025-0105",
+    nguoiNop: "Vũ Thị Thanh",
+    ngayNhan: "16/09/2026 09:30",
     loaiDon: "Đơn khiếu nại đất đai",
   };
 
@@ -137,11 +137,10 @@ export default function DonTiepNhan({ onNav, donDetail }: DonTiepNhanProps) {
             <button
               type="button"
               onClick={() => setShowModalBoSung(true)}
-              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold shadow-2xs transition-colors cursor-pointer ${
-                daGuiThongBaoBoSung
+              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold shadow-2xs transition-colors cursor-pointer ${daGuiThongBaoBoSung
                   ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
                   : 'border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900'
-              }`}
+                }`}
               title="Chưa đủ thông tin: Tạo thông báo yêu cầu bổ sung hồ sơ"
             >
               <span className="material-symbols-outlined text-[16px]">
@@ -153,11 +152,10 @@ export default function DonTiepNhan({ onNav, donDetail }: DonTiepNhanProps) {
             <button
               type="button"
               onClick={() => setShowModalBuocTiepTheo(true)}
-              className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl active:scale-95 text-white text-xs font-bold shadow-xs transition-all cursor-pointer ${
-                daHoanThanhBuoc
+              className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl active:scale-95 text-white text-xs font-bold shadow-xs transition-all cursor-pointer ${daHoanThanhBuoc
                   ? 'bg-emerald-600 hover:bg-emerald-700'
                   : 'bg-[#004ac6] hover:bg-[#003ea8]'
-              }`}
+                }`}
               title="Đủ thông tin: Chuyển sang bước tiếp theo theo quy trình"
             >
               <span className="material-symbols-outlined text-[16px]">

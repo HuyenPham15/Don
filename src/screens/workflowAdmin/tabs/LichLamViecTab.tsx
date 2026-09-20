@@ -46,9 +46,6 @@ export default function LichLamViecTab() {
             <span className="material-symbols-outlined text-blue-600 text-[22px]">calendar_month</span>
             Quản trị Lịch làm việc &amp; Định mức thời gian
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Cấu hình khung giờ làm việc chuẩn để tự động tính thời hạn xử lý hồ sơ (SLA) theo ngày làm việc
-          </p>
         </div>
 
         <button
@@ -65,9 +62,8 @@ export default function LichLamViecTab() {
         {schedules.map((sch) => (
           <div
             key={sch.id}
-            className={`bg-white rounded-2xl border p-5 shadow-2xs space-y-4 ${
-              sch.isDefault ? 'border-blue-300 ring-2 ring-blue-100' : 'border-slate-200/90'
-            }`}
+            className={`bg-white rounded-2xl border p-5 shadow-2xs space-y-4 ${sch.isDefault ? 'border-blue-300 ring-2 ring-blue-100' : 'border-slate-200/90'
+              }`}
           >
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2.5">

@@ -42,20 +42,20 @@ export const INITIAL_WORK_ITEMS: WorkItem[] = [
     taskReadiness: 'needs_review',
   },
 
-  // 2. Lượt nhận AI ĐÃ PHÂN TÍCH (Sẵn sàng xử lý bước tiếp theo)
+  // 2. Lượt nhận AI ĐÃ PHÂN TÍCH (Đã chuyển đến - Sẵn sàng tiếp nhận & xử lý)
   {
     id: 'LN-56/2026-GOVEX',
     code: 'LN-56/2026-GOVEX',
     title: 'Phản ánh ô nhiễm môi trường',
     sender: 'Đại diện khu dân cư số 4',
-    source: 'Cổng DVC Quốc gia',
+    source: 'Cổng DVC Quốc gia (Đã chuyển đến)',
     timeReceived: '16/09/2026 09:15',
     priority: 'normal',
     deadlineType: 'today',
     deadlineText: 'Còn 4 giờ 25 phút',
     deadlineFull: 'Hôm nay - 16:00',
     column: 'action_required',
-    nextAction: 'Kiểm tra kết quả AI và xác định hướng xử lý',
+    nextAction: 'Kiểm tra kết quả AI và tiếp nhận thụ lý',
     holder: {
       role: 'Đang xử lý',
       name: 'Tôi (Nguyễn Minh Anh)',
@@ -69,25 +69,25 @@ export const INITIAL_WORK_ITEMS: WorkItem[] = [
     },
     docCount: 3,
     cta: {
-      label: 'Xử lý ngay',
+      label: 'Tiếp nhận ngay',
       actionType: 'handle_now',
       variant: 'urgent',
     },
     category: 'Môi trường',
-    tags: ['AI đã phân tích', 'Môi trường'],
+    tags: ['Đã chuyển đến', 'AI đã phân tích', 'Môi trường'],
     loaiDon: 'Đơn phản ánh kiến nghị',
     luotNhanId: 'LN-56/2026-GOVEX',
     aiStatus: 'completed',
     taskReadiness: 'action_required',
   },
 
-  // 3. Lượt nhận AI ĐANG PHÂN TÍCH (Asynchronous 75%)
+  // 3. Lượt nhận AI ĐANG PHÂN TÍCH (Đã chuyển đến - Asynchronous 75%)
   {
     id: 'LN-57/2026-GOVEX',
     code: 'LN-57/2026-GOVEX',
     title: 'Đề nghị hỗ trợ an sinh xã hội',
     sender: 'Bà Hoàng Thị Lựu',
-    source: 'Cổng DVC Quốc gia (VNeID)',
+    source: 'Cổng DVC Quốc gia (VNeID) (Đã chuyển đến)',
     timeReceived: '16/09/2026 10:20',
     priority: 'normal',
     deadlineType: 'today',
@@ -113,7 +113,7 @@ export const INITIAL_WORK_ITEMS: WorkItem[] = [
       variant: 'outline',
     },
     category: 'Lao động - TBXH',
-    tags: ['AI đang xử lý', 'VNeID'],
+    tags: ['Đã chuyển đến', 'AI đang xử lý', 'VNeID'],
     loaiDon: 'Thủ tục chính sách xã hội',
     luotNhanId: 'LN-57/2026-GOVEX',
     aiStatus: 'processing',
@@ -121,13 +121,13 @@ export const INITIAL_WORK_ITEMS: WorkItem[] = [
     taskReadiness: 'waiting_system',
   },
 
-  // 4. Lượt nhận AI PHÂN TÍCH THẤT BẠI (OCR lỗi)
+  // 4. Lượt nhận AI PHÂN TÍCH THẤT BẠI (Đã chuyển đến - OCR lỗi)
   {
     id: 'LN-58/2026-GOVEX',
     code: 'LN-58/2026-GOVEX',
     title: 'Phản ánh về đất đai',
     sender: 'Ông Đỗ Viết Thắng',
-    source: 'Trực tiếp Một cửa',
+    source: 'Một cửa chuyển đến',
     timeReceived: '16/09/2026 08:45',
     priority: 'urgent',
     deadlineType: 'today',
@@ -153,7 +153,7 @@ export const INITIAL_WORK_ITEMS: WorkItem[] = [
       variant: 'urgent',
     },
     category: 'Xây dựng - Đất đai',
-    tags: ['AI lỗi', 'Xử lý thủ công'],
+    tags: ['Đã chuyển đến', 'AI lỗi', 'Xử lý thủ công'],
     loaiDon: 'Đơn phản ánh kiến nghị',
     luotNhanId: 'LN-58/2026-GOVEX',
     aiStatus: 'failed',

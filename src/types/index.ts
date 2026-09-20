@@ -28,6 +28,19 @@ export interface LuotNhan {
   noiDung: string;
   donVi: string;
   aiJob: AIJob;
+  cccd?: string;
+  sdt?: string;
+  diaChi?: string;
+  loaiDon?: string;
+  status?: 'cho_chuyen' | 'da_chuyen' | 'da_ban_giao' | 'da_tra_lai';
+  hasFile?: boolean;
+  fileCount?: number;
+  files?: UploadedFile[];
+  ghiChu?: string;
+  sourceType?: 'file' | 'ghi_chu' | 'both';
+  isOfficialData?: boolean;
+  officerEdits?: Record<string, string>;
+  historyLogs?: { time: string; action: string; actor: string; note?: string }[];
 }
 
 export interface DonDetail {
