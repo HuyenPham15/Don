@@ -236,14 +236,16 @@ export default function WorkflowDesignerScreen({
       transitions: prev.transitions.map((t) => (t.id === updatedTrans.id ? updatedTrans : t)),
     }));
     setHasUnsavedChanges(true);
+    const transName = updatedTrans.name || updatedTrans.actionName || 'Đường chuyển';
+    const oldName = oldTrans ? (oldTrans.name || oldTrans.actionName || 'Đường chuyển') : 'Chưa có';
     recordAuditChange(
       'edit_condition',
       'Sửa thuộc tính & điều kiện đường chuyển',
-      updatedTrans.name,
+      transName,
       updatedTrans.id,
       'transition',
-      oldTrans ? `${oldTrans.name} (${oldTrans.conditions?.length || 0} điều kiện)` : 'Chưa có',
-      `${updatedTrans.name} (${updatedTrans.conditions?.length || 0} điều kiện)`
+      oldTrans ? `${oldName} (${oldTrans.conditions?.length || 0} điều kiện)` : 'Chưa có',
+      `${transName} (${updatedTrans.conditions?.length || 0} điều kiện)`
     );
   }, [workflow.transitions, recordAuditChange]);
 
@@ -258,13 +260,14 @@ export default function WorkflowDesignerScreen({
     setHasUnsavedChanges(true);
     showToast('✓ Đã xóa đường chuyển bước.');
     if (transToDelete) {
+      const delName = transToDelete.name || transToDelete.actionName || 'Đường chuyển';
       recordAuditChange(
         'delete_transition',
         'Xóa đường chuyển luồng',
-        transToDelete.name,
+        delName,
         transToDelete.id,
         'transition',
-        transToDelete.name,
+        delName,
         'Đã xóa'
       );
     }
@@ -291,10 +294,12 @@ export default function WorkflowDesignerScreen({
     const fromStageIdx = workflow.stages.findIndex((st) => st.id === fromStep?.stageId);
     const toStageIdx = workflow.stages.findIndex((st) => st.id === toStep?.stageId);
     const isReturn = toStageIdx < fromStageIdx;
+    const transLabel = isReturn ? `Trả lại: ${fromStep?.name || ''} → ${toStep?.name || ''}` : `Chuyển: ${fromStep?.name || ''} → ${toStep?.name || ''}`;
 
     const newTrans: ProcessTransition = {
       id: `trans-${Date.now()}`,
-      name: isReturn ? `Trả lại: ${fromStep?.name || ''} → ${toStep?.name || ''}` : `Chuyển: ${fromStep?.name || ''} → ${toStep?.name || ''}`,
+      actionName: transLabel,
+      name: transLabel,
       fromStepId,
       toStepId,
       fromStepName: fromStep?.name,
@@ -318,7 +323,7 @@ export default function WorkflowDesignerScreen({
     recordAuditChange(
       'create_transition',
       'Tạo đường chuyển luồng',
-      newTrans.name,
+      newTrans.name || transLabel,
       newTrans.id,
       'transition',
       'Chưa nối',

@@ -34,8 +34,11 @@ export interface TransitionCondition {
 export interface ProcessTransition {
   id: string;
   actionName: string;
+  name?: string;
   fromStepId: string;
+  fromStepName?: string;
   toStepId: string;
+  toStepName?: string;
   type: TransitionType;
   allowedRoles: string[];
   createNextTask: boolean;

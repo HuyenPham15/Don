@@ -12,7 +12,8 @@ export type Screen =
   | "quan-tri-bieu-mau"
   | "thu-vien" 
   | "bao-cao" 
-  | "tiep-nhan-xu-ly";
+  | "tiep-nhan-xu-ly"
+  | "ai-tiep-nhan-chat";
 
 export type AIJob = 0 | 1 | 2 | 3 | 4 | 5;
 

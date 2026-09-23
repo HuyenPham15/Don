@@ -8,6 +8,7 @@ import DonTiepNhan from "./screens/DonTiepNhan";
 import NhanDonList from "./screens/NhanDonList";
 import NhanDonThem from "./screens/NhanDonThem";
 import TroChuyenScreen from "./screens/TroChuyenScreen";
+import AITiepNhanChatScreen from "./screens/AITiepNhanChatScreen";
 import TiepNhanVaXuLyScreen from "./screens/TiepNhanVaXuLyScreen";
 import { LN19, ALL_LUOT_NHAN } from "./constants";
 import { LuotNhan, Screen, DonDetail } from "./types";
@@ -431,61 +432,78 @@ export default function App() {
       <div className="flex flex-1 overflow-hidden">
         <Sidebar screen={screen} onNav={setScreen} />
         <main className="flex-1 overflow-y-auto flex flex-col bg-[#f4f7fb]">
-          {(screen === "cong-viec" || screen === "tiep-nhan-xu-ly") && (
-            <CongViecCuaToi
-              onSelect={setSelected}
-              onNav={setScreen}
-              extraCard={extraCard}
-              onSelectDon={handleSelectDon}
-              acceptedDons={acceptedDons}
-              luotNhanList={luotNhanList}
-              tiepNhanItems={tiepNhanItems}
-              onBanGiaoDone={handleBanGiao}
-            />
-          )}
-          {screen === "nhan-don-list" && (
-            <NhanDonList
-              onNav={setScreen}
-              onSelect={setSelected}
-              luotNhanList={luotNhanList}
-            />
-          )}
-          {screen === "nhan-don-them" && <NhanDonThem onNav={setScreen} onSubmit={handleSubmit} />}
-          {screen === "ban-phan-tich" && (
-            <BanPhanTich
-              luotNhan={selected}
-              onNav={setScreen}
-              onAcceptAndProcess={handleAcceptFromBanPhanTich}
-              onChuyenTiepNhan={handleChuyenTiepNhan}
-              onBanGiao={handleBanGiao}
-              onTraLai={handleTraLai}
-              onUpdateLuotNhan={handleUpdateLuotNhan}
-            />
-          )}
-          {screen === "don-tiep-nhan" && (
-            <DonTiepNhan onNav={setScreen} donDetail={selectedDon} />
-          )}
-          {screen === "quy-trinh-xu-ly" && (
-            <QuyTrinhXuLyDon
-              onNav={setScreen}
-              workflowState={activeWorkflow}
-              onUpdateWorkflowState={setActiveWorkflow}
-            />
-          )}
-          {screen === "quan-tri-quy-trinh" && (
-            <QuanTriNghiepVuScreen onNav={setScreen} initialTab="quy-trinh" />
-          )}
-          {screen === "quan-tri-loai-don" && (
-            <QuanTriNghiepVuScreen onNav={setScreen} initialTab="loai-don" />
-          )}
-          {screen === "quan-tri-lich-lam-viec" && (
-            <QuanTriNghiepVuScreen onNav={setScreen} initialTab="lich-lam-viec" />
-          )}
-          {screen === "quan-tri-bieu-mau" && (
-            <QuanTriNghiepVuScreen onNav={setScreen} initialTab="bieu-mau" />
-          )}
-          {screen === "thu-vien" && <TroChuyenScreen onNav={setScreen} />}
-          {screen === "bao-cao" && <Placeholder title="Báo cáo thông minh" />}
+          <ErrorBoundary fallbackScreen={() => setScreen("don-tiep-nhan")}>
+            {(screen === "cong-viec" || screen === "tiep-nhan-xu-ly") && (
+              <CongViecCuaToi
+                onSelect={setSelected}
+                onNav={setScreen}
+                extraCard={extraCard}
+                onSelectDon={handleSelectDon}
+                acceptedDons={acceptedDons}
+                luotNhanList={luotNhanList}
+                tiepNhanItems={tiepNhanItems}
+                onBanGiaoDone={handleBanGiao}
+              />
+            )}
+            {screen === "nhan-don-list" && (
+              <NhanDonList
+                onNav={setScreen}
+                onSelect={setSelected}
+                luotNhanList={luotNhanList}
+              />
+            )}
+            {screen === "nhan-don-them" && <NhanDonThem onNav={setScreen} onSubmit={handleSubmit} />}
+            {screen === "ban-phan-tich" && (
+              <BanPhanTich
+                luotNhan={selected}
+                onNav={setScreen}
+                onAcceptAndProcess={handleAcceptFromBanPhanTich}
+                onChuyenTiepNhan={handleChuyenTiepNhan}
+                onBanGiao={handleBanGiao}
+                onTraLai={handleTraLai}
+                onUpdateLuotNhan={handleUpdateLuotNhan}
+              />
+            )}
+            {screen === "don-tiep-nhan" && (
+              <DonTiepNhan onNav={setScreen} donDetail={selectedDon} />
+            )}
+            {screen === "quy-trinh-xu-ly" && (
+              <QuyTrinhXuLyDon
+                onNav={setScreen}
+                workflowState={activeWorkflow}
+                onUpdateWorkflowState={setActiveWorkflow}
+              />
+            )}
+            {screen === "quan-tri-quy-trinh" && (
+              <QuanTriNghiepVuScreen onNav={setScreen} initialTab="quy-trinh" />
+            )}
+            {screen === "quan-tri-loai-don" && (
+              <QuanTriNghiepVuScreen onNav={setScreen} initialTab="loai-don" />
+            )}
+            {screen === "quan-tri-lich-lam-viec" && (
+              <QuanTriNghiepVuScreen onNav={setScreen} initialTab="lich-lam-viec" />
+            )}
+            {screen === "quan-tri-bieu-mau" && (
+              <QuanTriNghiepVuScreen onNav={setScreen} initialTab="bieu-mau" />
+            )}
+            {screen === "thu-vien" && <TroChuyenScreen onNav={setScreen} />}
+            {screen === "ai-tiep-nhan-chat" && (
+              <AITiepNhanChatScreen
+                onNav={setScreen}
+                onReceptionCreated={(newLn, newDon) => {
+                  setLuotNhanList((prev) => [newLn, ...prev.filter((l) => l.id !== newLn.id)]);
+                  setAcceptedDons((prev) => [newDon, ...prev.filter((d) => d.id !== newDon.id)]);
+                  setSelected(newLn);
+                  setSelectedDon(newDon);
+                }}
+                onSaveDraftToWorkItems={(draftLn, draftDon) => {
+                  setLuotNhanList((prev) => [draftLn, ...prev.filter((l) => l.id !== draftLn.id)]);
+                  setAcceptedDons((prev) => [draftDon, ...prev.filter((d) => d.id !== draftDon.id)]);
+                }}
+              />
+            )}
+            {screen === "bao-cao" && <Placeholder title="Báo cáo thông minh" />}
+          </ErrorBoundary>
         </main>
       </div>
     </div>

@@ -62,6 +62,23 @@ export default function TransitionPropertiesPanel({
     });
   };
 
+  const renderConditionFormula = () => {
+    if (!transition.conditions || transition.conditions.length === 0) return null;
+    return (
+      <div className="p-2.5 rounded-lg bg-slate-100 border border-slate-200 text-[11px] font-mono text-slate-700 leading-relaxed">
+        <span className="font-bold text-slate-500 uppercase mr-1">Biểu thức:</span>
+        {transition.conditions.map((c, i) => (
+          <span key={c.id}>
+            {i > 0 && <span className="font-bold text-blue-600 mx-1">{c.logicOp}</span>}
+            <span className="text-slate-900 font-semibold">{c.fieldName || `[Trường ${i + 1}]`}</span>
+            <span className="text-amber-600 font-bold mx-0.5">{c.operator}</span>
+            <span className="text-emerald-700 font-semibold">{`"${c.value || '...'}"`}</span>
+          </span>
+        ))}
+      </div>
+    );
+  };
+
 
 
   return (

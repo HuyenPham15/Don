@@ -70,6 +70,29 @@ export default function Sidebar({ screen, onNav }: SidebarProps) {
             </div>
           </button>
 
+          {/* AI Tiếp nhận đơn (Chat) */}
+          <button
+            type="button"
+            onClick={() => onNav('ai-tiep-nhan-chat')}
+            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer ${screen === 'ai-tiep-nhan-chat'
+              ? 'bg-blue-50 text-[#004ac6] font-semibold border border-blue-100/60 shadow-2xs'
+              : 'text-slate-700 hover:bg-slate-50'
+              }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <span className={`material-symbols-outlined text-[20px] ${screen === 'ai-tiep-nhan-chat' ? 'text-[#004ac6]' : 'text-slate-600'}`}>
+                support_agent
+              </span>
+              <span className="text-[13.5px] font-medium">AI Tiếp nhận đơn (Chat)</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="px-1.5 py-0.5 rounded-md bg-emerald-600 text-white text-[10px] font-bold tracking-wider uppercase">
+                MỚI
+              </span>
+              {screen === 'ai-tiep-nhan-chat' && <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>}
+            </div>
+          </button>
+
           {/* Trò chuyện trợ lý AI */}
           <button
             type="button"

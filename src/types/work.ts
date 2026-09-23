@@ -31,7 +31,7 @@ export type WorkItemSubStatus =
 export type TaskReadiness = 'waiting_system' | 'action_required' | 'needs_review' | 'manual_required' | 'completed';
 
 export interface WorkItemHolder {
-  role: 'Đang xử lý' | 'Đang chờ' | 'Đã bàn giao cho' | 'Đã hoàn thành';
+  role: 'Đang xử lý' | 'Đang chờ' | 'Đã bàn giao cho' | 'Đã hoàn thành' | 'Chờ tiếp nhận';
   name: string;
   department?: string;
 }
@@ -99,4 +99,6 @@ export interface WorkItem {
   nguonXuLy?: 'file_ocr' | 'ghi_chu_thu_cong';
   lyDoTraLai?: string;
   lyDoBanGiao?: string;
+  completionResult?: string;
+  completedAt?: string;
 }

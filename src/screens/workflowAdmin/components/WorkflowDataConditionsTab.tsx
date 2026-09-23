@@ -23,7 +23,7 @@ export default function WorkflowDataConditionsTab({
     if (hasCondOnly && (!t.conditions || t.conditions.length === 0)) return false;
     if (searchKw.trim()) {
       const kw = searchKw.toLowerCase();
-      const matchName = t.name.toLowerCase().includes(kw);
+      const matchName = (t.name || t.actionName || '').toLowerCase().includes(kw);
       const matchSource = (t.fromStepName || '').toLowerCase().includes(kw);
       const matchTarget = (t.toStepName || '').toLowerCase().includes(kw);
       if (!matchName && !matchSource && !matchTarget) return false;

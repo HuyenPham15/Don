@@ -1,11 +1,26 @@
 import React, { useState, useMemo } from 'react';
 import { LuotNhan, Screen, DonDetail } from "../types";
-import { WorkItem, WorkItemColumn, AIProcessingStatus } from '../types/work';
+import {
+  WorkItem,
+  WorkItemColumn,
+  AIProcessingStatus,
+  WorkItemSourceType,
+  WorkItemSubStatus,
+  WorkItemDeadlineType,
+  WorkItemPriority,
+} from '../types/work';
 import { INITIAL_WORK_ITEMS } from '../constants/workItems';
 import { LN19, ALL_LUOT_NHAN } from '../constants';
 import ChuyenTiepNhanModal, { ChuyenTiepNhanSubmitData } from '../components/modals/ChuyenTiepNhanModal';
 import PhanCongModal, { PhanCongSubmitData } from '../components/modals/PhanCongModal';
-import { TiepNhanDonItem } from '../constants/departments';
+import { TiepNhanDonItem, DEPARTMENTS } from '../constants/departments';
+
+export type ViewMode = 'kanban' | 'list' | 'completed';
+export type FilterStatus = WorkItemColumn | 'all';
+export type FilterSource = WorkItemSourceType | 'all';
+export type FilterDeadline = WorkItemDeadlineType | 'all';
+export type FilterAI = AIProcessingStatus | 'all';
+export type FilterHandler = 'all' | 'me' | 'others';
 
 interface CongViecCuaToiProps {
   onSelect: (ln: LuotNhan) => void;
@@ -742,6 +757,13 @@ export default function CongViecCuaToi({
 
   // Điều hướng khi nhấp vào thẻ: phân biệt rõ Lượt nhận / Đơn / Vụ việc
   const handleItemClick = (item: WorkItem) => {
+    // 0. Nếu là hồ sơ bản nháp từ màn AI Tiếp nhận đơn qua Chat
+    if (item.id.includes('NHAP') || item.code.includes('NHAP') || item.tags?.includes('Bản nháp AI')) {
+      onNav('ai-tiep-nhan-chat');
+      showToast(`Mở bản nháp hồ sơ ${item.code} tại màn AI Tiếp nhận đơn qua Chat`);
+      return;
+    }
+
     // 1. Kiểm tra nếu là đơn / lượt nhận mà AI mới phân tích (cần kiểm tra và tiếp nhận)
     // Các trường hợp chuyển đến màn AI đã phân tích (Bàn phân tích & bóc tách AI):
     // - Trạng thái AI cần kiểm tra (needs_review) e.g. VV-2025-0430 (Độ tin cậy 68%)
@@ -770,6 +792,9 @@ export default function CongViecCuaToi({
       item.id === 'LN-2025-0819';
 
     if (isAiAnalyzedForReview || item.aiStatus === 'processing' || item.aiStatus === 'failed') {
+      const matchedLn =
+        luotNhanList.find((l) => l.id === item.id || l.id === item.code || l.id === item.luotNhanId) ||
+        ALL_LUOT_NHAN.find((l) => l.id === item.id || l.id === item.code);
       const targetLuotNhan: LuotNhan = {
         id: item.code,
         ngayNhan: item.timeReceived,
@@ -2373,10 +2398,8 @@ function TaskCard({ item, onClick, onRetryAI, onTiepNhanXuLy, onBanGiao, onPhanC
           </span>
         )}
 
-        {/* TASK TYPE */}
-        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-blue-50 text-blue-800 border border-blue-200 shrink-0 font-label-technical">
-          {taskType}
-        </span>
+        {/* TASK TYPE / NGUỒN */}
+        <SourceTypeBadge sourceType={srcType} />
 
         {/* MÃ HỒ SƠ */}
         <span className="font-mono text-[11px] font-bold text-slate-800 group-hover/card:text-[#C62828] transition-colors">
