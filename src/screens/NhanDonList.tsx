@@ -186,20 +186,19 @@ export default function NhanDonList({
                     </td>
                     <td className="py-3.5 px-4 whitespace-nowrap">
                       <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11.5px] font-medium border ${
-                          ln.hinhThuc === 'Bưu điện'
-                            ? 'bg-purple-50 text-purple-700 border-purple-200'
-                            : ln.hinhThuc === 'Trực tuyến'
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11.5px] font-medium border ${ln.hinhThuc === 'Bưu điện'
+                          ? 'bg-purple-50 text-purple-700 border-purple-200'
+                          : ln.hinhThuc === 'Trực tuyến'
                             ? 'bg-blue-50 text-blue-700 border-blue-200'
                             : 'bg-slate-100 text-slate-700 border-slate-200'
-                        }`}
+                          }`}
                       >
                         <span className="material-symbols-outlined text-[13px]">
                           {ln.hinhThuc === 'Bưu điện'
                             ? 'local_post_office'
                             : ln.hinhThuc === 'Trực tuyến'
-                            ? 'language'
-                            : 'person'}
+                              ? 'language'
+                              : 'person'}
                         </span>
                         {ln.hinhThuc}
                       </span>
@@ -239,38 +238,19 @@ export default function NhanDonList({
                       )}
                     </td>
                     <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                      <div className="flex items-center justify-center gap-1.5">
-                        <button
-                          type="button"
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-[12px] transition-all cursor-pointer"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onSelect(ln);
-                            onNav('ban-phan-tich');
-                            showToast('Đang mở Chi tiết Lượt nhận...');
-                          }}
-                        >
-                          <span className="material-symbols-outlined text-[15px]">visibility</span>
-                          <span>Chi tiết</span>
-                        </button>
-
-                        {(!ln.status || ln.status === 'cho_chuyen') && (
-                          <button
-                            type="button"
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#C62828] hover:bg-[#b71c1c] text-white font-semibold text-[12px] shadow-2xs transition-all cursor-pointer"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onSelect(ln);
-                              onNav('ban-phan-tich');
-                              showToast('Mở chi tiết lượt nhận để chuyển tiếp nhận & xử lý...');
-                            }}
-                            title="Chuyển tiếp nhận và xử lý (BR-03)"
-                          >
-                            <span className="material-symbols-outlined text-[14px]">forward_to_inbox</span>
-                            <span>Chuyển</span>
-                          </button>
-                        )}
-                      </div>
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-[#004ac6] text-[#004ac6] hover:text-white font-medium text-[12px] transition-all cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelect(ln);
+                          onNav('ban-phan-tich');
+                          showToast('Đang mở Chi tiết Lượt nhận & Phân tích AI đầy đủ...');
+                        }}
+                      >
+                        <span className="material-symbols-outlined text-[15px]">visibility</span>
+                        <span>Xem chi tiết</span>
+                      </button>
                     </td>
                   </tr>
                 );

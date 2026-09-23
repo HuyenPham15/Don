@@ -50,6 +50,7 @@ export interface DonDetail {
   luotNhanId?: string;
   nguoiNop: string;
   ngayNhan?: string;
+  gioNhan?: string;
   loaiDon?: string;
   type?: 'VỤ VIỆC' | 'ĐƠN TIẾP NHẬN' | 'LƯỢT NHẬN';
   statusBadge?: string;

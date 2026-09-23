@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import Placeholder from "./components/Placeholder";
 import Sidebar from "./components/Sidebar";
+import ErrorBoundary from "./components/ErrorBoundary";
 import BanPhanTich from "./screens/BanPhanTich";
 import CongViecCuaToi from "./screens/CongViecCuaToi";
 import DonTiepNhan from "./screens/DonTiepNhan";
@@ -141,20 +142,20 @@ export default function App() {
       prev.map((ln) =>
         ln.id === item.luotNhanId
           ? {
-              ...ln,
-              status: 'da_chuyen',
-              historyLogs: [
-                ...(ln.historyLogs || []),
-                {
-                  action: isDirect
-                    ? `Chuyển tiếp nhận trực tiếp cho cán bộ ${assignedOfficerName || 'Nguyễn Minh Anh'}`
-                    : `Chuyển tiếp nhận vào hàng chờ đơn vị ${item.donViTiepNhan}`,
-                  actor: 'Nguyễn Minh Anh (Cán bộ một cửa)',
-                  time: 'Hôm nay, vừa xong',
-                  note: item.ghiChuChuyen || 'Chuyển tiếp nhận xử lý hồ sơ',
-                },
-              ],
-            }
+            ...ln,
+            status: 'da_chuyen',
+            historyLogs: [
+              ...(ln.historyLogs || []),
+              {
+                action: isDirect
+                  ? `Chuyển tiếp nhận trực tiếp cho cán bộ ${assignedOfficerName || 'Nguyễn Minh Anh'}`
+                  : `Chuyển tiếp nhận vào hàng chờ đơn vị ${item.donViTiepNhan}`,
+                actor: 'Nguyễn Minh Anh (Cán bộ một cửa)',
+                time: 'Hôm nay, vừa xong',
+                note: item.ghiChuChuyen || 'Chuyển tiếp nhận xử lý hồ sơ',
+              },
+            ],
+          }
           : ln
       )
     );
@@ -200,18 +201,18 @@ export default function App() {
       prev.map((ln) =>
         ln.id === luotNhanId
           ? {
-              ...ln,
-              status: 'da_ban_giao',
-              historyLogs: [
-                ...(ln.historyLogs || []),
-                {
-                  action: `Bàn giao hồ sơ cho ${donViName || 'đơn vị khác'}${canBoName ? ` (Cán bộ: ${canBoName})` : ''}`,
-                  actor: 'Nguyễn Minh Anh (Cán bộ thụ lý)',
-                  time: 'Hôm nay, vừa xong',
-                  note: lyDo || 'Bàn giao theo thẩm quyền nghiệp vụ',
-                },
-              ],
-            }
+            ...ln,
+            status: 'da_ban_giao',
+            historyLogs: [
+              ...(ln.historyLogs || []),
+              {
+                action: `Bàn giao hồ sơ cho ${donViName || 'đơn vị khác'}${canBoName ? ` (Cán bộ: ${canBoName})` : ''}`,
+                actor: 'Nguyễn Minh Anh (Cán bộ thụ lý)',
+                time: 'Hôm nay, vừa xong',
+                note: lyDo || 'Bàn giao theo thẩm quyền nghiệp vụ',
+              },
+            ],
+          }
           : ln
       )
     );
@@ -224,12 +225,12 @@ export default function App() {
       prev.map((it) =>
         it.luotNhanId === luotNhanId
           ? {
-              ...it,
-              trangThai: 'da_ban_giao',
-              lyDoBanGiao: lyDo,
-              donViTiepNhan: donViName || it.donViTiepNhan,
-              canBoXuLy: canBoName || it.canBoXuLy,
-            }
+            ...it,
+            trangThai: 'da_ban_giao',
+            lyDoBanGiao: lyDo,
+            donViTiepNhan: donViName || it.donViTiepNhan,
+            canBoXuLy: canBoName || it.canBoXuLy,
+          }
           : it
       )
     );
@@ -250,18 +251,18 @@ export default function App() {
       prev.map((ln) =>
         ln.id === luotNhanId
           ? {
-              ...ln,
-              status: 'da_tra_lai',
-              historyLogs: [
-                ...(ln.historyLogs || []),
-                {
-                  action: 'Trả lại hồ sơ cho công dân / người nộp đơn',
-                  actor: 'Nguyễn Minh Anh (Cán bộ thụ lý)',
-                  time: 'Hôm nay, vừa xong',
-                  note: lyDo || 'Trả lại đơn theo quy định',
-                },
-              ],
-            }
+            ...ln,
+            status: 'da_tra_lai',
+            historyLogs: [
+              ...(ln.historyLogs || []),
+              {
+                action: 'Trả lại hồ sơ cho công dân / người nộp đơn',
+                actor: 'Nguyễn Minh Anh (Cán bộ thụ lý)',
+                time: 'Hôm nay, vừa xong',
+                note: lyDo || 'Trả lại đơn theo quy định',
+              },
+            ],
+          }
           : ln
       )
     );

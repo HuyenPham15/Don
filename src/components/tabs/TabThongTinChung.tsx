@@ -375,12 +375,6 @@ export default function TabThongTinChung({
     setIsEditingPhanLoai(false);
   };
 
-  const handleRestoreAiPhanLoai = () => {
-    setEditPhanLoaiForm({ ...aiOriginalPhanLoai });
-    setIsCustomLinhVuc(false);
-    showToast('✓ Đã khôi phục các thông số phân loại theo gợi ý ban đầu của AI.');
-  };
-
   const handleSelectLoaiDon = (newLoaiDon: string) => {
     const matched = matchWorkflowByLoaiDon(newLoaiDon);
     let suggestedCanCu = editPhanLoaiForm.canCuPhapLy;
@@ -579,11 +573,31 @@ export default function TabThongTinChung({
   const countBiToGiac = duongSuList.filter((d) => d.phanNhom === 'ben_bi_to_giac').length;
   const countLienQuan = duongSuList.filter((d) => d.phanNhom === 'lien_quan').length;
 
+  // Tách ngày và giờ tiếp nhận hồ sơ
+  const rawNgayNhan = currentDon?.ngayNhan || (isToGiac ? '16/09/2026 09:15' : '15/09/2026 09:15');
+  const parts = rawNgayNhan.trim().split(/\s+/);
+  let displayNgay = rawNgayNhan;
+  let displayGio = currentDon?.gioNhan || '09:15';
+
+  if (parts.length >= 2) {
+    if (parts[0].includes('/') || parts[0].includes('-')) {
+      displayNgay = parts[0];
+      displayGio = currentDon?.gioNhan || parts[1];
+    } else {
+      displayGio = currentDon?.gioNhan || parts[0];
+      displayNgay = parts[1];
+    }
+  } else if (rawNgayNhan.includes('/')) {
+    displayNgay = rawNgayNhan;
+    displayGio = currentDon?.gioNhan || '09:15';
+  }
+
   // Dữ liệu tiếp nhận hồ sơ & thông tin nghiệp vụ
   const info = isToGiac
     ? {
       luotNhanGoc: currentDon?.luotNhanId || 'LN-2025-0819',
-      ngayNhan: currentDon?.ngayNhan || '16/09/2026 09:15',
+      ngayNhan: displayNgay,
+      gioNhan: displayGio,
       hinhThuc: 'Trực tiếp',
       canBo: 'Nguyễn Minh Anh',
       chucVu: 'Cán bộ thụ lý',
@@ -601,7 +615,8 @@ export default function TabThongTinChung({
     }
     : {
       luotNhanGoc: currentDon?.luotNhanId || 'LN-45/2026-GOVEX',
-      ngayNhan: currentDon?.ngayNhan || '15/09/2026 09:15',
+      ngayNhan: displayNgay,
+      gioNhan: displayGio,
       hinhThuc: 'Trực tiếp',
       canBo: 'Nguyễn Minh Anh',
       chucVu: 'Cán bộ thụ lý',
@@ -666,199 +681,143 @@ export default function TabThongTinChung({
       )}
 
       {/* ========================================================================= */}
-      {/* KHỐI 1: THÔNG TIN TIẾP NHẬN & DANH SÁCH ĐƯƠNG SỰ                          */}
+      {/* KHỐI 1: THÔNG TIN TIẾP NHẬN & ĐƯƠNG SỰ                                     */}
       {/* ========================================================================= */}
       <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden">
         {/* Header Khối 1 */}
-        <div className="px-6 py-3.5 border-b border-slate-200/90 flex items-center justify-between bg-white flex-wrap gap-2">
-          <div className="flex items-center gap-2">
+        <div className="px-5 py-3 border-b border-slate-200/90 flex items-center justify-between bg-white flex-wrap gap-2.5">
+          <div className="flex items-center gap-2.5">
             <span className="w-2 h-2 rounded-full bg-[#004ac6]"></span>
             <h2 className="text-[13px] font-bold text-slate-900 tracking-tight font-headline-md uppercase">
-              1. THÔNG TIN TIẾP NHẬN &amp; NGƯỜI NỘP / CÁC ĐƯƠNG SỰ
+              1. THÔNG TIN TIẾP NHẬN
             </h2>
-            <span className="px-2 py-0.5 rounded-full bg-blue-50 text-[#004ac6] text-[11px] font-bold border border-blue-200 font-label-technical ml-1">
-              {duongSuList.length} người &amp; đối tượng
+            <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[11px] font-semibold border border-slate-200 font-label-technical">
+              Hồ sơ gốc: <strong className="text-[#004ac6]">{info.luotNhanGoc}</strong>
             </span>
           </div>
 
+          <button
+            type="button"
+            onClick={onOpenLuotNhan}
+            className="inline-flex items-center gap-1 text-[11.5px] text-blue-700 hover:text-blue-900 font-semibold px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors cursor-pointer"
+            title="Xem chi tiết Lượt nhận hồ sơ ban đầu"
+          >
+            <span className="material-symbols-outlined text-[14px]">open_in_new</span>
+            <span>Xem lượt nhận gốc</span>
+          </button>
         </div>
 
-        <div className="p-6 space-y-5">
-          {/* A. DỮ LIỆU TIẾP NHẬN HỒ SƠ */}
-          <div>
-            <h3 className="text-[12px] font-bold text-slate-500 uppercase tracking-tight flex items-center gap-2 mb-3">
-              <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-              A. DỮ LIỆU TIẾP NHẬN HỒ SƠ
-            </h3>
-
-            <div className="p-4 rounded-xl bg-slate-50/70 border border-slate-200/80 grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
-              {/* Cột 1: Mã lượt nhận gốc */}
-              <div>
-                <div className="text-[11px] text-slate-400 font-medium mb-1">Mã lượt nhận gốc</div>
-                <div className="flex items-center gap-1.5">
-                  <span className="font-bold text-[#004ac6] font-label-technical text-[13px]">
-                    {info.luotNhanGoc}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={onOpenLuotNhan}
-                    className="inline-flex items-center gap-0.5 text-[10.5px] text-blue-600 hover:text-blue-800 font-semibold px-1.5 py-0.5 rounded bg-blue-50 border border-blue-100 hover:underline cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-[11px]">open_in_new</span>
-                    <span>Xem lượt nhận</span>
-                  </button>
-                </div>
+        <div className="p-5 space-y-5">
+          {/* A. DỮ LIỆU TIẾP NHẬN HỒ SƠ (Thanh thông tin tinh gọn 5 cột) */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 py-1 text-xs">
+            {/* 1. Ngày nhận */}
+            <div>
+              <span className="text-[11px] text-slate-400 font-medium block mb-0.5">Ngày tiếp nhận</span>
+              <div className="font-semibold text-slate-800 flex items-center gap-1.5 text-[12px]">
+                <span className="material-symbols-outlined text-[15px] text-slate-400">calendar_today</span>
+                <span>{info.ngayNhan}</span>
               </div>
+            </div>
 
-              {/* Cột 2: Ngày giờ tiếp nhận */}
-              <div>
-                <div className="text-[11px] text-slate-400 font-medium mb-1">Ngày giờ tiếp nhận</div>
-                <div className="font-semibold text-slate-800 flex items-center gap-1.5 text-[12.5px]">
-                  <span className="material-symbols-outlined text-[15px] text-slate-500">calendar_month</span>
-                  <span>{info.ngayNhan}</span>
-                </div>
+            {/* 2. Giờ nhận */}
+            <div>
+              <span className="text-[11px] text-slate-400 font-medium block mb-0.5">Giờ tiếp nhận</span>
+              <div className="font-semibold text-slate-800 flex items-center gap-1.5 text-[12px]">
+                <span className="material-symbols-outlined text-[15px] text-slate-400">schedule</span>
+                <span>{info.gioNhan}</span>
               </div>
+            </div>
 
-              {/* Cột 3: Hình thức nhận */}
-              <div>
-                <div className="text-[11px] text-slate-400 font-medium mb-1">Hình thức nhận</div>
-                <div className="font-semibold text-slate-800 flex items-center gap-1.5 text-[12.5px]">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  <span>{info.hinhThuc}</span>
-                </div>
+            {/* 3. Hình thức */}
+            <div>
+              <span className="text-[11px] text-slate-400 font-medium block mb-0.5">Hình thức nhận</span>
+              <div className="font-semibold text-slate-800 flex items-center gap-1.5 text-[12px]">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <span>{info.hinhThuc}</span>
               </div>
+            </div>
 
-              {/* Cột 4: Cán bộ tiếp nhận */}
-              <div>
-                <div className="text-[11px] text-slate-400 font-medium mb-1">Cán bộ tiếp nhận</div>
-                <div className="flex items-center gap-1.5">
-                  <span className="font-bold text-slate-900 text-[12.5px]">{info.canBo}</span>
-                  <span className="px-1.5 py-0.5 rounded bg-slate-200/70 text-slate-700 text-[10px] font-semibold">
-                    {info.chucVu}
-                  </span>
-                </div>
+            {/* 4. Cán bộ tiếp nhận */}
+            <div>
+              <span className="text-[11px] text-slate-400 font-medium block mb-0.5">Cán bộ tiếp nhận</span>
+              <div className="font-semibold text-slate-800 text-[12px] truncate" title={`${info.canBo} (${info.chucVu})`}>
+                {info.canBo} <span className="text-slate-400 font-normal">({info.chucVu})</span>
               </div>
+            </div>
 
-              {/* Đơn vị tiếp nhận */}
-              <div className="md:col-span-4 pt-3 border-t border-slate-200/60 flex items-center gap-2">
-                <span className="text-[11px] text-slate-400 font-medium shrink-0">Đơn vị tiếp nhận:</span>
-                <span className="font-semibold text-slate-800 text-[12px]">
-                  {info.donViTiepNhan}
-                </span>
+            {/* 5. Đơn vị tiếp nhận */}
+            <div className="col-span-2 sm:col-span-1 lg:col-span-1">
+              <span className="text-[11px] text-slate-400 font-medium block mb-0.5">Đơn vị tiếp nhận</span>
+              <div className="font-semibold text-slate-800 text-[12px] truncate" title={info.donViTiepNhan}>
+                {info.donViTiepNhan}
               </div>
             </div>
           </div>
 
-          {/* =================================================================== */}
-          {/* B. DANH SÁCH ĐƯƠNG SỰ DẠNG LIST (KẾ THỪA TỪ LƯỢT NHẬN & AI BÓC TÁCH FILE) */}
-          {/* =================================================================== */}
-          <div>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <h3 className="text-[12px] font-bold text-slate-700 uppercase tracking-tight flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#004ac6]"></span>
-                  B. DANH SÁCH ĐƯƠNG SỰ TRONG VỤ VIỆC
+          {/* B. DANH SÁCH ĐƯƠNG SỰ TRONG VỤ VIỆC */}
+          <div className="space-y-3 pt-2 border-t border-slate-100">
+            {/* Tiêu đề & Ô tìm kiếm & Nút Thêm mới trên cùng 1 hàng */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#004ac6]"></span>
+                <h3 className="text-[12px] font-bold text-slate-800 uppercase tracking-tight font-label-technical">
+                  Danh sách đương sự trong vụ việc
                 </h3>
-                <span className="text-[11px] font-medium text-slate-500">
-                  (Từ Lượt nhận &amp; AI đọc từ file văn bản)
+                <span className="px-2 py-0.2 rounded-full bg-blue-50 text-[#004ac6] text-[10.5px] font-bold border border-blue-200 font-label-technical">
+                  {duongSuList.length} đương sự
                 </span>
               </div>
 
-              <div className="flex items-center gap-2">
-                {onOpenSoDo && (
-                  <button
-                    type="button"
-                    onClick={onOpenSoDo}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-blue-50 hover:bg-blue-100 text-[#004ac6] border border-blue-200 transition-colors cursor-pointer"
-                    title="Mở Sơ đồ mối quan hệ giữa các đương sự"
-                  >
-                    <span className="material-symbols-outlined text-[15px]">hub</span>
-                    <span>Sơ đồ liên hệ</span>
-                  </button>
-                )}
+              <div className="flex items-center gap-2.5">
+                {/* Ô tìm kiếm */}
+                <div className="relative w-full sm:w-60">
+                  <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-[15px] text-slate-400">
+                    search
+                  </span>
+                  <input
+                    type="text"
+                    value={searchKeyword}
+                    onChange={(e) => setSearchKeyword(e.target.value)}
+                    placeholder="Tìm tên, CCCD/MST..."
+                    className="w-full pl-8 pr-7 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs focus:bg-white focus:outline-none focus:border-[#004ac6] transition-all"
+                  />
+                  {searchKeyword && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchKeyword('')}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">close</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Nút Thêm đương sự */}
                 <button
                   type="button"
                   onClick={handleOpenAdd}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg bg-[#004ac6] hover:bg-[#003ea8] text-white shadow-xs transition-all cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-[#004ac6] hover:bg-[#003ea8] text-white shadow-xs transition-all cursor-pointer whitespace-nowrap active:scale-95"
                 >
-                  <span className="material-symbols-outlined text-[15px]">person_add</span>
-                  <span>+ Thêm người / Đương sự</span>
+                  <span className="material-symbols-outlined text-[16px]">person_add</span>
+                  <span>+ Thêm đương sự</span>
                 </button>
               </div>
             </div>
-            {/* Thanh Phân loại Filter & Tìm kiếm nhanh */}
-            <div className="p-2 mb-3 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col md:flex-row items-center justify-between gap-2.5 text-xs">
-              <div className="flex items-center gap-1 flex-wrap w-full md:w-auto">
-                <button
-                  type="button"
-                  onClick={() => setFilterTab('all')}
-                  className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer ${filterTab === 'all'
-                    ? 'bg-white text-[#004ac6] shadow-xs border border-blue-200 font-bold'
-                    : 'text-slate-600 hover:bg-slate-200/70'
-                    }`}
-                >
-                  Tất cả ({duongSuList.length})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFilterTab('nguoi_nop')}
-                  className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer ${filterTab === 'nguoi_nop'
-                    ? 'bg-white text-[#004ac6] shadow-xs border border-blue-200 font-bold'
-                    : 'text-slate-600 hover:bg-slate-200/70'
-                    }`}
-                >
-                  Người nộp &amp; Đứng đơn ({countNguoiNop})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFilterTab('ben_bi_to_giac')}
-                  className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer ${filterTab === 'ben_bi_to_giac'
-                    ? 'bg-white text-rose-700 shadow-xs border border-rose-200 font-bold'
-                    : 'text-slate-600 hover:bg-slate-200/70'
-                    }`}
-                >
-                  Phía Bị tố giác / Khiếu nại ({countBiToGiac})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFilterTab('lien_quan')}
-                  className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer ${filterTab === 'lien_quan'
-                    ? 'bg-white text-amber-800 shadow-xs border border-amber-200 font-bold'
-                    : 'text-slate-600 hover:bg-slate-200/70'
-                    }`}
-                >
-                  Người liên quan ({countLienQuan})
-                </button>
-              </div>
 
-              <div className="relative w-full md:w-60">
-                <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-[15px] text-slate-400">
-                  search
-                </span>
-                <input
-                  type="text"
-                  value={searchKeyword}
-                  onChange={(e) => setSearchKeyword(e.target.value)}
-                  placeholder="Tìm tên, CCCD, vai trò..."
-                  className="w-full pl-8 pr-2.5 py-1 rounded-lg bg-white border border-slate-200 text-xs focus:outline-none focus:border-[#004ac6]"
-                />
-              </div>
-            </div>
-
-            {/* BẢNG DANH SÁCH ĐƯƠNG SỰ DẠNG LIST */}
+            {/* BẢNG DANH SÁCH ĐƯƠNG SỰ TINH GỌN */}
             <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
                     <tr className="bg-slate-50/90 border-b border-slate-200 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                      <th className="py-2.5 px-3 text-center w-10">#</th>
-                      <th className="py-2.5 px-3 min-w-[220px]">Họ tên / Tổ chức &amp; Số định danh</th>
-                      <th className="py-2.5 px-3 min-w-[240px]">Vai trò &amp; Tư cách tham gia tố tụng</th>
-                      <th className="py-2.5 px-3 min-w-[180px]">Thông tin liên hệ &amp; Địa chỉ</th>
-                      <th className="py-2.5 px-3 text-center w-24">Thao tác</th>
+                      <th className="py-2.5 px-3 text-center w-9 font-label-technical">#</th>
+                      <th className="py-2.5 px-3 min-w-[200px]">Họ tên / Tổ chức</th>
+                      <th className="py-2.5 px-3 min-w-[220px]">Vai trò &amp; Tư cách</th>
+                      <th className="py-2.5 px-3 min-w-[170px]">Liên hệ &amp; Địa chỉ</th>
+                      <th className="py-2.5 px-3 text-center w-20">Thao tác</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-150">
+                  <tbody className="divide-y divide-slate-100">
                     {filteredList.map((item, idx) => {
                       const roleBadgeClass = getRoleBadgeClasses(item.vaiTroColor);
                       const avatarBg = getAvatarBg(item);
@@ -867,16 +826,16 @@ export default function TabThongTinChung({
                       return (
                         <tr
                           key={item.id}
-                          className={`hover:bg-blue-50/40 transition-colors ${item.isPrimary ? 'bg-blue-50/15' : ''
+                          className={`hover:bg-blue-50/30 transition-colors ${item.isPrimary ? 'bg-blue-50/10' : ''
                             }`}
                         >
                           {/* 1. STT */}
-                          <td className="py-3 px-3 text-center font-bold text-slate-400 font-label-technical">
+                          <td className="py-2.5 px-3 text-center font-bold text-slate-400 font-label-technical text-[11px]">
                             {idx + 1}
                           </td>
 
-                          {/* 2. Họ tên / Tổ chức & Số định danh */}
-                          <td className="py-3 px-3">
+                          {/* 2. Họ tên / Tổ chức & Định danh */}
+                          <td className="py-2.5 px-3">
                             <div className="flex items-start gap-2.5">
                               <div
                                 className={`w-7 h-7 rounded-full ${avatarBg} flex items-center justify-center shrink-0 shadow-2xs mt-0.5`}
@@ -886,32 +845,29 @@ export default function TabThongTinChung({
                                 </span>
                               </div>
                               <div className="min-w-0">
-                                <div className="font-bold text-slate-900 text-[12.5px] leading-tight">
-                                  {item.hoTen}
-                                </div>
-                                <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                                  {item.dinhDanh && (
-                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 text-[10.5px] font-label-technical">
-                                      <span className="text-slate-400 font-normal">{item.dinhDanhLabel || 'ĐD'}:</span>
-                                      <span className="font-semibold text-slate-800">{item.dinhDanh}</span>
+                                <div className="font-bold text-slate-900 text-[12.5px] leading-tight flex items-center gap-1.5">
+                                  <span>{item.hoTen}</span>
+                                  {item.isPrimary && (
+                                    <span className="px-1.5 py-0.2 rounded bg-blue-100 text-[#004ac6] text-[9.5px] font-bold">
+                                      Chính
                                     </span>
                                   )}
-                                  <span className="text-[10px] text-slate-400 font-label-technical">
-                                    {item.loaiDoiTuong === 'to_chuc' ? 'Tổ chức' : 'Cá nhân'}
-                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-slate-500 flex-wrap">
+                                  {item.dinhDanh && (
+                                    <span className="font-mono text-slate-700 font-medium">
+                                      {item.dinhDanhLabel || 'ĐD'}: {item.dinhDanh}
+                                    </span>
+                                  )}
+                                  <span className="text-slate-300">•</span>
+                                  <span>{item.loaiDoiTuong === 'to_chuc' ? 'Tổ chức' : 'Cá nhân'}</span>
                                   {item.xacThucBadge && (
                                     <span
-                                      className={`inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[9.5px] font-semibold border ${item.xacThucColor === 'emerald'
-                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                        : item.xacThucColor === 'amber'
-                                          ? 'bg-amber-50 text-amber-800 border-amber-200'
-                                          : 'bg-blue-50 text-blue-700 border-blue-200'
-                                        }`}
+                                      className="inline-flex items-center gap-0.5 text-emerald-600 font-medium text-[10px]"
+                                      title={item.xacThucBadge}
                                     >
-                                      <span className="material-symbols-outlined text-[11px]">
-                                        {item.xacThucColor === 'emerald' ? 'verified' : 'badge'}
-                                      </span>
-                                      {item.xacThucBadge}
+                                      <span className="material-symbols-outlined text-[12px]">verified</span>
+                                      <span>Xác thực</span>
                                     </span>
                                   )}
                                 </div>
@@ -920,46 +876,50 @@ export default function TabThongTinChung({
                           </td>
 
                           {/* 3. Vai trò & Tư cách tham gia tố tụng */}
-                          <td className="py-3 px-3 text-[11px]">
+                          <td className="py-2.5 px-3">
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span
-                                className={`inline-block px-2 py-0.5 rounded-md text-[10.5px] font-bold border ${roleBadgeClass}`}
+                                className={`inline-block px-2 py-0.5 rounded text-[10.5px] font-bold border ${roleBadgeClass}`}
                               >
                                 {item.vaiTro}
                               </span>
                               {item.chucVu && (
-                                <span className="text-[10.5px] text-slate-500 font-medium">
-                                  • {item.chucVu}
+                                <span className="text-[11px] text-slate-500 truncate max-w-[140px]" title={item.chucVu}>
+                                  {item.chucVu}
                                 </span>
                               )}
                             </div>
-                            <div className="font-semibold text-slate-800 mt-1 leading-tight">
+                            <div className="font-medium text-slate-800 text-[11.5px] mt-0.5 leading-snug">
                               {item.tuCach}
                             </div>
                             {item.quanHeLienDoi && (
-                              <div
-                                className="text-[10.5px] text-slate-500 mt-0.5 leading-snug line-clamp-2"
+                              <p
+                                className="text-[10.5px] text-slate-400 mt-0.5 line-clamp-1 italic"
                                 title={item.quanHeLienDoi}
                               >
                                 {item.quanHeLienDoi}
-                              </div>
+                              </p>
                             )}
                           </td>
 
                           {/* 4. Liên hệ & Địa chỉ */}
-                          <td className="py-3 px-3 text-[11px]">
+                          <td className="py-2.5 px-3">
                             {item.sdt && (
-                              <div className="flex items-center gap-1 font-semibold text-slate-800 font-label-technical">
+                              <div className="font-mono text-[11.5px] text-slate-700 flex items-center gap-1 font-medium">
                                 <span className="material-symbols-outlined text-[12px] text-slate-400">call</span>
                                 <span>{item.sdt}</span>
                               </div>
                             )}
-                            <div className="text-[10.5px] text-slate-500 truncate max-w-[220px]" title={item.diaChi}>
+                            <div
+                              className="text-[11px] text-slate-500 truncate max-w-[210px] mt-0.5"
+                              title={item.diaChi}
+                            >
                               {item.diaChi}
                             </div>
                           </td>
-                          {/* 8. Thao tác */}
-                          <td className="py-3 px-3 text-center">
+
+                          {/* 5. Thao tác */}
+                          <td className="py-2.5 px-3 text-center">
                             <div className="flex items-center justify-center gap-1">
                               <button
                                 type="button"
@@ -969,16 +929,6 @@ export default function TabThongTinChung({
                               >
                                 <span className="material-symbols-outlined text-[16px]">edit</span>
                               </button>
-                              {onOpenSoDo && (
-                                <button
-                                  type="button"
-                                  onClick={onOpenSoDo}
-                                  className="p-1 rounded-md text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors cursor-pointer"
-                                  title="Xem trên Sơ đồ"
-                                >
-                                  <span className="material-symbols-outlined text-[16px]">hub</span>
-                                </button>
-                              )}
                               {!item.isPrimary && (
                                 <button
                                   type="button"
@@ -999,8 +949,8 @@ export default function TabThongTinChung({
               </div>
 
               {filteredList.length === 0 && (
-                <div className="text-center py-8 bg-slate-50/50">
-                  <span className="material-symbols-outlined text-[32px] text-slate-300 mb-1 block">
+                <div className="text-center py-6 bg-slate-50/50">
+                  <span className="material-symbols-outlined text-[28px] text-slate-300 mb-1 block">
                     group_off
                   </span>
                   <p className="text-xs font-semibold text-slate-600">
@@ -1012,7 +962,7 @@ export default function TabThongTinChung({
                       setFilterTab('all');
                       setSearchKeyword('');
                     }}
-                    className="mt-1.5 text-xs font-bold text-[#004ac6] hover:underline"
+                    className="mt-1 text-xs font-bold text-[#004ac6] hover:underline cursor-pointer"
                   >
                     Xem tất cả danh sách
                   </button>
@@ -1043,7 +993,7 @@ export default function TabThongTinChung({
                 type="button"
                 onClick={handleStartEditPhanLoai}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[#004ac6] bg-blue-50/80 hover:bg-blue-100/80 border border-blue-200/80 transition-colors cursor-pointer shadow-2xs"
-                title="Chỉnh sửa hoặc chọn lại loại đơn, thẩm quyền, hướng xử lý do AI gợi ý"
+                title="Chỉnh sửa phân loại đơn, thẩm quyền thụ lý và hướng xử lý"
               >
                 <span className="material-symbols-outlined text-[15px]">edit</span>
                 <span>Chỉnh sửa phân loại</span>
@@ -1070,180 +1020,116 @@ export default function TabThongTinChung({
         {/* NỘI DUNG KHỐI 2: CHẾ ĐỘ XEM (VIEW MODE) HOẶC CHỈNH SỬA (EDIT MODE)        */}
         {/* ========================================================================= */}
         {!isEditingPhanLoai ? (
-          <div className="p-6 space-y-5">
+          <div className="p-5 space-y-3.5">
             {/* Banner thông báo nếu cán bộ đã điều chỉnh */}
             {phanLoai.isModifiedByUser && (
-              <div className="p-3.5 px-4 rounded-xl bg-amber-50/80 border border-amber-200/90 flex items-start gap-3 text-xs text-amber-900 shadow-2xs">
-                <span className="material-symbols-outlined text-[20px] text-amber-600 shrink-0 mt-0.5">verified_user</span>
-                <div className="space-y-1 flex-1">
-                  <div className="font-bold flex items-center justify-between flex-wrap gap-2">
-                    <span className="flex items-center gap-1.5">
-                      <span>Phân loại nghiệp vụ đã được điều chỉnh bởi cán bộ</span>
-                      <span className="px-2 py-0.2 rounded-full text-[10px] font-bold bg-amber-200/80 text-amber-900">Đã lưu vết</span>
-                    </span>
-                    <span className="text-[11px] font-normal text-amber-700 font-label-technical">
-                      {phanLoai.nguoiCapNhat} • {phanLoai.ngayCapNhat}
-                    </span>
-                  </div>
+              <div className="px-3.5 py-2 rounded-lg bg-amber-50/90 border border-amber-200/90 flex items-center justify-between gap-3 text-xs text-amber-900 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[18px] text-amber-600 shrink-0">verified_user</span>
+                  <span className="font-bold">Phân loại nghiệp vụ đã được điều chỉnh bởi: {phanLoai.nguoiCapNhat}</span>
                   {phanLoai.ghiChuCuaCanBo && (
-                    <p className="text-amber-800 text-[11.5px] italic bg-white/70 p-2 rounded-lg border border-amber-200/60">
-                      "Ghi chú: {phanLoai.ghiChuCuaCanBo}"
-                    </p>
+                    <span className="text-amber-800 text-[11.5px] italic">
+                      — &ldquo;{phanLoai.ghiChuCuaCanBo}&rdquo;
+                    </span>
                   )}
                 </div>
+                <span className="text-[11px] text-amber-700 font-label-technical shrink-0">
+                  {phanLoai.ngayCapNhat}
+                </span>
               </div>
             )}
 
-            {/* HÀNG 1: BẢNG 3 THẺ PHÂN LOẠI CHÍNH */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Lưới 4 thông tin phân loại chính: Loại đơn, Lĩnh vực, Thẩm quyền, Hướng xử lý */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {/* Thẻ 1: Loại đơn */}
-              <div className="p-4 rounded-xl bg-slate-50/70 border border-slate-200/80 hover:border-blue-200 transition-all">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-tight">
-                    PHÂN LOẠI ĐƠN
-                  </span>
-                  <span className="material-symbols-outlined text-[18px] text-rose-600">gavel</span>
-                </div>
-                <div className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold">
+              <div className="p-3.5 rounded-lg bg-slate-50/80 border border-slate-200/80 flex flex-col justify-between">
+                <span className="text-[10.5px] font-bold text-slate-500 uppercase tracking-tight flex items-center gap-1.5 mb-2">
+                  <span className="material-symbols-outlined text-[15px] text-rose-600">gavel</span>
+                  Phân loại đơn
+                </span>
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold">
                     <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
                     {phanLoai.loaiDon}
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400 mt-2">
-                  Xác định tính chất vụ việc tố tụng / hành chính
-                </p>
               </div>
 
-              {/* Thẻ 2: Lĩnh vực nghiệp vụ */}
-              <div className="p-4 rounded-xl bg-slate-50/70 border border-slate-200/80 hover:border-blue-200 transition-all">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-tight">
-                    LĨNH VỰC CHUYÊN MÔN
-                  </span>
-                  <span className="material-symbols-outlined text-[18px] text-[#004ac6]">category</span>
-                </div>
-                <div className="text-xs font-bold text-slate-900 leading-snug">
+              {/* Thẻ 2: Lĩnh vực chuyên môn */}
+              <div className="p-3.5 rounded-lg bg-slate-50/80 border border-slate-200/80 flex flex-col justify-between">
+                <span className="text-[10.5px] font-bold text-slate-500 uppercase tracking-tight flex items-center gap-1.5 mb-2">
+                  <span className="material-symbols-outlined text-[15px] text-[#004ac6]">category</span>
+                  Lĩnh vực chuyên môn
+                </span>
+                <div className="text-xs font-bold text-slate-800 leading-snug">
                   {phanLoai.linhVuc}
                 </div>
-                <p className="text-[11px] text-slate-400 mt-2">
-                  Phân nhánh chuyên ban thụ lý giải quyết
-                </p>
               </div>
 
-              {/* Thẻ 3: AI Đánh giá & Cơ sở trích xuất */}
-              <div className="p-4 rounded-xl bg-indigo-50/40 border border-indigo-200/70 hover:border-indigo-300 transition-all">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[11px] font-bold text-indigo-900 uppercase tracking-tight flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[15px] text-indigo-600">psychology</span>
-                    CƠ SỞ AI GỢI Ý
-                  </span>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-indigo-100 text-indigo-700 font-label-technical">
-                    Độ tin cậy: {phanLoai.doTinCaiAi}
-                  </span>
-                </div>
-                <p className="text-[11.5px] text-slate-700 leading-relaxed line-clamp-3">
-                  {phanLoai.nguonTrichXuatAi}
-                </p>
-              </div>
-            </div>
-
-            {/* HÀNG 2: THẨM QUYỀN GIẢI QUYẾT & HƯỚNG XỬ LÝ ĐỀ XUẤT */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Thẩm quyền giải quyết */}
-              <div className="p-4 rounded-xl bg-slate-50/70 border border-slate-200/80">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[11px] font-bold text-slate-600 uppercase tracking-tight flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-[16px] text-[#004ac6]">account_balance</span>
-                    CƠ QUAN CÓ THẨM QUYỀN GIẢI QUYẾT
-                  </span>
-                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider font-label-technical">
-                    THẨM QUYỀN THỤ LÝ
-                  </span>
-                </div>
-                <div className="text-xs text-slate-800 font-semibold leading-relaxed bg-white p-3 rounded-lg border border-slate-200/60">
+              {/* Thẻ 3: Cơ quan có thẩm quyền giải quyết */}
+              <div className="p-3.5 rounded-lg bg-slate-50/80 border border-slate-200/80 flex flex-col justify-between">
+                <span className="text-[10.5px] font-bold text-slate-500 uppercase tracking-tight flex items-center gap-1.5 mb-1.5">
+                  <span className="material-symbols-outlined text-[15px] text-[#004ac6]">account_balance</span>
+                  Cơ quan có thẩm quyền giải quyết
+                </span>
+                <div className="text-xs text-slate-800 font-medium leading-relaxed">
                   {phanLoai.thamQuyen}
                 </div>
               </div>
 
-              {/* Hướng xử lý đề xuất */}
-              <div className="p-4 rounded-xl bg-slate-50/70 border border-slate-200/80">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[11px] font-bold text-slate-600 uppercase tracking-tight flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-[16px] text-emerald-600">alt_route</span>
-                    HƯỚNG XỬ LÝ ĐỀ XUẤT TIẾP THEO
-                  </span>
-                  <span className="text-[10px] font-semibold text-emerald-700 uppercase tracking-wider font-label-technical">
-                    QUY TRÌNH DỰ KIẾN
-                  </span>
-                </div>
-                <div className="text-xs text-slate-800 font-medium leading-relaxed bg-white p-3 rounded-lg border border-slate-200/60">
+              {/* Thẻ 4: Hướng xử lý đề xuất */}
+              <div className="p-3.5 rounded-lg bg-slate-50/80 border border-slate-200/80 flex flex-col justify-between">
+                <span className="text-[10.5px] font-bold text-slate-500 uppercase tracking-tight flex items-center gap-1.5 mb-1.5">
+                  <span className="material-symbols-outlined text-[15px] text-emerald-600">alt_route</span>
+                  Hướng xử lý đề xuất tiếp theo
+                </span>
+                <div className="text-xs text-slate-800 font-medium leading-relaxed">
                   {phanLoai.huongXuLy}
                 </div>
               </div>
             </div>
 
-            {/* HÀNG 3: CĂN CỨ PHÁP LÝ */}
-            <div className="p-4 rounded-xl bg-slate-50/70 border border-slate-200/80">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[11px] font-bold text-slate-600 uppercase tracking-tight flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-[16px] text-amber-600">menu_book</span>
-                  CĂN CỨ PHÁP LÝ ÁP DỤNG
-                </span>
-                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider font-label-technical">
-                  QUY PHẠM PHÁP LUẬT VIỆT NAM
-                </span>
-              </div>
-              <div className="text-xs text-slate-800 font-medium leading-relaxed bg-white p-3 rounded-lg border border-slate-200/60">
+            {/* Căn cứ pháp lý áp dụng */}
+            <div className="p-3.5 rounded-lg bg-slate-50/80 border border-slate-200/80">
+              <span className="text-[10.5px] font-bold text-slate-500 uppercase tracking-tight flex items-center gap-1.5 mb-1.5">
+                <span className="material-symbols-outlined text-[15px] text-amber-600">menu_book</span>
+                Căn cứ pháp lý áp dụng
+              </span>
+              <div className="text-xs text-slate-800 font-medium leading-relaxed">
                 {phanLoai.canCuPhapLy}
               </div>
             </div>
 
-            {/* HÀNG 4: TÓM TẮT YÊU CẦU CỦA ĐƯƠNG SỰ */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-bold text-slate-600 uppercase tracking-tight flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-[16px] text-[#004ac6]">subject</span>
-                  TÓM TẮT YÊU CẦU CỦA ĐƯƠNG SỰ
+            {/* Tóm tắt yêu cầu của đương sự */}
+            <div className="p-3.5 rounded-lg bg-slate-50/80 border border-slate-200/80">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[10.5px] font-bold text-slate-500 uppercase tracking-tight flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[15px] text-[#004ac6]">subject</span>
+                  Tóm tắt yêu cầu của đương sự
                 </span>
-                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider font-label-technical">
-                  TRÍCH XUẤT TỪ NỘI DUNG ĐƠN
-                </span>
+                <span className="text-[10.5px] text-slate-400 font-medium">Trích yếu nội dung đơn</span>
               </div>
-
-              <div className="p-4 rounded-xl bg-slate-50/70 border border-slate-200/80 text-[12.5px] text-slate-800 leading-relaxed text-justify">
+              <div className="text-xs text-slate-800 leading-relaxed text-justify">
                 {info.tomTatYeuCau}
               </div>
             </div>
-
           </div>
         ) : (
           /* FORM ĐIỀU CHỈNH PHÂN LOẠI NGHIỆP VỤ */
-          <form onSubmit={handleSavePhanLoai} className="p-6 space-y-6 bg-slate-50/50">
-            {/* Banner hướng dẫn */}
-            <div className="flex items-center justify-between p-3.5 px-4 rounded-2xl bg-blue-50/80 border border-blue-200/90 text-xs text-blue-900 shadow-2xs flex-wrap gap-2">
-              <div className="flex items-center gap-2.5">
-                <span className="material-symbols-outlined text-[19px] text-[#004ac6]">psychology</span>
-                <span className="font-medium">
-                  Cán bộ có thể điều chỉnh loại đơn, lĩnh vực, cơ quan thẩm quyền hoặc hướng xử lý. Mọi thay đổi sẽ được ghi nhận và lưu vết kiểm toán.
-                </span>
-              </div>
-              <span className="text-[11px] font-bold text-blue-700 bg-white px-2.5 py-0.5 rounded-full border border-blue-200 shrink-0">
-                Độ tin cậy AI: {editPhanLoaiForm.doTinCaiAi || '96.8%'}
+          <form onSubmit={handleSavePhanLoai} className="p-5 space-y-4 bg-slate-50/30">
+            {/* Banner hướng dẫn (gọn, không AI) */}
+            <div className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-blue-50/80 border border-blue-200/80 text-xs text-blue-900">
+              <span className="material-symbols-outlined text-[17px] text-[#004ac6] shrink-0">tune</span>
+              <span className="font-medium">
+                Cán bộ có thể điều chỉnh loại đơn, lĩnh vực chuyên môn, cơ quan thẩm quyền hoặc hướng xử lý. Mọi thay đổi sẽ được ghi nhận và lưu vết kiểm toán.
               </span>
             </div>
 
-            {/* KHỐI 1: LOẠI ĐƠN & LĨNH VỰC CHUYÊN MÔN (2 CỘT) */}
-            <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-4">
-              <div className="flex items-center gap-2 border-b border-slate-100 pb-2.5">
-                <span className="material-symbols-outlined text-[18px] text-[#004ac6]">category</span>
-                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-tight">
-                  Phân loại tính chất đơn &amp; Lĩnh vực chuyên môn
-                </h3>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {/* 1. LOẠI ĐƠN */}
+            {/* LƯỚI FORM NHẬP LIỆU GỌN GÀNG */}
+            <div className="p-4 rounded-xl bg-white border border-slate-200 space-y-4 shadow-2xs">
+              {/* Hàng 1: Loại đơn & Lĩnh vực */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* 1. Loại đơn */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="text-xs font-bold text-slate-800 flex items-center gap-1">
@@ -1254,7 +1140,7 @@ export default function TabThongTinChung({
                   <select
                     value={editPhanLoaiForm.loaiDon}
                     onChange={(e) => handleSelectLoaiDon(e.target.value)}
-                    className="w-full px-3 py-2 text-xs font-semibold text-slate-800 bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6] transition-all cursor-pointer"
+                    className="w-full px-3 py-1.5 text-xs font-semibold text-slate-800 bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6] transition-all cursor-pointer"
                   >
                     {LOAI_DON_SUGGESTIONS.map((item) => (
                       <option key={item} value={item}>
@@ -1264,8 +1150,8 @@ export default function TabThongTinChung({
                   </select>
 
                   {/* Quick pills */}
-                  <div className="flex flex-wrap gap-1.5 mt-2.5">
-                    <span className="text-[10.5px] text-slate-400 font-medium self-center">Chọn nhanh:</span>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    <span className="text-[10px] text-slate-400 font-medium self-center">Chọn nhanh:</span>
                     {[
                       { label: 'Đơn tố giác về tội phạm', color: 'rose' },
                       { label: 'Đơn khiếu nại (Lần 1)', color: 'amber' },
@@ -1287,7 +1173,7 @@ export default function TabThongTinChung({
                           key={chip.label}
                           type="button"
                           onClick={() => handleSelectLoaiDon(chip.label)}
-                          className={`text-[10.5px] px-2.5 py-1 rounded-lg border transition-all cursor-pointer flex items-center gap-1 ${isSelected
+                          className={`text-[10px] px-2 py-0.5 rounded border transition-all cursor-pointer flex items-center gap-1 ${isSelected
                             ? activeClasses
                             : 'bg-slate-50 hover:bg-white text-slate-600 border-slate-200'
                             }`}
@@ -1309,7 +1195,7 @@ export default function TabThongTinChung({
                   </div>
                 </div>
 
-                {/* 2. LĨNH VỰC CHUYÊN MÔN (Single clean control) */}
+                {/* 2. Lĩnh vực chuyên môn */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="text-xs font-bold text-slate-800 flex items-center gap-1">
@@ -1338,7 +1224,7 @@ export default function TabThongTinChung({
                           setEditPhanLoaiForm({ ...editPhanLoaiForm, linhVuc: e.target.value });
                         }
                       }}
-                      className="w-full px-3 py-2 text-xs font-semibold text-slate-800 bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6] transition-all cursor-pointer"
+                      className="w-full px-3 py-1.5 text-xs font-semibold text-slate-800 bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6] transition-all cursor-pointer"
                     >
                       {LINH_VUC_SUGGESTIONS.map((item) => (
                         <option key={item} value={item}>
@@ -1355,31 +1241,19 @@ export default function TabThongTinChung({
                         onChange={(e) => setEditPhanLoaiForm({ ...editPhanLoaiForm, linhVuc: e.target.value })}
                         placeholder="Nhập lĩnh vực chuyên môn cụ thể..."
                         autoFocus
-                        className="w-full px-3 py-2 text-xs font-semibold text-slate-800 bg-white border border-[#004ac6] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 transition-all"
+                        className="w-full px-3 py-1.5 text-xs font-semibold text-slate-800 bg-white border border-[#004ac6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 transition-all"
                       />
                       <span className="text-[10px] text-slate-400 block mt-1">
                         Đang ở chế độ tự nhập lĩnh vực chuyên môn.
                       </span>
                     </div>
                   )}
-                  <p className="text-[10.5px] text-slate-500 mt-2">
-                    Xác định phân nhánh nghiệp vụ để chuyển giao đúng bộ phận chuyên môn.
-                  </p>
                 </div>
               </div>
-            </div>
 
-            {/* KHỐI 2: THẨM QUYỀN GIẢI QUYẾT & HƯỚNG XỬ LÝ (2 CỘT) */}
-            <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-4">
-              <div className="flex items-center gap-2 border-b border-slate-100 pb-2.5">
-                <span className="material-symbols-outlined text-[18px] text-[#004ac6]">account_balance</span>
-                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-tight">
-                  Thẩm quyền giải quyết &amp; Hướng xử lý đề xuất
-                </h3>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {/* 3. THẨM QUYỀN GIẢI QUYẾT */}
+              {/* Hàng 2: Thẩm quyền giải quyết & Hướng xử lý */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+                {/* 3. Thẩm quyền giải quyết */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
                     <label className="text-xs font-bold text-slate-800 flex items-center gap-1">
@@ -1387,14 +1261,14 @@ export default function TabThongTinChung({
                       <span className="text-rose-600">*</span>
                     </label>
                     <div className="flex items-center gap-1">
-                      <span className="text-[10.5px] text-slate-400">Chọn mẫu:</span>
+                      <span className="text-[10px] text-slate-400">Mẫu:</span>
                       <select
                         onChange={(e) => {
                           if (e.target.value) {
                             setEditPhanLoaiForm({ ...editPhanLoaiForm, thamQuyen: e.target.value });
                           }
                         }}
-                        className="text-[11px] font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg px-2 py-0.5 focus:outline-none cursor-pointer max-w-[140px] truncate"
+                        className="text-[10.5px] font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded px-1.5 py-0.5 focus:outline-none cursor-pointer max-w-[130px] truncate"
                         defaultValue=""
                       >
                         <option value="" disabled>-- Chọn mẫu --</option>
@@ -1408,18 +1282,15 @@ export default function TabThongTinChung({
                   </div>
 
                   <textarea
-                    rows={3}
+                    rows={2}
                     value={editPhanLoaiForm.thamQuyen}
                     onChange={(e) => setEditPhanLoaiForm({ ...editPhanLoaiForm, thamQuyen: e.target.value })}
-                    className="w-full px-3 py-2 text-xs font-medium text-slate-800 bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6] transition-all leading-relaxed"
-                    placeholder="Nhập chi tiết cơ quan, phòng ban có thẩm quyền giải quyết..."
+                    className="w-full px-3 py-1.5 text-xs font-medium text-slate-800 bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6] transition-all leading-relaxed"
+                    placeholder="Nhập chi tiết cơ quan có thẩm quyền giải quyết..."
                   />
-                  <span className="text-[10.5px] text-slate-400 block mt-1">
-                    Có thể chọn mẫu từ danh mục hoặc chỉnh sửa trực tiếp nội dung trên.
-                  </span>
                 </div>
 
-                {/* 4. HƯỚNG XỬ LÝ ĐỀ XUẤT */}
+                {/* 4. Hướng xử lý đề xuất */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
                     <label className="text-xs font-bold text-slate-800 flex items-center gap-1">
@@ -1427,14 +1298,14 @@ export default function TabThongTinChung({
                       <span className="text-rose-600">*</span>
                     </label>
                     <div className="flex items-center gap-1">
-                      <span className="text-[10.5px] text-slate-400">Chọn mẫu:</span>
+                      <span className="text-[10px] text-slate-400">Mẫu:</span>
                       <select
                         onChange={(e) => {
                           if (e.target.value) {
                             setEditPhanLoaiForm({ ...editPhanLoaiForm, huongXuLy: e.target.value });
                           }
                         }}
-                        className="text-[11px] font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg px-2 py-0.5 focus:outline-none cursor-pointer max-w-[140px] truncate"
+                        className="text-[10.5px] font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded px-1.5 py-0.5 focus:outline-none cursor-pointer max-w-[130px] truncate"
                         defaultValue=""
                       >
                         <option value="" disabled>-- Chọn mẫu --</option>
@@ -1448,36 +1319,23 @@ export default function TabThongTinChung({
                   </div>
 
                   <textarea
-                    rows={3}
+                    rows={2}
                     value={editPhanLoaiForm.huongXuLy}
                     onChange={(e) => setEditPhanLoaiForm({ ...editPhanLoaiForm, huongXuLy: e.target.value })}
-                    className="w-full px-3 py-2 text-xs font-medium text-slate-800 bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6] transition-all leading-relaxed"
-                    placeholder="Nhập nội dung đề xuất phân công, thụ lý, chuyển đơn hoặc hướng dẫn..."
+                    className="w-full px-3 py-1.5 text-xs font-medium text-slate-800 bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6] transition-all leading-relaxed"
+                    placeholder="Nhập nội dung đề xuất thụ lý, chuyển đơn hoặc hướng dẫn..."
                   />
-                  <span className="text-[10.5px] text-slate-400 block mt-1">
-                    Đề xuất bước tác nghiệp thụ lý tiếp theo của cơ quan.
-                  </span>
                 </div>
               </div>
-            </div>
 
-            {/* KHỐI 3: CĂN CỨ PHÁP LÝ & LƯU VẾT KIỂM TOÁN */}
-            <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-4">
-              <div className="flex items-center gap-2 border-b border-slate-100 pb-2.5">
-                <span className="material-symbols-outlined text-[18px] text-[#004ac6]">menu_book</span>
-                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-tight">
-                  Căn cứ pháp lý áp dụng &amp; Ghi chú lưu vết
-                </h3>
-              </div>
-
-              {/* 5. CĂN CỨ PHÁP LÝ */}
-              <div>
-                <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+              {/* Hàng 3: Căn cứ pháp lý */}
+              <div className="pt-2 border-t border-slate-100">
+                <div className="flex items-center justify-between mb-1.5 flex-wrap gap-2">
                   <label className="text-xs font-bold text-slate-800">
                     5. Căn cứ pháp lý áp dụng
                   </label>
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="text-[10.5px] text-slate-400">Thêm nhanh điều luật:</span>
+                  <div className="flex flex-wrap items-center gap-1">
+                    <span className="text-[10px] text-slate-400">Thêm nhanh:</span>
                     {[
                       'BLTTHS 2015',
                       'BLHS 2015',
@@ -1503,12 +1361,12 @@ export default function TabThongTinChung({
                               setEditPhanLoaiForm({ ...editPhanLoaiForm, canCuPhapLy: current + addition });
                             }
                           }}
-                          className={`text-[10.5px] px-2 py-0.5 rounded-lg border transition-all cursor-pointer flex items-center gap-1 ${isIncluded
+                          className={`text-[10px] px-1.5 py-0.5 rounded border transition-all cursor-pointer flex items-center gap-0.5 ${isIncluded
                             ? 'bg-emerald-50 text-emerald-700 border-emerald-300 font-bold'
                             : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
                             }`}
                         >
-                          <span className="material-symbols-outlined text-[12px]">
+                          <span className="material-symbols-outlined text-[11px]">
                             {isIncluded ? 'check' : 'add'}
                           </span>
                           <span>{law}</span>
@@ -1521,19 +1379,19 @@ export default function TabThongTinChung({
                   rows={2}
                   value={editPhanLoaiForm.canCuPhapLy}
                   onChange={(e) => setEditPhanLoaiForm({ ...editPhanLoaiForm, canCuPhapLy: e.target.value })}
-                  className="w-full px-3 py-2 text-xs font-medium text-slate-800 bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6] leading-relaxed transition-all"
+                  className="w-full px-3 py-1.5 text-xs font-medium text-slate-800 bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6] leading-relaxed transition-all"
                   placeholder="Nhập điều khoản luật, nghị định, thông tư căn cứ..."
                 />
               </div>
 
-              {/* 6. LÝ DO / GHI CHÚ ĐIỀU CHỈNH (LƯU VẾT KIỂM TOÁN) */}
-              <div className="p-3.5 rounded-xl bg-amber-50/50 border border-amber-200/80">
-                <div className="flex items-center gap-1.5 mb-1.5">
-                  <span className="material-symbols-outlined text-[16px] text-amber-700">verified_user</span>
+              {/* Hàng 4: Ghi chú điều chỉnh của cán bộ */}
+              <div className="p-3 rounded-lg bg-amber-50/60 border border-amber-200/80">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className="material-symbols-outlined text-[15px] text-amber-700">verified_user</span>
                   <label className="text-xs font-bold text-amber-900 uppercase tracking-tight">
                     6. Lý do / Ghi chú điều chỉnh của Cán bộ (Lưu vết kiểm toán)
                   </label>
-                  <span className="text-[10px] text-amber-700 bg-amber-100 px-2 py-0.2 rounded-full font-semibold">
+                  <span className="text-[9.5px] text-amber-700 bg-amber-100 px-1.5 py-0.2 rounded font-semibold ml-auto">
                     Lưu lịch sử
                   </span>
                 </div>
@@ -1541,12 +1399,9 @@ export default function TabThongTinChung({
                   type="text"
                   value={editPhanLoaiForm.ghiChuCuaCanBo || ''}
                   onChange={(e) => setEditPhanLoaiForm({ ...editPhanLoaiForm, ghiChuCuaCanBo: e.target.value })}
-                  className="w-full px-3 py-2 text-xs text-slate-800 bg-white border border-amber-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-600 transition-all placeholder:text-slate-400"
+                  className="w-full px-3 py-1.5 text-xs text-slate-800 bg-white border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-600 transition-all placeholder:text-slate-400"
                   placeholder="VD: Điều chỉnh từ Tin báo sang Tố giác theo hồ sơ tài liệu xác minh bổ sung..."
                 />
-                <p className="text-[10.5px] text-amber-800 mt-1.5">
-                  Hệ thống tự động lưu kèm họ tên cán bộ thụ lý và mốc thời gian điều chỉnh để phục vụ hậu kiểm.
-                </p>
               </div>
             </div>
 
@@ -1573,15 +1428,6 @@ export default function TabThongTinChung({
         )}
       </div>
 
-      {/* ========================================================================= */}
-      {/* KHỐI 3: GỢI Ý CÁC NÚT XỬ LÝ TIẾP THEO DỰA TRÊN QUY TRÌNH PHÁP LUẬT         */}
-      {/* ========================================================================= */}
-      <QuyTrinhSuggestedActions
-        loaiDon={phanLoai.loaiDon}
-        donCode={currentDon?.code || 'Đ-2026-00125'}
-        currentNguoiGui={currentDon?.nguoiNop || (isToGiac ? 'Nguyễn Văn A' : 'Lê Văn Hùng')}
-        onActionSuccess={(actTitle) => showToast(`✓ Đã hoàn tất và lưu thao tác: ${actTitle}`)}
-      />
 
       {/* ========================================================================= */}
       {/* MODAL THÊM / CHỈNH SỬA ĐƯƠNG SỰ VÀ VAI TRÒ                                */}
