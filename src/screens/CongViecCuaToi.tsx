@@ -917,7 +917,7 @@ export default function CongViecCuaToi({
                   className="w-full flex items-start gap-3 px-3 py-2 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors text-left cursor-pointer"
                   onClick={() => {
                     setShowDropdown(false);
-                    onNav('tiep-nhan-xu-ly');
+                    onNav('nhan-don-them');
                   }}
                 >
                   <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
@@ -928,7 +928,7 @@ export default function CongViecCuaToi({
                     <p className="text-[11px] text-slate-500 leading-tight mt-0.5">Mở màn hình tiếp nhận và xử lý đơn</p>
                   </div>
                 </button>
-                <button
+                {/* <button
                   type="button"
                   className="w-full flex items-start gap-3 px-3 py-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors text-left cursor-pointer"
                   onClick={() => {
@@ -943,7 +943,7 @@ export default function CongViecCuaToi({
                     <div className="text-[13px] font-semibold text-slate-900 leading-snug">Danh sách lượt nhận</div>
                     <p className="text-[11px] text-slate-500 leading-tight mt-0.5">Xem danh sách toàn bộ các lượt nhận</p>
                   </div>
-                </button>
+                </button> */}
               </div>
             )}
           </div>

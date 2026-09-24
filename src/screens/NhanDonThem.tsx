@@ -677,9 +677,7 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
               <h1 className="text-[18px] font-bold text-slate-900 font-headline-md tracking-tight">
                 Thêm mới đơn tiếp nhận
               </h1>
-              <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-[#004ac6] border border-blue-200 text-[11px] font-semibold font-label-technical">
-                Chờ tiếp nhận
-              </span>
+
             </div>
           </div>
         </div>
@@ -1059,64 +1057,35 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
                 </div>
               </div>
 
-              {/* Tư cách nộp đơn / Tư cách thực hiện */}
+              {/* Có người ủy quyền không? */}
               <div className="space-y-4 pt-2">
-                <div>
-                  <h3 className="text-[13px] font-bold text-slate-800 uppercase font-label-technical">
-                    Tư cách thực hiện
-                  </h3>
-                  <p className="text-[12px] text-slate-500 mt-0.5">
-                    Xác định người trực tiếp nộp hồ sơ hoặc làm việc với cơ quan
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <label
-                    className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${cnTuCach === 'nguoi-dung-don'
-                      ? 'border-[#004ac6] bg-blue-50/40 shadow-xs ring-1 ring-[#004ac6]'
-                      : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
-                      }`}
-                  >
-                    <input
-                      type="radio"
-                      name="cnTuCach"
-                      value="nguoi-dung-don"
-                      checked={cnTuCach === 'nguoi-dung-don'}
-                      onChange={() => setCnTuCach('nguoi-dung-don')}
-                      className="mt-1 w-4 h-4 text-[#004ac6] focus:ring-[#004ac6] cursor-pointer"
-                    />
-                    <div>
-                      <div className="text-[13px] font-bold text-slate-900">Người đứng đơn</div>
-                      <div className="text-[11.5px] text-slate-500 mt-0.5">
-                        Chính chủ người nộp đơn khiếu nại, tố cáo, kiến nghị, phản ánh
-                      </div>
+                <label
+                  className={`flex items-start gap-3.5 p-4 rounded-xl border cursor-pointer transition-all ${cnTuCach === 'nguoi-dai-dien'
+                    ? 'border-[#004ac6] bg-blue-50/40 shadow-xs ring-1 ring-[#004ac6]'
+                    : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                    }`}
+                >
+                  <input
+                    type="checkbox"
+                    id="checkbox-co-nguoi-uy-quyen"
+                    checked={cnTuCach === 'nguoi-dai-dien'}
+                    onChange={(e) => setCnTuCach(e.target.checked ? 'nguoi-dai-dien' : 'nguoi-dung-don')}
+                    className="mt-0.5 w-4.5 h-4.5 text-[#004ac6] rounded border-slate-300 focus:ring-[#004ac6] cursor-pointer"
+                  />
+                  <div className="flex-1">
+                    <div className="text-[13.5px] font-bold text-slate-900 flex items-center gap-2">
+                      <span>Có người ủy quyền không?</span>
+                      {cnTuCach === 'nguoi-dai-dien' && (
+                        <span className="text-[11px] font-semibold px-2 py-0.5 bg-blue-100 text-[#004ac6] rounded-full">
+                          Có người ủy quyền / đại diện
+                        </span>
+                      )}
                     </div>
-                  </label>
-
-                  <label
-                    className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${cnTuCach === 'nguoi-dai-dien'
-                      ? 'border-[#004ac6] bg-blue-50/40 shadow-xs ring-1 ring-[#004ac6]'
-                      : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
-                      }`}
-                  >
-                    <input
-                      type="radio"
-                      name="cnTuCach"
-                      value="nguoi-dai-dien"
-                      checked={cnTuCach === 'nguoi-dai-dien'}
-                      onChange={() => setCnTuCach('nguoi-dai-dien')}
-                      className="mt-1 w-4 h-4 text-[#004ac6] focus:ring-[#004ac6] cursor-pointer"
-                    />
-                    <div>
-                      <div className="text-[13px] font-bold text-slate-900">
-                        Người đại diện / Người được ủy quyền
-                      </div>
-                      <div className="text-[11.5px] text-slate-500 mt-0.5">
-                        Đại diện theo pháp luật hoặc được ủy quyền thực hiện nộp đơn và làm việc
-                      </div>
+                    <div className="text-[12px] text-slate-500 mt-0.5">
+                      Tích chọn nếu người trực tiếp nộp đơn hoặc làm việc với cơ quan là người được ủy quyền hoặc người đại diện hợp pháp
                     </div>
-                  </label>
-                </div>
+                  </div>
+                </label>
 
                 {/* ─── KHU VỰC: THÔNG TIN NGƯỜI ĐẠI DIỆN ─── */}
                 {cnTuCach === 'nguoi-dai-dien' && (
