@@ -8,6 +8,7 @@ import ChuyenTiepNhanModal, { ChuyenTiepNhanSubmitData } from '../components/mod
 import NguonTraCuuModal, { NguonTraCuuTabType } from '../components/modals/NguonTraCuuModal';
 import BanGiaoDonModal, { BanGiaoDonSubmitData } from '../components/modals/BanGiaoDonModal';
 import TraLaiDonModal, { TraLaiDonSubmitData } from '../components/modals/TraLaiDonModal';
+import ThuLyDonModal, { ThuLyDonSubmitData } from '../components/modals/ThuLyDonModal';
 import { getSuggestedActionsForWorkflow } from '../components/workflow/QuyTrinhSuggestedActions';
 
 interface BanPhanTichProps {
@@ -131,6 +132,7 @@ export default function BanPhanTich({
   const [banGiaoUnit, setBanGiaoUnit] = useState<string>('Phòng Cảnh sát kinh tế (PC03) - Công an TP. Hà Nội');
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [showSubmitModal, setShowSubmitModal] = useState<boolean>(false);
+  const [showThuLyModal, setShowThuLyModal] = useState<boolean>(false);
   const [showChuyenModal, setShowChuyenModal] = useState<boolean>(false);
   const [showTraLaiModal, setShowTraLaiModal] = useState<boolean>(false);
   const [showBanGiaoModal, setShowBanGiaoModal] = useState<boolean>(false);
@@ -686,6 +688,36 @@ export default function BanPhanTich({
     );
 
     onTraLai?.(luotNhan?.id, data.lyDoChiTiet);
+  };
+
+  // STEP-03A: Xác nhận Thụ lý từ Popup ThuLyDonModal (Chuẩn Mẫu số 01/TT-TTCP)
+  const handleThuLyModalSubmit = (data: ThuLyDonSubmitData) => {
+    const dynamicCode = luotNhan?.id
+      ? luotNhan.id.startsWith('LN-')
+        ? `Đ-${luotNhan.id.replace('LN-', '')}`
+        : luotNhan.id
+      : 'Đ-2026-00125';
+
+    setShowThuLyModal(false);
+    setCurrentLuotNhanStatus('da_thu_ly');
+    onUpdateLuotNhan?.({ ...luotNhan, status: 'da_thu_ly' });
+
+    showToast(
+      `✓ [MẪU SỐ 01/TT-TTCP] Đã lập Báo cáo đề xuất thụ lý ${dynamicCode} (Số: ${data.cauHinhBaoCao.soKyHieu}) cho Lãnh đạo phê duyệt!`
+    );
+
+    onAcceptAndProcess?.({
+      id: dynamicCode,
+      code: dynamicCode,
+      title: extractData.noiDungTomTat || luotNhan?.noiDung || `Hồ sơ ${dynamicCode}`,
+      luotNhanId: luotNhan?.id || 'LN-2025-0105',
+      nguoiNop: extractData.nguoiGui || luotNhan?.nguoiNop || 'Nguyễn Văn A',
+      ngayNhan: luotNhan?.ngayNhan || '16/09/2026 09:30',
+      loaiDon: extractData.loaiNoiDung || 'Đơn tố cáo',
+      type: 'ĐƠN THỤ LÝ',
+      statusBadge: 'Đang thụ lý giải quyết',
+      baoCaoThuLy: data,
+    });
   };
 
   const handleConfirmBanGiao = () => {
@@ -2273,9 +2305,32 @@ export default function BanPhanTich({
           nguoiNop: extractData.nguoiGui || luotNhan?.nguoiNop || 'Nguyễn Văn A',
           cccd: extractData.cccd || '001088012345',
           sdt: extractData.sdt || '0983 123 456',
-          diaChi: extractData.diaChi || 'Cầu Giấy, Hà Nội',
+          diaChi: extractData.diaChi || luotNhan?.diaChi || 'Cầu Giấy, Hà Nội',
           loaiDon: extractData.loaiNoiDung || 'Đơn tiếp nhận',
           noiDung: extractData.noiDungTomTat || luotNhan?.noiDung || 'Đơn đề xuất giải quyết vụ việc',
+          ngayNhan: luotNhan?.ngayNhan || '16/09/2026',
+          hinhThucTiepNhan: luotNhan?.hinhThuc || 'Trực tiếp tại cơ quan',
+        }}
+      />
+
+      {/* ========================================================================= */}
+      {/* MODAL THỤ LÝ ĐƠN - BÁO CÁO ĐỀ XUẤT THỤ LÝ (MẪU SỐ 01/TT-TTCP)            */}
+      {/* ========================================================================= */}
+      <ThuLyDonModal
+        isOpen={showThuLyModal}
+        onClose={() => setShowThuLyModal(false)}
+        onSubmit={handleThuLyModalSubmit}
+        currentOfficerName="Nguyễn Minh Anh"
+        currentDepartmentName="Phòng Tiếp công dân & Xử lý đơn"
+        donInfo={{
+          code: luotNhan?.id ? (luotNhan.id.startsWith('LN-') ? `Đ-${luotNhan.id.replace('LN-', '')}` : luotNhan.id) : 'Đ-2026-00125',
+          luotNhanId: luotNhan?.id || 'LN-2026-0819',
+          nguoiNop: extractData.nguoiGui || luotNhan?.nguoiNop || 'Nguyễn Văn A',
+          cccd: extractData.cccd || '001088012345',
+          sdt: extractData.sdt || '0983 123 456',
+          diaChi: extractData.diaChi || luotNhan?.diaChi || 'Cầu Giấy, Hà Nội',
+          loaiDon: extractData.loaiNoiDung || 'Đơn tố cáo',
+          noiDung: extractData.noiDungTomTat || luotNhan?.noiDung || 'Tố cáo hành vi vi phạm pháp luật',
           ngayNhan: luotNhan?.ngayNhan || '16/09/2026',
         }}
       />

@@ -37,7 +37,7 @@ export interface LuotNhan {
   sdt?: string;
   diaChi?: string;
   loaiDon?: string;
-  status?: 'cho_chuyen' | 'da_chuyen' | 'da_ban_giao' | 'da_tra_lai' | 'da_ghep';
+  status?: 'cho_chuyen' | 'da_chuyen' | 'da_ban_giao' | 'da_tra_lai' | 'da_ghep' | 'da_thu_ly';
   hasFile?: boolean;
   fileCount?: number;
   files?: UploadedFile[];

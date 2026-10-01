@@ -1,6 +1,7 @@
 // src/components/signing/LeaderSigningKanban.tsx
 import React, { useState, useMemo } from 'react';
-import { Screen } from '../../types';
+import { Screen, LuotNhan, DonDetail } from '../../types';
+import { WorkItem, WorkItemSourceType } from '../../types/work';
 import {
   SigningDocument,
   SigningStatus,
@@ -17,7 +18,13 @@ interface LeaderSigningKanbanProps {
   currentAccount?: CurrentUserAccount;
   onSwitchAccount?: (account: CurrentUserAccount) => void;
   onOpenDetailedView?: () => void;
+  onSwitchToTasksView?: () => void;
   initialKpiFilter?: 'all' | 'urgent' | 'pending' | 'returned' | 'signed';
+  workItems?: WorkItem[];
+  onItemClick?: (item: WorkItem) => void;
+  onTiepNhanXuLy?: (item: WorkItem) => void;
+  onBanGiaoDon?: (item: WorkItem) => void;
+  onTraLaiDon?: (item: WorkItem) => void;
 }
 
 export default function LeaderSigningKanban({
@@ -28,7 +35,13 @@ export default function LeaderSigningKanban({
   currentAccount = DEMO_ACCOUNTS[1], // Default Lãnh đạo
   onSwitchAccount,
   onOpenDetailedView,
+  onSwitchToTasksView,
   initialKpiFilter = 'all',
+  workItems = [],
+  onItemClick,
+  onTiepNhanXuLy,
+  onBanGiaoDon,
+  onTraLaiDon,
 }: LeaderSigningKanbanProps) {
   // Lọc chỉ những văn bản ĐÃ ĐƯỢC TRÌNH TỚI LÃNH ĐẠO (không lấy bản nháp hoặc chờ trình của cán bộ)
   const submittedDocs = useMemo(() => {
@@ -37,10 +50,10 @@ export default function LeaderSigningKanban({
 
   // Bộ lọc & Tìm kiếm
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterSource, setFilterSource] = useState<'all' | 'van_ban' | 'luot_nhan' | 'don' | 'vu_viec'>('all');
   const [filterLoaiVB, setFilterLoaiVB] = useState<string>('all');
   const [filterCanBo, setFilterCanBo] = useState<string>('all');
   const [filterPriority, setFilterPriority] = useState<string>('all');
-  const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban');
 
   // KPI Filter nhanh
   const [kpiFilter, setKpiFilter] = useState<'all' | 'urgent' | 'pending' | 'returned' | 'signed'>(initialKpiFilter);
@@ -75,19 +88,57 @@ export default function LeaderSigningKanban({
     }, 3800);
   };
 
-  // Thống kê 5 chỉ số cho Lãnh đạo
+  // Helper phân loại nguồn WorkItem
+  const getItemSourceType = (item: WorkItem): 'luot_nhan' | 'don' | 'vu_viec' => {
+    const code = (item.code || '').toUpperCase();
+    if (code.startsWith('VV')) return 'vu_viec';
+    if (code.startsWith('LR') || code.startsWith('LN')) return 'luot_nhan';
+    return 'don';
+  };
+
+  // Thống kê số lượng theo từng nguồn để hiển thị badge
+  const sourceCounts = useMemo(() => {
+    const vanBanCount = submittedDocs.length;
+    const luotNhanCount = workItems.filter((i) => getItemSourceType(i) === 'luot_nhan').length;
+    const donCount = workItems.filter((i) => getItemSourceType(i) === 'don').length;
+    const vuViecCount = workItems.filter((i) => getItemSourceType(i) === 'vu_viec').length;
+    return {
+      all: vanBanCount + luotNhanCount + donCount + vuViecCount,
+      van_ban: vanBanCount,
+      luot_nhan: luotNhanCount,
+      don: donCount,
+      vu_viec: vuViecCount,
+    };
+  }, [submittedDocs, workItems]);
+
+  // Thống kê 5 chỉ số cho Lãnh đạo (Gộp cả Văn bản trình ký + Lượt nhận + Đơn + Vụ việc)
   const kpis = useMemo(() => {
-    const total = submittedDocs.length;
-    const urgent = submittedDocs.filter(
+    const docTotal = submittedDocs.length;
+    const docUrgent = submittedDocs.filter(
       (d) => d.status === 'da_trinh' && (d.mucDoUuTien === 'khan' || d.mucDoUuTien === 'hoa_toc')
     ).length;
-    const regularPending = submittedDocs.filter(
+    const docPending = submittedDocs.filter(
       (d) => d.status === 'da_trinh' && d.mucDoUuTien === 'thuong'
     ).length;
-    const returned = submittedDocs.filter((d) => d.status === 'yeu_cau_chinh_sua').length;
-    const signed = submittedDocs.filter((d) => d.status === 'da_ky').length;
-    return { total, urgent, regularPending, returned, signed };
-  }, [submittedDocs]);
+    const docReturned = submittedDocs.filter((d) => d.status === 'yeu_cau_chinh_sua').length;
+    const docSigned = submittedDocs.filter((d) => d.status === 'da_ky').length;
+
+    const itemTotal = workItems.length;
+    const itemActionRequired = workItems.filter((i) => i.column === 'action_required').length;
+    const itemProcessing = workItems.filter((i) => i.column === 'processing').length;
+    const itemWaiting = workItems.filter((i) => i.column === 'waiting').length;
+    const itemCompleted = workItems.filter((i) => i.column === 'completed' || i.column === 'handed_over').length;
+
+    return {
+      total: docTotal + itemTotal,
+      urgent: docUrgent + itemActionRequired,
+      regularPending: docPending + itemProcessing,
+      returned: docReturned + itemWaiting,
+      signed: docSigned + itemCompleted,
+      docStats: { docTotal, docUrgent, docPending, docReturned, docSigned },
+      itemStats: { itemTotal, itemActionRequired, itemProcessing, itemWaiting, itemCompleted },
+    };
+  }, [submittedDocs, workItems]);
 
   // Danh sách cán bộ trình duy nhất
   const uniqueCanBoList = useMemo(() => {
@@ -98,8 +149,12 @@ export default function LeaderSigningKanban({
     return Array.from(set);
   }, [submittedDocs]);
 
-  // Áp dụng bộ lọc
+  // Áp dụng bộ lọc cho Văn bản trình ký
   const filteredDocs = useMemo(() => {
+    if (filterSource !== 'all' && filterSource !== 'van_ban') {
+      return [];
+    }
+
     return submittedDocs.filter((d) => {
       // Tìm kiếm
       const term = searchTerm.toLowerCase();
@@ -138,9 +193,58 @@ export default function LeaderSigningKanban({
 
       return true;
     });
-  }, [submittedDocs, searchTerm, filterLoaiVB, filterCanBo, filterPriority, kpiFilter]);
+  }, [submittedDocs, searchTerm, filterLoaiVB, filterCanBo, filterPriority, kpiFilter, filterSource]);
 
-  // Phân chia vào 4 cột Kanban cho Lãnh đạo
+  // Áp dụng bộ lọc cho Lượt nhận / Đơn / Vụ việc
+  const filteredWorkItems = useMemo(() => {
+    if (filterSource === 'van_ban') return [];
+
+    return workItems.filter((item) => {
+      const srcType = getItemSourceType(item);
+      if (filterSource !== 'all' && filterSource !== srcType) {
+        return false;
+      }
+
+      // Tìm kiếm
+      const term = searchTerm.toLowerCase();
+      if (term) {
+        const match =
+          item.code.toLowerCase().includes(term) ||
+          item.title.toLowerCase().includes(term) ||
+          item.sender.toLowerCase().includes(term) ||
+          (item.actionTitle && item.actionTitle.toLowerCase().includes(term)) ||
+          item.nextAction.toLowerCase().includes(term);
+        if (!match) return false;
+      }
+
+      // Mức độ ưu tiên
+      if (filterPriority !== 'all') {
+        if (filterPriority === 'hoa_toc' || filterPriority === 'khan') {
+          if (item.priority !== 'urgent') return false;
+        } else if (filterPriority === 'thuong') {
+          if (item.priority === 'urgent') return false;
+        }
+      }
+
+      // KPI filter
+      if (kpiFilter === 'urgent') {
+        return item.column === 'action_required' || item.priority === 'urgent' || item.deadlineType === 'overdue';
+      }
+      if (kpiFilter === 'pending') {
+        return item.column === 'processing';
+      }
+      if (kpiFilter === 'returned') {
+        return item.column === 'waiting';
+      }
+      if (kpiFilter === 'signed') {
+        return item.column === 'completed' || item.column === 'handed_over';
+      }
+
+      return true;
+    });
+  }, [workItems, filterSource, searchTerm, filterPriority, kpiFilter]);
+
+  // Phân chia Văn bản vào 4 cột
   const colUrgent = useMemo(
     () => filteredDocs.filter((d) => d.status === 'da_trinh' && (d.mucDoUuTien === 'khan' || d.mucDoUuTien === 'hoa_toc')),
     [filteredDocs]
@@ -156,6 +260,24 @@ export default function LeaderSigningKanban({
   const colSigned = useMemo(
     () => filteredDocs.filter((d) => d.status === 'da_ky' || d.status === 'tu_choi'),
     [filteredDocs]
+  );
+
+  // Phân chia Lượt nhận / Đơn / Vụ việc vào 4 cột
+  const colItemsActionRequired = useMemo(
+    () => filteredWorkItems.filter((i) => i.column === 'action_required'),
+    [filteredWorkItems]
+  );
+  const colItemsProcessing = useMemo(
+    () => filteredWorkItems.filter((i) => i.column === 'processing'),
+    [filteredWorkItems]
+  );
+  const colItemsWaiting = useMemo(
+    () => filteredWorkItems.filter((i) => i.column === 'waiting'),
+    [filteredWorkItems]
+  );
+  const colItemsCompleted = useMemo(
+    () => filteredWorkItems.filter((i) => i.column === 'completed' || i.column === 'handed_over'),
+    [filteredWorkItems]
   );
 
   // Xử lý Ký số văn bản
@@ -297,68 +419,25 @@ export default function LeaderSigningKanban({
       <div className="bg-white border-b border-slate-200 px-5 py-3.5 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-700 to-blue-800 text-white flex items-center justify-center shadow-xs">
-            <span className="material-symbols-outlined text-[22px]">verified_user</span>
+            <span className="material-symbols-outlined text-[22px]">view_kanban</span>
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-base font-bold text-slate-900 tracking-tight">
-                Văn bản trình tới Lãnh đạo
+                Bàn làm việc Lãnh đạo (Kanban)
               </h2>
               <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 font-mono">
-                {kpis.total} văn bản
+                {kpis.total} công việc &amp; văn bản
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              Thẩm định, chỉ đạo bổ sung và thực hiện ký số công vụ các văn bản do Cán bộ thụ lý trình tới
+              Thẩm định, ký số công vụ văn bản và trực tiếp chỉ đạo xử lý Lượt nhận, Đơn tiếp nhận, Vụ việc
             </p>
           </div>
         </div>
 
         {/* Nút thao tác nhanh bên phải */}
         <div className="flex items-center gap-2">
-          {/* Chuyển đổi Kanban / Danh sách */}
-          <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200">
-            <button
-              type="button"
-              onClick={() => setViewMode('kanban')}
-              className={`p-1.5 px-2.5 rounded-lg flex items-center gap-1.5 text-xs font-bold cursor-pointer transition-all ${
-                viewMode === 'kanban'
-                  ? 'bg-white text-indigo-700 shadow-2xs'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
-              title="Xem bảng Kanban 4 cột"
-            >
-              <span className="material-symbols-outlined text-[17px]">view_kanban</span>
-              <span>Kanban</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('table')}
-              className={`p-1.5 px-2.5 rounded-lg flex items-center gap-1.5 text-xs font-bold cursor-pointer transition-all ${
-                viewMode === 'table'
-                  ? 'bg-white text-indigo-700 shadow-2xs'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
-              title="Xem danh sách dạng bảng chi tiết"
-            >
-              <span className="material-symbols-outlined text-[17px]">view_list</span>
-              <span>Danh sách</span>
-            </button>
-          </div>
-
-          {/* Mở bàn ký chi tiết master-detail nếu có */}
-          {onOpenDetailedView && (
-            <button
-              type="button"
-              onClick={onOpenDetailedView}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 transition-colors shadow-2xs cursor-pointer"
-              title="Mở giao diện duyệt tuần tự văn bản kèm trình xem dự thảo tài liệu lớn"
-            >
-              <span className="material-symbols-outlined text-[17px] text-indigo-600">splitscreen</span>
-              <span>Bàn duyệt chi tiết</span>
-            </button>
-          )}
-
           {/* Nút đổi vai trò tài khoản để test */}
           {onSwitchAccount && (
             <button
@@ -377,70 +456,69 @@ export default function LeaderSigningKanban({
         </div>
       </div>
 
-      {/* KPI RIBBON - 5 CHỈ SỐ CỦA LÃNH ĐẠO */}
+      {/* KPI RIBBON - 5 CHỈ SỐ TOÀN DIỆN CỦA LÃNH ĐẠO */}
       <div className="px-5 pt-3.5 pb-2">
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
-          {/* KPI 1: Tổng văn bản trình tới */}
+          {/* KPI 1: Tổng công việc & văn bản */}
           <button
             type="button"
             onClick={() => setKpiFilter('all')}
-            className={`p-3 rounded-2xl border text-left transition-all cursor-pointer shadow-2xs flex flex-col justify-between ${
-              kpiFilter === 'all'
+            className={`p-3 rounded-2xl border text-left transition-all cursor-pointer shadow-2xs flex flex-col justify-between ${kpiFilter === 'all'
                 ? 'bg-slate-900 text-white border-slate-900 ring-2 ring-slate-900/20'
                 : 'bg-white border-slate-200 hover:border-slate-300 text-slate-800'
-            }`}
+              }`}
           >
             <div className="flex items-center justify-between text-[11.5px] font-medium opacity-80">
-              <span>Tổng trình tới</span>
+              <span>Tổng công việc</span>
               <span className="material-symbols-outlined text-[16px]">folder_managed</span>
             </div>
             <div className="text-2xl font-bold font-mono mt-1.5 tracking-tight">
               {String(kpis.total).padStart(2, '0')}
             </div>
-            <span className="text-[10px] opacity-70 mt-1">Toàn bộ văn bản đã tiếp nhận</span>
+            <span className="text-[10px] opacity-70 mt-1">
+              {kpis.docStats.docTotal} văn bản • {kpis.itemStats.itemTotal} hồ sơ
+            </span>
           </button>
 
-          {/* KPI 2: HỎA TỐC & KHẨN CẤP */}
+          {/* KPI 2: CẦN XỬ LÝ (Khẩn & Lượt nhận cần giải quyết) */}
           <button
             type="button"
             onClick={() => setKpiFilter(kpiFilter === 'urgent' ? 'all' : 'urgent')}
-            className={`p-3 rounded-2xl border text-left transition-all cursor-pointer shadow-2xs flex flex-col justify-between ${
-              kpiFilter === 'urgent'
+            className={`p-3 rounded-2xl border text-left transition-all cursor-pointer shadow-2xs flex flex-col justify-between ${kpiFilter === 'urgent'
                 ? 'bg-rose-600 text-white border-rose-600 ring-2 ring-rose-600/30'
                 : 'bg-rose-50/70 border-rose-200 hover:border-rose-300 text-rose-950'
-            }`}
+              }`}
           >
             <div className="flex items-center justify-between text-[11.5px] font-bold">
               <span className="flex items-center gap-1.5">
                 <span className={`w-2 h-2 rounded-full ${kpiFilter === 'urgent' ? 'bg-white' : 'bg-rose-500'} animate-ping`}></span>
-                <span>Hỏa tốc / Khẩn</span>
+                <span>Cần xử lý</span>
               </span>
               <span className={`material-symbols-outlined text-[16px] ${kpiFilter === 'urgent' ? 'text-white' : 'text-rose-600'}`}>
-                notifications_active
+                bolt
               </span>
             </div>
             <div className={`text-2xl font-bold font-mono mt-1.5 tracking-tight ${kpiFilter === 'urgent' ? 'text-white' : 'text-rose-700'}`}>
               {String(kpis.urgent).padStart(2, '0')}
             </div>
             <span className={`text-[10px] font-medium mt-1 ${kpiFilter === 'urgent' ? 'text-white/90' : 'text-rose-700'}`}>
-              Ưu tiên ký duyệt ngay trong ngày
+              {kpis.docStats.docUrgent} hỏa tốc • {kpis.itemStats.itemActionRequired} hồ sơ mới
             </span>
           </button>
 
-          {/* KPI 3: CHỜ KÝ DUYỆT THƯỜNG */}
+          {/* KPI 3: CHỜ KÝ DUYỆT & ĐANG THỰC HIỆN */}
           <button
             type="button"
             onClick={() => setKpiFilter(kpiFilter === 'pending' ? 'all' : 'pending')}
-            className={`p-3 rounded-2xl border text-left transition-all cursor-pointer shadow-2xs flex flex-col justify-between ${
-              kpiFilter === 'pending'
+            className={`p-3 rounded-2xl border text-left transition-all cursor-pointer shadow-2xs flex flex-col justify-between ${kpiFilter === 'pending'
                 ? 'bg-indigo-700 text-white border-indigo-700 ring-2 ring-indigo-700/30'
                 : 'bg-indigo-50/70 border-indigo-200 hover:border-indigo-300 text-indigo-950'
-            }`}
+              }`}
           >
             <div className="flex items-center justify-between text-[11.5px] font-bold">
               <span className="flex items-center gap-1.5">
                 <span className={`w-2 h-2 rounded-full ${kpiFilter === 'pending' ? 'bg-white' : 'bg-indigo-500'}`}></span>
-                <span>Chờ ký duyệt</span>
+                <span>Chờ ký &amp; Xử lý</span>
               </span>
               <span className={`material-symbols-outlined text-[16px] ${kpiFilter === 'pending' ? 'text-white' : 'text-indigo-600'}`}>
                 draw
@@ -450,58 +528,56 @@ export default function LeaderSigningKanban({
               {String(kpis.regularPending).padStart(2, '0')}
             </div>
             <span className={`text-[10px] font-medium mt-1 ${kpiFilter === 'pending' ? 'text-white/90' : 'text-indigo-700'}`}>
-              Hồ sơ bình thường trong hạn
+              {kpis.docStats.docPending} VB chờ • {kpis.itemStats.itemProcessing} đang giải quyết
             </span>
           </button>
 
-          {/* KPI 4: ĐÃ YÊU CẦU CHỈNH SỬA */}
+          {/* KPI 4: YÊU CẦU CHỈNH SỬA & ĐANG CHỜ */}
           <button
             type="button"
             onClick={() => setKpiFilter(kpiFilter === 'returned' ? 'all' : 'returned')}
-            className={`p-3 rounded-2xl border text-left transition-all cursor-pointer shadow-2xs flex flex-col justify-between ${
-              kpiFilter === 'returned'
+            className={`p-3 rounded-2xl border text-left transition-all cursor-pointer shadow-2xs flex flex-col justify-between ${kpiFilter === 'returned'
                 ? 'bg-amber-600 text-white border-amber-600 ring-2 ring-amber-600/30'
                 : 'bg-amber-50/70 border-amber-200 hover:border-amber-300 text-amber-950'
-            }`}
+              }`}
           >
             <div className="flex items-center justify-between text-[11.5px] font-bold">
               <span className="flex items-center gap-1">
                 <span className="material-symbols-outlined text-[16px] text-amber-600">replay</span>
-                <span>Yêu cầu chỉnh sửa</span>
+                <span>Yêu cầu sửa / Chờ</span>
               </span>
               <span className="px-1.5 py-0.2 rounded bg-amber-200/80 text-amber-900 text-[10px] font-bold">
-                Trả lại
+                Tạm dừng
               </span>
             </div>
             <div className={`text-2xl font-bold font-mono mt-1.5 tracking-tight ${kpiFilter === 'returned' ? 'text-white' : 'text-amber-700'}`}>
               {String(kpis.returned).padStart(2, '0')}
             </div>
             <span className={`text-[10px] font-medium mt-1 ${kpiFilter === 'returned' ? 'text-white/90' : 'text-amber-700'}`}>
-              Cán bộ đang tiếp thu sửa lại
+              {kpis.docStats.docReturned} trả lại • {kpis.itemStats.itemWaiting} đang chờ
             </span>
           </button>
 
-          {/* KPI 5: ĐÃ KÝ BAN HÀNH */}
+          {/* KPI 5: ĐÃ KÝ BAN HÀNH & HOÀN THÀNH */}
           <button
             type="button"
             onClick={() => setKpiFilter(kpiFilter === 'signed' ? 'all' : 'signed')}
-            className={`p-3 rounded-2xl border text-left transition-all cursor-pointer shadow-2xs flex flex-col justify-between ${
-              kpiFilter === 'signed'
+            className={`p-3 rounded-2xl border text-left transition-all cursor-pointer shadow-2xs flex flex-col justify-between ${kpiFilter === 'signed'
                 ? 'bg-emerald-700 text-white border-emerald-700 ring-2 ring-emerald-700/30'
                 : 'bg-emerald-50/70 border-emerald-200 hover:border-emerald-300 text-emerald-950'
-            }`}
+              }`}
           >
             <div className="flex items-center justify-between text-[11.5px] font-bold">
               <span className="flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-[16px] text-emerald-600">task_alt</span>
-                <span>Đã ký số ban hành</span>
+                <span>Đã ký &amp; Hoàn thành</span>
               </span>
             </div>
             <div className={`text-2xl font-bold font-mono mt-1.5 tracking-tight ${kpiFilter === 'signed' ? 'text-white' : 'text-emerald-700'}`}>
               {String(kpis.signed).padStart(2, '0')}
             </div>
             <span className={`text-[10px] font-medium mt-1 ${kpiFilter === 'signed' ? 'text-white/90' : 'text-emerald-700'}`}>
-              Đã ký số VGCA &amp; ban hành
+              {kpis.docStats.docSigned} đã ký • {kpis.itemStats.itemCompleted} đã giải quyết
             </span>
           </button>
         </div>
@@ -509,122 +585,184 @@ export default function LeaderSigningKanban({
 
       {/* THANH TÌM KIẾM & BỘ LỌC ĐA CHIỀU */}
       <div className="px-5 py-2">
-        <div className="bg-white rounded-2xl border border-slate-200 p-2.5 shadow-2xs flex flex-wrap items-center justify-between gap-2.5">
-          {/* Ô tìm kiếm */}
-          <div className="relative flex-1 min-w-[240px]">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">
-              search
-            </span>
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Tìm theo Mã văn bản, Mã hồ sơ, Tên văn bản, Cán bộ trình, Người nộp đơn..."
-              className="w-full pl-9 pr-8 py-1.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 bg-slate-50/50"
-            />
-            {searchTerm && (
-              <button
-                type="button"
-                onClick={() => setSearchTerm('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+        <div className="bg-white rounded-2xl border border-slate-200 p-2.5 shadow-2xs flex flex-col gap-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-2.5">
+            {/* Ô tìm kiếm */}
+            <div className="relative flex-1 min-w-[240px]">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">
+                search
+              </span>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Tìm theo Mã VB, Mã hồ sơ (LR-, Đ-, VV-), tên hồ sơ, cán bộ trình..."
+                className="w-full pl-9 pr-8 py-1.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 bg-slate-50/50"
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[16px]">close</span>
+                </button>
+              )}
+            </div>
+
+            {/* Dropdown Lọc Loại văn bản */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <select
+                value={filterLoaiVB}
+                onChange={(e) => setFilterLoaiVB(e.target.value)}
+                className="px-2.5 py-1.5 rounded-xl border border-slate-200 text-xs text-slate-700 bg-white hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
               >
-                <span className="material-symbols-outlined text-[16px]">close</span>
-              </button>
-            )}
+                <option value="all">Tất cả loại văn bản</option>
+                <option value="to_trinh_thu_ly">Tờ trình đề xuất thụ lý</option>
+                <option value="quyet_dinh_thu_ly">Quyết định thụ lý</option>
+                <option value="thong_bao_khong_thu_ly">Thông báo không thụ lý</option>
+                <option value="bao_cao_xac_minh">Báo cáo kết quả xác minh</option>
+                <option value="ket_luan_to_cao">Kết luận nội dung tố cáo</option>
+                <option value="bien_ban_ban_giao">Biên bản bàn giao</option>
+              </select>
+
+              {/* Dropdown Lọc Cán bộ trình */}
+              <select
+                value={filterCanBo}
+                onChange={(e) => setFilterCanBo(e.target.value)}
+                className="px-2.5 py-1.5 rounded-xl border border-slate-200 text-xs text-slate-700 bg-white hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+              >
+                <option value="all">Tất cả cán bộ trình</option>
+                {uniqueCanBoList.map((cb) => (
+                  <option key={cb} value={cb}>
+                    {cb}
+                  </option>
+                ))}
+              </select>
+
+              {/* Dropdown Lọc Mức độ ưu tiên */}
+              <select
+                value={filterPriority}
+                onChange={(e) => setFilterPriority(e.target.value)}
+                className="px-2.5 py-1.5 rounded-xl border border-slate-200 text-xs text-slate-700 bg-white hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+              >
+                <option value="all">Mọi mức độ ưu tiên</option>
+                <option value="hoa_toc">Hỏa tốc</option>
+                <option value="khan">Khẩn</option>
+                <option value="thuong">Bình thường</option>
+              </select>
+
+              {/* Nút Đặt lại lọc nếu đang lọc */}
+              {(searchTerm || filterLoaiVB !== 'all' || filterCanBo !== 'all' || filterPriority !== 'all' || kpiFilter !== 'all' || filterSource !== 'all') && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchTerm('');
+                    setFilterSource('all');
+                    setFilterLoaiVB('all');
+                    setFilterCanBo('all');
+                    setFilterPriority('all');
+                    setKpiFilter('all');
+                  }}
+                  className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 transition-colors cursor-pointer flex items-center gap-1"
+                  title="Xóa toàn bộ bộ lọc"
+                >
+                  <span className="material-symbols-outlined text-[15px]">filter_alt_off</span>
+                  <span>Đặt lại</span>
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* Dropdown Lọc Loại văn bản */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <select
-              value={filterLoaiVB}
-              onChange={(e) => setFilterLoaiVB(e.target.value)}
-              className="px-2.5 py-1.5 rounded-xl border border-slate-200 text-xs text-slate-700 bg-white hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-            >
-              <option value="all">Tất cả loại văn bản</option>
-              <option value="to_trinh_thu_ly">Tờ trình đề xuất thụ lý</option>
-              <option value="quyet_dinh_thu_ly">Quyết định thụ lý</option>
-              <option value="thong_bao_khong_thu_ly">Thông báo không thụ lý</option>
-              <option value="bao_cao_xac_minh">Báo cáo kết quả xác minh</option>
-              <option value="ket_luan_to_cao">Kết luận nội dung tố cáo</option>
-              <option value="bien_ban_ban_giao">Biên bản bàn giao</option>
-            </select>
-
-            {/* Dropdown Lọc Cán bộ trình */}
-            <select
-              value={filterCanBo}
-              onChange={(e) => setFilterCanBo(e.target.value)}
-              className="px-2.5 py-1.5 rounded-xl border border-slate-200 text-xs text-slate-700 bg-white hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-            >
-              <option value="all">Tất cả cán bộ trình</option>
-              {uniqueCanBoList.map((cb) => (
-                <option key={cb} value={cb}>
-                  {cb}
-                </option>
-              ))}
-            </select>
-
-            {/* Dropdown Lọc Mức độ ưu tiên */}
-            <select
-              value={filterPriority}
-              onChange={(e) => setFilterPriority(e.target.value)}
-              className="px-2.5 py-1.5 rounded-xl border border-slate-200 text-xs text-slate-700 bg-white hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-            >
-              <option value="all">Mọi mức độ ưu tiên</option>
-              <option value="hoa_toc">Hỏa tốc</option>
-              <option value="khan">Khẩn</option>
-              <option value="thuong">Bình thường</option>
-            </select>
-
-            {/* Nút Đặt lại lọc nếu đang lọc */}
-            {(searchTerm || filterLoaiVB !== 'all' || filterCanBo !== 'all' || filterPriority !== 'all' || kpiFilter !== 'all') && (
+          {/* HÀNG LỌC NGUỒN CÔNG VIỆC: Tất cả | Văn bản trình ký | Lượt nhận | Đơn | Vụ việc */}
+          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 text-xs">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+              Nguồn hồ sơ:
+            </span>
+            <div className="inline-flex items-center p-0.5 bg-slate-100 rounded-xl border border-slate-200/60">
               <button
                 type="button"
-                onClick={() => {
-                  setSearchTerm('');
-                  setFilterLoaiVB('all');
-                  setFilterCanBo('all');
-                  setFilterPriority('all');
-                  setKpiFilter('all');
-                }}
-                className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 transition-colors cursor-pointer flex items-center gap-1"
-                title="Xóa toàn bộ bộ lọc"
+                onClick={() => setFilterSource('all')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${filterSource === 'all'
+                    ? 'bg-white text-indigo-900 shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                  }`}
               >
-                <span className="material-symbols-outlined text-[15px]">filter_alt_off</span>
-                <span>Đặt lại</span>
+                Tất cả ({sourceCounts.all})
               </button>
-            )}
+              <button
+                type="button"
+                onClick={() => setFilterSource('van_ban')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${filterSource === 'van_ban'
+                    ? 'bg-white text-indigo-900 shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                  }`}
+              >
+                Văn bản trình ký ({sourceCounts.van_ban})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterSource('luot_nhan')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${filterSource === 'luot_nhan'
+                    ? 'bg-white text-indigo-900 shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                  }`}
+              >
+                Lượt nhận ({sourceCounts.luot_nhan})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterSource('don')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${filterSource === 'don'
+                    ? 'bg-white text-indigo-900 shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                  }`}
+              >
+                Đơn tiếp nhận ({sourceCounts.don})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterSource('vu_viec')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${filterSource === 'vu_viec'
+                    ? 'bg-white text-indigo-900 shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                  }`}
+              >
+                Vụ việc ({sourceCounts.vu_viec})
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* NỘI DUNG CHÍNH: KANBAN 4 CỘT HOẶC DANH SÁCH BẢNG */}
       <div className="flex-1 px-5 pb-5 overflow-auto">
-        {viewMode === 'kanban' ? (
-          /* BẢNG KANBAN 4 CỘT VĂN BẢN TRÌNH KÝ */
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 h-full min-h-[580px] items-start">
-            {/* CỘT 1: HỎA TỐC & KHẨN CẤP */}
-            <div className="flex flex-col h-full bg-slate-100/80 rounded-2xl border border-rose-200/80 p-3 shadow-2xs">
-              <div className="flex items-center justify-between pb-2.5 border-b border-rose-200 mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full bg-rose-600 animate-ping"></div>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-rose-900 flex items-center gap-1">
-                    <span>Hỏa tốc &amp; Khẩn</span>
-                  </h3>
-                </div>
-                <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white font-mono text-[11px] font-bold shadow-2xs">
-                  {colUrgent.length}
-                </span>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 h-full min-h-[580px] items-start">
+          {/* CỘT 1: CẦN XỬ LÝ (HỎA TỐC / KHẨN / LƯỢT NHẬN MỚI) */}
+          <div className="flex flex-col h-full bg-slate-100/80 rounded-2xl border border-rose-200/80 p-3 shadow-2xs">
+            <div className="flex items-center justify-between pb-2.5 border-b border-rose-200 mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-rose-600 animate-ping"></div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-rose-900 flex items-center gap-1">
+                  <span>Cần xử lý</span>
+                </h3>
               </div>
+              <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white font-mono text-[11px] font-bold shadow-2xs">
+                {colUrgent.length + colItemsActionRequired.length}
+              </span>
+            </div>
 
-              {/* Danh sách Card Cột 1 */}
-              <div className="flex-1 flex flex-col gap-3 overflow-y-auto pr-0.5">
-                {colUrgent.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center p-6 text-center text-slate-400 border border-dashed border-rose-200 rounded-xl bg-white/50">
-                    <span className="material-symbols-outlined text-3xl text-rose-300 mb-1">done_all</span>
-                    <span className="text-xs font-medium">Không có văn bản hỏa tốc nào cần duyệt</span>
-                  </div>
-                ) : (
-                  colUrgent.map((doc) => (
+            {/* Danh sách Card Cột 1 */}
+            <div className="flex-1 flex flex-col gap-3 overflow-y-auto pr-0.5">
+              {colUrgent.length === 0 && colItemsActionRequired.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-6 text-center text-slate-400 border border-dashed border-rose-200 rounded-xl bg-white/50">
+                  <span className="material-symbols-outlined text-3xl text-rose-300 mb-1">done_all</span>
+                  <span className="text-xs font-medium">Không có văn bản hoặc hồ sơ nào cần xử lý gấp</span>
+                </div>
+              ) : (
+                <>
+                  {/* Văn bản trình ký khẩn / hỏa tốc */}
+                  {colUrgent.map((doc) => (
                     <LeaderDocumentCard
                       key={doc.id}
                       doc={doc}
@@ -643,34 +781,50 @@ export default function LeaderSigningKanban({
                       }}
                       onSelectHoSo={onSelectHoSo}
                     />
-                  ))
-                )}
+                  ))}
+
+                  {/* Hồ sơ Lượt nhận / Đơn / Vụ việc cần xử lý */}
+                  {colItemsActionRequired.map((item) => (
+                    <LeaderWorkItemCard
+                      key={item.id}
+                      item={item}
+                      variant="urgent"
+                      onItemClick={onItemClick}
+                      onSelectHoSo={onSelectHoSo}
+                      onBanGiaoDon={onBanGiaoDon}
+                      onTraLaiDon={onTraLaiDon}
+                    />
+                  ))}
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* CỘT 2: CHỜ KÝ DUYỆT & ĐANG XỬ LÝ */}
+          <div className="flex flex-col h-full bg-slate-100/80 rounded-2xl border border-indigo-200/80 p-3 shadow-2xs">
+            <div className="flex items-center justify-between pb-2.5 border-b border-indigo-200 mb-3">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-indigo-600 text-[18px]">pending_actions</span>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-indigo-900">
+                  Chờ ký duyệt &amp; Đang xử lý
+                </h3>
               </div>
+              <span className="px-2 py-0.5 rounded-full bg-indigo-700 text-white font-mono text-[11px] font-bold shadow-2xs">
+                {colPending.length + colItemsProcessing.length}
+              </span>
             </div>
 
-            {/* CỘT 2: CHỜ KÝ DUYỆT (HỒ SƠ THƯỜNG) */}
-            <div className="flex flex-col h-full bg-slate-100/80 rounded-2xl border border-indigo-200/80 p-3 shadow-2xs">
-              <div className="flex items-center justify-between pb-2.5 border-b border-indigo-200 mb-3">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-indigo-600 text-[18px]">pending_actions</span>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-indigo-900">
-                    Chờ ký duyệt
-                  </h3>
+            {/* Danh sách Card Cột 2 */}
+            <div className="flex-1 flex flex-col gap-3 overflow-y-auto pr-0.5">
+              {colPending.length === 0 && colItemsProcessing.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-6 text-center text-slate-400 border border-dashed border-indigo-200 rounded-xl bg-white/50">
+                  <span className="material-symbols-outlined text-3xl text-indigo-300 mb-1">checklist</span>
+                  <span className="text-xs font-medium">Đã xử lý hết hồ sơ và văn bản chờ ký</span>
                 </div>
-                <span className="px-2 py-0.5 rounded-full bg-indigo-700 text-white font-mono text-[11px] font-bold shadow-2xs">
-                  {colPending.length}
-                </span>
-              </div>
-
-              {/* Danh sách Card Cột 2 */}
-              <div className="flex-1 flex flex-col gap-3 overflow-y-auto pr-0.5">
-                {colPending.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center p-6 text-center text-slate-400 border border-dashed border-indigo-200 rounded-xl bg-white/50">
-                    <span className="material-symbols-outlined text-3xl text-indigo-300 mb-1">checklist</span>
-                    <span className="text-xs font-medium">Đã xử lý hết văn bản chờ ký</span>
-                  </div>
-                ) : (
-                  colPending.map((doc) => (
+              ) : (
+                <>
+                  {/* Văn bản trình thường */}
+                  {colPending.map((doc) => (
                     <LeaderDocumentCard
                       key={doc.id}
                       doc={doc}
@@ -689,34 +843,50 @@ export default function LeaderSigningKanban({
                       }}
                       onSelectHoSo={onSelectHoSo}
                     />
-                  ))
-                )}
+                  ))}
+
+                  {/* Hồ sơ đang thực hiện */}
+                  {colItemsProcessing.map((item) => (
+                    <LeaderWorkItemCard
+                      key={item.id}
+                      item={item}
+                      variant="pending"
+                      onItemClick={onItemClick}
+                      onSelectHoSo={onSelectHoSo}
+                      onBanGiaoDon={onBanGiaoDon}
+                      onTraLaiDon={onTraLaiDon}
+                    />
+                  ))}
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* CỘT 3: YÊU CẦU CHỈNH SỬA & ĐANG CHỜ */}
+          <div className="flex flex-col h-full bg-slate-100/80 rounded-2xl border border-amber-200/80 p-3 shadow-2xs">
+            <div className="flex items-center justify-between pb-2.5 border-b border-amber-200 mb-3">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-amber-600 text-[18px]">replay</span>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-amber-900">
+                  Yêu cầu sửa &amp; Đang chờ
+                </h3>
               </div>
+              <span className="px-2 py-0.5 rounded-full bg-amber-600 text-white font-mono text-[11px] font-bold shadow-2xs">
+                {colReturned.length + colItemsWaiting.length}
+              </span>
             </div>
 
-            {/* CỘT 3: ĐÃ YÊU CẦU CHỈNH SỬA */}
-            <div className="flex flex-col h-full bg-slate-100/80 rounded-2xl border border-amber-200/80 p-3 shadow-2xs">
-              <div className="flex items-center justify-between pb-2.5 border-b border-amber-200 mb-3">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-amber-600 text-[18px]">replay</span>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-amber-900">
-                    Yêu cầu chỉnh sửa
-                  </h3>
+            {/* Danh sách Card Cột 3 */}
+            <div className="flex-1 flex flex-col gap-3 overflow-y-auto pr-0.5">
+              {colReturned.length === 0 && colItemsWaiting.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-6 text-center text-slate-400 border border-dashed border-amber-200 rounded-xl bg-white/50">
+                  <span className="material-symbols-outlined text-3xl text-amber-300 mb-1">assignment_turned_in</span>
+                  <span className="text-xs font-medium">Không có văn bản nào bị trả lại hoặc đang chờ</span>
                 </div>
-                <span className="px-2 py-0.5 rounded-full bg-amber-600 text-white font-mono text-[11px] font-bold shadow-2xs">
-                  {colReturned.length}
-                </span>
-              </div>
-
-              {/* Danh sách Card Cột 3 */}
-              <div className="flex-1 flex flex-col gap-3 overflow-y-auto pr-0.5">
-                {colReturned.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center p-6 text-center text-slate-400 border border-dashed border-amber-200 rounded-xl bg-white/50">
-                    <span className="material-symbols-outlined text-3xl text-amber-300 mb-1">assignment_turned_in</span>
-                    <span className="text-xs font-medium">Không có văn bản nào bị trả lại chỉnh sửa</span>
-                  </div>
-                ) : (
-                  colReturned.map((doc) => (
+              ) : (
+                <>
+                  {/* Văn bản trả lại */}
+                  {colReturned.map((doc) => (
                     <LeaderDocumentCard
                       key={doc.id}
                       doc={doc}
@@ -727,34 +897,50 @@ export default function LeaderSigningKanban({
                       }}
                       onSelectHoSo={onSelectHoSo}
                     />
-                  ))
-                )}
+                  ))}
+
+                  {/* Hồ sơ đang chờ */}
+                  {colItemsWaiting.map((item) => (
+                    <LeaderWorkItemCard
+                      key={item.id}
+                      item={item}
+                      variant="waiting"
+                      onItemClick={onItemClick}
+                      onSelectHoSo={onSelectHoSo}
+                      onBanGiaoDon={onBanGiaoDon}
+                      onTraLaiDon={onTraLaiDon}
+                    />
+                  ))}
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* CỘT 4: ĐÃ KÝ SỐ BAN HÀNH & HOÀN THÀNH */}
+          <div className="flex flex-col h-full bg-slate-100/80 rounded-2xl border border-emerald-200/80 p-3 shadow-2xs">
+            <div className="flex items-center justify-between pb-2.5 border-b border-emerald-200 mb-3">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-emerald-600 text-[18px]">verified</span>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-900">
+                  Đã ký ban hành &amp; Hoàn thành
+                </h3>
               </div>
+              <span className="px-2 py-0.5 rounded-full bg-emerald-700 text-white font-mono text-[11px] font-bold shadow-2xs">
+                {colSigned.length + colItemsCompleted.length}
+              </span>
             </div>
 
-            {/* CỘT 4: ĐÃ KÝ SỐ & BAN HÀNH */}
-            <div className="flex flex-col h-full bg-slate-100/80 rounded-2xl border border-emerald-200/80 p-3 shadow-2xs">
-              <div className="flex items-center justify-between pb-2.5 border-b border-emerald-200 mb-3">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-emerald-600 text-[18px]">verified</span>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-900">
-                    Đã ký số ban hành
-                  </h3>
+            {/* Danh sách Card Cột 4 */}
+            <div className="flex-1 flex flex-col gap-3 overflow-y-auto pr-0.5">
+              {colSigned.length === 0 && colItemsCompleted.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-6 text-center text-slate-400 border border-dashed border-emerald-200 rounded-xl bg-white/50">
+                  <span className="material-symbols-outlined text-3xl text-emerald-300 mb-1">history_edu</span>
+                  <span className="text-xs font-medium">Chưa có văn bản hoặc hồ sơ nào hoàn thành</span>
                 </div>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-700 text-white font-mono text-[11px] font-bold shadow-2xs">
-                  {colSigned.length}
-                </span>
-              </div>
-
-              {/* Danh sách Card Cột 4 */}
-              <div className="flex-1 flex flex-col gap-3 overflow-y-auto pr-0.5">
-                {colSigned.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center p-6 text-center text-slate-400 border border-dashed border-emerald-200 rounded-xl bg-white/50">
-                    <span className="material-symbols-outlined text-3xl text-emerald-300 mb-1">history_edu</span>
-                    <span className="text-xs font-medium">Chưa có văn bản nào được ký ban hành</span>
-                  </div>
-                ) : (
-                  colSigned.map((doc) => (
+              ) : (
+                <>
+                  {/* Văn bản đã ký */}
+                  {colSigned.map((doc) => (
                     <LeaderDocumentCard
                       key={doc.id}
                       doc={doc}
@@ -765,151 +951,25 @@ export default function LeaderSigningKanban({
                       }}
                       onSelectHoSo={onSelectHoSo}
                     />
-                  ))
-                )}
-              </div>
+                  ))}
+
+                  {/* Hồ sơ hoàn thành / bàn giao */}
+                  {colItemsCompleted.map((item) => (
+                    <LeaderWorkItemCard
+                      key={item.id}
+                      item={item}
+                      variant="completed"
+                      onItemClick={onItemClick}
+                      onSelectHoSo={onSelectHoSo}
+                      onBanGiaoDon={onBanGiaoDon}
+                      onTraLaiDon={onTraLaiDon}
+                    />
+                  ))}
+                </>
+              )}
             </div>
           </div>
-        ) : (
-          /* DANH SÁCH BẢNG CHO LÃNH ĐẠO */
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
-                    <th className="py-3 px-4">Mã VB / Hồ sơ</th>
-                    <th className="py-3 px-4">Tên văn bản trình ký</th>
-                    <th className="py-3 px-4">Cán bộ trình</th>
-                    <th className="py-3 px-4">Độ ưu tiên</th>
-                    <th className="py-3 px-4">Thời hạn xử lý</th>
-                    <th className="py-3 px-4">Trạng thái</th>
-                    <th className="py-3 px-4 text-right">Thao tác Lãnh đạo</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredDocs.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="py-12 text-center text-slate-400">
-                        Không tìm thấy văn bản phù hợp với bộ lọc
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredDocs.map((doc) => {
-                      const isUrgent = doc.mucDoUuTien === 'khan' || doc.mucDoUuTien === 'hoa_toc';
-                      return (
-                        <tr key={doc.id} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="py-3 px-4">
-                            <div className="font-mono font-bold text-slate-900">{doc.id}</div>
-                            <div
-                              onClick={() => onSelectHoSo && onSelectHoSo(doc.hoSoCode)}
-                              className="font-mono text-[11px] text-blue-600 hover:underline cursor-pointer"
-                              title="Xem hồ sơ đơn gốc"
-                            >
-                              {doc.hoSoCode}
-                            </div>
-                          </td>
-                          <td className="py-3 px-4 max-w-xs">
-                            <div className="font-bold text-slate-900 leading-snug line-clamp-1">{doc.tenVanBan}</div>
-                            <div className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">{doc.trichYeu}</div>
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="font-semibold text-slate-800">{doc.nguoiTrinh || doc.nguoiLap}</div>
-                            <div className="text-[10.5px] text-slate-500">{doc.thoiGianTrinh || doc.ngayTao}</div>
-                          </td>
-                          <td className="py-3 px-4">
-                            {doc.mucDoUuTien === 'hoa_toc' && (
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-600 text-white uppercase tracking-wider">
-                                Hỏa tốc
-                              </span>
-                            )}
-                            {doc.mucDoUuTien === 'khan' && (
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300 uppercase tracking-wider">
-                                Khẩn
-                              </span>
-                            )}
-                            {doc.mucDoUuTien === 'thuong' && (
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 uppercase tracking-wider">
-                                Thường
-                              </span>
-                            )}
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className={`text-[11px] font-semibold ${isUrgent ? 'text-rose-700' : 'text-slate-700'}`}>
-                              {doc.hanXuLy || 'Trong hạn'}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4">
-                            {doc.status === 'da_trinh' && (
-                              <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">
-                                Chờ ký duyệt
-                              </span>
-                            )}
-                            {doc.status === 'yeu_cau_chinh_sua' && (
-                              <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
-                                Đã yêu cầu sửa
-                              </span>
-                            )}
-                            {doc.status === 'da_ky' && (
-                              <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                Đã ký số ban hành
-                              </span>
-                            )}
-                            {doc.status === 'tu_choi' && (
-                              <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-slate-200 text-slate-700 border border-slate-300">
-                                Từ chối ký
-                              </span>
-                            )}
-                          </td>
-                          <td className="py-3 px-4 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              {doc.status === 'da_trinh' ? (
-                                <>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setActiveSignDoc(doc);
-                                      setLeaderOpinion('');
-                                    }}
-                                    className="px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
-                                  >
-                                    <span className="material-symbols-outlined text-[15px]">draw</span>
-                                    <span>Ký số</span>
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setActiveReturnDoc(doc);
-                                      setReturnReason('');
-                                    }}
-                                    className="px-2 py-1 rounded-lg text-xs font-medium text-amber-700 hover:bg-amber-50 border border-amber-300 transition-colors cursor-pointer"
-                                    title="Yêu cầu cán bộ chỉnh sửa lại"
-                                  >
-                                    Sửa
-                                  </button>
-                                </>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setActiveSignDoc(doc);
-                                    setLeaderOpinion(doc.chuKyInfo?.yKienLanhDao || doc.lyDoTraLai || '');
-                                  }}
-                                  className="px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer"
-                                >
-                                  Chi tiết
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+        </div>
       </div>
 
       {/* ========================================================================= */}
@@ -933,8 +993,22 @@ export default function LeaderSigningKanban({
                       {activeSignDoc.status === 'da_ky' ? 'Văn bản đã ký duyệt' : 'Thẩm định & Phê duyệt ký số văn bản'}
                     </h3>
                   </div>
-                  <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2">
+                  <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2 flex-wrap">
                     <span>Hồ sơ liên quan: <strong className="font-mono text-slate-800">{activeSignDoc.hoSoCode}</strong></span>
+                    {onSelectHoSo && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onSelectHoSo(activeSignDoc.hoSoCode);
+                          setActiveSignDoc(null);
+                        }}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 font-bold text-[10.5px] cursor-pointer transition-colors"
+                        title="Mở trực tiếp hồ sơ Lượt nhận / Đơn / Vụ việc này để xem xét hoặc trực tiếp xử lý"
+                      >
+                        <span className="material-symbols-outlined text-[13px]">open_in_new</span>
+                        <span>Mở xử lý hồ sơ gốc</span>
+                      </button>
+                    )}
                     <span>•</span>
                     <span>Cán bộ trình: <strong>{activeSignDoc.nguoiTrinh || activeSignDoc.nguoiLap}</strong> ({activeSignDoc.thoiGianTrinh || activeSignDoc.ngayTao})</span>
                   </div>
@@ -1089,11 +1163,10 @@ export default function LeaderSigningKanban({
                     </label>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <label
-                        className={`p-2.5 rounded-xl border flex items-center gap-2 cursor-pointer transition-all ${
-                          certType === 'vgca'
+                        className={`p-2.5 rounded-xl border flex items-center gap-2 cursor-pointer transition-all ${certType === 'vgca'
                             ? 'bg-indigo-50 border-indigo-500 text-indigo-950 font-bold ring-2 ring-indigo-500/20'
                             : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
-                        }`}
+                          }`}
                       >
                         <input
                           type="radio"
@@ -1109,11 +1182,10 @@ export default function LeaderSigningKanban({
                       </label>
 
                       <label
-                        className={`p-2.5 rounded-xl border flex items-center gap-2 cursor-pointer transition-all ${
-                          certType === 'usb_token'
+                        className={`p-2.5 rounded-xl border flex items-center gap-2 cursor-pointer transition-all ${certType === 'usb_token'
                             ? 'bg-indigo-50 border-indigo-500 text-indigo-950 font-bold ring-2 ring-indigo-500/20'
                             : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
-                        }`}
+                          }`}
                       >
                         <input
                           type="radio"
@@ -1129,11 +1201,10 @@ export default function LeaderSigningKanban({
                       </label>
 
                       <label
-                        className={`p-2.5 rounded-xl border flex items-center gap-2 cursor-pointer transition-all ${
-                          certType === 'smart_ca'
+                        className={`p-2.5 rounded-xl border flex items-center gap-2 cursor-pointer transition-all ${certType === 'smart_ca'
                             ? 'bg-indigo-50 border-indigo-500 text-indigo-950 font-bold ring-2 ring-indigo-500/20'
                             : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
-                        }`}
+                          }`}
                       >
                         <input
                           type="radio"
@@ -1247,11 +1318,10 @@ export default function LeaderSigningKanban({
                     if (returnError) setReturnError(null);
                   }}
                   placeholder="Nêu rõ căn cứ cần bổ sung, sai sót trong dự thảo hoặc tài liệu kiểm tra thực địa cần đối chất thêm..."
-                  className={`w-full p-3 rounded-xl border text-xs focus:outline-none focus:ring-2 ${
-                    returnError
+                  className={`w-full p-3 rounded-xl border text-xs focus:outline-none focus:ring-2 ${returnError
                       ? 'border-rose-400 focus:ring-rose-500/20 focus:border-rose-500'
                       : 'border-slate-300 focus:ring-amber-500/20 focus:border-amber-600'
-                  }`}
+                    }`}
                 />
                 {returnError && <p className="text-[11px] text-rose-600 mt-1">{returnError}</p>}
               </div>
@@ -1315,15 +1385,14 @@ function LeaderDocumentCard({
   return (
     <div
       onClick={onOpenDetail}
-      className={`bg-white rounded-2xl p-3.5 shadow-2xs hover:shadow-md transition-all flex flex-col gap-2 relative cursor-pointer group/card border ${
-        variant === 'urgent'
+      className={`bg-white rounded-2xl p-3.5 shadow-2xs hover:shadow-md transition-all flex flex-col gap-2 relative cursor-pointer group/card border ${variant === 'urgent'
           ? 'border-rose-300 hover:border-rose-500 ring-1 ring-rose-100'
           : variant === 'returned'
             ? 'border-amber-300 hover:border-amber-500'
             : variant === 'signed'
               ? 'border-emerald-200 hover:border-emerald-400 bg-emerald-50/20'
               : 'border-slate-200 hover:border-indigo-400'
-      }`}
+        }`}
     >
       {/* DÒNG 1: BADGE MỨC ĐỘ & MÃ VĂN BẢN & MÃ HỒ SƠ */}
       <div className="flex items-center gap-1.5 text-xs flex-wrap">
@@ -1421,11 +1490,10 @@ function LeaderDocumentCard({
                   e.stopPropagation();
                   if (onQuickSign) onQuickSign();
                 }}
-                className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-1 cursor-pointer shadow-2xs ${
-                  variant === 'urgent'
+                className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-1 cursor-pointer shadow-2xs ${variant === 'urgent'
                     ? 'bg-rose-600 hover:bg-rose-700 text-white'
                     : 'bg-indigo-600 hover:bg-indigo-700 text-white'
-                }`}
+                  }`}
               >
                 <span className="material-symbols-outlined text-[14px]">draw</span>
                 <span>Ký số ngay</span>
@@ -1451,6 +1519,189 @@ function LeaderDocumentCard({
             >
               <span className="material-symbols-outlined text-[14px]">visibility</span>
               <span>Xem chi tiết ý kiến chỉ đạo</span>
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface LeaderWorkItemCardProps {
+  item: WorkItem;
+  variant: 'urgent' | 'pending' | 'waiting' | 'completed';
+  onItemClick?: (item: WorkItem) => void;
+  onSelectHoSo?: (hoSoCode: string) => void;
+  onBanGiaoDon?: (item: WorkItem) => void;
+  onTraLaiDon?: (item: WorkItem) => void;
+}
+
+export function LeaderWorkItemCard({
+  item,
+  variant,
+  onItemClick,
+  onSelectHoSo,
+  onBanGiaoDon,
+  onTraLaiDon,
+}: LeaderWorkItemCardProps) {
+  const isUrgent = item.priority === 'urgent' || variant === 'urgent';
+  const isLuotNhan = item.sourceType === 'luot_nhan';
+  const isDon = item.sourceType === 'don';
+  const isVuViec = item.sourceType === 'vu_viec';
+
+  return (
+    <div
+      onClick={() => {
+        if (onItemClick) {
+          onItemClick(item);
+        } else if (onSelectHoSo) {
+          onSelectHoSo(item.code);
+        }
+      }}
+      className={`bg-white rounded-2xl p-3.5 shadow-2xs hover:shadow-md transition-all flex flex-col gap-2 relative cursor-pointer group/card border ${
+        variant === 'urgent'
+          ? 'border-rose-300 hover:border-rose-500 ring-1 ring-rose-100'
+          : variant === 'waiting'
+          ? 'border-amber-300 hover:border-amber-500'
+          : variant === 'completed'
+          ? 'border-emerald-200 hover:border-emerald-400 bg-emerald-50/20'
+          : 'border-slate-200 hover:border-indigo-400'
+      }`}
+    >
+      {/* DÒNG 1: BADGE NGUỒN HỒ SƠ + MÃ HỒ SƠ + MỨC ĐỘ */}
+      <div className="flex items-center gap-1.5 text-xs flex-wrap">
+        {/* Badge Nguồn */}
+        {isLuotNhan && (
+          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200 flex items-center gap-1">
+            <span className="material-symbols-outlined text-[13px]">folder_open</span>
+            <span>LƯỢT NHẬN</span>
+          </span>
+        )}
+        {isDon && (
+          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200 flex items-center gap-1">
+            <span className="material-symbols-outlined text-[13px]">description</span>
+            <span>ĐƠN TIẾP NHẬN</span>
+          </span>
+        )}
+        {isVuViec && (
+          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1">
+            <span className="material-symbols-outlined text-[13px]">account_tree</span>
+            <span>VỤ VIỆC</span>
+          </span>
+        )}
+
+        {/* Mã hồ sơ */}
+        <span className="font-mono text-[11px] font-bold text-slate-800 group-hover/card:text-indigo-600 transition-colors">
+          {item.code}
+        </span>
+
+        {/* Mức độ ưu tiên */}
+        {item.priority === 'urgent' && (
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-600 text-white uppercase tracking-wider animate-pulse ml-auto">
+            HỎA TỐC
+          </span>
+        )}
+        {item.priority === 'high' && (
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200 uppercase tracking-wider ml-auto">
+            KHẨN
+          </span>
+        )}
+      </div>
+
+      {/* DÒNG 2: TIÊU ĐỀ HỒ SƠ */}
+      <h4 className="text-[12.5px] font-bold text-slate-900 leading-snug line-clamp-2 group-hover/card:text-indigo-700 transition-colors">
+        {item.title}
+      </h4>
+
+      {/* DÒNG 3: NGƯỜI NỘP ĐƠN & LĨNH VỰC */}
+      <div className="flex items-center gap-1.5 text-[11px] text-slate-600">
+        <span className="material-symbols-outlined text-[14px] text-slate-400">person</span>
+        <span className="truncate font-medium">{item.sender}</span>
+        {item.category && (
+          <>
+            <span className="text-slate-300">•</span>
+            <span className="truncate text-slate-500">{item.category}</span>
+          </>
+        )}
+      </div>
+
+      {item.actionTitle && (
+        <div className="p-2 bg-slate-50 rounded-xl border border-slate-200/80 text-[10.5px] text-slate-700 leading-tight">
+          <span className="font-bold text-indigo-700">Yêu cầu:</span> {item.actionTitle}
+        </div>
+      )}
+
+      {/* DÒNG 4: NGƯỜI PHỤ TRÁCH & THỜI HẠN */}
+      <div className="flex items-center justify-between text-[11px] pt-1 border-t border-slate-100 text-slate-500">
+        <div className="flex items-center gap-1 truncate max-w-[130px]" title={item.holder?.name}>
+          <span className="material-symbols-outlined text-[13px] text-slate-400">badge</span>
+          <span className="truncate font-medium">{item.holder?.name || 'Chưa phân công'}</span>
+        </div>
+
+        <div className="flex items-center gap-1 shrink-0">
+          <span className="text-slate-400">Hạn:</span>
+          <span className={`font-semibold ${isUrgent ? 'text-rose-600 font-bold' : 'text-slate-700'}`}>
+            {item.deadlineText || 'Đang thụ lý'}
+          </span>
+        </div>
+      </div>
+
+      {/* DÒNG 5: HÀNG NÚT THAO TÁC LÃNH ĐẠO */}
+      {variant !== 'completed' && (
+        <div className="flex items-center gap-1.5 pt-1 border-t border-slate-100">
+          {/* Nút hành động chính */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onItemClick) {
+                onItemClick(item);
+              } else if (onSelectHoSo) {
+                onSelectHoSo(item.code);
+              }
+            }}
+            className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-1 cursor-pointer shadow-2xs ${
+              isLuotNhan
+                ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                : variant === 'urgent'
+                ? 'bg-rose-600 hover:bg-rose-700 text-white'
+                : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[14px]">
+              {isLuotNhan ? 'psychology' : 'edit_document'}
+            </span>
+            <span>
+              {isLuotNhan ? 'Bàn phân tích AI' : isVuViec ? 'Xem vụ việc' : 'Xử lý hồ sơ'}
+            </span>
+          </button>
+
+          {/* Các nút phụ đối với Đơn hoặc Lượt nhận */}
+          {onBanGiaoDon && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onBanGiaoDon(item);
+              }}
+              className="p-1.5 px-2 rounded-lg border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-slate-600 hover:text-indigo-800 text-xs font-medium transition-colors cursor-pointer"
+              title="Chuyển thẩm quyền / Bàn giao cơ quan khác"
+            >
+              Chuyển
+            </button>
+          )}
+
+          {onTraLaiDon && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onTraLaiDon(item);
+              }}
+              className="p-1.5 px-2 rounded-lg border border-slate-200 hover:bg-rose-50 hover:border-rose-300 text-slate-600 hover:text-rose-800 text-xs font-medium transition-colors cursor-pointer"
+              title="Trả lại đơn cho người gửi"
+            >
+              Trả
             </button>
           )}
         </div>
