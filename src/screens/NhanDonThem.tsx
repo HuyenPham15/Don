@@ -701,7 +701,6 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
         </div>
       </div>
 
-      {/* ─── FULL WIDTH SCROLLABLE BODY ───────────────────────── */}
       <div className="flex-1 overflow-y-auto px-6 sm:px-10 py-6 space-y-8 w-full">
         {/* ─── SECTION 1: THÔNG TIN TIẾP NHẬN ─────────────────── */}
         <section className="space-y-4">
@@ -2242,7 +2241,7 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
           )}
         </section>
       </div>
-      {/* ─── MODAL: XEM TRƯỚC TÀI LIỆU CHỨNG MINH ĐẠI DIỆN ─── */}
+
       {previewDoc && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 backdrop-blur-xs animate-in fade-in">
           <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden border border-slate-200 animate-in zoom-in-95">

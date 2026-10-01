@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import GovexToCaoWorkflowDiagram from './GovexToCaoWorkflowDiagram';
 
-export type WorkflowType = 'khoi-kien' | 'khieu-nai' | 'to-giac';
+export type WorkflowType = 'to-cao-govex' | 'khoi-kien' | 'khieu-nai' | 'to-giac';
 
 export interface SwimlaneStepNode {
   id: string;
@@ -797,6 +798,65 @@ export default function SwimlaneWorkflowDiagram({
   const firstCoords = getNodeCoordinates(firstNode);
   const lastCoords = getNodeCoordinates(lastNode);
 
+  if (currentWorkflowType === 'to-cao-govex' || currentWorkflowType === 'to-giac') {
+    return (
+      <div className="flex flex-col h-full bg-[#f8fafc] text-slate-800 select-none overflow-hidden font-body-md">
+        {/* Top switch selector */}
+        <div className="bg-white border-b border-slate-200 px-6 py-2.5 flex items-center justify-between gap-4 flex-wrap shrink-0 shadow-2xs">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-[#0047AB] text-white flex items-center justify-center font-bold text-xs shadow-2xs">
+              GOV
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-xs sm:text-sm font-bold text-slate-900 tracking-tight">
+                  Quy trình Xử lý Đơn tố cáo và Vụ việc (Chuẩn hóa GOVEX)
+                </h2>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-[#004ac6] border border-blue-200">
+                  6 Giai đoạn • 4 Làn bơi • Luồng rút đơn
+                </span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Sơ đồ nghiệp vụ BRD
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                ⚖️ <strong className="text-slate-700">Căn cứ Luật Tố cáo 2018 &amp; Thông tư 05/2021/TT-TTCP</strong>
+              </p>
+            </div>
+          </div>
+
+          {/* Quick Workflow Selector Pills */}
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-semibold">
+            {[
+              { id: 'to-cao-govex', label: '⭐ Đơn tố cáo & Vụ việc (GOVEX BRD)' },
+              { id: 'khieu-nai', label: 'Khiếu nại đất đai (Luật KN)' },
+              { id: 'khoi-kien', label: 'Khởi kiện dân sự (BLTTDS)' },
+            ].map((wf) => (
+              <button
+                key={wf.id}
+                type="button"
+                onClick={() => setCurrentWorkflowType(wf.id as WorkflowType)}
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer text-xs ${
+                  currentWorkflowType === wf.id || (currentWorkflowType === 'to-giac' && wf.id === 'to-cao-govex')
+                    ? 'bg-[#004ac6] text-white shadow-2xs font-bold'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                }`}
+              >
+                {wf.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Render GovexToCaoWorkflowDiagram */}
+        <div className="flex-1 overflow-hidden">
+          <GovexToCaoWorkflowDiagram donCode={donCode} donTitle={donTitle} nguoiNop={nguoiNop} />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full bg-[#f8fafc] text-slate-800 select-none overflow-hidden font-body-md">
       {/* Toast Notification */}
@@ -840,9 +900,9 @@ export default function SwimlaneWorkflowDiagram({
           {/* Quick Workflow Selector Pills */}
           <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-semibold">
             {[
-              { id: 'khoi-kien', label: 'Khởi kiện dân sự (BLTTDS)' },
+              { id: 'to-cao-govex', label: '⭐ Đơn tố cáo & Vụ việc (GOVEX BRD)' },
               { id: 'khieu-nai', label: 'Khiếu nại đất đai (Luật KN)' },
-              { id: 'to-giac', label: 'Tố giác tội phạm (BLTTHS)' },
+              { id: 'khoi-kien', label: 'Khởi kiện dân sự (BLTTDS)' },
             ].map((wf) => (
               <button
                 key={wf.id}

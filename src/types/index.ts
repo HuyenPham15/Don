@@ -10,10 +10,14 @@ export type Screen =
   | "quan-tri-loai-don"
   | "quan-tri-lich-lam-viec"
   | "quan-tri-bieu-mau"
+  | "trinh-ky"
+  | "van-ban-cho-ky"
   | "thu-vien" 
   | "bao-cao" 
   | "tiep-nhan-xu-ly"
   | "ai-tiep-nhan-chat";
+
+export * from './signing';
 
 export type AIJob = 0 | 1 | 2 | 3 | 4 | 5;
 
@@ -33,7 +37,7 @@ export interface LuotNhan {
   sdt?: string;
   diaChi?: string;
   loaiDon?: string;
-  status?: 'cho_chuyen' | 'da_chuyen' | 'da_ban_giao' | 'da_tra_lai';
+  status?: 'cho_chuyen' | 'da_chuyen' | 'da_ban_giao' | 'da_tra_lai' | 'da_ghep';
   hasFile?: boolean;
   fileCount?: number;
   files?: UploadedFile[];

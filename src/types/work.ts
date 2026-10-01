@@ -25,6 +25,7 @@ export type WorkItemSubStatus =
   | 'cho_he_thong'
   | 'dang_xu_ly'
   | 'da_ban_giao'
+  | 'da_ghep'
   | 'da_hoan_thanh';
 
 // TASK READINESS

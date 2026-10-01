@@ -3,11 +3,10 @@ import PanelSection from "./PanelSection";
 
 function GoiYHuongXuLySection({ huong, setHuong }: { huong: string; setHuong: (v: string) => void }) {
   const options = [
-    { id: "tiep-nhan-xu-ly", title: "Tiếp nhận xử lý", desc: "Tiếp nhận đơn, khởi tạo hồ sơ và bắt đầu quy trình xử lý", aiSuggest: true },
-    { id: "tra-lai-don", title: "Trả lại đơn", desc: "Không đủ điều kiện thụ lý, trả lại cho người gửi" },
-    { id: "ghep-don", title: "Ghép vào đơn / vụ việc đang giải quyết", desc: "Trùng với đơn hoặc vụ việc đang xử lý, ghép hồ sơ" },
-    { id: "chuyen-tham-quyen", title: "Chuyển đơn vị có thẩm quyền", desc: "Chuyển cho cơ quan/đơn vị khác giải quyết" },
-    { id: "yeu-cau-bo-sung", title: "Yêu cầu bổ sung", desc: "Hồ sơ thiếu thông tin quan trọng, yêu cầu người gửi bổ sung" },
+    { id: "tiep-nhan-xu-ly", title: "Tiếp nhận (Tạo Đơn mới)", badge: "STEP-03A", desc: "Đơn phát sinh mới không trùng lặp, khởi tạo mã Đơn chính thức và đưa vào quy trình thụ lý", aiSuggest: true },
+    { id: "ghep-don", title: "Ghép đơn (Ghép vào Đơn đã có)", badge: "STEP-03B", desc: "Trùng người nộp hoặc đối tượng vụ việc, ghép vào hồ sơ đang giải quyết, không tạo mã đơn trùng" },
+    { id: "ban-giao", title: "Bàn giao đơn", badge: "STEP-03C", desc: "Đơn thuộc thẩm quyền cơ quan khác hoặc chuyển cán bộ khác, lập thông tin và chuyển giao hồ sơ" },
+    { id: "tra-lai", title: "Trả lại đơn", badge: "STEP-03D", desc: "Không đủ điều kiện thụ lý hoặc không thuộc thẩm quyền, ghi lý do và lập văn bản trả lại công dân" },
   ];
 
   return (
@@ -24,6 +23,9 @@ function GoiYHuongXuLySection({ huong, setHuong }: { huong: string; setHuong: (v
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-2">
                   <span className="text-sm font-semibold" style={{ color: active ? "#1D4ED8" : "#0F172A" }}>{o.title}</span>
+                  {o.badge && (
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded font-mono" style={{ background: "#F1F5F9", color: "#475569" }}>{o.badge}</span>
+                  )}
                   {o.aiSuggest && (
                     <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "#DBEAFE", color: "#1D4ED8" }}>AI đề xuất</span>
                   )}

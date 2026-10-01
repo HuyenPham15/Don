@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import Placeholder from "./components/Placeholder";
 import Sidebar from "./components/Sidebar";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -10,8 +10,12 @@ import NhanDonThem from "./screens/NhanDonThem";
 import TroChuyenScreen from "./screens/TroChuyenScreen";
 import AITiepNhanChatScreen from "./screens/AITiepNhanChatScreen";
 import TiepNhanVaXuLyScreen from "./screens/TiepNhanVaXuLyScreen";
+import TrinhKyScreen from "./screens/TrinhKyScreen";
+import VanBanChoKyScreen from "./screens/VanBanChoKyScreen";
 import { LN19, ALL_LUOT_NHAN } from "./constants";
 import { LuotNhan, Screen, DonDetail } from "./types";
+import { SigningDocument, CurrentUserAccount, DEMO_ACCOUNTS } from "./types/signing";
+import { INITIAL_SIGNING_DOCUMENTS } from "./constants/signingData";
 import QuyTrinhXuLyDon from "./screens/QuyTrinhXuLyDon";
 import { ActiveWorkflowState } from "./types/workflow";
 import { WORKFLOW_DEFINITIONS, matchWorkflowByLoaiDon } from "./constants/workflows";
@@ -38,6 +42,20 @@ export default function App() {
   const [acceptedDons, setAcceptedDons] = useState<DonDetail[]>([]);
   const [extraCard, setExtraCard] = useState<LuotNhan | null>(null);
   const [tiepNhanItems, setTiepNhanItems] = useState<TiepNhanDonItem[]>(INITIAL_TIEP_NHAN_ITEMS);
+
+  // Danh sách văn bản Trình ký & Ký số (Dành cho Cán bộ và Lãnh đạo)
+  const [signingDocuments, setSigningDocuments] = useState<SigningDocument[]>(INITIAL_SIGNING_DOCUMENTS);
+
+  // Tài khoản người dùng đang đăng nhập (Cán bộ thụ lý hoặc Lãnh đạo ký duyệt)
+  const [currentAccount, setCurrentAccount] = useState<CurrentUserAccount>(DEMO_ACCOUNTS[0]);
+  const [isAccountDropdownOpen, setIsAccountDropdownOpen] = useState(false);
+
+  const signingCounts = useMemo(() => {
+    const choTrinh = signingDocuments.filter((d) => d.status === 'cho_trinh' || d.status === 'nhap').length;
+    const daTrinh = signingDocuments.filter((d) => d.status === 'da_trinh').length;
+    const yeuCauSua = signingDocuments.filter((d) => d.status === 'yeu_cau_chinh_sua').length;
+    return { choTrinh, daTrinh, yeuCauSua };
+  }, [signingDocuments]);
 
   // Trạng thái Quy trình xử lý đơn đang chạy
   const [activeWorkflow, setActiveWorkflow] = useState<ActiveWorkflowState>(() => {
@@ -416,21 +434,109 @@ export default function App() {
             <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500"></span>
           </button>
 
-          <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
-            <div className="w-8 h-8 rounded-full bg-[#004ac6] text-white font-bold text-xs flex items-center justify-center shadow-xs">
-              MA
-            </div>
-            <div className="hidden lg:flex flex-col text-left">
-              <span className="text-xs font-bold text-slate-900 leading-tight">Nguyễn Minh Anh</span>
-              <span className="text-[10px] text-slate-400 leading-tight">Cán bộ thụ lý hồ sơ</span>
-            </div>
+          {/* Profile & Account Switcher */}
+          <div className="relative pl-2 border-l border-slate-200">
+            <button
+              type="button"
+              onClick={() => setIsAccountDropdownOpen((prev) => !prev)}
+              className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-100 transition-all cursor-pointer group"
+              title="Nhấn để chuyển đổi tài khoản (Cán bộ thụ lý ⟷ Lãnh đạo ký duyệt)"
+            >
+              <div className={`w-8 h-8 rounded-full ${currentAccount.avatarBg} text-white font-bold text-xs flex items-center justify-center shadow-xs shrink-0 ring-2 ring-white`}>
+                {currentAccount.shortName}
+              </div>
+              <div className="hidden lg:flex flex-col text-left">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-bold text-slate-900 leading-tight group-hover:text-blue-700 transition-colors">
+                    {currentAccount.name}
+                  </span>
+                  <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
+                    currentAccount.role === 'lanh_dao' 
+                      ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' 
+                      : 'bg-blue-100 text-[#004ac6] border border-blue-200'
+                  }`}>
+                    {currentAccount.role === 'lanh_dao' ? 'LÃNH ĐẠO' : 'CÁN BỘ'}
+                  </span>
+                </div>
+                <span className="text-[10px] text-slate-400 leading-tight">
+                  {currentAccount.roleLabel}
+                </span>
+              </div>
+              <span className="material-symbols-outlined text-[18px] text-slate-400 group-hover:text-slate-600 transition-transform duration-200">
+                unfold_more
+              </span>
+            </button>
+
+            {/* Dropdown Menu chuyển tài khoản */}
+            {isAccountDropdownOpen && (
+              <>
+                <div 
+                  className="fixed inset-0 z-40" 
+                  onClick={() => setIsAccountDropdownOpen(false)} 
+                />
+                <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-slate-200 rounded-2xl shadow-xl p-2 z-50 animate-fade-in flex flex-col gap-1">
+                  <div className="px-3 py-2 border-b border-slate-100">
+                    <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-label-technical">
+                      CHUYỂN ĐỔI TÀI KHOẢN NGƯỜI DÙNG
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Giao diện "Công việc của tôi" tự động đổi theo tài khoản đang chọn
+                    </p>
+                  </div>
+
+                  {DEMO_ACCOUNTS.map((acc) => {
+                    const isSelected = acc.id === currentAccount.id;
+                    return (
+                      <button
+                        key={acc.id}
+                        type="button"
+                        onClick={() => {
+                          setCurrentAccount(acc);
+                          setIsAccountDropdownOpen(false);
+                          if (screen !== 'cong-viec') {
+                            setScreen('cong-viec');
+                          }
+                        }}
+                        className={`w-full flex items-start gap-3 p-2.5 rounded-xl text-left transition-all cursor-pointer ${
+                          isSelected 
+                            ? 'bg-blue-50 border border-blue-200/80 shadow-2xs' 
+                            : 'hover:bg-slate-50 border border-transparent'
+                        }`}
+                      >
+                        <div className={`w-9 h-9 rounded-full ${acc.avatarBg} text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs mt-0.5`}>
+                          {acc.shortName}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="text-xs font-bold text-slate-900 truncate">
+                              {acc.name}
+                            </span>
+                            {isSelected && (
+                              <span className="material-symbols-outlined text-[16px] text-blue-600 shrink-0">
+                                check_circle
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[11px] font-semibold text-blue-700 leading-tight mt-0.5">
+                            {acc.chucVu}
+                          </div>
+                          <div className="text-[10.5px] text-slate-400 truncate mt-0.5">
+                            {acc.phongBan}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </header>
 
       {/* 2. BODY: SIDEBAR + MAIN WORKSPACE */}
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar screen={screen} onNav={setScreen} />
+        <Sidebar screen={screen} onNav={setScreen} currentAccount={currentAccount} signingCounts={signingCounts} />
         <main className="flex-1 overflow-y-auto flex flex-col bg-[#f4f7fb]">
           <ErrorBoundary fallbackScreen={() => setScreen("don-tiep-nhan")}>
             {(screen === "cong-viec" || screen === "tiep-nhan-xu-ly") && (
@@ -443,6 +549,10 @@ export default function App() {
                 luotNhanList={luotNhanList}
                 tiepNhanItems={tiepNhanItems}
                 onBanGiaoDone={handleBanGiao}
+                currentAccount={currentAccount}
+                onSwitchAccount={setCurrentAccount}
+                signingDocuments={signingDocuments}
+                onUpdateSigningDocuments={setSigningDocuments}
               />
             )}
             {screen === "nhan-don-list" && (
@@ -472,6 +582,42 @@ export default function App() {
                 onNav={setScreen}
                 workflowState={activeWorkflow}
                 onUpdateWorkflowState={setActiveWorkflow}
+              />
+            )}
+            {screen === "trinh-ky" && (
+              <TrinhKyScreen
+                onNav={setScreen}
+                documents={signingDocuments}
+                onUpdateDocuments={setSigningDocuments}
+                onSelectHoSo={(hoSoCode) => {
+                  const matched = acceptedDons.find((d) => d.code === hoSoCode || d.id === hoSoCode);
+                  if (matched) setSelectedDon(matched);
+                }}
+                onSwitchAccount={(role) => {
+                  const target = DEMO_ACCOUNTS.find((a) => a.role === role);
+                  if (target) {
+                    setCurrentAccount(target);
+                    setScreen("cong-viec");
+                  }
+                }}
+              />
+            )}
+            {screen === "van-ban-cho-ky" && (
+              <VanBanChoKyScreen
+                onNav={setScreen}
+                documents={signingDocuments}
+                onUpdateDocuments={setSigningDocuments}
+                onSelectHoSo={(hoSoCode) => {
+                  const matched = acceptedDons.find((d) => d.code === hoSoCode || d.id === hoSoCode);
+                  if (matched) setSelectedDon(matched);
+                }}
+                onSwitchAccount={(role) => {
+                  const target = DEMO_ACCOUNTS.find((a) => a.role === role);
+                  if (target) {
+                    setCurrentAccount(target);
+                    setScreen("cong-viec");
+                  }
+                }}
               />
             )}
             {screen === "quan-tri-quy-trinh" && (

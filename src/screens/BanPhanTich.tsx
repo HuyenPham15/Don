@@ -6,6 +6,8 @@ import { DON_VI_OPTIONS } from '../constants';
 import { TiepNhanDonItem, DEPARTMENTS, OFFICERS } from '../constants/departments';
 import ChuyenTiepNhanModal, { ChuyenTiepNhanSubmitData } from '../components/modals/ChuyenTiepNhanModal';
 import NguonTraCuuModal, { NguonTraCuuTabType } from '../components/modals/NguonTraCuuModal';
+import BanGiaoDonModal, { BanGiaoDonSubmitData } from '../components/modals/BanGiaoDonModal';
+import TraLaiDonModal, { TraLaiDonSubmitData } from '../components/modals/TraLaiDonModal';
 import { getSuggestedActionsForWorkflow } from '../components/workflow/QuyTrinhSuggestedActions';
 
 interface BanPhanTichProps {
@@ -56,11 +58,19 @@ export default function BanPhanTich({
 
   // Officer inputs
   const [officerNote, setOfficerNote] = useState<string>(
-    'Qua phân tích, đề xuất tiếp nhận đơn và chuyển Phòng Cảnh sát kinh tế để xem xét, giải quyết theo thẩm quyền.'
+    'Qua rà soát đối soát CSDL đơn thư, hồ sơ phát sinh mới và không trùng lặp. Đề xuất tiếp nhận tạo Đơn mới để chuyển tiếp sang quy trình thụ lý giải quyết theo quy định.'
   );
-  const [huongXuLy, setHuongXuLy] = useState<'tiep-nhan' | 'xac-minh' | 'chuyen'>('tiep-nhan');
+  const [huongXuLy, setHuongXuLy] = useState<'tiep-nhan' | 'ghep' | 'ban-giao' | 'tra-lai'>('tiep-nhan');
   const [expandedCanCu, setExpandedCanCu] = useState<string | null>(null);
-  const [donViChuyen, setDonViChuyen] = useState<string>('');
+  const [showGhepModal, setShowGhepModal] = useState<boolean>(false);
+  const [showDetailTargetDonModal, setShowDetailTargetDonModal] = useState<boolean>(false);
+  const [selectedGhepDonCode, setSelectedGhepDonCode] = useState<string>('Đ-2026-00125');
+  const [lyDoGhep, setLyDoGhep] = useState<string>(
+    'Bổ sung tài liệu, chứng cứ cho hồ sơ đang thụ lý giải quyết'
+  );
+  const [ghiChuGhep, setGhiChuGhep] = useState<string>(
+    'Ghép lượt nhận vào hồ sơ Đ-2026-00125 để theo dõi tập trung, không tạo mã đơn mới.'
+  );
   const [banGiaoUnit, setBanGiaoUnit] = useState<string>('Phòng Cảnh sát kinh tế (PC03) - Công an TP. Hà Nội');
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [showSubmitModal, setShowSubmitModal] = useState<boolean>(false);
@@ -550,35 +560,42 @@ export default function BanPhanTich({
     }
   };
 
+  // Xử lý xác nhận Ghép lượt nhận vào hồ sơ Đơn đã có (Không sinh mã đơn mới)
+  const handleConfirmGhep = () => {
+    setShowGhepModal(false);
+    setCurrentLuotNhanStatus('da_ghep');
+    onUpdateLuotNhan?.({ ...luotNhan, status: 'da_ghep' });
+    showToast(
+      `✓ Đã ghép thành công lượt nhận ${luotNhan?.id || 'LN-56/2026-GOVEX'} vào hồ sơ đơn ${selectedGhepDonCode}!`
+    );
+    setTimeout(() => {
+      onNav('don-tiep-nhan');
+    }, 1000);
+  };
+
   // BR-19, BR-20, BR-21, BR-22: Xác nhận Bàn giao (Đơn vị khác vs Cán bộ trong phòng)
-  const handleConfirmBanGiao = () => {
+  // STEP-03C: Xác nhận Bàn giao từ Popup BanGiaoDonModal (Cán bộ chuyên môn)
+  const handleBanGiaoModalSubmit = (data: BanGiaoDonSubmitData) => {
     const dynamicCode = luotNhan?.id
       ? luotNhan.id.startsWith('LN-')
         ? `Đ-${luotNhan.id.replace('LN-', '')}`
         : luotNhan.id
       : 'Đ-2026-00125';
 
-    if (banGiaoHuong === 'don_vi_khac' && !lyDoBanGiao.trim()) {
-      showToast('Bắt buộc nhập lý do bàn giao cho đơn vị khác (BR-20).');
-      return;
-    }
-    if (banGiaoHuong === 'can_bo_khac' && !banGiaoCanBoId) {
-      showToast('Bắt buộc chọn cán bộ nhận bàn giao trong phòng (BR-21).');
-      return;
-    }
-
     setShowBanGiaoModal(false);
     setCurrentLuotNhanStatus('da_ban_giao');
     onUpdateLuotNhan?.({ ...luotNhan, status: 'da_ban_giao' });
 
-    if (banGiaoHuong === 'don_vi_khac') {
-      showToast(`Đã bàn giao đơn ${dynamicCode} sang "${banGiaoUnit}" (Chờ bên nhận xác nhận - BR-22).`);
-      onBanGiao?.(luotNhan?.id, banGiaoUnit, undefined, lyDoBanGiao);
-    } else {
-      const targetOfficer = OFFICERS.find((o) => o.id === banGiaoCanBoId);
-      showToast(`Đã chuyển giao Task đơn ${dynamicCode} sang cán bộ "${targetOfficer?.name}" (BR-21).`);
-      onBanGiao?.(luotNhan?.id, 'Phòng Tiếp công dân & Xử lý đơn', targetOfficer?.name, lyDoBanGiao);
-    }
+    const targetName =
+      data.banGiaoType === 'don_vi_khac'
+        ? data.donViNhanName || 'Đơn vị tiếp nhận'
+        : data.canBoNhan?.name || 'Cán bộ trong phòng';
+
+    showToast(
+      `✓ [STEP-03C] Đã hoàn tất bàn giao đơn ${dynamicCode} sang "${targetName}" (${data.danhMucTaiLieu.length} tài liệu, ${data.cauHinhVanBan.taoVanBan ? `Biên bản: ${data.cauHinhVanBan.soKyHieu}` : 'Không xuất văn bản'}).`
+    );
+
+    onBanGiao?.(luotNhan?.id, targetName, data.canBoNhan?.name, data.lyDoBanGiao);
 
     onAcceptAndProcess?.({
       id: dynamicCode,
@@ -592,28 +609,34 @@ export default function BanPhanTich({
       statusBadge: 'Đã bàn giao',
     });
 
-    setTimeout(() => onNav('don-tiep-nhan'), 600);
+    setTimeout(() => onNav('don-tiep-nhan'), 800);
   };
 
-  // BR-23, BR-24: Xác nhận Trả lại (cho người dân/người nộp, kết thúc Task)
-  const handleConfirmTraLai = () => {
+  // STEP-03D: Xác nhận Trả lại từ Popup TraLaiDonModal (Cán bộ chuyên môn)
+  const handleTraLaiModalSubmit = (data: TraLaiDonSubmitData) => {
     const dynamicCode = luotNhan?.id
       ? luotNhan.id.startsWith('LN-')
         ? `Đ-${luotNhan.id.replace('LN-', '')}`
         : luotNhan.id
       : 'Đ-2026-00125';
 
-    if (!traLaiReason.trim()) {
-      showToast('Bắt buộc nhập hoặc chọn lý do trả lại đơn (BR-24).');
-      return;
-    }
-
     setShowTraLaiModal(false);
     setCurrentLuotNhanStatus('da_tra_lai');
     onUpdateLuotNhan?.({ ...luotNhan, status: 'da_tra_lai' });
 
-    showToast(`Đã trả lại đơn ${dynamicCode} cho người dân/người nộp và kết thúc Task xử lý (BR-23, BR-24).`);
-    onTraLai?.(luotNhan?.id, traLaiReason);
+    showToast(
+      `✓ [STEP-03D] Đã lập văn bản trả lại đơn ${dynamicCode} cho công dân ${extractData.nguoiGui || luotNhan?.nguoiNop} (${data.cauHinhVanBan.taoVanBan ? `Văn bản: ${data.cauHinhVanBan.soKyHieu}` : 'Ghi nhận lý do'}) và kết thúc Task xử lý.`
+    );
+
+    onTraLai?.(luotNhan?.id, data.lyDoChiTiet);
+  };
+
+  const handleConfirmBanGiao = () => {
+    setShowBanGiaoModal(true);
+  };
+
+  const handleConfirmTraLai = () => {
+    setShowTraLaiModal(true);
   };
 
   return (
@@ -765,6 +788,8 @@ export default function BanPhanTich({
                     ? 'text-emerald-700'
                     : currentLuotNhanStatus === 'da_ban_giao'
                     ? 'text-amber-700'
+                    : currentLuotNhanStatus === 'da_ghep'
+                    ? 'text-indigo-700'
                     : currentLuotNhanStatus === 'da_tra_lai'
                     ? 'text-rose-700'
                     : 'text-[#C62828]'
@@ -774,6 +799,8 @@ export default function BanPhanTich({
                   ? 'Đã chuyển tiếp nhận'
                   : currentLuotNhanStatus === 'da_ban_giao'
                   ? 'Đã bàn giao'
+                  : currentLuotNhanStatus === 'da_ghep'
+                  ? `Đã ghép vào ${selectedGhepDonCode}`
                   : currentLuotNhanStatus === 'da_tra_lai'
                   ? 'Đã trả lại người nộp'
                   : 'Chờ chuyển tiếp nhận & xử lý'}
@@ -784,6 +811,28 @@ export default function BanPhanTich({
 
         {/* Action Controls Top-Right */}
         <div className="flex items-center gap-2">
+          {/* Nút thao tác nhanh STEP-03C: Bàn giao đơn */}
+          <button
+            type="button"
+            onClick={() => setShowBanGiaoModal(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold shadow-2xs transition-all cursor-pointer"
+            title="Bàn giao đơn sang cơ quan hoặc cán bộ khác (STEP-03C)"
+          >
+            <span className="material-symbols-outlined text-[16px] text-amber-700">swap_horiz</span>
+            <span>Bàn giao [STEP-03C]</span>
+          </button>
+
+          {/* Nút thao tác nhanh STEP-03D: Trả lại đơn */}
+          <button
+            type="button"
+            onClick={() => setShowTraLaiModal(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-900 text-xs font-bold shadow-2xs transition-all cursor-pointer"
+            title="Trả lại đơn và hướng dẫn công dân (STEP-03D)"
+          >
+            <span className="material-symbols-outlined text-[16px] text-rose-700">assignment_return</span>
+            <span>Trả lại [STEP-03D]</span>
+          </button>
+
           <button
             type="button"
             onClick={() => showToast('Đang tải xuống tài liệu đơn...')}
@@ -803,6 +852,11 @@ export default function BanPhanTich({
             <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-50 text-amber-800 border border-amber-300 text-xs font-bold shadow-2xs">
               <span className="material-symbols-outlined text-[16px] text-amber-600">swap_horiz</span>
               <span>Đã bàn giao</span>
+            </span>
+          ) : currentLuotNhanStatus === 'da_ghep' ? (
+            <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-50 text-indigo-800 border border-indigo-300 text-xs font-bold shadow-2xs">
+              <span className="material-symbols-outlined text-[16px] text-indigo-600">merge_type</span>
+              <span>Đã ghép vào {selectedGhepDonCode}</span>
             </span>
           ) : currentLuotNhanStatus === 'da_tra_lai' ? (
             <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-50 text-rose-800 border border-rose-300 text-xs font-bold shadow-2xs">
@@ -1844,31 +1898,39 @@ export default function BanPhanTich({
           </div>
 
           {/* =================================================================== */}
-          {/* 5. GỢI Ý HƯỚNG XỬ LÝ                                                */}
+          {/* 5. GỢI Ý ĐỀ XUẤT XỬ LÝ CỦA AI (TIẾP NHẬN HOẶC GHÉP ĐƠN)              */}
           {/* =================================================================== */}
           <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs space-y-3">
-            <h3 className="text-xs sm:text-sm font-bold text-slate-900 tracking-tight border-b border-slate-100 pb-2 font-headline-md">
-              5. Gợi ý hướng xử lý
-            </h3>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+              <h3 className="text-xs sm:text-sm font-bold text-slate-900 tracking-tight font-headline-md flex items-center gap-2">
+                <span>5. Gợi ý đề xuất xử lý của AI</span>
+                <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[10.5px] font-semibold border border-blue-200">
+                  Phân tích Lượt nhận
+                </span>
+              </h3>
+              <span className="text-[11px] text-slate-500 font-medium">Tiếp nhận hoặc Ghép đơn</span>
+            </div>
 
             {aiState === 'reading' && readingProgress < 85 ? (
               <div className="p-3 bg-slate-50 rounded-xl space-y-2">
                 <div className="h-16 bg-slate-200 rounded-lg skel" />
                 <div className="h-16 bg-slate-200 rounded-lg skel" />
-                <div className="h-16 bg-slate-200 rounded-lg skel" />
               </div>
             ) : (
-              <div className="space-y-2.5 text-xs">
-                {/* Tùy chọn 1: Tiếp nhận, chuyển đơn vị điều tra theo thẩm quyền (92%) */}
+              <div className="space-y-3 text-xs">
+                {/* Tùy chọn 1: TIẾP NHẬN (Tạo đơn mới) */}
                 <div
                   onClick={() => {
                     setHuongXuLy('tiep-nhan');
-                    setOfficerNote('Qua phân tích, đề xuất tiếp nhận đơn và chuyển Phòng Cảnh sát kinh tế để xem xét, giải quyết theo thẩm quyền.');
+                    setOfficerNote(
+                      'Hồ sơ phát sinh mới, không trùng lặp. Đề xuất tiếp nhận tạo Đơn mới để chuyển tiếp sang quy trình thụ lý giải quyết theo quy định.'
+                    );
                   }}
-                  className={`p-3.5 rounded-xl border transition-all cursor-pointer ${huongXuLy === 'tiep-nhan'
-                    ? 'bg-emerald-50/40 border-emerald-400 ring-1 ring-emerald-200'
-                    : 'bg-white border-slate-200 hover:border-slate-300'
-                    }`}
+                  className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
+                    huongXuLy === 'tiep-nhan'
+                      ? 'bg-emerald-50/40 border-emerald-400 ring-1 ring-emerald-200 shadow-2xs'
+                      : 'bg-white border-slate-200 hover:border-slate-300'
+                  }`}
                 >
                   <div className="flex items-start gap-3">
                     <div className="pt-0.5 shrink-0">
@@ -1882,17 +1944,22 @@ export default function BanPhanTich({
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
-                        <h4 className="text-xs sm:text-sm font-bold text-slate-900">
-                          Tiếp nhận, chuyển đơn vị điều tra theo thẩm quyền
-                        </h4>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-xs sm:text-sm font-bold text-slate-900">
+                            Tiếp nhận (Tạo Đơn mới)
+                          </h4>
+                          <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 text-[10px] font-semibold border border-emerald-200">
+                            Thụ lý độc lập
+                          </span>
+                        </div>
                         <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold shrink-0">
                           92%
                         </span>
                       </div>
-                      <ul className="text-slate-600 space-y-0.5 mt-1.5 pl-0.5 leading-relaxed">
-                        <li>• Có dấu hiệu tội phạm theo quy định.</li>
-                        <li>• Thuộc thẩm quyền của Cơ quan CSĐT Công an TP Hà Nội.</li>
-                        <li className="text-slate-500">Có đơn tương tự đã tiếp nhận trước đây, cần xem xét, tổng hợp.</li>
+                      <ul className="text-slate-600 space-y-1 mt-1.5 pl-0.5 leading-relaxed text-xs">
+                        <li>• <strong>Đơn phát sinh mới:</strong> Không trùng lặp người gửi, nội dung hoặc vụ việc trong CSDL đơn thư.</li>
+                        <li>• <strong>Điều kiện tiếp nhận:</strong> Đủ thông tin tối thiểu để khởi tạo mã Đơn chính thức (Đ-2026-...) và kích hoạt quy trình xử lý.</li>
+                        <li>• <strong>Thẩm quyền:</strong> Thuộc chức năng tiếp nhận và thụ lý của đơn vị.</li>
                       </ul>
                       <button
                         type="button"
@@ -1909,29 +1976,32 @@ export default function BanPhanTich({
                       </button>
                       {expandedCanCu === 'op1' && (
                         <div className="mt-2 p-2.5 bg-slate-50 rounded-lg border border-slate-200 text-[11px] text-slate-700 space-y-1 animate-fade-in">
-                          <p>• <strong>Điều 145 Bộ luật Tố tụng Hình sự 2015:</strong> Thẩm quyền và trách nhiệm tiếp nhận, giải quyết tố giác tội phạm.</p>
-                          <p>• <strong>Thông tư liên tịch 01/2017:</strong> Quy định phối hợp tiếp nhận, thụ lý nguồn tin tội phạm.</p>
+                          <p>• <strong>Thông tư số 05/2021/TT-TTCP:</strong> Quy định quy trình tiếp nhận, xử lý đơn khiếu nại, tố cáo, kiến nghị, phản ánh.</p>
+                          <p>• <strong>Điều 145 Bộ luật Tố tụng Hình sự 2015:</strong> Thẩm quyền và trách nhiệm tiếp nhận, khởi tạo hồ sơ thụ lý giải quyết ban đầu.</p>
                         </div>
                       )}
                     </div>
                   </div>
                 </div>
 
-                {/* Tùy chọn 2: Kiểm tra, xác minh thông tin bổ sung (68%) */}
+                {/* Tùy chọn 2: GHÉP (Ghép vào đơn / vụ việc đã có) */}
                 <div
                   onClick={() => {
-                    setHuongXuLy('xac-minh');
-                    setOfficerNote('Cần tiến hành kiểm tra, xác minh làm rõ thêm tài liệu kèm theo trước khi quyết định thụ lý chính thức.');
+                    setHuongXuLy('ghep');
+                    setOfficerNote(
+                      'Phát hiện hồ sơ trùng đối tượng và nội dung với đơn Đ-2026-00125 đang thụ lý giải quyết. Đề xuất ghép lượt nhận này vào hồ sơ Đ-2026-00125 để theo dõi tập trung, không tạo mã đơn mới.'
+                    );
                   }}
-                  className={`p-3.5 rounded-xl border transition-all cursor-pointer ${huongXuLy === 'xac-minh'
-                    ? 'bg-blue-50/40 border-blue-400 ring-1 ring-blue-200'
-                    : 'bg-white border-slate-200 hover:border-slate-300'
-                    }`}
+                  className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
+                    huongXuLy === 'ghep'
+                      ? 'bg-indigo-50/40 border-indigo-400 ring-1 ring-indigo-200 shadow-2xs'
+                      : 'bg-white border-slate-200 hover:border-slate-300'
+                  }`}
                 >
                   <div className="flex items-start gap-3">
                     <div className="pt-0.5 shrink-0">
-                      {huongXuLy === 'xac-minh' ? (
-                        <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shadow-2xs">
+                      {huongXuLy === 'ghep' ? (
+                        <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold shadow-2xs">
                           ✓
                         </span>
                       ) : (
@@ -1940,18 +2010,75 @@ export default function BanPhanTich({
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
-                        <h4 className="text-xs sm:text-sm font-bold text-slate-900">
-                          Kiểm tra, xác minh thông tin bổ sung
-                        </h4>
-                        <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[11px] font-bold shrink-0">
-                          68%
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-xs sm:text-sm font-bold text-slate-900">
+                            Ghép đơn (Ghép vào Đơn đã có)
+                          </h4>
+                          <span className="px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 text-[10px] font-semibold border border-indigo-200">
+                            Không tạo đơn trùng
+                          </span>
+                        </div>
+                        <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[11px] font-bold shrink-0">
+                          88%
                         </span>
                       </div>
-                      <ul className="text-slate-600 space-y-0.5 mt-1.5 pl-0.5 leading-relaxed">
-                        <li>• Cần làm rõ một số nội dung, tài liệu kèm theo.</li>
-                        <li>• Có liên quan đến vụ việc đang điều tra.</li>
-                        <li>• Đề nghị liên hệ người gửi để bổ sung tài liệu liên quan.</li>
+                      <ul className="text-slate-600 space-y-1 mt-1.5 pl-0.5 leading-relaxed text-xs">
+                        <li>• <strong>Phát hiện tương đồng cao:</strong> Trùng người nộp / đối tượng bị phản ánh với hồ sơ đang giải quyết trong hệ thống.</li>
+                        <li>• <strong>Đơn gốc được đề xuất:</strong> <strong className="text-indigo-900 font-mono">Đ-2026-00125</strong> (Phản ánh cơ sở tái chế Minh Phát - Cán bộ thụ lý: Nguyễn Minh Anh).</li>
+                        <li>• <strong>Khuyến nghị nghiệp vụ:</strong> Tích hợp lượt nhận này vào hồ sơ đơn gốc làm tài liệu bổ sung, không nhân bản mã đơn mới.</li>
                       </ul>
+
+                      {/* Widget chi tiết hồ sơ đơn đích khi đang chọn Ghép đơn */}
+                      {huongXuLy === 'ghep' && (
+                        <div
+                          className="mt-3 p-3 bg-white rounded-xl border border-indigo-200 shadow-2xs space-y-2 animate-fade-in"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-bold text-indigo-900 uppercase tracking-wide flex items-center gap-1.5">
+                              <span className="material-symbols-outlined text-[15px] text-indigo-600">folder_shared</span>
+                              Hồ sơ đơn ghép đích
+                            </span>
+                            <span className="text-[10.5px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold border border-emerald-200">
+                              Trùng khớp 94%
+                            </span>
+                          </div>
+
+                          <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-[11.5px] space-y-1">
+                            <div className="flex items-center justify-between">
+                              <strong className="text-slate-900 font-mono text-xs">{selectedGhepDonCode}</strong>
+                              <span className="text-[10.5px] text-slate-500">Tiếp nhận: 10/09/2026</span>
+                            </div>
+                            <p className="text-slate-700 line-clamp-1">
+                              Phản ánh cơ sở tái chế phế liệu Minh Phát gây ô nhiễm môi trường và tiếng ồn tại TDP 4
+                            </p>
+                            <div className="flex items-center justify-between text-slate-500 pt-1 border-t border-slate-200/60 text-[11px]">
+                              <span>Người gửi: <strong>Đại diện KDC số 4</strong></span>
+                              <span>Thụ lý: <strong>Nguyễn Minh Anh</strong></span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between pt-1">
+                            <button
+                              type="button"
+                              onClick={() => setShowDetailTargetDonModal(true)}
+                              className="text-[11px] text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-1 cursor-pointer"
+                            >
+                              <span className="material-symbols-outlined text-[14px]">visibility</span>
+                              <span>Xem đối chiếu chi tiết hồ sơ gốc</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setShowGhepModal(true)}
+                              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer shadow-2xs"
+                            >
+                              <span className="material-symbols-outlined text-[14px]">merge_type</span>
+                              <span>Xác nhận ghép</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
                       <button
                         type="button"
                         onClick={(e) => {
@@ -1967,27 +2094,31 @@ export default function BanPhanTich({
                       </button>
                       {expandedCanCu === 'op2' && (
                         <div className="mt-2 p-2.5 bg-slate-50 rounded-lg border border-slate-200 text-[11px] text-slate-700 space-y-1 animate-fade-in">
-                          <p>• <strong>Khoản 2 Điều 147 Bộ luật Tố tụng Hình sự 2015:</strong> Thời hạn và thủ tục xác minh nguồn tin về tội phạm.</p>
+                          <p>• <strong>Điều 27 Thông tư 05/2021/TT-TTCP:</strong> Xử lý đối với đơn trùng lặp, đơn gửi nhiều lần, đơn bổ sung tài liệu chứng cứ cho vụ việc đang giải quyết.</p>
+                          <p>• <strong>Quy chế lưu trữ CSDL Đơn thư tập trung:</strong> Đảm bảo một vụ việc chỉ duy trì một hồ sơ thụ lý gốc, các tài liệu gửi tiếp theo được ghép vào hồ sơ đang thụ lý.</p>
                         </div>
                       )}
                     </div>
                   </div>
                 </div>
 
-                {/* Tùy chọn 3: Chuyển đơn đến đơn vị khác (35%) */}
+                {/* Tùy chọn 3: BÀN GIAO ĐƠN (STEP-03C) */}
                 <div
                   onClick={() => {
-                    setHuongXuLy('chuyen');
-                    setOfficerNote('Vụ việc không thuộc thẩm quyền giải quyết của đơn vị, đề xuất lập phiếu chuyển đơn đến cơ quan có thẩm quyền.');
+                    setHuongXuLy('ban-giao');
+                    setOfficerNote(
+                      'Hồ sơ thuộc thẩm quyền giải quyết của cơ quan/đơn vị khác hoặc thay đổi phân công cán bộ chuyên môn. Đề xuất lập thông tin bàn giao, biên bản bàn giao (STEP-03C) và chuyển hồ sơ theo quy định.'
+                    );
                   }}
-                  className={`p-3.5 rounded-xl border transition-all cursor-pointer ${huongXuLy === 'chuyen'
-                    ? 'bg-amber-50/40 border-amber-400 ring-1 ring-amber-200'
-                    : 'bg-white border-slate-200 hover:border-slate-300'
-                    }`}
+                  className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
+                    huongXuLy === 'ban-giao'
+                      ? 'bg-amber-50/50 border-amber-400 ring-1 ring-amber-200 shadow-2xs'
+                      : 'bg-white border-slate-200 hover:border-slate-300'
+                  }`}
                 >
                   <div className="flex items-start gap-3">
                     <div className="pt-0.5 shrink-0">
-                      {huongXuLy === 'chuyen' ? (
+                      {huongXuLy === 'ban-giao' ? (
                         <span className="w-5 h-5 rounded-full bg-amber-600 text-white flex items-center justify-center text-xs font-bold shadow-2xs">
                           ✓
                         </span>
@@ -1997,54 +2128,104 @@ export default function BanPhanTich({
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
-                        <h4 className="text-xs sm:text-sm font-bold text-slate-900">
-                          Chuyển đơn đến đơn vị khác
-                        </h4>
-                        <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[11px] font-bold shrink-0">
-                          35%
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-xs sm:text-sm font-bold text-slate-900">
+                            Bàn giao đơn (STEP-03C)
+                          </h4>
+                          <span className="px-1.5 py-0.2 rounded bg-amber-100 text-amber-900 text-[10px] font-bold">
+                            Chuyển đơn vị / Cán bộ khác
+                          </span>
+                        </div>
+                        <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[11px] font-bold shrink-0">
+                          Chuyển tiếp
                         </span>
                       </div>
-                      <ul className="text-slate-600 space-y-0.5 mt-1.5 pl-0.5 leading-relaxed">
-                        <li>• Không thuộc thẩm quyền giải quyết.</li>
-                        <li>• Đề nghị chuyển đến cơ quan có thẩm quyền.</li>
+                      <ul className="text-slate-600 space-y-1 mt-1.5 pl-0.5 leading-relaxed text-xs">
+                        <li>• <strong>Chọn nơi nhận:</strong> Cơ quan/Đơn vị ngoài (Thanh tra, Công an, QL Đô thị...) hoặc cán bộ chuyên môn cùng phòng.</li>
+                        <li>• <strong>Lập thông tin bàn giao:</strong> Bắt buộc có lý do bàn giao, danh mục hồ sơ tài liệu kèm theo, thời hạn tiếp nhận.</li>
+                        <li>• <strong>Sản phẩm đầu ra:</strong> Phiếu chuyển đơn / Biên bản bàn giao hồ sơ đơn (Mẫu số 01/BB-BG nếu cấu hình).</li>
                       </ul>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setExpandedCanCu(expandedCanCu === 'op3' ? null : 'op3');
-                        }}
-                        className="text-[11px] text-blue-600 hover:underline font-semibold flex items-center gap-0.5 mt-2 cursor-pointer"
-                      >
-                        <span>Xem căn cứ</span>
-                        <span className="material-symbols-outlined text-[13px]">
-                          {expandedCanCu === 'op3' ? 'expand_less' : 'expand_more'}
+
+                      <div className="mt-2.5 flex items-center justify-between pt-1">
+                        <span className="text-[11px] text-amber-800 font-medium">
+                          Ràng buộc: Bắt buộc có nơi nhận &amp; dữ liệu bàn giao
                         </span>
-                      </button>
-                      {expandedCanCu === 'op3' && (
-                        <div className="mt-2 p-2.5 bg-slate-50 rounded-lg border border-slate-200 text-[11px] text-slate-700 space-y-1 animate-fade-in">
-                          <p>• <strong>Điều 146 Bộ luật Tố tụng Hình sự:</strong> Chuyển tố giác, tin báo theo đúng thẩm quyền thụ lý.</p>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowBanGiaoModal(true);
+                          }}
+                          className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white text-xs font-bold rounded-lg shadow-2xs flex items-center gap-1.5 cursor-pointer transition-all"
+                        >
+                          <span className="material-symbols-outlined text-[15px]">swap_horiz</span>
+                          <span>Mở popup Bàn giao đơn (STEP-03C)</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tùy chọn 4: TRẢ LẠI ĐƠN (STEP-03D) */}
+                <div
+                  onClick={() => {
+                    setHuongXuLy('tra-lai');
+                    setOfficerNote(
+                      'Đơn không thuộc thẩm quyền giải quyết hoặc không đủ điều kiện thụ lý theo quy định pháp luật. Đề xuất lập thông báo trả lại đơn và hướng dẫn công dân nộp đến đúng cơ quan có thẩm quyền (STEP-03D).'
+                    );
+                  }}
+                  className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
+                    huongXuLy === 'tra-lai'
+                      ? 'bg-rose-50/50 border-rose-400 ring-1 ring-rose-200 shadow-2xs'
+                      : 'bg-white border-slate-200 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="pt-0.5 shrink-0">
+                      {huongXuLy === 'tra-lai' ? (
+                        <span className="w-5 h-5 rounded-full bg-rose-600 text-white flex items-center justify-center text-xs font-bold shadow-2xs">
+                          ✓
+                        </span>
+                      ) : (
+                        <span className="w-5 h-5 rounded-full border-2 border-slate-300 block" />
                       )}
-                      {huongXuLy === 'chuyen' && (
-                        <div className="mt-2.5 pt-2.5 border-t border-slate-100" onClick={(e) => e.stopPropagation()}>
-                          <label className="text-[11px] font-semibold text-slate-700 block mb-1">
-                            Đơn vị nhận chuyển đơn:
-                          </label>
-                          <select
-                            value={donViChuyen}
-                            onChange={(e) => setDonViChuyen(e.target.value)}
-                            className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:border-amber-500"
-                          >
-                            <option value="">— Chọn đơn vị tiếp nhận —</option>
-                            {DON_VI_OPTIONS.map((o) => (
-                              <option key={o} value={o}>
-                                {o}
-                              </option>
-                            ))}
-                          </select>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-xs sm:text-sm font-bold text-slate-900">
+                            Trả lại đơn (STEP-03D)
+                          </h4>
+                          <span className="px-1.5 py-0.2 rounded bg-rose-100 text-rose-900 text-[10px] font-bold">
+                            Không thụ lý / Trả hồ sơ
+                          </span>
                         </div>
-                      )}
+                        <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 text-[11px] font-bold shrink-0">
+                          Kết thúc Task
+                        </span>
+                      </div>
+                      <ul className="text-slate-600 space-y-1 mt-1.5 pl-0.5 leading-relaxed text-xs">
+                        <li>• <strong>Ghi lý do bắt buộc:</strong> Không thuộc thẩm quyền, nặc danh/mạo danh, đơn trùng lặp đã giải quyết, thiếu tài liệu...</li>
+                        <li>• <strong>Tạo văn bản trả lại:</strong> Thông báo trả lại đơn kèm hướng dẫn công dân gửi đến cơ quan có thẩm quyền.</li>
+                        <li>• <strong>Sản phẩm đầu ra:</strong> Thông báo / Văn bản trả lại (Mẫu 02/TB hoặc Phiếu hướng dẫn).</li>
+                      </ul>
+
+                      <div className="mt-2.5 flex items-center justify-between pt-1">
+                        <span className="text-[11px] text-rose-800 font-medium">
+                          Ràng buộc: Bắt buộc có lý do trả lại &amp; văn bản
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowTraLaiModal(true);
+                          }}
+                          className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-bold rounded-lg shadow-2xs flex items-center gap-1.5 cursor-pointer transition-all"
+                        >
+                          <span className="material-symbols-outlined text-[15px]">assignment_return</span>
+                          <span>Mở popup Trả lại đơn (STEP-03D)</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2060,7 +2241,18 @@ export default function BanPhanTich({
               <h3 className="text-xs sm:text-sm font-bold text-slate-900 tracking-tight font-headline-md">
                 6. Ý kiến của cán bộ tiếp nhận
               </h3>
-              <span className="text-[11px] text-slate-400 font-medium">Quyết định xử lý hồ sơ</span>
+              <div className="flex items-center gap-1 text-[11px] text-slate-500 font-medium">
+                <span>Hướng đang chọn:</span>
+                <span className="font-bold text-slate-800 uppercase font-mono">
+                  {huongXuLy === 'tiep-nhan'
+                    ? '1. Tiếp nhận (Tạo Đơn mới)'
+                    : huongXuLy === 'ghep'
+                    ? '2. Ghép đơn đã có'
+                    : huongXuLy === 'ban-giao'
+                    ? '3. Bàn giao đơn (STEP-03C)'
+                    : '4. Trả lại đơn (STEP-03D)'}
+                </span>
+              </div>
             </div>
 
             <div>
@@ -2079,10 +2271,8 @@ export default function BanPhanTich({
               </div>
             </div>
 
-
-
-            {/* Nhóm các nút hành động: Trả lại, Bàn giao, Tiếp nhận và xử lý */}
-            <div className="flex items-center justify-between pt-1 border-t border-slate-100">
+            {/* Nhóm các nút hành động: hỗ trợ 4 hướng: Tiếp nhận | Ghép đơn | Bàn giao | Trả lại */}
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => showToast('Đã lưu tạm ý kiến cán bộ tiếp nhận.')}
@@ -2092,59 +2282,84 @@ export default function BanPhanTich({
                 <span>Lưu nháp</span>
               </button>
 
-              <div className="flex items-center gap-2">
-                {/* BR-15: Chỉ khi dữ liệu đầu vào đã sẵn sàng cho cán bộ kiểm tra thì mới hiển thị các hướng xử lý Tiếp nhận / Bàn giao / Trả lại */}
-                {(aiState === 'done' || aiState === 'none') && (
-                  <>
-                    {/* Nút 1: Trả lại (BR-23, BR-24) */}
-                    <button
-                      type="button"
-                      onClick={() => setShowTraLaiModal(true)}
-                      className="px-3.5 py-2 rounded-xl border border-rose-200 bg-rose-50/80 hover:bg-rose-100 text-rose-700 active:scale-95 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
-                    >
-                      <span className="material-symbols-outlined text-[16px]">assignment_return</span>
-                      <span>Trả lại</span>
-                    </button>
-
-                    {/* Nút 2: Bàn giao (BR-19, BR-20, BR-21, BR-22) */}
-                    <button
-                      type="button"
-                      onClick={() => setShowBanGiaoModal(true)}
-                      className="px-3.5 py-2 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 active:scale-95 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
-                    >
-                      <span className="material-symbols-outlined text-[16px]">swap_horiz</span>
-                      <span>Bàn giao</span>
-                    </button>
-
-                    {/* Nút 3: Tiếp nhận (BR-16, BR-17, BR-18) */}
-                    <button
-                      type="button"
-                      onClick={() => setShowSubmitModal(true)}
-                      className="px-4 py-2.5 rounded-xl bg-[#004ac6] hover:bg-[#003da8] active:scale-95 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
-                    >
-                      <span className="material-symbols-outlined text-[16px]">task_alt</span>
-                      <span>Tiếp nhận</span>
-                    </button>
-                  </>
-                )}
-
-                {/* Nút 4: Chuyển tiếp nhận và xử lý (BR-03, BR-04, BR-05) */}
+              <div className="flex flex-wrap items-center gap-2">
                 {currentLuotNhanStatus === 'cho_chuyen' ? (
-                  <button
-                    type="button"
-                    onClick={handleOpenChuyenModal}
-                    disabled={aiState === 'reading'}
-                    className="px-4 py-2.5 rounded-xl bg-[#C62828] hover:bg-[#b71c1c] active:scale-95 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Chuyển tiếp nhận và xử lý (BR-03, BR-04, BR-05)"
-                  >
-                    <span className="material-symbols-outlined text-[17px]">forward_to_inbox</span>
-                    <span>Chuyển tiếp nhận và xử lý</span>
-                  </button>
+                  <>
+                    {huongXuLy === 'ban-giao' ? (
+                      <button
+                        type="button"
+                        onClick={() => setShowBanGiaoModal(true)}
+                        className="px-4.5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-95 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">swap_horiz</span>
+                        <span>Mở Popup Bàn giao đơn (STEP-03C)</span>
+                      </button>
+                    ) : huongXuLy === 'tra-lai' ? (
+                      <button
+                        type="button"
+                        onClick={() => setShowTraLaiModal(true)}
+                        className="px-4.5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">assignment_return</span>
+                        <span>Mở Popup Trả lại đơn (STEP-03D)</span>
+                      </button>
+                    ) : huongXuLy === 'ghep' ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setHuongXuLy('tiep-nhan');
+                            setOfficerNote('Hồ sơ phát sinh mới, không trùng lặp. Đề xuất tiếp nhận tạo Đơn mới để chuyển tiếp sang quy trình thụ lý giải quyết theo quy định.');
+                          }}
+                          className="px-3 py-2 rounded-xl border border-slate-200 hover:border-slate-300 bg-white text-slate-700 active:scale-95 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+                          title="Chuyển sang hướng Tiếp nhận (Tạo Đơn mới)"
+                        >
+                          <span className="material-symbols-outlined text-[15px] text-emerald-600">add_circle</span>
+                          <span>Đổi sang Tiếp nhận</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setShowGhepModal(true)}
+                          className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-700 hover:from-indigo-700 hover:to-blue-800 active:scale-95 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">merge_type</span>
+                          <span>Xác nhận ghép vào {selectedGhepDonCode}</span>
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setHuongXuLy('ghep');
+                            setOfficerNote('Phát hiện hồ sơ trùng đối tượng và nội dung với đơn Đ-2026-00125 đang thụ lý giải quyết. Đề xuất ghép lượt nhận này vào hồ sơ Đ-2026-00125 để theo dõi tập trung, không tạo mã đơn mới.');
+                          }}
+                          className="px-3 py-2 rounded-xl border border-slate-200 hover:border-slate-300 bg-white text-slate-700 active:scale-95 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+                          title="Chuyển sang hướng Ghép đơn đã có"
+                        >
+                          <span className="material-symbols-outlined text-[15px] text-indigo-600">merge_type</span>
+                          <span>Đổi sang Ghép đơn</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setShowSubmitModal(true)}
+                          className="px-4.5 py-2.5 rounded-xl bg-[#004ac6] hover:bg-[#003da8] active:scale-95 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">task_alt</span>
+                          <span>Tiếp nhận (Tạo Đơn mới)</span>
+                        </button>
+                      </>
+                    )}
+                  </>
                 ) : (
                   <span
                     className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border ${
                       currentLuotNhanStatus === 'da_chuyen'
                         ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                        : currentLuotNhanStatus === 'da_ghep'
+                        ? 'bg-indigo-50 text-indigo-800 border-indigo-300'
                         : currentLuotNhanStatus === 'da_ban_giao'
                         ? 'bg-amber-50 text-amber-800 border-amber-300'
                         : 'bg-rose-50 text-rose-800 border-rose-300'
@@ -2153,13 +2368,17 @@ export default function BanPhanTich({
                     <span className="material-symbols-outlined text-[16px]">
                       {currentLuotNhanStatus === 'da_chuyen'
                         ? 'check_circle'
+                        : currentLuotNhanStatus === 'da_ghep'
+                        ? 'merge_type'
                         : currentLuotNhanStatus === 'da_ban_giao'
                         ? 'swap_horiz'
                         : 'assignment_return'}
                     </span>
                     <span>
                       {currentLuotNhanStatus === 'da_chuyen'
-                        ? 'Đã chuyển xử lý'
+                        ? 'Đã tiếp nhận tạo Đơn'
+                        : currentLuotNhanStatus === 'da_ghep'
+                        ? `Đã ghép vào ${selectedGhepDonCode}`
                         : currentLuotNhanStatus === 'da_ban_giao'
                         ? 'Đã bàn giao'
                         : 'Đã trả lại'}
@@ -2216,223 +2435,49 @@ export default function BanPhanTich({
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL TRẢ LẠI ĐƠN (BR-23, BR-24)                                          */}
+      {/* MODAL BÀN GIAO ĐƠN (STEP-03C)                                             */}
       {/* ========================================================================= */}
-      {showTraLaiModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full p-6 space-y-4 animate-scale-up">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-2xl">assignment_return</span>
-              </div>
-              <div>
-                <h3 className="font-bold text-slate-900 text-base">Xác nhận trả lại đơn</h3>
-                <p className="text-xs text-slate-500">
-                  {luotNhan?.id ? (luotNhan.id.startsWith('LN-') ? `Đ-${luotNhan.id.replace('LN-', '')}` : luotNhan.id) : 'Đ-2026-00125'} • Người gửi: {extractData.nguoiGui || luotNhan?.nguoiNop || 'Công dân'}
-                </p>
-              </div>
-            </div>
-
-            {/* BR-23 Callout */}
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 leading-relaxed">
-              <strong>Lưu ý (BR-23 &amp; BR-24):</strong> Đây là hành động trả hồ sơ cho người dân / người nộp hồ sơ (không phải trả về cán bộ xử lý trước). Sau khi xác nhận, hồ sơ chuyển trạng thái <strong>Đã trả lại</strong> và Task xử lý kết thúc.
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Lý do trả lại đơn <span className="text-red-500">*</span> (BR-24):
-                </label>
-                <select
-                  value={traLaiReason}
-                  onChange={(e) => setTraLaiReason(e.target.value)}
-                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-rose-500"
-                >
-                  <option value="Không thuộc thẩm quyền giải quyết">Không thuộc thẩm quyền giải quyết</option>
-                  <option value="Thiếu hồ sơ tài liệu chứng minh theo quy định">Thiếu hồ sơ tài liệu chứng minh theo quy định</option>
-                  <option value="Đơn trùng lặp nội dung đã có thông báo trả lời">Đơn trùng lặp nội dung đã có thông báo trả lời</option>
-                  <option value="Người gửi có đơn xin rút yêu cầu xử lý">Người gửi có đơn xin rút yêu cầu xử lý</option>
-                  <option value="Đơn không đủ điều kiện thụ lý giải quyết theo luật định">Đơn không đủ điều kiện thụ lý giải quyết theo luật định</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Nội dung thông báo hướng dẫn người nộp hồ sơ:
-                </label>
-                <textarea
-                  rows={2}
-                  value={traLaiHuongDan}
-                  onChange={(e) => setTraLaiHuongDan(e.target.value)}
-                  placeholder="Nhập nội dung hướng dẫn người dân..."
-                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none resize-none"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => setShowTraLaiModal(false)}
-                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmTraLai}
-                className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-semibold cursor-pointer flex items-center gap-1 shadow-xs"
-              >
-                <span className="material-symbols-outlined text-[16px]">send</span>
-                <span>Xác nhận trả lại</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <BanGiaoDonModal
+        isOpen={showBanGiaoModal}
+        onClose={() => setShowBanGiaoModal(false)}
+        onSubmit={handleBanGiaoModalSubmit}
+        currentOfficerName="Nguyễn Minh Anh"
+        currentDepartmentName="Phòng Tiếp công dân & Xử lý đơn"
+        donInfo={{
+          code: luotNhan?.id ? (luotNhan.id.startsWith('LN-') ? `Đ-${luotNhan.id.replace('LN-', '')}` : luotNhan.id) : 'Đ-2026-00125',
+          luotNhanId: luotNhan?.id || 'LN-2026-0819',
+          nguoiNop: extractData.nguoiGui || luotNhan?.nguoiNop || 'Nguyễn Văn A',
+          cccd: extractData.cccd || '001088012345',
+          sdt: extractData.sdt || '0983 123 456',
+          diaChi: extractData.diaChi || 'Cầu Giấy, Hà Nội',
+          loaiDon: extractData.loaiNoiDung || 'Đơn tiếp nhận',
+          noiDung: extractData.noiDungTomTat || luotNhan?.noiDung || 'Đơn đề xuất giải quyết vụ việc',
+          ngayNhan: luotNhan?.ngayNhan || '16/09/2026',
+          suggestedDeptId: 'pc03',
+        }}
+      />
 
       {/* ========================================================================= */}
-      {/* MODAL BÀN GIAO ĐƠN (BR-19, BR-20, BR-21, BR-22)                           */}
+      {/* MODAL TRẢ LẠI ĐƠN (STEP-03D)                                              */}
       {/* ========================================================================= */}
-      {showBanGiaoModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full p-6 space-y-4 animate-scale-up">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-2xl">swap_horiz</span>
-              </div>
-              <div>
-                <h3 className="font-bold text-slate-900 text-base">Bàn giao hồ sơ đơn</h3>
-                <p className="text-xs text-slate-500">
-                  {luotNhan?.id ? (luotNhan.id.startsWith('LN-') ? `Đ-${luotNhan.id.replace('LN-', '')}` : luotNhan.id) : 'Đ-2026-00125'} • BR-19 đến BR-22
-                </p>
-              </div>
-            </div>
-
-            {/* BR-19: 2 hướng bàn giao */}
-            <div className="space-y-2">
-              <label className="block text-xs font-bold text-slate-800 uppercase tracking-wide">
-                Hướng bàn giao (BR-19):
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setBanGiaoHuong('don_vi_khac')}
-                  className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all ${
-                    banGiaoHuong === 'don_vi_khac'
-                      ? 'bg-amber-50 border-amber-500 ring-2 ring-amber-200 shadow-2xs'
-                      : 'bg-slate-50 hover:bg-slate-100 border-slate-200'
-                  }`}
-                >
-                  <div className="font-bold text-xs text-slate-900">1. Đơn vị khác</div>
-                  <div className="text-[10.5px] text-slate-500 mt-0.5">Cơ quan / Đơn vị ngoài</div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setBanGiaoHuong('can_bo_khac')}
-                  className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all ${
-                    banGiaoHuong === 'can_bo_khac'
-                      ? 'bg-amber-50 border-amber-500 ring-2 ring-amber-200 shadow-2xs'
-                      : 'bg-slate-50 hover:bg-slate-100 border-slate-200'
-                  }`}
-                >
-                  <div className="font-bold text-xs text-slate-900">2. Cán bộ trong phòng</div>
-                  <div className="text-[10.5px] text-slate-500 mt-0.5">Cùng phòng nghiệp vụ</div>
-                </button>
-              </div>
-            </div>
-
-            {banGiaoHuong === 'don_vi_khac' ? (
-              <div className="space-y-3 p-3 bg-slate-50 border border-slate-200 rounded-xl">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Đơn vị tiếp nhận bàn giao <span className="text-red-500">*</span> (BR-20):
-                  </label>
-                  <select
-                    value={banGiaoUnit}
-                    onChange={(e) => setBanGiaoUnit(e.target.value)}
-                    className="w-full p-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-amber-500"
-                  >
-                    {DEPARTMENTS.map((d) => (
-                      <option key={d.id} value={d.name}>
-                        {d.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Lý do bàn giao đơn vị khác <span className="text-red-500">*</span> (BR-20):
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={lyDoBanGiao}
-                    onChange={(e) => setLyDoBanGiao(e.target.value)}
-                    placeholder="Bắt buộc nhập lý do bàn giao theo thẩm quyền..."
-                    className="w-full p-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-amber-500 resize-none"
-                  />
-                </div>
-                <div className="p-2.5 bg-amber-50/80 rounded-lg border border-amber-200 text-[11px] text-amber-800">
-                  * BR-22: Sau khi bàn giao, hồ sơ chuyển trạng thái <strong>Đã bàn giao / Chờ bên nhận xác nhận</strong>.
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-3 p-3 bg-slate-50 border border-slate-200 rounded-xl">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Cán bộ nhận bàn giao <span className="text-red-500">*</span> (BR-21):
-                  </label>
-                  <select
-                    value={banGiaoCanBoId}
-                    onChange={(e) => setBanGiaoCanBoId(e.target.value)}
-                    className="w-full p-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-amber-500"
-                  >
-                    <option value="">-- Chọn cán bộ nhận bàn giao --</option>
-                    {OFFICERS.filter((o) => o.departmentId === 'tiep-dan').map((o) => (
-                      <option key={o.id} value={o.id}>
-                        {o.name} - {o.role}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Nội dung ghi chú bàn giao:
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={lyDoBanGiao}
-                    onChange={(e) => setLyDoBanGiao(e.target.value)}
-                    placeholder="Nội dung và lưu ý khi bàn giao công việc..."
-                    className="w-full p-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-amber-500 resize-none"
-                  />
-                </div>
-                <div className="p-2.5 bg-blue-50/80 rounded-lg border border-blue-200 text-[11px] text-blue-800">
-                  * BR-21: Hệ thống chuyển Task sang cán bộ mới, không tạo Task song song trùng lặp.
-                </div>
-              </div>
-            )}
-
-            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => setShowBanGiaoModal(false)}
-                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmBanGiao}
-                className="px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold cursor-pointer flex items-center gap-1 shadow-xs active:scale-95"
-              >
-                <span className="material-symbols-outlined text-[16px]">forward</span>
-                <span>Xác nhận bàn giao</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <TraLaiDonModal
+        isOpen={showTraLaiModal}
+        onClose={() => setShowTraLaiModal(false)}
+        onSubmit={handleTraLaiModalSubmit}
+        currentOfficerName="Nguyễn Minh Anh"
+        currentDepartmentName="Phòng Tiếp công dân & Xử lý đơn"
+        donInfo={{
+          code: luotNhan?.id ? (luotNhan.id.startsWith('LN-') ? `Đ-${luotNhan.id.replace('LN-', '')}` : luotNhan.id) : 'Đ-2026-00125',
+          luotNhanId: luotNhan?.id || 'LN-2026-0819',
+          nguoiNop: extractData.nguoiGui || luotNhan?.nguoiNop || 'Nguyễn Văn A',
+          cccd: extractData.cccd || '001088012345',
+          sdt: extractData.sdt || '0983 123 456',
+          diaChi: extractData.diaChi || 'Cầu Giấy, Hà Nội',
+          loaiDon: extractData.loaiNoiDung || 'Đơn tiếp nhận',
+          noiDung: extractData.noiDungTomTat || luotNhan?.noiDung || 'Đơn đề xuất giải quyết vụ việc',
+          ngayNhan: luotNhan?.ngayNhan || '16/09/2026',
+        }}
+      />
 
       {/* ========================================================================= */}
       {/* MODAL TIẾP NHẬN ĐƠN (BR-16, BR-17, BR-18)                                 */}
@@ -2653,6 +2698,235 @@ export default function BanPhanTich({
           noiDungTomTat: extractData.noiDungTomTat || luotNhan?.noiDung,
         }}
       />
+
+      {/* ========================================================================= */}
+      {/* MODAL XÁC NHẬN GHÉP ĐƠN VÀO HỒ SƠ ĐÃ CÓ                                   */}
+      {/* ========================================================================= */}
+      {showGhepModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full p-6 space-y-4 animate-scale-up">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-200 text-indigo-600 flex items-center justify-center shrink-0 shadow-2xs">
+                <span className="material-symbols-outlined text-2xl">merge_type</span>
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900 text-base">Xác nhận ghép vào hồ sơ đơn đã có</h3>
+                <p className="text-xs text-slate-500 font-mono">
+                  Lượt nhận: {luotNhan?.id || 'LN-56/2026-GOVEX'} ➔ Đơn đích: {selectedGhepDonCode}
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3 bg-indigo-50/70 border border-indigo-200 rounded-xl text-xs text-indigo-950 leading-relaxed space-y-1">
+              <div className="font-bold flex items-center gap-1.5 text-indigo-900">
+                <span className="material-symbols-outlined text-[16px]">info</span>
+                <span>Quy tắc nghiệp vụ Tiếp nhận đơn (Điều 27 TT 05/2021/TT-TTCP):</span>
+              </div>
+              <p>
+                Lượt nhận này sẽ được tích hợp trực tiếp vào hồ sơ đơn <strong>{selectedGhepDonCode}</strong> dưới dạng tài liệu bổ sung / đơn gửi tiếp theo. Hệ thống sẽ <strong>không tạo mã đơn mới</strong> để tránh nhân bản trùng lặp vụ việc.
+              </p>
+            </div>
+
+            {/* Thông tin hồ sơ đơn đích */}
+            <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 font-medium">Hồ sơ tiếp nhận đích:</span>
+                <span className="font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 font-mono">{selectedGhepDonCode}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block text-[11px]">Tiêu đề vụ việc:</span>
+                <strong className="text-slate-800 leading-snug block mt-0.5">
+                  Phản ánh cơ sở tái chế phế liệu Minh Phát gây ô nhiễm môi trường và tiếng ồn tại TDP 4
+                </strong>
+              </div>
+              <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-200/80 text-[11.5px]">
+                <div>
+                  <span className="text-slate-400 block text-[10.5px]">Người đứng đơn gốc:</span>
+                  <span className="font-semibold text-slate-700">Đại diện KDC số 4</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[10.5px]">Cán bộ đang thụ lý:</span>
+                  <span className="font-semibold text-slate-700">Nguyễn Minh Anh</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Lý do ghép hồ sơ <span className="text-red-500">*</span>:
+                </label>
+                <select
+                  value={lyDoGhep}
+                  onChange={(e) => setLyDoGhep(e.target.value)}
+                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-indigo-500"
+                >
+                  <option value="Bổ sung tài liệu, chứng cứ cho hồ sơ đang thụ lý giải quyết">
+                    Bổ sung tài liệu, chứng cứ cho hồ sơ đang thụ lý giải quyết
+                  </option>
+                  <option value="Đơn gửi nhiều lần trùng người nộp và đối tượng bị phản ánh (đơn trùng)">
+                    Đơn gửi nhiều lần trùng người nộp và đối tượng bị phản ánh (đơn trùng)
+                  </option>
+                  <option value="Đơn cùng nội dung của đồng đứng đơn / người liên quan">
+                    Đơn cùng nội dung của đồng đứng đơn / người liên quan
+                  </option>
+                  <option value="Văn bản giải trình, tài liệu phát sinh mới phục vụ xác minh">
+                    Văn bản giải trình, tài liệu phát sinh mới phục vụ xác minh
+                  </option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Ghi chú của cán bộ ghép hồ sơ:
+                </label>
+                <textarea
+                  rows={2}
+                  value={ghiChuGhep}
+                  onChange={(e) => setGhiChuGhep(e.target.value)}
+                  placeholder="Nhập ghi chú xử lý ghép hồ sơ..."
+                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setShowGhepModal(false)}
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmGhep}
+                className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs font-bold cursor-pointer flex items-center gap-1.5 shadow-xs transition-all"
+              >
+                <span className="material-symbols-outlined text-[16px]">merge_type</span>
+                <span>Xác nhận ghép hồ sơ</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL ĐỐI CHIẾU CHI TIẾT HỒ SƠ ĐƠN GỐC ĐỂ GHÉP                           */}
+      {/* ========================================================================= */}
+      {showDetailTargetDonModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-2xl w-full p-6 space-y-4 animate-scale-up max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-600 flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-xl">compare_arrows</span>
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-base">Đối chiếu Lượt nhận &amp; Hồ sơ Đơn gốc</h3>
+                  <p className="text-xs text-slate-500 font-mono">
+                    {luotNhan?.id || 'LN-56/2026-GOVEX'} ⟷ {selectedGhepDonCode}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDetailTargetDonModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-lg">close</span>
+              </button>
+            </div>
+
+            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-xs text-emerald-900">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-emerald-600">verified</span>
+                <span>Độ tương đồng nội dung &amp; chủ thể do AI đối soát:</span>
+              </div>
+              <strong className="text-sm font-bold text-emerald-800">94% (Khuyến nghị Ghép đơn)</strong>
+            </div>
+
+            {/* Bảng so sánh đối chiếu */}
+            <div className="border border-slate-200 rounded-xl overflow-hidden text-xs">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-100 border-b border-slate-200 text-slate-700 text-[11px] uppercase tracking-wider font-semibold">
+                    <th className="p-2.5 w-1/4">Tiêu chí so sánh</th>
+                    <th className="p-2.5 w-3/8 bg-blue-50/50 text-blue-900">Lượt nhận mới ({luotNhan?.id || 'LN-56'})</th>
+                    <th className="p-2.5 w-3/8 bg-indigo-50/50 text-indigo-900">Đơn gốc ({selectedGhepDonCode})</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-slate-700">
+                  <tr>
+                    <td className="p-2.5 font-semibold text-slate-500">Người đứng đơn</td>
+                    <td className="p-2.5">{extractData.nguoiGui || 'Đại diện KDC số 4'}</td>
+                    <td className="p-2.5 flex items-center justify-between">
+                      <span>Đại diện khu dân cư số 4</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">Trùng khớp</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="p-2.5 font-semibold text-slate-500">Số CCCD / Định danh</td>
+                    <td className="p-2.5 font-mono">{extractData.cccd || '001075018392'}</td>
+                    <td className="p-2.5 font-mono flex items-center justify-between">
+                      <span>001075018392</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">100%</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="p-2.5 font-semibold text-slate-500">Đối tượng bị phản ánh</td>
+                    <td className="p-2.5">{extractData.doiTuong || 'Cơ sở tái chế Minh Phát'}</td>
+                    <td className="p-2.5 flex items-center justify-between">
+                      <span>Cơ sở tái chế Minh Phát</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">Trùng khớp</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="p-2.5 font-semibold text-slate-500">Địa bàn xảy ra vụ việc</td>
+                    <td className="p-2.5">{extractData.diaDiem || 'Quận Cầu Giấy, Hà Nội'}</td>
+                    <td className="p-2.5 flex items-center justify-between">
+                      <span>Khu dân cư số 4, Cầu Giấy, Hà Nội</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">Cùng địa bàn</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="p-2.5 font-semibold text-slate-500">Tình trạng thụ lý</td>
+                    <td className="p-2.5 text-amber-700 font-medium">Lượt nhận mới tiếp nhận</td>
+                    <td className="p-2.5 text-blue-700 font-medium">Đang thụ lý giải quyết (Nguyễn Minh Anh)</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2.5 font-semibold text-slate-500">Điểm mới bổ sung</td>
+                    <td className="p-2.5 text-slate-800" colSpan={2}>
+                      Lượt nhận mới cung cấp thêm file <strong>Hợp đồng góp vốn.pdf</strong> và biên bản đo đạc hiện trạng tiếng ồn ban đêm để củng cố chứng cứ cho đơn gốc.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setShowDetailTargetDonModal(false)}
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer"
+              >
+                Đóng
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDetailTargetDonModal(false);
+                  setShowGhepModal(true);
+                }}
+                className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs font-bold cursor-pointer flex items-center gap-1.5 shadow-xs transition-all"
+              >
+                <span className="material-symbols-outlined text-[16px]">merge_type</span>
+                <span>Tiến hành ghép vào đơn này</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

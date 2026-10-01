@@ -1,12 +1,19 @@
 import React, { useState } from 'react';
 import { Screen } from "../types";
+import { CurrentUserAccount } from "../types/signing";
 
 interface SidebarProps {
   screen: Screen;
   onNav: (s: Screen) => void;
+  currentAccount?: CurrentUserAccount;
+  signingCounts?: {
+    choTrinh: number;
+    daTrinh: number;
+    yeuCauSua: number;
+  };
 }
 
-export default function Sidebar({ screen, onNav }: SidebarProps) {
+export default function Sidebar({ screen, onNav, currentAccount, signingCounts }: SidebarProps) {
   const isNhanDon = ["nhan-don-list", "nhan-don-them", "ban-phan-tich"].includes(screen);
   const isCongViec = screen === "cong-viec" || screen === "don-tiep-nhan" || screen === "quy-trinh-xu-ly";
   const isQuanTri = [
@@ -41,7 +48,19 @@ export default function Sidebar({ screen, onNav }: SidebarProps) {
               </span>
               <span className="text-[13.5px] font-medium">Công việc của tôi</span>
             </div>
-            {isCongViec && <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>}
+            <div className="flex items-center gap-1.5">
+              {currentAccount?.role === 'lanh_dao' && (signingCounts?.daTrinh || 0) > 0 && (
+                <span className="px-1.5 py-0.5 rounded-md bg-indigo-600 text-white text-[10.5px] font-bold font-label-technical animate-pulse" title="Văn bản đang chờ ký duyệt">
+                  {signingCounts?.daTrinh} chờ ký
+                </span>
+              )}
+              {currentAccount?.role === 'can_bo' && (signingCounts?.yeuCauSua || 0) > 0 && (
+                <span className="px-1.5 py-0.5 rounded-md bg-rose-500 text-white text-[10.5px] font-bold font-label-technical" title="Có văn bản bị Lãnh đạo yêu cầu sửa">
+                  {signingCounts?.yeuCauSua} sửa
+                </span>
+              )}
+              {isCongViec && <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>}
+            </div>
           </button>
 
           {/* Nhận đơn */}

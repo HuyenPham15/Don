@@ -184,6 +184,17 @@ export default function QuyTrinhXuLyDon({
               <span>Hồ sơ chi tiết</span>
             </button>
 
+            {/* Nút Trình ký văn bản vụ việc */}
+            <button
+              type="button"
+              onClick={() => onNav('trinh-ky')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 text-[#004ac6] text-xs font-bold shadow-2xs transition-colors cursor-pointer"
+              title="Mở màn hình Trình ký văn bản cho hồ sơ này"
+            >
+              <span className="material-symbols-outlined text-[15px] text-[#004ac6]">drive_file_move</span>
+              <span>Trình ký văn bản</span>
+            </button>
+
             {/* Nút thay đổi loại đơn (Rule 9) */}
             <button
               type="button"
@@ -219,10 +230,10 @@ export default function QuyTrinhXuLyDon({
           initialWorkflowType={
             workflowState.loaiDonConfirmed?.toLowerCase().includes('khiếu nại')
               ? 'khieu-nai'
-              : workflowState.loaiDonConfirmed?.toLowerCase().includes('tố giác') ||
-                workflowState.loaiDonConfirmed?.toLowerCase().includes('hình sự')
-              ? 'to-giac'
-              : 'khoi-kien'
+              : workflowState.loaiDonConfirmed?.toLowerCase().includes('khởi kiện') ||
+                workflowState.loaiDonConfirmed?.toLowerCase().includes('dân sự')
+              ? 'khoi-kien'
+              : 'to-cao-govex'
           }
           donCode={workflowState.donCode}
           donTitle={workflowState.donTitle}
