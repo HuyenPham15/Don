@@ -266,6 +266,92 @@ const MOCK_CITIZENS_DATA: Record<
   },
 };
 
+// Dữ liệu mô phỏng CSDL Đăng ký doanh nghiệp / Thuế phục vụ tra cứu theo MST
+const MOCK_ORGANIZATIONS_DATA: Record<
+  string,
+  {
+    ten: string;
+    tenVietTat: string;
+    mst: string;
+    loaiHinh: string;
+    sdt: string;
+    email: string;
+    tinhThanh: string;
+    phuongXa: string;
+    diaChiChiTiet: string;
+    ddHoTen: string;
+    ddChucVu: string;
+    ddCccd: string;
+    ddSdt: string;
+    ddEmail: string;
+  }
+> = {
+  '0100109106': {
+    ten: 'Tập đoàn Công nghiệp - Viễn thông Quân đội (Viettel)',
+    tenVietTat: 'VIETTEL',
+    mst: '0100109106',
+    loaiHinh: 'Cơ quan nhà nước / Đơn vị sự nghiệp',
+    sdt: '024 6255 6789',
+    email: 'cskh@viettel.com.vn',
+    tinhThanh: 'Thành phố Hà Nội',
+    phuongXa: 'Phường Dịch Vọng Hậu (Cầu Giấy)',
+    diaChiChiTiet: 'Lô D26 Khu đô thị mới Cầu Giấy, Yên Hòa, Cầu Giấy',
+    ddHoTen: 'Tào Đức Thắng',
+    ddChucVu: 'Chủ tịch kiêm Tổng Giám đốc',
+    ddCccd: '001073008912',
+    ddSdt: '0983 123 456',
+    ddEmail: 'thangtd@viettel.com.vn',
+  },
+  '0101234567': {
+    ten: 'Công ty Cổ phần Đầu tư và Phát triển Đô thị Sông Hồng',
+    tenVietTat: 'SONGHONG CORP',
+    mst: '0101234567',
+    loaiHinh: 'Công ty Cổ phần',
+    sdt: '024 3822 5566',
+    email: 'info@songhongcorp.vn',
+    tinhThanh: 'Thành phố Hà Nội',
+    phuongXa: 'Phường Kim Mã (Ba Đình)',
+    diaChiChiTiet: 'Số 165 Thái Hà, Đống Đa',
+    ddHoTen: 'Trần Văn Mạnh',
+    ddChucVu: 'Tổng Giám đốc',
+    ddCccd: '001085002468',
+    ddSdt: '0913 222 333',
+    ddEmail: 'manhtv@songhongcorp.vn',
+  },
+  '0300123456': {
+    ten: 'Công ty TNHH Thương mại & Dịch vụ Tân Phát Hưng',
+    tenVietTat: 'TAN PHAT HUNG',
+    mst: '0300123456',
+    loaiHinh: 'Công ty TNHH',
+    sdt: '028 3910 8888',
+    email: 'contact@tanphathung.com.vn',
+    tinhThanh: 'Thành phố Hồ Chí Minh',
+    phuongXa: 'Phường Bến Nghé (Quận 1)',
+    diaChiChiTiet: 'Số 12 Lê Duẩn, Phường Bến Nghé, Quận 1',
+    ddHoTen: 'Lê Hoàng Nam',
+    ddChucVu: 'Giám đốc',
+    ddCccd: '079082001122',
+    ddSdt: '0903 888 999',
+    ddEmail: 'namlh@tanphathung.com.vn',
+  },
+  '0100112233': {
+    ten: 'Tổng Công ty Xây dựng Công trình Giao thông 1 - CTCP',
+    tenVietTat: 'CIENCO 1',
+    mst: '0100112233',
+    loaiHinh: 'Công ty Cổ phần',
+    sdt: '024 3851 4455',
+    email: 'vanphong@cienco1.com',
+    tinhThanh: 'Thành phố Hà Nội',
+    phuongXa: 'Phường Phương Mai (Đống Đa)',
+    diaChiChiTiet: 'Số 623 La Thành, Ba Đình',
+    ddHoTen: 'Nguyễn Đăng Giáp',
+    ddChucVu: 'Chủ tịch HĐQT',
+    ddCccd: '001079001357',
+    ddSdt: '0912 111 222',
+    ddEmail: 'giapnd@cienco1.com',
+  },
+};
+
 export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
   // ─── 1. THÔNG TIN TIẾP NHẬN STATE ─────────────────────────────
   const todayStr = new Date().toISOString().split('T')[0];
@@ -393,6 +479,38 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
     showToast('Đã quét thông tin thẻ CCCD gắn chip thành công!');
   };
 
+  // Tra cứu công dân người nộp đơn chính theo CCCD (CSDL Dân cư)
+  const handleSearchCccdCaNhan = (cccdQuery?: string) => {
+    const raw = cccdQuery !== undefined ? cccdQuery : cnCccd;
+    const q = raw.trim().replace(/\s+/g, '');
+    if (!q) {
+      showToast('Vui lòng nhập số CCCD để tra cứu');
+      return;
+    }
+    const citizen = MOCK_CITIZENS_DATA[q];
+    if (citizen) {
+      setCnHoTen(citizen.hoTen);
+      setCnCccd(citizen.cccd);
+      setCnNgaySinh(citizen.ngaySinh);
+      setCnGioiTinh(citizen.gioiTinh);
+      setCnSdt(citizen.sdt);
+      setCnEmail(citizen.email);
+      setCnTinhThanh(citizen.tinhThanh);
+      const wardList = PROVINCES_AND_WARDS[citizen.tinhThanh] || [];
+      if (wardList.includes(citizen.phuongXa)) {
+        setIsCustomPhuongXa(false);
+      } else {
+        setIsCustomPhuongXa(true);
+      }
+      setCnPhuongXa(citizen.phuongXa);
+      setCnDiaChiChiTiet(citizen.diaChiChiTiet);
+      setErrors((prev) => ({ ...prev, cnHoTen: '', cnCccd: '' }));
+      showToast(`Đã tìm thấy công dân: ${citizen.hoTen} (${citizen.cccd}) từ CSDL Dân cư`);
+    } else {
+      showToast(`Không tìm thấy CCCD "${q}" trong CSDL Dân cư. Bạn có thể nhập thông tin thủ công.`);
+    }
+  };
+
   // Quét tài liệu từ máy scan
   const handleScanDocument = () => {
     const newDoc: UploadedFile = {
@@ -446,6 +564,69 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
       setIsCustomUqPhuongXa(false);
       setErrors((prev) => ({ ...prev, cnUqHoTen: '', cnUqCccd: '' }));
       showToast(`Đã tìm thấy công dân: ${citizen.hoTen} (${citizen.cccd})`);
+    } else {
+      showToast(`Không tìm thấy CCCD "${q}" trong CSDL Dân cư. Bạn có thể nhập thông tin thủ công.`);
+    }
+  };
+
+  // Tra cứu tổ chức / doanh nghiệp theo MST (CSDL Đăng ký doanh nghiệp)
+  const handleSearchMstToChuc = (mstQuery?: string) => {
+    const raw = mstQuery !== undefined ? mstQuery : tcMst;
+    const q = raw.trim().replace(/\s+/g, '');
+    if (!q) {
+      showToast('Vui lòng nhập Mã số thuế / Mã định danh để tra cứu');
+      return;
+    }
+    const org = MOCK_ORGANIZATIONS_DATA[q];
+    if (org) {
+      setTcTen(org.ten);
+      setTcMst(org.mst);
+      setTcTenVietTat(org.tenVietTat || '');
+      setTcLoaiHinh(org.loaiHinh || 'Công ty TNHH');
+      setTcSdt(org.sdt || '');
+      setTcEmail(org.email || '');
+      setTcTinhThanh(org.tinhThanh);
+      const wardList = PROVINCES_AND_WARDS[org.tinhThanh] || [];
+      if (wardList.includes(org.phuongXa)) {
+        setIsCustomTcPhuongXa(false);
+      } else {
+        setIsCustomTcPhuongXa(true);
+      }
+      setTcPhuongXa(org.phuongXa);
+      setTcDiaChiChiTiet(org.diaChiChiTiet || '');
+
+      // Tự động điền người đại diện nếu có trong hồ sơ
+      if (org.ddHoTen) {
+        setTcDdHoTen(org.ddHoTen);
+        setTcDdChucVu(org.ddChucVu || 'Giám đốc');
+        setTcDdCccd(org.ddCccd || '');
+        setTcDdSdt(org.ddSdt || '');
+        setTcDdEmail(org.ddEmail || '');
+      }
+
+      setErrors((prev) => ({ ...prev, tcTen: '', tcMst: '', tcDdHoTen: '' }));
+      showToast(`Đã tìm thấy tổ chức: ${org.ten} (MST: ${org.mst}) từ CSDL Doanh nghiệp`);
+    } else {
+      showToast(`Không tìm thấy MST "${q}" trong CSDL Doanh nghiệp. Bạn có thể nhập thông tin thủ công.`);
+    }
+  };
+
+  // Tra cứu người đại diện tổ chức theo CCCD (CSDL Dân cư)
+  const handleSearchCccdDaiDienToChuc = (cccdQuery?: string) => {
+    const raw = cccdQuery !== undefined ? cccdQuery : tcDdCccd;
+    const q = raw.trim().replace(/\s+/g, '');
+    if (!q) {
+      showToast('Vui lòng nhập số CCCD để tra cứu');
+      return;
+    }
+    const citizen = MOCK_CITIZENS_DATA[q];
+    if (citizen) {
+      setTcDdHoTen(citizen.hoTen);
+      setTcDdCccd(citizen.cccd);
+      setTcDdSdt(citizen.sdt);
+      setTcDdEmail(citizen.email);
+      setErrors((prev) => ({ ...prev, tcDdHoTen: '' }));
+      showToast(`Đã tìm thấy người đại diện: ${citizen.hoTen} (${citizen.cccd}) từ CSDL Dân cư`);
     } else {
       showToast(`Không tìm thấy CCCD "${q}" trong CSDL Dân cư. Bạn có thể nhập thông tin thủ công.`);
     }
@@ -739,27 +920,7 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
               )}
             </div>
 
-            {/* Ngày làm đơn */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-[12px] font-semibold text-slate-700">
-                  Ngày làm đơn
-                </label>
-              </div>
-              <input
-                type="date"
-                value={ngayLamDon}
-                onChange={(e) => {
-                  setNgayLamDon(e.target.value);
-                  if (errors.ngayLamDon) setErrors((prev) => ({ ...prev, ngayLamDon: '' }));
-                }}
-                className={`w-full p-2.5 bg-slate-50 border rounded-xl text-[13px] text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all ${errors.ngayLamDon ? 'border-red-500' : 'border-slate-200'
-                  }`}
-              />
-              {errors.ngayLamDon && (
-                <p className="text-[11px] text-red-500 mt-1">{errors.ngayLamDon}</p>
-              )}
-            </div>
+
 
             {/* Hình thức nhận * */}
             <div>
@@ -938,16 +1099,53 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
                   </div>
 
                   <div>
-                    <label className="block text-[12px] font-semibold text-slate-700 mb-1">
-                      Số định danh cá nhân / CCCD
-                    </label>
-                    <input
-                      type="text"
-                      value={cnCccd}
-                      onChange={(e) => setCnCccd(e.target.value)}
-                      placeholder="12 chữ số"
-                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[13px] text-slate-800 font-label-technical focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
-                    />
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[12px] font-semibold text-slate-700">
+                        Số định danh cá nhân / CCCD
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCnCccd('001088019482');
+                          handleSearchCccdCaNhan('001088019482');
+                        }}
+                        className="text-[11px] text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                        title="Điền nhanh CCCD mẫu có sẵn trong CSDL Dân cư"
+                      >
+                        CCCD mẫu
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="text"
+                        value={cnCccd}
+                        onChange={(e) => {
+                          setCnCccd(e.target.value);
+                          if (errors.cnCccd) setErrors((prev) => ({ ...prev, cnCccd: '' }));
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleSearchCccdCaNhan();
+                          }
+                        }}
+                        placeholder="12 chữ số CCCD"
+                        className={`flex-1 p-2.5 bg-slate-50 border rounded-xl text-[13px] text-slate-800 font-label-technical focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all ${errors.cnCccd ? 'border-red-500' : 'border-slate-200'
+                          }`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleSearchCccdCaNhan()}
+                        title="Tra cứu CSDL Dân cư Quốc gia (Nhấn Enter hoặc bấm Tra cứu)"
+                        className="px-3 py-2.5 bg-[#004ac6] hover:bg-blue-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1 shadow-xs transition-all cursor-pointer shrink-0"
+                      >
+                        <span className="material-symbols-outlined text-base">search</span>
+                        <span>Tra cứu</span>
+                      </button>
+                    </div>
+                    {errors.cnCccd && (
+                      <p className="text-[11px] text-red-500 mt-1">{errors.cnCccd}</p>
+                    )}
                   </div>
 
                   <div>
@@ -1695,16 +1893,53 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
                   </div>
 
                   <div>
-                    <label className="block text-[12px] font-semibold text-slate-700 mb-1">
-                      Mã số thuế / Mã định danh
-                    </label>
-                    <input
-                      type="text"
-                      value={tcMst}
-                      onChange={(e) => setTcMst(e.target.value)}
-                      placeholder="MST / Số ĐKKD"
-                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[13px] text-slate-800 font-label-technical focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
-                    />
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[12px] font-semibold text-slate-700">
+                        Mã số thuế / Mã định danh
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTcMst('0100109106');
+                          handleSearchMstToChuc('0100109106');
+                        }}
+                        className="text-[11px] text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                        title="Điền nhanh MST mẫu có sẵn trong CSDL Doanh nghiệp"
+                      >
+                        MST mẫu
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="text"
+                        value={tcMst}
+                        onChange={(e) => {
+                          setTcMst(e.target.value);
+                          if (errors.tcMst) setErrors((prev) => ({ ...prev, tcMst: '' }));
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleSearchMstToChuc();
+                          }
+                        }}
+                        placeholder="MST / Số ĐKKD (VD: 0100109106)"
+                        className={`flex-1 p-2.5 bg-slate-50 border rounded-xl text-[13px] text-slate-800 font-label-technical focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all ${errors.tcMst ? 'border-red-500' : 'border-slate-200'
+                          }`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleSearchMstToChuc()}
+                        title="Tra cứu CSDL Đăng ký doanh nghiệp (Nhấn Enter hoặc bấm Tra cứu)"
+                        className="px-3 py-2.5 bg-[#004ac6] hover:bg-blue-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1 shadow-xs transition-all cursor-pointer shrink-0"
+                      >
+                        <span className="material-symbols-outlined text-base">search</span>
+                        <span>Tra cứu</span>
+                      </button>
+                    </div>
+                    {errors.tcMst && (
+                      <p className="text-[11px] text-red-500 mt-1">{errors.tcMst}</p>
+                    )}
                   </div>
 
                   <div>
@@ -1889,13 +2124,30 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
                     <label className="block text-[12px] font-semibold text-slate-700 mb-1">
                       CCCD / Số định danh
                     </label>
-                    <input
-                      type="text"
-                      value={tcDdCccd}
-                      onChange={(e) => setTcDdCccd(e.target.value)}
-                      placeholder="12 chữ số"
-                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[13px] text-slate-800 font-label-technical focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
-                    />
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="text"
+                        value={tcDdCccd}
+                        onChange={(e) => setTcDdCccd(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleSearchCccdDaiDienToChuc();
+                          }
+                        }}
+                        placeholder="12 chữ số"
+                        className="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[13px] text-slate-800 font-label-technical focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleSearchCccdDaiDienToChuc()}
+                        title="Tra cứu CSDL Dân cư Quốc gia (Nhấn Enter hoặc bấm Tra cứu)"
+                        className="px-3 py-2.5 bg-[#004ac6] hover:bg-blue-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1 shadow-xs transition-all cursor-pointer shrink-0"
+                      >
+                        <span className="material-symbols-outlined text-base">search</span>
+                        <span>Tra cứu</span>
+                      </button>
+                    </div>
                   </div>
 
                   <div>
@@ -1925,173 +2177,611 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
                   </div>
                 </div>
               </div>
-
-              {/* Tư cách nộp đơn & Ủy quyền */}
-              <div className="space-y-3 pt-2">
-                <div>
-                  <h3 className="text-[13px] font-bold text-slate-800 uppercase font-label-technical">
-                    Tư cách nộp đơn &amp; Ủy quyền
-                  </h3>
-                  <p className="text-[12px] text-slate-500 mt-0.5">
-                    Xác định tư cách của người thực hiện nộp hồ sơ cho tổ chức
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div
-                    onClick={() => setTcTuCach('dai-dien-phap-luat')}
-                    className={`p-4 rounded-xl border cursor-pointer transition-all ${tcTuCach === 'dai-dien-phap-luat'
-                      ? 'bg-blue-50/80 border-blue-500 ring-2 ring-blue-200 shadow-xs'
-                      : 'bg-slate-50 hover:bg-slate-100 border-slate-200'
-                      }`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <input
-                        type="radio"
-                        checked={tcTuCach === 'dai-dien-phap-luat'}
-                        onChange={() => setTcTuCach('dai-dien-phap-luat')}
-                        className="text-blue-600"
-                      />
-                      <span className="font-bold text-slate-900 text-[13px]">
-                        Người đại diện theo pháp luật
-                      </span>
+              {/* Có người ủy quyền không? */}
+              <div className="space-y-4 pt-2">
+                <label
+                  className={`flex items-start gap-3.5 p-4 rounded-xl border cursor-pointer transition-all ${cnTuCach === 'nguoi-dai-dien'
+                    ? 'border-[#004ac6] bg-blue-50/40 shadow-xs ring-1 ring-[#004ac6]'
+                    : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                    }`}
+                >
+                  <input
+                    type="checkbox"
+                    id="checkbox-co-nguoi-uy-quyen"
+                    checked={cnTuCach === 'nguoi-dai-dien'}
+                    onChange={(e) => setCnTuCach(e.target.checked ? 'nguoi-dai-dien' : 'nguoi-dung-don')}
+                    className="mt-0.5 w-4.5 h-4.5 text-[#004ac6] rounded border-slate-300 focus:ring-[#004ac6] cursor-pointer"
+                  />
+                  <div className="flex-1">
+                    <div className="text-[13.5px] font-bold text-slate-900 flex items-center gap-2">
+                      <span>Có người ủy quyền không?</span>
+                      {cnTuCach === 'nguoi-dai-dien' && (
+                        <span className="text-[11px] font-semibold px-2 py-0.5 bg-blue-100 text-[#004ac6] rounded-full">
+                          Có người ủy quyền / đại diện
+                        </span>
+                      )}
                     </div>
-                    <p className="text-[11.5px] text-slate-500 mt-1 pl-6">
-                      Chính người đại diện đứng tên và nộp đơn
-                    </p>
+                    <div className="text-[12px] text-slate-500 mt-0.5">
+                      Tích chọn nếu người trực tiếp nộp đơn hoặc làm việc với cơ quan là người được ủy quyền hoặc người đại diện hợp pháp
+                    </div>
                   </div>
+                </label>
 
-                  <div
-                    onClick={() => setTcTuCach('nguoi-duoc-uy-quyen')}
-                    className={`p-4 rounded-xl border cursor-pointer transition-all ${tcTuCach === 'nguoi-duoc-uy-quyen'
-                      ? 'bg-amber-50/80 border-amber-500 ring-2 ring-amber-200 shadow-xs'
-                      : 'bg-slate-50 hover:bg-slate-100 border-slate-200'
-                      }`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <input
-                        type="radio"
-                        checked={tcTuCach === 'nguoi-duoc-uy-quyen'}
-                        onChange={() => setTcTuCach('nguoi-duoc-uy-quyen')}
-                        className="text-amber-600"
-                      />
-                      <span className="font-bold text-slate-900 text-[13px]">
-                        Người được ủy quyền
-                      </span>
-                    </div>
-                    <p className="text-[11.5px] text-slate-500 mt-1 pl-6">
-                      Có giấy ủy quyền/công văn ủy quyền hợp lệ từ tổ chức
-                    </p>
-                  </div>
-                </div>
+                {/* ─── KHU VỰC: THÔNG TIN NGƯỜI ĐẠI DIỆN ─── */}
+                {cnTuCach === 'nguoi-dai-dien' && (
+                  <div className="space-y-4 pt-1 animate-in fade-in duration-200">
 
-                {/* Khi chọn Người được ủy quyền của Tổ chức */}
-                {tcTuCach === 'nguoi-duoc-uy-quyen' && (
-                  <div className="mt-3 p-4 space-y-4">
-                    <div className="flex items-center gap-2 text-amber-900 font-bold text-xs">
-                      <span className="material-symbols-outlined text-[18px]">assignment_ind</span>
-                      <span>Thông tin người nhận ủy quyền &amp; Giấy ủy quyền từ tổ chức (Bắt buộc)</span>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-                      <div>
-                        <label className="block text-[11.5px] font-semibold text-slate-700 mb-1">
-                          Họ và tên người được ủy quyền <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={tcUqHoTen}
-                          onChange={(e) => setTcUqHoTen(e.target.value)}
-                          placeholder="Họ tên người đến nộp thay"
-                          className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-xs"
-                        />
-                        {errors.tcUqHoTen && (
-                          <p className="text-[11px] text-red-500 mt-1">{errors.tcUqHoTen}</p>
+                    {/* CARD 1: THÔNG TIN NGƯỜI ĐẠI DIỆN */}
+                    <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-100">
+                        <div className="flex items-center gap-2">
+                          <span className="w-6 h-6 rounded-md bg-blue-100 text-[#004ac6] flex items-center justify-center font-bold text-xs">
+                            1
+                          </span>
+                          <div>
+                            <h4 className="text-[13px] font-bold text-slate-800">
+                              Thông tin người đại diện / Người được ủy quyền
+                            </h4>
+                            <p className="text-[11.5px] text-slate-500">
+                              Thông tin cá nhân thực hiện nộp hồ sơ hoặc làm việc với cơ quan
+                            </p>
+                          </div>
+                        </div>
+                        {isViewModeDaiDien && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-semibold rounded-md border border-slate-200">
+                            <span className="material-symbols-outlined text-xs">lock</span>
+                            Chế độ xem
+                          </span>
                         )}
                       </div>
 
-                      <div>
-                        <label className="block text-[11.5px] font-semibold text-slate-700 mb-1">
-                          Chức vụ trong tổ chức
-                        </label>
-                        <input
-                          type="text"
-                          value={tcUqChucVu}
-                          onChange={(e) => setTcUqChucVu(e.target.value)}
-                          placeholder="Chuyên viên pháp lý..."
-                          className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-xs"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-[11.5px] font-semibold text-slate-700 mb-1">
-                          CCCD người được ủy quyền
-                        </label>
-                        <input
-                          type="text"
-                          value={tcUqCccd}
-                          onChange={(e) => setTcUqCccd(e.target.value)}
-                          placeholder="12 chữ số"
-                          className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-xs font-label-technical"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-[11.5px] font-semibold text-slate-700 mb-1">
-                          Số điện thoại liên hệ
-                        </label>
-                        <input
-                          type="text"
-                          value={tcUqSdt}
-                          onChange={(e) => setTcUqSdt(e.target.value)}
-                          placeholder="09xx xxx xxx"
-                          className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-xs"
-                        />
-                      </div>
-
-                      <div className="sm:col-span-2 lg:col-span-4">
-                        <label className="block text-[11.5px] font-semibold text-slate-700 mb-1">
-                          Khu vực tải Giấy ủy quyền / Công văn ủy quyền <span className="text-red-500">*</span>
-                        </label>
-                        <div className="border-2 border-dashed border-amber-300 rounded-xl p-3.5 text-center bg-white">
-                          <input
-                            type="file"
-                            id="file-tc-uq-full"
-                            className="hidden"
-                            accept=".pdf,.docx,.doc,.jpg,.png"
-                            onChange={(e) => {
-                              if (e.target.files && e.target.files[0]) {
-                                setTcUqVanBan(e.target.files[0]);
-                                setFiles((prev) => [
-                                  ...prev,
-                                  {
-                                    name: `Cong_van_uy_quyen_${e.target.files![0].name}`,
-                                    size: '1.8 MB',
-                                    category: 'attach',
-                                  },
-                                ]);
-                                if (errors.tcUqVanBan) setErrors((prev) => ({ ...prev, tcUqVanBan: '' }));
-                              }
-                            }}
-                          />
-                          <label
-                            htmlFor="file-tc-uq-full"
-                            className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-blue-700 hover:underline font-medium"
-                          >
-                            <span className="material-symbols-outlined text-[18px]">upload_file</span>
-                            <span>
-                              {tcUqVanBan ? tcUqVanBan.name : 'Chọn Giấy ủy quyền / Công văn có dấu đỏ'}
+                      {/* Tra cứu CCCD quick-bar (chỉ hiện khi ở Edit mode) */}
+                      {/* {!isViewModeDaiDien && (
+                        <div className="p-3 bg-blue-50/40 border border-blue-200/80 rounded-xl space-y-2">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <span className="text-xs font-bold text-[#004ac6] flex items-center gap-1.5">
+                              <span className="material-symbols-outlined text-base">search</span>
+                              Tra cứu tự động theo CCCD từ CSDL Quốc gia
                             </span>
+                            <span className="text-[11px] text-slate-500">
+                              Tự động điền dữ liệu đã xác thực, có thể chỉnh sửa thủ công
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2 pt-1">
+                            <span className="text-[11px] font-medium text-slate-600">Gợi ý mẫu tra cứu:</span>
+                            <button
+                              type="button"
+                              onClick={() => handleSearchCccdDaiDien('001092015882')}
+                              className="px-2.5 py-1 bg-white hover:bg-blue-100/60 text-slate-700 hover:text-blue-800 border border-slate-200 rounded-lg text-xs font-medium transition-all cursor-pointer"
+                            >
+                              001092015882 (Trần Đức Minh)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleSearchCccdDaiDien('001193004521')}
+                              className="px-2.5 py-1 bg-white hover:bg-blue-100/60 text-slate-700 hover:text-blue-800 border border-slate-200 rounded-lg text-xs font-medium transition-all cursor-pointer"
+                            >
+                              001193004521 (Lê Thị Thu Hà - LS)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleSearchCccdDaiDien('079190008899')}
+                              className="px-2.5 py-1 bg-white hover:bg-blue-100/60 text-slate-700 hover:text-blue-800 border border-slate-200 rounded-lg text-xs font-medium transition-all cursor-pointer"
+                            >
+                              079190008899 (Phạm Quốc Bảo)
+                            </button>
+                          </div>
+                        </div>
+                      )} */}
+
+                      {/* Layout 3 cột trên desktop */}
+                      {isViewModeDaiDien ? (
+                        /* Read-only layout in View Mode */
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
+                          <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                            <div className="text-[11px] font-semibold text-slate-500">Họ và tên người đại diện</div>
+                            <div className="text-sm font-bold text-slate-900">{cnUqHoTen || '---'}</div>
+                          </div>
+                          <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                            <div className="text-[11px] font-semibold text-slate-500">Số CCCD / Định danh</div>
+                            <div className="text-sm font-bold font-mono text-slate-900">{cnUqCccd || '---'}</div>
+                          </div>
+                          <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                            <div className="text-[11px] font-semibold text-slate-500">Ngày sinh &amp; Giới tính</div>
+                            <div className="text-sm font-semibold text-slate-900">
+                              {cnUqNgaySinh || '---'} • {cnUqGioiTinh}
+                            </div>
+                          </div>
+                          <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                            <div className="text-[11px] font-semibold text-slate-500">Số điện thoại</div>
+                            <div className="text-sm font-semibold text-slate-900">{cnUqSdt || '---'}</div>
+                          </div>
+                          <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                            <div className="text-[11px] font-semibold text-slate-500">Email liên hệ</div>
+                            <div className="text-sm font-semibold text-slate-900">{cnUqEmail || '---'}</div>
+                          </div>
+                          <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                            <div className="text-[11px] font-semibold text-slate-500">Địa chỉ liên hệ</div>
+                            <div className="text-xs font-semibold text-slate-900 truncate">
+                              {[cnUqDiaChiChiTiet, cnUqPhuongXa, cnUqTinhThanh].filter(Boolean).join(', ') || '---'}
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        /* Editable form in Edit Mode */
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {/* Hàng 1: Họ tên, Ngày sinh, Giới tính */}
+                          <div>
+                            <label className="block text-[12px] font-semibold text-slate-700 mb-1">
+                              Họ và tên người đại diện <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={cnUqHoTen}
+                              onChange={(e) => {
+                                setCnUqHoTen(e.target.value);
+                                if (errors.cnUqHoTen) setErrors((prev) => ({ ...prev, cnUqHoTen: '' }));
+                              }}
+                              placeholder="Nhập họ và tên đầy đủ"
+                              className={`w-full p-2.5 bg-slate-50 border rounded-xl text-[13px] text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all ${errors.cnUqHoTen ? 'border-red-500' : 'border-slate-200'
+                                }`}
+                            />
+                            {errors.cnUqHoTen && (
+                              <p className="text-[11px] text-red-500 mt-1">{errors.cnUqHoTen}</p>
+                            )}
+                          </div>
+
+                          <div>
+                            <label className="block text-[12px] font-semibold text-slate-700 mb-1">
+                              Ngày sinh
+                            </label>
+                            <input
+                              type="date"
+                              value={cnUqNgaySinh}
+                              onChange={(e) => setCnUqNgaySinh(e.target.value)}
+                              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[13px] text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[12px] font-semibold text-slate-700 mb-1">
+                              Giới tính
+                            </label>
+                            <select
+                              value={cnUqGioiTinh}
+                              onChange={(e) => setCnUqGioiTinh(e.target.value)}
+                              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[13px] text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all cursor-pointer"
+                            >
+                              <option value="Nam">Nam</option>
+                              <option value="Nữ">Nữ</option>
+                              <option value="Khác">Khác</option>
+                            </select>
+                          </div>
+
+                          {/* Hàng 2: Số CCCD + Nút tra cứu, Số điện thoại, Email */}
+                          <div>
+                            <label className="block text-[12px] font-semibold text-slate-700 mb-1">
+                              Số CCCD / Định danh <span className="text-red-500">*</span>
+                            </label>
+                            <div className="flex items-center gap-1.5">
+                              <input
+                                type="text"
+                                value={cnUqCccd}
+                                onChange={(e) => {
+                                  setCnUqCccd(e.target.value);
+                                  if (errors.cnUqCccd) setErrors((prev) => ({ ...prev, cnUqCccd: '' }));
+                                }}
+                                placeholder="12 chữ số CCCD"
+                                className={`flex-1 p-2.5 bg-slate-50 border rounded-xl text-[13px] text-slate-800 font-label-technical focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all ${errors.cnUqCccd ? 'border-red-500' : 'border-slate-200'
+                                  }`}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleSearchCccdDaiDien()}
+                                title="Tra cứu trong CSDL Dân cư"
+                                className="px-3 py-2.5 bg-[#004ac6] hover:bg-blue-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1 shadow-xs transition-all cursor-pointer"
+                              >
+                                <span className="material-symbols-outlined text-base">search</span>
+                                <span>Tra cứu</span>
+                              </button>
+                            </div>
+                            {errors.cnUqCccd && (
+                              <p className="text-[11px] text-red-500 mt-1">{errors.cnUqCccd}</p>
+                            )}
+                          </div>
+
+                          <div>
+                            <label className="block text-[12px] font-semibold text-slate-700 mb-1">
+                              Số điện thoại
+                            </label>
+                            <input
+                              type="text"
+                              value={cnUqSdt}
+                              onChange={(e) => setCnUqSdt(e.target.value)}
+                              placeholder="09xx xxx xxx"
+                              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[13px] text-slate-800 font-label-technical focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[12px] font-semibold text-slate-700 mb-1">
+                              Email liên hệ
+                            </label>
+                            <input
+                              type="email"
+                              value={cnUqEmail}
+                              onChange={(e) => setCnUqEmail(e.target.value)}
+                              placeholder="dai-dien@example.com"
+                              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[13px] text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+                            />
+                          </div>
+
+                          {/* Hàng 3: Tỉnh/Thành phố, Phường/Xã, Địa chỉ chi tiết */}
+                          <div>
+                            <label className="block text-[12px] font-semibold text-slate-700 mb-1">
+                              Tỉnh / Thành phố
+                            </label>
+                            <select
+                              value={cnUqTinhThanh}
+                              onChange={(e) => {
+                                const newTinh = e.target.value;
+                                setCnUqTinhThanh(newTinh);
+                                const wards = PROVINCES_AND_WARDS[newTinh];
+                                if (wards && wards.length > 0) {
+                                  setCnUqPhuongXa(wards[0]);
+                                  setIsCustomUqPhuongXa(false);
+                                } else {
+                                  setCnUqPhuongXa('');
+                                }
+                              }}
+                              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[13px] text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all cursor-pointer"
+                            >
+                              {VIETNAMESE_PROVINCES.map((tinh) => (
+                                <option key={tinh} value={tinh}>
+                                  {tinh}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="block text-[12px] font-semibold text-slate-700">
+                                Phường / Xã
+                              </label>
+                            </div>
+                            {isCustomUqPhuongXa || !PROVINCES_AND_WARDS[cnUqTinhThanh] ? (
+                              <input
+                                type="text"
+                                value={cnUqPhuongXa}
+                                onChange={(e) => setCnUqPhuongXa(e.target.value)}
+                                placeholder="Phường/Xã/Thị trấn"
+                                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[13px] text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+                              />
+                            ) : (
+                              <select
+                                value={cnUqPhuongXa}
+                                onChange={(e) => {
+                                  if (e.target.value === '__custom__') {
+                                    setIsCustomUqPhuongXa(true);
+                                    setCnUqPhuongXa('');
+                                  } else {
+                                    setCnUqPhuongXa(e.target.value);
+                                  }
+                                }}
+                                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[13px] text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all cursor-pointer"
+                              >
+                                <option value="">-- Chọn Phường / Xã --</option>
+                                {(PROVINCES_AND_WARDS[cnUqTinhThanh] || []).map((px) => (
+                                  <option key={px} value={px}>
+                                    {px}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
+                          </div>
+
+                          <div>
+                            <label className="block text-[12px] font-semibold text-slate-700 mb-1">
+                              Địa chỉ chi tiết
+                            </label>
+                            <input
+                              type="text"
+                              value={cnUqDiaChiChiTiet}
+                              onChange={(e) => setCnUqDiaChiChiTiet(e.target.value)}
+                              placeholder="Số nhà, đường phố, ngõ ngách..."
+                              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[13px] text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* CARD 2: CĂN CỨ ĐẠI DIỆN & PHẠM VI ỦY QUYỀN */}
+                    <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-4">
+                      <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+                        <span className="w-6 h-6 rounded-md bg-blue-100 text-[#004ac6] flex items-center justify-center font-bold text-xs">
+                          2
+                        </span>
+                        <div>
+                          <h4 className="text-[13px] font-bold text-slate-800">
+                            Căn cứ đại diện &amp; Phạm vi ủy quyền
+                          </h4>
+                          <p className="text-[11.5px] text-slate-500">
+                            Xác định hình thức đại diện, số hiệu văn bản pháp lý và quyền hạn được giao
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Cảnh báo hết hạn hiệu lực */}
+                      {cnUqNgayHetHieuLuc && cnUqNgayHetHieuLuc < todayStr && (
+                        <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2.5 text-red-700 text-xs font-semibold animate-in fade-in">
+                          <span className="material-symbols-outlined text-red-600 text-lg">error</span>
+                          <span>
+                            Văn bản ủy quyền đã hết hiệu lực (hết hạn ngày {cnUqNgayHetHieuLuc}). Vui lòng kiểm tra lại văn bản gia hạn hoặc bổ sung giấy tờ hợp lệ.
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {/* Hàng 1: Loại đại diện, Số văn bản, Ngày lập */}
+                        <div>
+                          <label className="block text-[12px] font-semibold text-slate-700 mb-1">
+                            Loại đại diện <span className="text-red-500">*</span>
                           </label>
-                          {errors.tcUqVanBan && (
-                            <p className="text-[11px] text-red-500 mt-1">{errors.tcUqVanBan}</p>
+                          <select
+                            value={cnUqLoaiDaiDien}
+                            disabled={isViewModeDaiDien}
+                            onChange={(e) => setCnUqLoaiDaiDien(e.target.value)}
+                            className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[13px] text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all cursor-pointer disabled:bg-slate-100"
+                          >
+                            <option value="Người được ủy quyền">Người được ủy quyền</option>
+                            <option value="Người đại diện theo pháp luật">Người đại diện theo pháp luật</option>
+                            <option value="Cha / Mẹ đại diện cho con chưa thành niên">
+                              Cha / Mẹ đại diện cho con chưa thành niên
+                            </option>
+                            <option value="Người giám hộ">Người giám hộ</option>
+                            <option value="Khác">Khác</option>
+                          </select>
+                        </div>
+
+                        {/* Số văn bản / Giấy UQ */}
+                        <div>
+                          <label className="block text-[12px] font-semibold text-slate-700 mb-1">
+                            Số văn bản / Giấy UQ
+                          </label>
+                          <input
+                            type="text"
+                            value={cnUqSoVanBan}
+                            disabled={isViewModeDaiDien}
+                            onChange={(e) => setCnUqSoVanBan(e.target.value)}
+                            placeholder="VD: 08/2026/UQ-ND"
+                            className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[13px] text-slate-800 font-label-technical focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all disabled:bg-slate-100"
+                          />
+                        </div>
+
+                        {/* Ngày lập văn bản */}
+                        <div>
+                          <label className="block text-[12px] font-semibold text-slate-700 mb-1">
+                            Ngày lập văn bản
+                          </label>
+                          <input
+                            type="date"
+                            value={cnUqNgayLap}
+                            disabled={isViewModeDaiDien}
+                            onChange={(e) => setCnUqNgayLap(e.target.value)}
+                            className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[13px] text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all disabled:bg-slate-100"
+                          />
+                        </div>
+
+                        {/* Hàng 2: Hiệu lực từ ngày, Đến ngày, Phạm vi đại diện */}
+                        <div>
+                          <label className="block text-[12px] font-semibold text-slate-700 mb-1">
+                            Hiệu lực từ ngày
+                          </label>
+                          <input
+                            type="date"
+                            value={cnUqNgayHieuLuc}
+                            disabled={isViewModeDaiDien}
+                            onChange={(e) => setCnUqNgayHieuLuc(e.target.value)}
+                            className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[13px] text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all disabled:bg-slate-100"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[12px] font-semibold text-slate-700 mb-1">
+                            Đến ngày
+                          </label>
+                          <input
+                            type="date"
+                            value={cnUqNgayHetHieuLuc}
+                            disabled={isViewModeDaiDien}
+                            onChange={(e) => setCnUqNgayHetHieuLuc(e.target.value)}
+                            className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[13px] text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all disabled:bg-slate-100"
+                          />
+                        </div>
+
+                        {/* Phạm vi đại diện / Quyền hạn được ủy quyền (dạng combobox) */}
+                        <div>
+                          <label className="block text-[12px] font-semibold text-slate-700 mb-1">
+                            Phạm vi đại diện / Quyền hạn được ủy quyền
+                          </label>
+                          <select
+                            value={cnUqPhamVi}
+                            disabled={isViewModeDaiDien}
+                            onChange={(e) => setCnUqPhamVi(e.target.value)}
+                            className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[13px] text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all cursor-pointer disabled:bg-slate-100"
+                          >
+                            <option value="Toàn quyền đại diện">Toàn quyền đại diện</option>
+                            <option value="Nộp đơn, bổ sung tài liệu và làm việc với cơ quan">
+                              Nộp đơn, bổ sung tài liệu và làm việc với cơ quan
+                            </option>
+                            <option value="Nộp đơn và rút đơn">Nộp đơn và rút đơn</option>
+                            <option value="Chỉ nộp đơn hồ sơ">Chỉ nộp đơn hồ sơ</option>
+                            <option value="Bổ sung tài liệu & làm việc với cơ quan">
+                              Bổ sung tài liệu &amp; làm việc với cơ quan
+                            </option>
+                            <option value="Khác">Khác (nhập chi tiết)</option>
+                          </select>
+                          {cnUqPhamVi === 'Khác' && (
+                            <input
+                              type="text"
+                              value={cnUqPhamViKhac}
+                              disabled={isViewModeDaiDien}
+                              onChange={(e) => setCnUqPhamViKhac(e.target.value)}
+                              placeholder="Ghi chú nội dung phạm vi cụ thể khác..."
+                              className="w-full mt-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[13px] text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all disabled:bg-slate-100"
+                            />
                           )}
                         </div>
                       </div>
                     </div>
+
+                    {/* CARD 3: TÀI LIỆU CHỨNG MINH TƯ CÁCH ĐẠI DIỆN */}
+                    <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-3.5">
+                      <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-100">
+                        <div className="flex items-center gap-2">
+                          <span className="w-6 h-6 rounded-md bg-blue-100 text-[#004ac6] flex items-center justify-center font-bold text-xs">
+                            3
+                          </span>
+                          <div>
+                            <h4 className="text-[13px] font-bold text-slate-800 flex items-center gap-1.5">
+                              <span>Tài liệu chứng minh tư cách đại diện</span>
+                              <span className="text-red-500">*</span>
+                            </h4>
+                            <p className="text-[11.5px] text-slate-500">
+                              Hồ sơ văn bản pháp lý (Giấy ủy quyền, Quyết định cử đại diện, Giấy tờ giám hộ...)
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Actions: Upload file + Quét máy scan */}
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="file"
+                            id="file-dai-dien-upload"
+                            className="hidden"
+                            multiple
+                            accept=".pdf,.docx,.doc,.jpg,.png"
+                            onChange={(e) => handleUploadDaiDienDoc(e.target.files)}
+                          />
+                          <label
+                            htmlFor="file-dai-dien-upload"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined text-sm text-[#004ac6]">upload_file</span>
+                            <span>Tải file lên</span>
+                          </label>
+
+                          <button
+                            type="button"
+                            onClick={handleScanDaiDien}
+                            disabled={isScanningDaiDien}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#004ac6] hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                          >
+                            <span className={`material-symbols-outlined text-sm ${isScanningDaiDien ? 'animate-spin' : ''}`}>
+                              scanner
+                            </span>
+                            <span>{isScanningDaiDien ? 'Đang quét...' : 'Quét tài liệu'}</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Scanner Feedback Simulation */}
+                      {isScanningDaiDien && (
+                        <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl flex items-center gap-2.5 text-[#004ac6] text-xs font-medium animate-pulse">
+                          <span className="material-symbols-outlined text-base animate-spin">autorenew</span>
+                          <span>Đang kết nối máy quét chuyên dụng và số hóa văn bản ủy quyền (OCR định dạng PDF/A)...</span>
+                        </div>
+                      )}
+
+                      {/* Cảnh báo khi chưa có tài liệu chứng minh */}
+                      {cnUqTaiLieuList.length === 0 && (
+                        <div className="p-3.5 bg-amber-50 border border-amber-300 rounded-xl flex items-center gap-2.5 text-amber-800 text-xs font-semibold animate-in fade-in">
+                          <span className="material-symbols-outlined text-amber-600 text-lg">warning</span>
+                          <span>
+                            Chưa có tài liệu chứng minh tư cách đại diện. Vui lòng tải lên văn bản hoặc bấm "Quét tài liệu" từ máy scan để bảo đảm tính hợp lệ.
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Bảng danh sách tài liệu chứng minh */}
+                      {cnUqTaiLieuList.length > 0 && (
+                        <div className="border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
+                          <table className="w-full text-left text-xs">
+                            <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
+                              <tr>
+                                <th className="p-2.5 w-10 text-center">STT</th>
+                                <th className="p-2.5">Tên tệp văn bản</th>
+                                <th className="p-2.5 w-52">Loại tài liệu</th>
+                                <th className="p-2.5 w-24">Dung lượng</th>
+                                <th className="p-2.5 w-28">Ngày tải</th>
+                                <th className="p-2.5 w-36">Người tải</th>
+                                <th className="p-2.5 w-20 text-center">Thao tác</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 text-slate-700">
+                              {cnUqTaiLieuList.map((doc, idx) => (
+                                <tr key={doc.id} className="hover:bg-slate-50/70 transition-colors">
+                                  <td className="p-2.5 text-center font-medium text-slate-500">{idx + 1}</td>
+                                  <td className="p-2.5 font-medium text-slate-900">
+                                    <div className="flex items-center gap-2">
+                                      <span className="material-symbols-outlined text-red-500 text-base">picture_as_pdf</span>
+                                      <span className="truncate max-w-[220px]" title={doc.name}>{doc.name}</span>
+                                    </div>
+                                  </td>
+                                  <td className="p-2.5">
+                                    <select
+                                      value={doc.loai}
+                                      onChange={(e) =>
+                                        handleUpdateDocLoai(
+                                          doc.id,
+                                          e.target.value as TaiLieuChungMinhItem['loai']
+                                        )
+                                      }
+                                      className="w-full p-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-200 cursor-pointer"
+                                    >
+                                      <option value="Giấy ủy quyền">Giấy ủy quyền</option>
+                                      <option value="Văn bản cử đại diện">Văn bản cử đại diện</option>
+                                      <option value="Giấy tờ chứng minh giám hộ">Giấy tờ chứng minh giám hộ</option>
+                                      <option value="Giấy khai sinh">Giấy khai sinh</option>
+                                      <option value="Tài liệu khác">Tài liệu khác</option>
+                                    </select>
+                                  </td>
+                                  <td className="p-2.5 text-slate-500 font-mono text-[11px]">{doc.size}</td>
+                                  <td className="p-2.5 text-slate-600 text-[11px]">{doc.ngayTai}</td>
+                                  <td className="p-2.5 text-slate-600 truncate">{doc.nguoiTai}</td>
+                                  <td className="p-2.5 text-center">
+                                    <div className="flex items-center justify-center gap-1">
+                                      <button
+                                        type="button"
+                                        onClick={() => setPreviewDoc(doc)}
+                                        title="Xem trước tài liệu"
+                                        className="p-1 hover:bg-blue-50 text-[#004ac6] rounded-md transition-colors cursor-pointer"
+                                      >
+                                        <span className="material-symbols-outlined text-base">visibility</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteDaiDienDoc(doc.id)}
+                                        title="Xóa tài liệu"
+                                        className="p-1 hover:bg-red-50 text-red-600 rounded-md transition-colors cursor-pointer"
+                                      >
+                                        <span className="material-symbols-outlined text-base">delete</span>
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
+
             </div>
           )}
 
@@ -2144,9 +2834,6 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
                 <h2 className="text-[15px] font-bold text-slate-900 uppercase font-label-technical tracking-wide">
                   Tài liệu kèm theo
                 </h2>
-                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-semibold text-[11px] font-label-technical">
-                  {files.length} tài liệu
-                </span>
               </div>
             </div>
 
@@ -2158,44 +2845,6 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
               <span className="material-symbols-outlined text-[16px] text-slate-600">scanner</span>
               <span>Quét tài liệu từ máy scan</span>
             </button>
-          </div>
-
-          {/* Full-width Upload Dropzone */}
-          <div
-            className={`border-2 border-dashed rounded-2xl p-7 text-center transition-all cursor-pointer ${isDragging
-              ? 'border-blue-500 bg-blue-50/50'
-              : 'border-slate-300 hover:border-blue-400 bg-slate-50/60'
-              }`}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setIsDragging(true);
-            }}
-            onDragLeave={() => setIsDragging(false)}
-            onDrop={(e) => {
-              e.preventDefault();
-              setIsDragging(false);
-              handleAddFiles(e.dataTransfer.files);
-            }}
-          >
-            <input
-              type="file"
-              id="file-upload-full"
-              className="hidden"
-              multiple
-              accept=".pdf,.docx,.doc,.jpg,.jpeg,.png,.tiff"
-              onChange={(e) => handleAddFiles(e.target.files)}
-            />
-            <label htmlFor="file-upload-full" className="cursor-pointer block">
-              <div className="w-12 h-12 rounded-xl bg-blue-50 text-[#004ac6] mx-auto mb-2 flex items-center justify-center shadow-xs">
-                <span className="material-symbols-outlined text-[28px]">upload_file</span>
-              </div>
-              <div className="text-[13.5px] font-semibold text-slate-800 mb-0.5">
-                Nhấn để chọn tệp hoặc kéo thả tài liệu vào đây
-              </div>
-              <p className="text-[11.5px] text-slate-400">
-                Hỗ trợ tệp PDF, DOCX, JPG, PNG (Tối đa 25MB)
-              </p>
-            </label>
           </div>
 
           {/* Danh sách tệp đã đính kèm */}

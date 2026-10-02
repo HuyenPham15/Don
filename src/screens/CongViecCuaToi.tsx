@@ -1016,108 +1016,258 @@ export default function CongViecCuaToi({
           </div>
         </div>
 
-        {/* Nút Tạo mới & Nút chuyển đổi vai trò */}
-        <div className="flex items-center gap-2.5">
-          {/* Nút Khởi tạo tiếp nhận mới */}
-          <div className="relative inline-flex items-center rounded-xl bg-[#C62828] hover:bg-[#b71c1c] text-white shadow-xs">
-            <button
-              type="button"
-              onClick={() => onNav('nhan-don-them')}
-              className="px-3.5 py-2 text-xs font-bold flex items-center gap-1.5 cursor-pointer hover:opacity-95"
-              title="Mở trực tiếp màn hình thêm mới lượt nhận hồ sơ"
-            >
-              <span className="material-symbols-outlined text-[18px]">add</span>
-              <span>Tạo mới</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowDropdown((prev) => !prev)}
-              className="px-1.5 py-2 border-l border-red-700/60 hover:bg-black/10 rounded-r-xl cursor-pointer flex items-center transition-colors"
-              title="Tùy chọn khởi tạo"
-            >
-              <span className="material-symbols-outlined text-[16px]">arrow_drop_down</span>
-            </button>
-
-            {showDropdown && (
-              <div
-                className="absolute right-0 top-full mt-1.5 w-72 rounded-xl bg-white border border-slate-200 shadow-xl py-1.5 z-50 animate-fade-in"
-                onMouseLeave={() => setShowDropdown(false)}
-              >
-                <div className="px-3 py-1 text-[10.5px] font-semibold text-slate-400 font-label-technical uppercase tracking-wider border-b border-slate-100 mb-1">
-                  Khởi tạo tiếp nhận
-                </div>
-                <button
-                  type="button"
-                  className="w-full flex items-start gap-3 px-3 py-2 text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-colors text-left cursor-pointer"
-                  onClick={() => {
-                    setShowDropdown(false);
-                    onNav('nhan-don-them');
-                  }}
-                >
-                  <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center shrink-0 mt-0.5">
-                    <span className="material-symbols-outlined text-[18px]">post_add</span>
-                  </div>
-                  <div>
-                    <div className="text-[13px] font-semibold text-slate-900 leading-snug">Tạo lượt nhận hồ sơ</div>
-                    <p className="text-[11px] text-slate-500 leading-tight mt-0.5">Mở màn hình thêm mới lượt nhận hồ sơ</p>
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  className="w-full flex items-start gap-3 px-3 py-2 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors text-left cursor-pointer"
-                  onClick={() => {
-                    setShowDropdown(false);
-                    onNav('nhan-don-them');
-                  }}
-                >
-                  <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
-                    <span className="material-symbols-outlined text-[18px]">folder_shared</span>
-                  </div>
-                  <div>
-                    <div className="text-[13px] font-semibold text-slate-900 leading-snug">Thêm mới tiếp nhận và xử lý</div>
-                    <p className="text-[11px] text-slate-500 leading-tight mt-0.5">Mở màn hình tiếp nhận và xử lý đơn</p>
-                  </div>
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Nút chuyển đổi vai trò nhanh để kiểm thử luồng Trình ký ⟷ Ký số */}
-          {onSwitchAccount && (
-            <button
-              type="button"
-              onClick={() => {
-                const other = DEMO_ACCOUNTS.find((a) => a.role !== currentAccount.role);
-                if (other) {
-                  onSwitchAccount(other);
-                  showToast(`Đã chuyển sang tài khoản ${other.name} (${other.roleLabel})`);
-                }
-              }}
-              className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer ${isLeader
-                ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20 hover:border-white/40'
-                : 'bg-amber-400 hover:bg-amber-300 text-slate-950 border border-amber-300'
-                }`}
-              title="Đổi vai trò tài khoản để kiểm tra cả luồng Cán bộ lập/trình ký và Lãnh đạo phê duyệt/ký số"
-            >
-              <span className="material-symbols-outlined text-[17px]">swap_horiz</span>
-              <span>
-                {isLeader
-                  ? 'Chuyển sang Cán bộ (Nguyễn Minh Anh)'
-                  : `Chuyển sang Lãnh đạo (Trần Văn Cường) • ${signingCounts.daTrinh} chờ ký`}
-              </span>
-            </button>
-          )}
-        </div>
+        {/* Nút chuyển đổi vai trò nhanh để kiểm thử luồng Trình ký ⟷ Ký số */}
+        {onSwitchAccount && (
+          <button
+            type="button"
+            onClick={() => {
+              const other = DEMO_ACCOUNTS.find((a) => a.role !== currentAccount.role);
+              if (other) {
+                onSwitchAccount(other);
+                showToast(`Đã chuyển sang tài khoản ${other.name} (${other.roleLabel})`);
+              }
+            }}
+            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer ${isLeader
+              ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20 hover:border-white/40'
+              : 'bg-amber-400 hover:bg-amber-300 text-slate-950 border border-amber-300'
+              }`}
+            title="Đổi vai trò tài khoản để kiểm tra cả luồng Cán bộ lập/trình ký và Lãnh đạo phê duyệt/ký số"
+          >
+            <span className="material-symbols-outlined text-[17px]">swap_horiz</span>
+            <span>
+              {isLeader
+                ? 'Chuyển sang Cán bộ (Nguyễn Minh Anh)'
+                : `Chuyển sang Lãnh đạo (Trần Văn Cường) • ${signingCounts.daTrinh} chờ ký`}
+            </span>
+          </button>
+        )}
       </div>
 
       {/* ========================================================================= */}
-      {/* 2. NỘI DUNG CHÍNH: CHẾ ĐỘ KANBAN THUẦN TÚY 100%                            */}
+      {/* 1. TABS QUẢN LÝ CÔNG VIỆC THEO TÀI KHOẢN (ROLE WORKSPACE TABS)            */}
       {/* ========================================================================= */}
-      {isLeader ? (
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-3.5 pb-2.5 border-b border-slate-200">
+        <div className="flex items-center gap-1.5 p-1 bg-slate-200/70 rounded-2xl border border-slate-300/60 shadow-2xs">
+          {/* NẾU LÀ CÁN BỘ THỤ LÝ: */}
+          {!isLeader && (
+            <>
+              {/* Tab 1: Hồ sơ & Nhiệm vụ */}
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('tasks');
+                  setViewMode('kanban');
+                }}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'tasks' && viewMode !== 'completed'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                  }`}
+              >
+                <span className="material-symbols-outlined text-[17px] text-[#004ac6]">checklist</span>
+                <span>Nhiệm vụ &amp; Tiếp nhận xử lý</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-700 text-[10.5px] font-bold font-mono">
+                  {kpiStats.total}
+                </span>
+              </button>
+
+              {/* Tab 2: Trình ký văn bản */}
+              <button
+                type="button"
+                onClick={() => setActiveTab('trinh_ky')}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'trinh_ky'
+                  ? 'bg-white text-[#004ac6] shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                  }`}
+              >
+                <span className="material-symbols-outlined text-[17px] text-blue-600">drive_file_move</span>
+                <span>Trình ký văn bản</span>
+                <div className="flex items-center gap-1">
+                  {signingCounts.yeuCauSua > 0 && (
+                    <span className="px-1.5 py-0.2 rounded-md bg-rose-500 text-white text-[10px] font-bold font-mono animate-pulse" title="Lãnh đạo yêu cầu chỉnh sửa lại">
+                      {signingCounts.yeuCauSua} sửa
+                    </span>
+                  )}
+                  <span className="px-1.5 py-0.2 rounded-full bg-blue-100 text-blue-800 text-[10.5px] font-bold font-mono">
+                    {signingCounts.choTrinh} chờ
+                  </span>
+                </div>
+              </button>
+
+              {/* Tab 3: Đã giải quyết */}
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('tasks');
+                  setViewMode('completed');
+                }}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'tasks' && viewMode === 'completed'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                  }`}
+              >
+                <span className="material-symbols-outlined text-[17px] text-emerald-600">inventory_2</span>
+                <span>Đã giải quyết</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 text-[10.5px] font-bold font-mono">
+                  {kpiStats.completedCount}
+                </span>
+              </button>
+            </>
+          )}
+
+          {/* NẾU LÀ LÃNH ĐẠO PHÊ DUYỆT: */}
+          {isLeader && (
+            <>
+              {/* Tab 1: Xử lý Lượt nhận / Đơn / Vụ việc trực tiếp */}
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('tasks');
+                  setViewMode('kanban');
+                }}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'tasks' && viewMode !== 'completed'
+                  ? 'bg-white text-indigo-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                  }`}
+              >
+                <span className="material-symbols-outlined text-[17px] text-indigo-600">folder_managed</span>
+                <span>Xử lý Lượt nhận / Đơn / Vụ việc</span>
+                <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[10.5px] font-bold font-mono">
+                  {kpiStats.total}
+                </span>
+              </button>
+
+
+              {/* Tab 3: Bàn ký duyệt chi tiết (Master-Detail) */}
+              <button
+                type="button"
+                onClick={() => setActiveTab('van_ban_cho_ky')}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'van_ban_cho_ky'
+                  ? 'bg-white text-indigo-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                  }`}
+              >
+                <span className="material-symbols-outlined text-[17px] text-indigo-600">splitscreen</span>
+                <span>Bàn ký duyệt chi tiết</span>
+              </button>
+
+              {/* Tab 4: Văn bản đã ký & ban hành */}
+              {/* <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('completed');
+                }}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'completed'
+                  ? 'bg-white text-emerald-800 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                  }`}
+              >
+                <span className="material-symbols-outlined text-[17px] text-emerald-600">task_alt</span>
+                <span>Văn bản đã ký ({signingCounts.daKy})</span>
+              </button> */}
+            </>
+          )}
+        </div>
+
+        {/* Cụm điều khiển bên phải: Chuyển đổi Kanban/List & Nút Tạo mới (Dành cho cả Cán bộ và Lãnh đạo khi ở tab Hồ sơ/Nhiệm vụ) */}
+        {(activeTab === 'tasks' || !isLeader) && (
+          <div className="flex items-center gap-2.5">
+            {viewMode !== 'completed' && (
+              <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('kanban')}
+                  className={`p-1.5 rounded-lg flex items-center justify-center cursor-pointer transition-all ${viewMode === 'kanban' ? 'bg-white text-blue-700 shadow-2xs font-bold' : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  title="Xem dạng Kanban 4 cột"
+                >
+                  <span className="material-symbols-outlined text-[18px]">view_kanban</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('list')}
+                  className={`p-1.5 rounded-lg flex items-center justify-center cursor-pointer transition-all ${viewMode === 'list' ? 'bg-white text-blue-700 shadow-2xs font-bold' : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  title="Xem dạng Bảng danh sách"
+                >
+                  <span className="material-symbols-outlined text-[18px]">view_list</span>
+                </button>
+              </div>
+            )}
+
+            {/* Nút Khởi tạo tiếp nhận mới */}
+            <div className="relative inline-flex items-center rounded-xl bg-[#C62828] hover:bg-[#b71c1c] text-white shadow-xs">
+              <button
+                type="button"
+                onClick={() => onNav('nhan-don-them')}
+                className="px-3.5 py-1.5 text-xs font-bold flex items-center gap-1.5 cursor-pointer hover:opacity-95"
+                title="Mở trực tiếp màn hình thêm mới lượt nhận hồ sơ"
+              >
+                <span className="material-symbols-outlined text-[18px]">add</span>
+                <span>Tạo mới</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowDropdown((prev) => !prev)}
+                className="px-1.5 py-1.5 border-l border-red-700/60 hover:bg-black/10 rounded-r-xl cursor-pointer flex items-center transition-colors"
+                title="Tùy chọn khởi tạo"
+              >
+                <span className="material-symbols-outlined text-[16px]">arrow_drop_down</span>
+              </button>
+
+              {showDropdown && (
+                <div
+                  className="absolute right-0 top-full mt-1.5 w-72 rounded-xl bg-white border border-slate-200 shadow-xl py-1.5 z-50 animate-fade-in"
+                  onMouseLeave={() => setShowDropdown(false)}
+                >
+                  <div className="px-3 py-1 text-[10.5px] font-semibold text-slate-400 font-label-technical uppercase tracking-wider border-b border-slate-100 mb-1">
+                    Khởi tạo tiếp nhận
+                  </div>
+                  <button
+                    type="button"
+                    className="w-full flex items-start gap-3 px-3 py-2 text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-colors text-left cursor-pointer"
+                    onClick={() => {
+                      setShowDropdown(false);
+                      onNav('nhan-don-them');
+                    }}
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="material-symbols-outlined text-[18px]">post_add</span>
+                    </div>
+                    <div>
+                      <div className="text-[13px] font-semibold text-slate-900 leading-snug">Tạo lượt nhận hồ sơ</div>
+                      <p className="text-[11px] text-slate-500 leading-tight mt-0.5">Mở màn hình thêm mới lượt nhận hồ sơ</p>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    className="w-full flex items-start gap-3 px-3 py-2 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors text-left cursor-pointer"
+                    onClick={() => {
+                      setShowDropdown(false);
+                      onNav('nhan-don-them');
+                    }}
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="material-symbols-outlined text-[18px]">folder_shared</span>
+                    </div>
+                    <div>
+                      <div className="text-[13px] font-semibold text-slate-900 leading-snug">Thêm mới tiếp nhận và xử lý</div>
+                      <p className="text-[11px] text-slate-500 leading-tight mt-0.5">Mở màn hình tiếp nhận và xử lý đơn</p>
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 2. NỘI DUNG CHÍNH DỰA THEO TAB ĐANG ACTIVE                                */}
+      {/* ========================================================================= */}
+      {activeTab === 'leader_kanban' ? (
         <div className="flex-1 bg-white border border-slate-200 rounded-2xl shadow-2xs overflow-hidden">
           <LeaderSigningKanban
             documents={docs}
-            workItems={allItemsWithExtra}
             onUpdateDocuments={onUpdateSigningDocuments || (() => { })}
             onNav={onNav}
             onSelectHoSo={(hoSoCode) => {
@@ -1136,11 +1286,66 @@ export default function CongViecCuaToi({
             }}
             currentAccount={currentAccount}
             onSwitchAccount={onSwitchAccount}
-            onItemClick={handleItemClick}
-            onTiepNhanXuLy={handleTiepNhanXuLyCaNhan}
-            onBanGiaoDon={handleOpenBanGiaoDon}
-            onTraLaiDon={handleOpenTraLaiDon}
+            onOpenDetailedView={() => setActiveTab('van_ban_cho_ky')}
+            onSwitchToTasksView={() => {
+              setActiveTab('tasks');
+              setViewMode('kanban');
+            }}
             initialKpiFilter="all"
+          />
+        </div>
+      ) : activeTab === 'van_ban_cho_ky' ? (
+        <div className="flex-1 bg-white border border-slate-200 rounded-2xl shadow-2xs overflow-hidden">
+          <VanBanChoKyScreen
+            onNav={onNav}
+            documents={docs}
+            onUpdateDocuments={onUpdateSigningDocuments || (() => { })}
+            onSelectHoSo={(hoSoCode) => {
+              const matched = acceptedDons.find((d) => d.code === hoSoCode || d.id === hoSoCode);
+              if (matched && onSelectDon) onSelectDon(matched);
+            }}
+            isEmbedded={true}
+            onSwitchAccount={(role) => {
+              const target = DEMO_ACCOUNTS.find((a) => a.role === role);
+              if (target && onSwitchAccount) onSwitchAccount(target);
+            }}
+          />
+        </div>
+      ) : activeTab === 'trinh_ky' ? (
+        <div className="flex-1 bg-white border border-slate-200 rounded-2xl shadow-2xs overflow-hidden">
+          <TrinhKyScreen
+            onNav={onNav}
+            documents={docs}
+            onUpdateDocuments={onUpdateSigningDocuments || (() => { })}
+            onSelectHoSo={(hoSoCode) => {
+              const matched = acceptedDons.find((d) => d.code === hoSoCode || d.id === hoSoCode);
+              if (matched && onSelectDon) onSelectDon(matched);
+            }}
+            isEmbedded={true}
+            onSwitchAccount={(role) => {
+              const target = DEMO_ACCOUNTS.find((a) => a.role === role);
+              if (target && onSwitchAccount) onSwitchAccount(target);
+            }}
+          />
+        </div>
+      ) : activeTab === 'completed' && isLeader ? (
+        <div className="flex-1 bg-white border border-slate-200 rounded-2xl shadow-2xs overflow-hidden">
+          <LeaderSigningKanban
+            documents={docs}
+            onUpdateDocuments={onUpdateSigningDocuments || (() => { })}
+            onNav={onNav}
+            onSelectHoSo={(hoSoCode) => {
+              const matched = acceptedDons.find((d) => d.code === hoSoCode || d.id === hoSoCode);
+              if (matched && onSelectDon) onSelectDon(matched);
+            }}
+            currentAccount={currentAccount}
+            onSwitchAccount={onSwitchAccount}
+            onOpenDetailedView={() => setActiveTab('van_ban_cho_ky')}
+            onSwitchToTasksView={() => {
+              setActiveTab('tasks');
+              setViewMode('kanban');
+            }}
+            initialKpiFilter="signed"
           />
         </div>
       ) : (
@@ -1950,9 +2155,10 @@ export default function CongViecCuaToi({
           </div>
 
           {/* ========================================================================= */}
-          {/* 4. GIAO DIỆN CHÍNH: KANBAN 4 CỘT CÔNG VIỆC CHUẨN NGHIỆP VỤ                 */}
+          {/* 4. GIAO DIỆN CHÍNH: KANBAN 4 CỘT HOẶC DANH SÁCH HOẶC HOÀN THÀNH          */}
           {/* ========================================================================= */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3.5 items-start">
+          {viewMode === 'kanban' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3.5 items-start">
               {/* ──────────────── CỘT 1: 🔴 CẦN XỬ LÝ ──────────────── */}
               <div className="bg-rose-50/40 rounded-2xl p-3 border border-rose-200/80 flex flex-col gap-2.5 shadow-2xs">
                 <div className="flex items-center justify-between px-1">
@@ -2125,6 +2331,184 @@ export default function CongViecCuaToi({
                 </div>
               </div>
             </div>
+          ) : viewMode === 'list' ? (
+            /* ========================================================================= */
+            /* CHẾ ĐỘ HIỂN THỊ DANH SÁCH BẢNG (LIST VIEW)                                */
+            /* ========================================================================= */
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-2xs overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                      <th className="py-3 px-3 w-28">Nguồn &amp; Mã</th>
+                      <th className="py-3 px-4 min-w-[260px]">Tên hồ sơ / Việc cần xử lý</th>
+                      <th className="py-3 px-3 min-w-[130px]">Trạng thái chính</th>
+                      <th className="py-3 px-3 min-w-[130px]">Trạng thái AI</th>
+                      <th className="py-3 px-3 min-w-[170px]">Người đang xử lý</th>
+                      <th className="py-3 px-3 w-36">Hạn xử lý</th>
+                      <th className="py-3 px-3 w-28 text-center">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredItems.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="py-12 text-center text-slate-500">
+                          <span className="material-symbols-outlined text-4xl text-slate-300 block mb-1">search_off</span>
+                          <div className="font-semibold text-slate-700">Không tìm thấy công việc nào phù hợp</div>
+                          <p className="text-[11.5px] text-slate-400 mt-0.5">Thử đổi từ khóa hoặc xóa bớt tiêu chí lọc.</p>
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredItems.map((item) => {
+                        const srcType = getEffectiveSourceType(item);
+                        return (
+                          <tr
+                            key={item.id}
+                            onClick={() => handleItemClick(item)}
+                            className="hover:bg-slate-50/80 cursor-pointer transition-colors group"
+                          >
+                            <td className="py-3 px-3">
+                              <div className="flex flex-col gap-1">
+                                <SourceTypeBadge sourceType={srcType} />
+                                <span className="font-mono font-bold text-slate-800 group-hover:text-[#C62828] transition-colors">
+                                  {item.code}
+                                </span>
+                              </div>
+                            </td>
+
+                            <td className="py-3 px-4">
+                              <div className="font-bold text-slate-900 group-hover:text-[#C62828] transition-colors leading-snug">
+                                {item.title}
+                              </div>
+                              <div className="text-[11.5px] text-slate-600 mt-1 flex items-center gap-1.5">
+                                <span className="font-bold text-slate-800">Cần làm:</span>
+                                <span className="font-medium text-[#C62828]">{item.actionTitle || item.nextAction}</span>
+                              </div>
+                            </td>
+
+                            <td className="py-3 px-3">
+                              <ColumnStatusBadge column={item.column} />
+                            </td>
+
+                            <td className="py-3 px-3">
+                              <AIStatusBadge status={item.aiStatus} progress={item.aiProgress} />
+                            </td>
+
+                            <td className="py-3 px-3">
+                              <div className="font-semibold text-slate-800">{item.holder.name}</div>
+                              <div className="text-[10.5px] text-slate-500">{item.holder.department || 'Đơn vị xử lý'}</div>
+                            </td>
+
+                            <td className="py-3 px-3">
+                              <DeadlineBadge type={item.deadlineType} text={item.deadlineText} />
+                            </td>
+
+                            <td className="py-3 px-3 text-center">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleItemClick(item);
+                                }}
+                                className="px-2.5 py-1 rounded-lg bg-[#C62828] hover:bg-[#b71c1c] text-white font-bold text-[11px] transition-all shadow-2xs"
+                              >
+                                Xử lý
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            /* ========================================================================= */
+            /* TAB LỊCH SỬ HOÀN THÀNH (Hồ sơ đã giải quyết xong)                         */
+            /* ========================================================================= */
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-2xs overflow-hidden">
+              <div className="p-4 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-emerald-600 text-[20px]">verified</span>
+                  <div>
+                    <h2 className="text-sm font-bold text-slate-900">Lịch sử công việc đã hoàn thành</h2>
+                    <p className="text-[11px] text-slate-500">Danh mục hồ sơ đã giải quyết xong và lưu trữ số</p>
+                  </div>
+                </div>
+                <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold font-mono">
+                  {kpiStats.completedCount} hồ sơ
+                </span>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                      <th className="py-3 px-3 w-28">Nguồn &amp; Mã</th>
+                      <th className="py-3 px-4 min-w-[260px]">Tên hồ sơ / Kết quả giải quyết</th>
+                      <th className="py-3 px-3 w-36">Người nộp</th>
+                      <th className="py-3 px-3 w-36">Ngày hoàn thành</th>
+                      <th className="py-3 px-3 w-40">Cán bộ phụ trách</th>
+                      <th className="py-3 px-3 w-28 text-center">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {allItemsWithExtra.filter((i) => i.column === 'completed').length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-12 text-center text-slate-500">
+                          <span className="material-symbols-outlined text-4xl text-slate-300 block mb-1">inventory_2</span>
+                          <div className="font-semibold text-slate-700">Chưa có hồ sơ nào trong mục hoàn thành</div>
+                        </td>
+                      </tr>
+                    ) : (
+                      allItemsWithExtra
+                        .filter((i) => i.column === 'completed')
+                        .map((item) => (
+                          <tr
+                            key={item.id}
+                            onClick={() => handleItemClick(item)}
+                            className="hover:bg-slate-50/80 cursor-pointer transition-colors"
+                          >
+                            <td className="py-3 px-3">
+                              <div className="flex flex-col gap-1">
+                                <SourceTypeBadge sourceType={getEffectiveSourceType(item)} />
+                                <span className="font-mono font-bold text-slate-800">{item.code}</span>
+                              </div>
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="font-bold text-slate-900 leading-snug">{item.title}</div>
+                              <div className="text-[11px] text-emerald-700 mt-1 flex items-center gap-1 font-medium">
+                                <span className="material-symbols-outlined text-[13px]">check_circle</span>
+                                <span>{item.completionResult || item.actionTitle}</span>
+                              </div>
+                            </td>
+                            <td className="py-3 px-3 text-slate-700 font-medium">{item.sender}</td>
+                            <td className="py-3 px-3 font-mono text-slate-600">{item.completedAt || '16/09/2026'}</td>
+                            <td className="py-3 px-3">
+                              <div className="font-semibold text-slate-800">{item.holder.name}</div>
+                              <div className="text-[10.5px] text-slate-500">{item.holder.department}</div>
+                            </td>
+                            <td className="py-3 px-3 text-center">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleItemClick(item);
+                                }}
+                                className="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-[11px] transition-all"
+                              >
+                                Xem lại
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </>
       )}
 

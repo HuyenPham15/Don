@@ -250,17 +250,6 @@ export default function ReceptionDraftCard({
               />
             </div>
 
-            {/* Ngày làm đơn */}
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold text-slate-700">Ngày làm đơn</label>
-              <input
-                type="text"
-                value={editForm.ngayLamDon}
-                onChange={(e) => setEditForm({ ...editForm, ngayLamDon: e.target.value })}
-                placeholder="dd/mm/yyyy"
-                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
-              />
-            </div>
 
             {/* Ngày tiếp nhận */}
             <div className="space-y-1">
@@ -372,11 +361,10 @@ export default function ReceptionDraftCard({
                 {renderConfidenceBadge(data.cccd)}
               </div>
               <div
-                className={`text-xs font-mono px-2.5 py-1.5 rounded-lg border ${
-                  data.cccd.status === 'needs_review'
-                    ? 'bg-amber-50/60 border-amber-200 text-amber-900 font-bold'
-                    : 'bg-slate-50 border-slate-200/80 text-slate-800'
-                }`}
+                className={`text-xs font-mono px-2.5 py-1.5 rounded-lg border ${data.cccd.status === 'needs_review'
+                  ? 'bg-amber-50/60 border-amber-200 text-amber-900 font-bold'
+                  : 'bg-slate-50 border-slate-200/80 text-slate-800'
+                  }`}
               >
                 {data.cccd.value || 'Chưa có thông tin'}
               </div>

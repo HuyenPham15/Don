@@ -319,22 +319,7 @@ export default function TraLaiDonModal({
             <div className="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shadow-md shadow-rose-600/20 shrink-0">
               <span className="material-symbols-outlined text-[24px]">assignment_return</span>
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded-md bg-rose-100 text-rose-900 text-[11px] font-bold tracking-wider font-label-technical">
-                  STEP-03D
-                </span>
-                <span className="text-xs px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-semibold">
-                  Cán bộ chuyên môn
-                </span>
-                <span className="text-xs text-rose-700 font-semibold hidden sm:inline-block">
-                  • Mẫu số 02/TL-Đ (TT 05/2021/TT-TTCP)
-                </span>
-              </div>
-              <h2 className="text-base sm:text-lg font-bold text-slate-900 font-headline-md tracking-tight mt-0.5">
-                Trả lại đơn &amp; Hướng dẫn công dân
-              </h2>
-            </div>
+
           </div>
 
           <div className="flex items-center gap-2">
@@ -343,11 +328,10 @@ export default function TraLaiDonModal({
               <button
                 type="button"
                 onClick={() => setActiveTab('form')}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                  activeTab === 'form'
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === 'form'
                     ? 'bg-white text-slate-900 shadow-2xs font-bold'
                     : 'text-slate-600 hover:text-slate-900'
-                }`}
+                  }`}
               >
                 <span className="material-symbols-outlined text-[16px]">edit_document</span>
                 <span>Thông tin trả lại</span>
@@ -355,11 +339,10 @@ export default function TraLaiDonModal({
               <button
                 type="button"
                 onClick={() => setActiveTab('preview')}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                  activeTab === 'preview'
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === 'preview'
                     ? 'bg-white text-rose-900 shadow-2xs font-bold'
                     : 'text-slate-600 hover:text-slate-900'
-                }`}
+                  }`}
               >
                 <span className="material-symbols-outlined text-[16px]">description</span>
                 <span>Xem trước Mẫu 02 (A4)</span>
