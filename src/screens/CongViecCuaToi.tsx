@@ -17,11 +17,7 @@ import BanGiaoDonModal, { BanGiaoDonSubmitData } from '../components/modals/BanG
 import TraLaiDonModal, { TraLaiDonSubmitData } from '../components/modals/TraLaiDonModal';
 import { TiepNhanDonItem, DEPARTMENTS } from '../constants/departments';
 import { SigningDocument, CurrentUserAccount, DEMO_ACCOUNTS } from '../types/signing';
-import TrinhKyScreen from './TrinhKyScreen';
-import VanBanChoKyScreen from './VanBanChoKyScreen';
-import LeaderSigningKanban from '../components/signing/LeaderSigningKanban';
-
-export type CongViecTab = 'tasks' | 'trinh_ky' | 'van_ban_cho_ky' | 'completed' | 'leader_kanban';
+export type CongViecTab = 'tasks' | 'all';
 export type ViewMode = 'kanban' | 'list' | 'completed';
 export type FilterStatus = WorkItemColumn | 'all';
 export type FilterSource = WorkItemSourceType | 'all';
@@ -42,6 +38,7 @@ interface CongViecCuaToiProps {
   onSwitchAccount?: (account: CurrentUserAccount) => void;
   signingDocuments?: SigningDocument[];
   onUpdateSigningDocuments?: (docs: SigningDocument[]) => void;
+  onSelectSigningDoc?: (docId: string) => void;
 }
 
 type QuickFilter =
@@ -88,17 +85,9 @@ export default function CongViecCuaToi({
   onSwitchAccount,
   signingDocuments = [],
   onUpdateSigningDocuments,
+  onSelectSigningDoc,
 }: CongViecCuaToiProps) {
   const isLeader = currentAccount.role === 'lanh_dao';
-  const [activeTab, setActiveTab] = useState<CongViecTab>(() => (isLeader ? 'leader_kanban' : 'tasks'));
-
-  useEffect(() => {
-    if (isLeader) {
-      setActiveTab('leader_kanban');
-    } else {
-      setActiveTab('tasks');
-    }
-  }, [currentAccount.id, isLeader]);
 
   const docs = signingDocuments;
   const signingCounts = useMemo(() => {
@@ -618,8 +607,138 @@ export default function CongViecCuaToi({
       });
     }
 
+    // Thêm các văn bản ký duyệt / trình ký từ signingDocuments nếu chưa có trong list
+    if (docs && docs.length > 0) {
+      docs.forEach((doc) => {
+        if (!list.some((it) => it.id === doc.id || it.code === doc.id)) {
+          let column: WorkItemColumn = 'action_required';
+          let subStatus: WorkItemSubStatus = 'cho_ky';
+          let ctaLabel = 'Ký duyệt ngay';
+          let ctaVariant: 'urgent' | 'primary' | 'outline' | 'warning' = 'urgent';
+          let nextAction = 'Xem xét dự thảo văn bản và thực hiện ký số phê duyệt';
+          let holderRole: 'Đang xử lý' | 'Đang chờ' | 'Đã bàn giao cho' | 'Đã hoàn thành' | 'Chờ tiếp nhận' = 'Đang xử lý';
+          let holderName = currentAccount.name;
+
+          if (isLeader) {
+            if (doc.status === 'da_trinh') {
+              column = 'action_required';
+              subStatus = 'cho_ky';
+              ctaLabel = 'Ký duyệt ngay';
+              ctaVariant = 'urgent';
+              nextAction = 'Ký số phê duyệt văn bản phát hành';
+              holderRole = 'Đang xử lý';
+              holderName = currentAccount.name;
+            } else if (doc.status === 'yeu_cau_chinh_sua') {
+              column = 'waiting';
+              subStatus = 'cho_phe_duyet';
+              ctaLabel = 'Xem chi tiết';
+              ctaVariant = 'outline';
+              nextAction = `Chờ cán bộ ${doc.nguoiTrinh || 'thụ lý'} chỉnh sửa lại theo ý kiến`;
+              holderRole = 'Đang chờ';
+              holderName = doc.nguoiTrinh || 'Cán bộ thụ lý';
+            } else if (doc.status === 'da_ky') {
+              column = 'completed';
+              subStatus = 'dang_xu_ly';
+              ctaLabel = 'Xem văn bản đã ký';
+              ctaVariant = 'outline';
+              nextAction = 'Văn bản đã được ký số và ban hành';
+              holderRole = 'Đã hoàn thành';
+              holderName = currentAccount.name;
+            } else {
+              column = 'waiting';
+              subStatus = 'chua_xu_ly';
+              ctaLabel = 'Xem văn bản';
+              ctaVariant = 'outline';
+              nextAction = 'Cán bộ đang dự thảo văn bản';
+              holderRole = 'Đang chờ';
+              holderName = doc.nguoiLap;
+            }
+          } else {
+            if (doc.status === 'yeu_cau_chinh_sua') {
+              column = 'action_required';
+              subStatus = 'bi_tra_lai';
+              ctaLabel = 'Sửa & Trình lại';
+              ctaVariant = 'urgent';
+              nextAction = `Lãnh đạo yêu cầu sửa: ${doc.lyDoTraLai || doc.lyDoTuChoi || doc.chuKyInfo?.yKienLanhDao || 'Chỉnh sửa nội dung'}`;
+              holderRole = 'Đang xử lý';
+              holderName = currentAccount.name;
+            } else if (doc.status === 'cho_trinh' || doc.status === 'nhap') {
+              column = 'processing';
+              subStatus = 'dang_xu_ly';
+              ctaLabel = 'Trình ký';
+              ctaVariant = 'primary';
+              nextAction = 'Hoàn thiện hồ sơ & tờ trình để gửi Lãnh đạo';
+              holderRole = 'Đang xử lý';
+              holderName = currentAccount.name;
+            } else if (doc.status === 'da_trinh') {
+              column = 'waiting';
+              subStatus = 'cho_ky';
+              ctaLabel = 'Theo dõi ký';
+              ctaVariant = 'outline';
+              nextAction = `Đang chờ ${doc.lanhDaoName || 'Lãnh đạo'} xem xét & ký số`;
+              holderRole = 'Đang chờ';
+              holderName = doc.lanhDaoName || 'Lãnh đạo';
+            } else if (doc.status === 'da_ky') {
+              column = 'completed';
+              subStatus = 'dang_xu_ly';
+              ctaLabel = 'Xem kết quả';
+              ctaVariant = 'outline';
+              nextAction = 'Lãnh đạo đã phê duyệt & ký số thành công';
+              holderRole = 'Đã hoàn thành';
+              holderName = doc.lanhDaoName || 'Lãnh đạo';
+            }
+          }
+
+          list.push({
+            id: doc.id,
+            code: doc.id,
+            title: doc.tenVanBan,
+            sender: doc.nguoiGuiDon || doc.nguoiTrinh || 'Cán bộ trình',
+            source: 'Văn bản trình ký',
+            sourceType: 'don',
+            timeReceived: doc.thoiGianTrinh || doc.ngayTao || 'Hôm nay',
+            priority: doc.mucDoUuTien === 'hoa_toc' ? 'urgent' : doc.mucDoUuTien === 'khan' ? 'high' : 'normal',
+            deadlineType: doc.mucDoUuTien === 'hoa_toc' || doc.mucDoUuTien === 'khan' ? 'today' : 'upcoming',
+            deadlineText: doc.hanXuLy || 'Trong ngày',
+            deadlineFull: doc.hanXuLy || 'Hôm nay - 17:00',
+            column,
+            subStatus,
+            actionTitle: doc.loaiVanBanLabel || 'Văn bản trình ký',
+            nextAction,
+            holder: {
+              role: holderRole,
+              name: holderName,
+              department: isLeader ? currentAccount.phongBan : (doc.donViNguoiLap || currentAccount.phongBan),
+            },
+            departmentId: 'tiep-dan',
+            departmentName: doc.donViNguoiLap || currentAccount.phongBan,
+            progress: {
+              currentStep: doc.status === 'da_ky' ? 5 : doc.status === 'da_trinh' ? 4 : 3,
+              totalSteps: 5,
+              stepName: doc.status === 'da_ky' ? 'Đã ký số' : doc.status === 'da_trinh' ? 'Chờ lãnh đạo ký' : 'Soạn thảo',
+              steps: ['Dự thảo', 'Thẩm định', 'Trình ký', 'Ký số', 'Ban hành'],
+            },
+            docCount: (doc.tepDinhKem?.length || 0) + 1,
+            cta: {
+              label: ctaLabel,
+              actionType: 'handle_now',
+              variant: ctaVariant,
+            },
+            category: doc.loaiVanBanLabel || 'Văn bản trình ký',
+            tags: [doc.loaiVanBanLabel || 'Văn bản', doc.mucDoUuTien === 'hoa_toc' ? 'Hỏa tốc' : doc.mucDoUuTien === 'khan' ? 'Khẩn' : 'Bình thường'],
+            loaiDon: doc.loaiDon || 'Văn bản hành chính',
+            luotNhanId: doc.luotNhanId || doc.hoSoCode,
+            nguoiGiao: doc.nguoiTrinh || 'Cán bộ trình',
+            ngayDuocGiao: doc.thoiGianTrinh || doc.ngayTao,
+            aiStatus: 'completed',
+            taskReadiness: column === 'action_required' ? 'action_required' : column === 'completed' ? 'completed' : 'waiting_system',
+          });
+        }
+      });
+    }
+
     return list;
-  }, [items, acceptedDons, extraCard, luotNhanList, tiepNhanItems]);
+  }, [items, acceptedDons, extraCard, luotNhanList, tiepNhanItems, docs, isLeader, currentAccount]);
 
   // =========================================================================
   // 5 KPI ĐẦU TRANG THEO ĐÚNG YÊU CẦU:
@@ -903,6 +1022,64 @@ export default function CongViecCuaToi({
       return;
     }
 
+    // 0B. Nếu là LÃNH ĐẠO click vào văn bản cần xử lý hoặc ký duyệt -> Mở trực tiếp màn ký chi tiết của Lãnh đạo
+    if (isLeader) {
+      const matchedSigningDoc = docs.find(
+        (d) =>
+          d.id === item.id ||
+          d.id === item.code ||
+          d.hoSoCode === item.code ||
+          d.hoSoCode === item.id ||
+          (item.luotNhanId && d.hoSoCode === item.luotNhanId)
+      );
+
+      const isSigningAction =
+        Boolean(matchedSigningDoc) ||
+        item.id.startsWith('VB-') ||
+        item.code.startsWith('VB-') ||
+        item.subStatus === 'cho_ky' ||
+        item.actionTitle?.toLowerCase().includes('ký') ||
+        item.nextAction?.toLowerCase().includes('ký') ||
+        item.title?.toLowerCase().includes('ký duyệt') ||
+        item.title?.toLowerCase().includes('trình ký');
+
+      if (isSigningAction) {
+        const targetDoc = matchedSigningDoc || docs.find((d) => d.status === 'da_trinh') || docs[0];
+        if (targetDoc) {
+          if (onSelectSigningDoc) onSelectSigningDoc(targetDoc.id);
+          onNav('van-ban-cho-ky');
+          showToast(`Mở Bàn ký duyệt văn bản chi tiết: [${targetDoc.id}] ${targetDoc.tenVanBan}`);
+          return;
+        }
+      }
+    } else {
+      const matchedSigningDoc = docs.find(
+        (d) =>
+          d.id === item.id ||
+          d.id === item.code ||
+          d.hoSoCode === item.code ||
+          d.hoSoCode === item.id ||
+          (item.luotNhanId && d.hoSoCode === item.luotNhanId)
+      );
+
+      const isSigningAction =
+        Boolean(matchedSigningDoc) ||
+        item.id.startsWith('VB-') ||
+        item.code.startsWith('VB-') ||
+        item.actionTitle?.toLowerCase().includes('trình') ||
+        item.title?.toLowerCase().includes('trình ký');
+
+      if (isSigningAction && (matchedSigningDoc || docs.length > 0)) {
+        const targetDoc = matchedSigningDoc || docs[0];
+        if (targetDoc) {
+          if (onSelectSigningDoc) onSelectSigningDoc(targetDoc.id);
+          onNav('trinh-ky');
+          showToast(`Mở màn hình Trình ký văn bản: [${targetDoc.id}] ${targetDoc.tenVanBan}`);
+          return;
+        }
+      }
+    }
+
     const isAiAnalyzedForReview =
       item.aiStatus === 'needs_review' ||
       item.aiStatus === 'processing' ||
@@ -980,376 +1157,169 @@ export default function CongViecCuaToi({
       )}
 
       {/* ========================================================================= */}
-      {/* 1. HEADER CHÍNH & VIEW MODE SWITCHER                                      */}
+      {/* 1. ADMINISTRATIVE HEADER: CÔNG VIỆC CỦA TÔI                               */}
       {/* ========================================================================= */}
-      {/* ========================================================================= */}
-      {/* 0. BANNER VAI TRÒ TÀI KHOẢN (ROLE CONTEXT BANNER)                         */}
-      {/* ========================================================================= */}
-      <div className={`p-4 rounded-2xl border mb-3.5 shadow-2xs flex flex-wrap items-center justify-between gap-3.5 transition-all ${isLeader
-        ? 'bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white border-indigo-800/80 shadow-indigo-950/20'
-        : 'bg-gradient-to-r from-slate-900 via-slate-900 to-blue-950 text-white border-blue-900/80 shadow-blue-950/20'
-        }`}>
-        <div className="flex items-center gap-3.5 min-w-0">
-          <div className={`w-11 h-11 rounded-2xl ${isLeader ? 'bg-indigo-600 text-white ring-2 ring-indigo-400/50' : 'bg-blue-600 text-white ring-2 ring-blue-400/50'
-            } font-bold text-sm flex items-center justify-center shrink-0 shadow-sm font-headline-md`}>
-            {currentAccount.shortName}
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-3 sm:p-4 shadow-2xs mb-3.5 flex flex-wrap items-center justify-between gap-3.5">
+        {/* Left: Icon, Title, Role Badge, Active Count */}
+        <div className="flex items-center gap-3 min-w-0">
+          <div
+            className={`w-10 h-10 rounded-xl ${
+              isLeader ? 'bg-indigo-600 text-white' : 'bg-[#004ac6] text-white'
+            } flex items-center justify-center font-bold text-sm shadow-xs shrink-0`}
+          >
+            <span className="material-symbols-outlined text-[22px]">
+              {isLeader ? 'approval_delegation' : 'checklist'}
+            </span>
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-extrabold text-white text-[15px] tracking-tight font-headline-md">
+              <h1 className="text-base font-extrabold text-slate-900 tracking-tight font-headline-md">
+                Công việc của tôi
+              </h1>
+              <span
+                className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider font-label-technical ${
+                  isLeader
+                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                    : 'bg-blue-100 text-blue-800 border border-blue-200'
+                }`}
+              >
+                {isLeader ? 'LÃNH ĐẠO PHÊ DUYỆT' : 'CÁN BỘ THỤ LÝ'}
+              </span>
+              <span className="text-xs font-semibold text-slate-700 hidden sm:inline">
                 {currentAccount.name}
               </span>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider font-label-technical ${isLeader ? 'bg-amber-400 text-slate-950' : 'bg-blue-400 text-slate-950'
-                }`}>
-                {isLeader ? 'LÃNH ĐẠO KÝ DUYỆT' : 'CÁN BỘ THỤ LÝ HỒ SƠ'}
-              </span>
-              <span className="text-white/40 text-xs">•</span>
-              <span className="text-white/80 text-xs font-medium">
-                {currentAccount.chucVu} ({currentAccount.phongBan})
-              </span>
             </div>
-            <p className="text-[11.5px] text-white/70 mt-0.5 truncate font-normal">
-              {isLeader
-                ? 'Thẩm quyền: Xem xét hồ sơ pháp lý, phê chuẩn tờ trình và ký số điện tử (VGCA / Ban Cơ yếu Chính phủ)'
-                : 'Thẩm quyền: Tiếp nhận hồ sơ, bóc tách AI, kiểm tra điều kiện, thẩm tra và lập tờ trình văn bản gửi Lãnh đạo'}
+            <p className="text-[11.5px] text-slate-500 mt-0.5 flex items-center gap-2">
+              <span>Không gian điều phối và theo dõi tiến độ xử lý hồ sơ, đơn thư, văn bản</span>
+              <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[10.5px] font-bold font-mono bg-slate-100 text-slate-700 border border-slate-200">
+                {kpiStats.total} việc đang xử lý
+              </span>
             </p>
           </div>
         </div>
 
-        {/* Nút chuyển đổi vai trò nhanh để kiểm thử luồng Trình ký ⟷ Ký số */}
-        {onSwitchAccount && (
-          <button
-            type="button"
-            onClick={() => {
-              const other = DEMO_ACCOUNTS.find((a) => a.role !== currentAccount.role);
-              if (other) {
-                onSwitchAccount(other);
-                showToast(`Đã chuyển sang tài khoản ${other.name} (${other.roleLabel})`);
-              }
-            }}
-            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer ${isLeader
-              ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20 hover:border-white/40'
-              : 'bg-amber-400 hover:bg-amber-300 text-slate-950 border border-amber-300'
+        {/* Right: View Mode Toggle (Kanban / Danh sách) + Role Switcher + Tạo mới */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Chuyển Kanban 4 cột vs Danh sách */}
+          <div className="flex items-center gap-0.5 p-0.5 bg-slate-100 rounded-xl border border-slate-200">
+            <button
+              type="button"
+              onClick={() => setViewMode('kanban')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
+                viewMode === 'kanban'
+                  ? 'bg-white text-[#004ac6] shadow-2xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
-            title="Đổi vai trò tài khoản để kiểm tra cả luồng Cán bộ lập/trình ký và Lãnh đạo phê duyệt/ký số"
-          >
-            <span className="material-symbols-outlined text-[17px]">swap_horiz</span>
-            <span>
-              {isLeader
-                ? 'Chuyển sang Cán bộ (Nguyễn Minh Anh)'
-                : `Chuyển sang Lãnh đạo (Trần Văn Cường) • ${signingCounts.daTrinh} chờ ký`}
-            </span>
-          </button>
-        )}
-      </div>
+              title="Xem dạng Kanban 4 cột quy trình"
+            >
+              <span className="material-symbols-outlined text-[17px]">view_kanban</span>
+              <span>Kanban</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('list')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
+                viewMode === 'list'
+                  ? 'bg-white text-[#004ac6] shadow-2xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+              title="Xem dạng Bảng danh sách chi tiết"
+            >
+              <span className="material-symbols-outlined text-[17px]">view_list</span>
+              <span>Danh sách</span>
+            </button>
+          </div>
 
-      {/* ========================================================================= */}
-      {/* 1. TABS QUẢN LÝ CÔNG VIỆC THEO TÀI KHOẢN (ROLE WORKSPACE TABS)            */}
-      {/* ========================================================================= */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-3.5 pb-2.5 border-b border-slate-200">
-        <div className="flex items-center gap-1.5 p-1 bg-slate-200/70 rounded-2xl border border-slate-300/60 shadow-2xs">
-          {/* NẾU LÀ CÁN BỘ THỤ LÝ: */}
-          {!isLeader && (
-            <>
-              {/* Tab 1: Hồ sơ & Nhiệm vụ */}
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('tasks');
-                  setViewMode('kanban');
-                }}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'tasks' && viewMode !== 'completed'
-                  ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                  }`}
-              >
-                <span className="material-symbols-outlined text-[17px] text-[#004ac6]">checklist</span>
-                <span>Nhiệm vụ &amp; Tiếp nhận xử lý</span>
-                <span className="px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-700 text-[10.5px] font-bold font-mono">
-                  {kpiStats.total}
-                </span>
-              </button>
+          {/* Đổi vai trò nhanh */}
+          {onSwitchAccount && (
+            <button
+              type="button"
+              onClick={() => {
+                const other = DEMO_ACCOUNTS.find((a) => a.role !== currentAccount.role);
+                if (other) {
+                  onSwitchAccount(other);
+                  showToast(`Đã chuyển sang tài khoản ${other.name} (${other.roleLabel})`);
+                }
+              }}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer border ${
+                isLeader
+                  ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200'
+                  : 'bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-300'
+              }`}
+              title="Đổi vai trò tài khoản để kiểm tra giữa Cán bộ thụ lý và Lãnh đạo ký duyệt"
+            >
+              <span className="material-symbols-outlined text-[16px]">swap_horiz</span>
+              <span className="hidden md:inline">
+                {isLeader ? 'Đổi sang Cán bộ' : 'Đổi sang Lãnh đạo'}
+              </span>
+            </button>
+          )}
 
-              {/* Tab 2: Trình ký văn bản */}
-              <button
-                type="button"
-                onClick={() => setActiveTab('trinh_ky')}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'trinh_ky'
-                  ? 'bg-white text-[#004ac6] shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                  }`}
+          {/* Nút Tạo mới tiếp nhận */}
+          <div className="relative inline-flex items-center rounded-xl bg-[#C62828] hover:bg-[#b71c1c] text-white shadow-xs">
+            <button
+              type="button"
+              onClick={() => onNav('nhan-don-them')}
+              className="px-3 py-1.5 text-xs font-bold flex items-center gap-1.5 cursor-pointer hover:opacity-95"
+              title="Mở trực tiếp màn hình thêm mới lượt nhận hồ sơ"
+            >
+              <span className="material-symbols-outlined text-[17px]">add</span>
+              <span>Tạo mới</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowDropdown((prev) => !prev)}
+              className="px-1.5 py-1.5 border-l border-red-700/60 hover:bg-black/10 rounded-r-xl cursor-pointer flex items-center transition-colors"
+              title="Tùy chọn khởi tạo"
+            >
+              <span className="material-symbols-outlined text-[16px]">arrow_drop_down</span>
+            </button>
+
+            {showDropdown && (
+              <div
+                className="absolute right-0 top-full mt-1.5 w-72 rounded-xl bg-white border border-slate-200 shadow-xl py-1.5 z-50 animate-fade-in"
+                onMouseLeave={() => setShowDropdown(false)}
               >
-                <span className="material-symbols-outlined text-[17px] text-blue-600">drive_file_move</span>
-                <span>Trình ký văn bản</span>
-                <div className="flex items-center gap-1">
-                  {signingCounts.yeuCauSua > 0 && (
-                    <span className="px-1.5 py-0.2 rounded-md bg-rose-500 text-white text-[10px] font-bold font-mono animate-pulse" title="Lãnh đạo yêu cầu chỉnh sửa lại">
-                      {signingCounts.yeuCauSua} sửa
-                    </span>
-                  )}
-                  <span className="px-1.5 py-0.2 rounded-full bg-blue-100 text-blue-800 text-[10.5px] font-bold font-mono">
-                    {signingCounts.choTrinh} chờ
-                  </span>
+                <div className="px-3 py-1 text-[10.5px] font-semibold text-slate-400 font-label-technical uppercase tracking-wider border-b border-slate-100 mb-1">
+                  Khởi tạo tiếp nhận
                 </div>
-              </button>
-
-              {/* Tab 3: Đã giải quyết */}
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('tasks');
-                  setViewMode('completed');
-                }}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'tasks' && viewMode === 'completed'
-                  ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                  }`}
-              >
-                <span className="material-symbols-outlined text-[17px] text-emerald-600">inventory_2</span>
-                <span>Đã giải quyết</span>
-                <span className="px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 text-[10.5px] font-bold font-mono">
-                  {kpiStats.completedCount}
-                </span>
-              </button>
-            </>
-          )}
-
-          {/* NẾU LÀ LÃNH ĐẠO PHÊ DUYỆT: */}
-          {isLeader && (
-            <>
-              {/* Tab 1: Xử lý Lượt nhận / Đơn / Vụ việc trực tiếp */}
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('tasks');
-                  setViewMode('kanban');
-                }}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'tasks' && viewMode !== 'completed'
-                  ? 'bg-white text-indigo-900 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                  }`}
-              >
-                <span className="material-symbols-outlined text-[17px] text-indigo-600">folder_managed</span>
-                <span>Xử lý Lượt nhận / Đơn / Vụ việc</span>
-                <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[10.5px] font-bold font-mono">
-                  {kpiStats.total}
-                </span>
-              </button>
-
-
-              {/* Tab 3: Bàn ký duyệt chi tiết (Master-Detail) */}
-              <button
-                type="button"
-                onClick={() => setActiveTab('van_ban_cho_ky')}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'van_ban_cho_ky'
-                  ? 'bg-white text-indigo-900 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                  }`}
-              >
-                <span className="material-symbols-outlined text-[17px] text-indigo-600">splitscreen</span>
-                <span>Bàn ký duyệt chi tiết</span>
-              </button>
-
-              {/* Tab 4: Văn bản đã ký & ban hành */}
-              {/* <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('completed');
-                }}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'completed'
-                  ? 'bg-white text-emerald-800 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                  }`}
-              >
-                <span className="material-symbols-outlined text-[17px] text-emerald-600">task_alt</span>
-                <span>Văn bản đã ký ({signingCounts.daKy})</span>
-              </button> */}
-            </>
-          )}
-        </div>
-
-        {/* Cụm điều khiển bên phải: Chuyển đổi Kanban/List & Nút Tạo mới (Dành cho cả Cán bộ và Lãnh đạo khi ở tab Hồ sơ/Nhiệm vụ) */}
-        {(activeTab === 'tasks' || !isLeader) && (
-          <div className="flex items-center gap-2.5">
-            {viewMode !== 'completed' && (
-              <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200">
                 <button
                   type="button"
-                  onClick={() => setViewMode('kanban')}
-                  className={`p-1.5 rounded-lg flex items-center justify-center cursor-pointer transition-all ${viewMode === 'kanban' ? 'bg-white text-blue-700 shadow-2xs font-bold' : 'text-slate-500 hover:text-slate-800'
-                    }`}
-                  title="Xem dạng Kanban 4 cột"
+                  className="w-full flex items-start gap-3 px-3 py-2 text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-colors text-left cursor-pointer"
+                  onClick={() => {
+                    setShowDropdown(false);
+                    onNav('nhan-don-them');
+                  }}
                 >
-                  <span className="material-symbols-outlined text-[18px]">view_kanban</span>
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="material-symbols-outlined text-[18px]">post_add</span>
+                  </div>
+                  <div>
+                    <div className="text-[13px] font-semibold text-slate-900 leading-snug">Tạo lượt nhận hồ sơ</div>
+                    <p className="text-[11px] text-slate-500 leading-tight mt-0.5">Mở màn hình thêm mới lượt nhận hồ sơ</p>
+                  </div>
                 </button>
                 <button
                   type="button"
-                  onClick={() => setViewMode('list')}
-                  className={`p-1.5 rounded-lg flex items-center justify-center cursor-pointer transition-all ${viewMode === 'list' ? 'bg-white text-blue-700 shadow-2xs font-bold' : 'text-slate-500 hover:text-slate-800'
-                    }`}
-                  title="Xem dạng Bảng danh sách"
+                  className="w-full flex items-start gap-3 px-3 py-2 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors text-left cursor-pointer"
+                  onClick={() => {
+                    setShowDropdown(false);
+                    onNav('nhan-don-them');
+                  }}
                 >
-                  <span className="material-symbols-outlined text-[18px]">view_list</span>
+                  <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="material-symbols-outlined text-[18px]">folder_shared</span>
+                  </div>
+                  <div>
+                    <div className="text-[13px] font-semibold text-slate-900 leading-snug">Thêm mới tiếp nhận và xử lý</div>
+                    <p className="text-[11px] text-slate-500 leading-tight mt-0.5">Mở màn hình tiếp nhận và xử lý đơn</p>
+                  </div>
                 </button>
               </div>
             )}
-
-            {/* Nút Khởi tạo tiếp nhận mới */}
-            <div className="relative inline-flex items-center rounded-xl bg-[#C62828] hover:bg-[#b71c1c] text-white shadow-xs">
-              <button
-                type="button"
-                onClick={() => onNav('nhan-don-them')}
-                className="px-3.5 py-1.5 text-xs font-bold flex items-center gap-1.5 cursor-pointer hover:opacity-95"
-                title="Mở trực tiếp màn hình thêm mới lượt nhận hồ sơ"
-              >
-                <span className="material-symbols-outlined text-[18px]">add</span>
-                <span>Tạo mới</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowDropdown((prev) => !prev)}
-                className="px-1.5 py-1.5 border-l border-red-700/60 hover:bg-black/10 rounded-r-xl cursor-pointer flex items-center transition-colors"
-                title="Tùy chọn khởi tạo"
-              >
-                <span className="material-symbols-outlined text-[16px]">arrow_drop_down</span>
-              </button>
-
-              {showDropdown && (
-                <div
-                  className="absolute right-0 top-full mt-1.5 w-72 rounded-xl bg-white border border-slate-200 shadow-xl py-1.5 z-50 animate-fade-in"
-                  onMouseLeave={() => setShowDropdown(false)}
-                >
-                  <div className="px-3 py-1 text-[10.5px] font-semibold text-slate-400 font-label-technical uppercase tracking-wider border-b border-slate-100 mb-1">
-                    Khởi tạo tiếp nhận
-                  </div>
-                  <button
-                    type="button"
-                    className="w-full flex items-start gap-3 px-3 py-2 text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-colors text-left cursor-pointer"
-                    onClick={() => {
-                      setShowDropdown(false);
-                      onNav('nhan-don-them');
-                    }}
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center shrink-0 mt-0.5">
-                      <span className="material-symbols-outlined text-[18px]">post_add</span>
-                    </div>
-                    <div>
-                      <div className="text-[13px] font-semibold text-slate-900 leading-snug">Tạo lượt nhận hồ sơ</div>
-                      <p className="text-[11px] text-slate-500 leading-tight mt-0.5">Mở màn hình thêm mới lượt nhận hồ sơ</p>
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    className="w-full flex items-start gap-3 px-3 py-2 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors text-left cursor-pointer"
-                    onClick={() => {
-                      setShowDropdown(false);
-                      onNav('nhan-don-them');
-                    }}
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
-                      <span className="material-symbols-outlined text-[18px]">folder_shared</span>
-                    </div>
-                    <div>
-                      <div className="text-[13px] font-semibold text-slate-900 leading-snug">Thêm mới tiếp nhận và xử lý</div>
-                      <p className="text-[11px] text-slate-500 leading-tight mt-0.5">Mở màn hình tiếp nhận và xử lý đơn</p>
-                    </div>
-                  </button>
-                </div>
-              )}
-            </div>
           </div>
-        )}
+        </div>
       </div>
-
-      {/* ========================================================================= */}
-      {/* 2. NỘI DUNG CHÍNH DỰA THEO TAB ĐANG ACTIVE                                */}
-      {/* ========================================================================= */}
-      {activeTab === 'leader_kanban' ? (
-        <div className="flex-1 bg-white border border-slate-200 rounded-2xl shadow-2xs overflow-hidden">
-          <LeaderSigningKanban
-            documents={docs}
-            onUpdateDocuments={onUpdateSigningDocuments || (() => { })}
-            onNav={onNav}
-            onSelectHoSo={(hoSoCode) => {
-              const matched = acceptedDons.find((d) => d.code === hoSoCode || d.id === hoSoCode);
-              if (matched && onSelectDon) {
-                onSelectDon(matched);
-              } else {
-                const matchedLn = luotNhanList.find((l) => l.id === hoSoCode);
-                if (matchedLn) {
-                  onSelect(matchedLn);
-                  onNav('ban-phan-tich');
-                } else {
-                  onNav('don-tiep-nhan');
-                }
-              }
-            }}
-            currentAccount={currentAccount}
-            onSwitchAccount={onSwitchAccount}
-            onOpenDetailedView={() => setActiveTab('van_ban_cho_ky')}
-            onSwitchToTasksView={() => {
-              setActiveTab('tasks');
-              setViewMode('kanban');
-            }}
-            initialKpiFilter="all"
-          />
-        </div>
-      ) : activeTab === 'van_ban_cho_ky' ? (
-        <div className="flex-1 bg-white border border-slate-200 rounded-2xl shadow-2xs overflow-hidden">
-          <VanBanChoKyScreen
-            onNav={onNav}
-            documents={docs}
-            onUpdateDocuments={onUpdateSigningDocuments || (() => { })}
-            onSelectHoSo={(hoSoCode) => {
-              const matched = acceptedDons.find((d) => d.code === hoSoCode || d.id === hoSoCode);
-              if (matched && onSelectDon) onSelectDon(matched);
-            }}
-            isEmbedded={true}
-            onSwitchAccount={(role) => {
-              const target = DEMO_ACCOUNTS.find((a) => a.role === role);
-              if (target && onSwitchAccount) onSwitchAccount(target);
-            }}
-          />
-        </div>
-      ) : activeTab === 'trinh_ky' ? (
-        <div className="flex-1 bg-white border border-slate-200 rounded-2xl shadow-2xs overflow-hidden">
-          <TrinhKyScreen
-            onNav={onNav}
-            documents={docs}
-            onUpdateDocuments={onUpdateSigningDocuments || (() => { })}
-            onSelectHoSo={(hoSoCode) => {
-              const matched = acceptedDons.find((d) => d.code === hoSoCode || d.id === hoSoCode);
-              if (matched && onSelectDon) onSelectDon(matched);
-            }}
-            isEmbedded={true}
-            onSwitchAccount={(role) => {
-              const target = DEMO_ACCOUNTS.find((a) => a.role === role);
-              if (target && onSwitchAccount) onSwitchAccount(target);
-            }}
-          />
-        </div>
-      ) : activeTab === 'completed' && isLeader ? (
-        <div className="flex-1 bg-white border border-slate-200 rounded-2xl shadow-2xs overflow-hidden">
-          <LeaderSigningKanban
-            documents={docs}
-            onUpdateDocuments={onUpdateSigningDocuments || (() => { })}
-            onNav={onNav}
-            onSelectHoSo={(hoSoCode) => {
-              const matched = acceptedDons.find((d) => d.code === hoSoCode || d.id === hoSoCode);
-              if (matched && onSelectDon) onSelectDon(matched);
-            }}
-            currentAccount={currentAccount}
-            onSwitchAccount={onSwitchAccount}
-            onOpenDetailedView={() => setActiveTab('van_ban_cho_ky')}
-            onSwitchToTasksView={() => {
-              setActiveTab('tasks');
-              setViewMode('kanban');
-            }}
-            initialKpiFilter="signed"
-          />
-        </div>
-      ) : (
-        <>
           {/* ========================================================================= */}
           {/* 3. DẢI KPI ĐẦU TRANG - 5 CHỈ SỐ ĐỘC LẬP (CHUẨN HÓA, KHÔNG TRỘN CẤP)        */}
           {/* 1. Tổng công việc | 2. Cần xử lý | 3. Đang thực hiện | 4. Đang chờ | 5. Quá hạn */}
@@ -2509,8 +2479,6 @@ export default function CongViecCuaToi({
               </div>
             </div>
           )}
-        </>
-      )}
 
       {/* ========================================================================= */}
       {/* 5. MODAL TIẾP NHẬN XỬ LÝ & PHÂN CÔNG XỬ LÝ TỪ TASK CARD                  */}

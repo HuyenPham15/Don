@@ -2837,23 +2837,80 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={handleScanDocument}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs transition-colors cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[16px] text-slate-600">scanner</span>
-              <span>Quét tài liệu từ máy scan</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <label className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#004ac6] hover:bg-blue-700 text-white font-semibold text-xs shadow-xs transition-all cursor-pointer">
+                <span className="material-symbols-outlined text-[16px]">upload_file</span>
+                <span>Tải tệp lên</span>
+                <input
+                  type="file"
+                  multiple
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.rar,.zip"
+                  onChange={(e) => {
+                    handleAddFiles(e.target.files);
+                    e.target.value = '';
+                  }}
+                  className="hidden"
+                />
+              </label>
+
+              <button
+                type="button"
+                onClick={handleScanDocument}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs transition-colors cursor-pointer border border-slate-200/80"
+              >
+                <span className="material-symbols-outlined text-[16px] text-slate-600">scanner</span>
+                <span>Quét tài liệu từ máy scan</span>
+              </button>
+            </div>
           </div>
 
           {/* Danh sách tệp đã đính kèm */}
           {files.length === 0 ? (
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
-              <p className="text-[12.5px] font-medium text-slate-700">Chưa có tài liệu đính kèm</p>
-              <p className="text-[11px] text-slate-400 mt-0.5">
-                Tải tệp lên hoặc quét tài liệu ngay.
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsDragging(true);
+              }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setIsDragging(false);
+                handleAddFiles(e.dataTransfer.files);
+              }}
+              className={`p-6 rounded-2xl border-2 border-dashed text-center transition-colors ${isDragging ? 'border-blue-500 bg-blue-50/60' : 'border-slate-200 bg-slate-50 hover:bg-slate-100/50'
+                }`}
+            >
+              <div className="w-10 h-10 mx-auto rounded-full bg-blue-100 text-[#004ac6] flex items-center justify-center mb-2">
+                <span className="material-symbols-outlined text-xl">cloud_upload</span>
+              </div>
+              <p className="text-[13px] font-semibold text-slate-800">Kéo thả tệp vào đây hoặc nhấn tải lên</p>
+              <p className="text-[11.5px] text-slate-500 mt-0.5 mb-3">
+                Hỗ trợ định dạng PDF, Word (.doc, .docx), hình ảnh (.jpg, .png). Tối đa 25MB/tệp.
               </p>
+              <div className="flex items-center justify-center gap-2">
+                <label className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#004ac6] hover:bg-blue-700 text-white font-semibold text-xs shadow-xs transition-all cursor-pointer">
+                  <span className="material-symbols-outlined text-[16px]">upload_file</span>
+                  <span>Chọn tệp từ máy tính</span>
+                  <input
+                    type="file"
+                    multiple
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.rar,.zip"
+                    onChange={(e) => {
+                      handleAddFiles(e.target.files);
+                      e.target.value = '';
+                    }}
+                    className="hidden"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={handleScanDocument}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-medium text-xs border border-slate-200 transition-colors cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[16px] text-slate-600">scanner</span>
+                  <span>Quét từ máy scan</span>
+                </button>
+              </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -2876,14 +2933,24 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveFile(idx)}
-                    className="p-1 text-slate-400 hover:text-red-600 rounded-lg transition-colors cursor-pointer"
-                    title="Xóa tệp"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">close</span>
-                  </button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => showToast(`Đang xem tài liệu: ${file.name}`)}
+                      className="p-1 text-slate-400 hover:text-blue-600 rounded-lg transition-colors cursor-pointer"
+                      title="Xem tài liệu"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">visibility</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveFile(idx)}
+                      className="p-1 text-slate-400 hover:text-red-600 rounded-lg transition-colors cursor-pointer"
+                      title="Xóa tệp"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">close</span>
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

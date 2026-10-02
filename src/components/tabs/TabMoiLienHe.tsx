@@ -16,10 +16,15 @@ export default function TabMoiLienHe({ currentDon }: TabMoiLienHeProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
+  const [showApplicantNote, setShowApplicantNote] = useState(false);
+
   const isToGiac =
     currentDon?.code?.startsWith('Đ-2026') ||
     currentDon?.nguoiNop === 'Nguyễn Văn A' ||
     currentDon?.title?.includes('tố giác');
+
+  const applicantName = currentDon?.nguoiNop || (isToGiac ? 'Nguyễn Văn A' : 'Lê Văn Hùng');
+  const avatarInitials = isToGiac ? 'NVA' : 'LVH';
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
@@ -37,10 +42,9 @@ export default function TabMoiLienHe({ currentDon }: TabMoiLienHeProps) {
   };
 
   // Node coordinates
-  const rootNode = { x: 80, y: 240, width: 300, height: 90 };
+  const rootNode = { x: 80, y: 220, width: 310, height: 135 };
   const n1 = { x: 520, y: 80, width: 290, height: 90 }; // Đơn liên quan
   const n2 = { x: 520, y: 240, width: 230, height: 75 }; // Tổ chức / Đối tượng
-  const n3 = { x: 840, y: 220, width: 310, height: 140 }; // Người nộp đơn
   const n4 = { x: 520, y: 400, width: 310, height: 130 }; // Tài liệu chứng cứ
   const n5 = { x: 840, y: 80, width: 310, height: 90 }; // Cơ quan thụ lý
 
@@ -159,14 +163,6 @@ export default function TabMoiLienHe({ currentDon }: TabMoiLienHeProps) {
               strokeWidth="2.5"
             />
 
-            {/* Người tổ chức to Người nộp đơn */}
-            <path
-              d={generateBezier(n2.x + n2.width, n2.y + n2.height / 2, n3.x, n3.y + n3.height / 2)}
-              fill="none"
-              stroke="#10B981"
-              strokeWidth="2.5"
-            />
-
             {/* Root to Tài liệu */}
             <path
               d={generateBezier(
@@ -184,7 +180,7 @@ export default function TabMoiLienHe({ currentDon }: TabMoiLienHeProps) {
 
           {/* Root Node: Hồ sơ đơn gốc */}
           <div
-            className="absolute bg-white rounded-xl border-2 flex flex-col justify-center items-center p-4 z-10 shadow-md"
+            className="absolute bg-white rounded-xl border-2 flex flex-col justify-between p-3.5 z-10 shadow-md"
             style={{
               left: rootNode.x,
               top: rootNode.y,
@@ -196,16 +192,117 @@ export default function TabMoiLienHe({ currentDon }: TabMoiLienHeProps) {
             <div className="absolute left-[-5px] top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-[#004ac6]"></div>
             <div className="absolute right-[-5px] top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-[#004ac6]"></div>
 
-            <span className="px-2 py-0.5 rounded bg-blue-50 text-[#004ac6] text-[10px] font-bold uppercase mb-1">
-              HỒ SƠ TIẾP NHẬN GỐC
-            </span>
-            <div className="font-bold text-slate-900 text-[13px] text-center">
-              {currentDon?.code || (isToGiac ? 'Đ-2026-00125' : 'DS-39/2026-GOVEX')}
+            <div className="flex flex-col items-center">
+              <span className="px-2 py-0.5 rounded bg-blue-50 text-[#004ac6] text-[10px] font-bold uppercase mb-0.5">
+                HỒ SƠ TIẾP NHẬN GỐC
+              </span>
+              <div className="font-bold text-slate-900 text-[13px] text-center">
+                {currentDon?.code || (isToGiac ? 'Đ-2026-00125' : 'DS-39/2026-GOVEX')}
+              </div>
+              <div className="text-[11px] text-slate-500 font-mono">
+                Lượt nhận: {currentDon?.luotNhanId || (isToGiac ? 'LN-2025-0819' : 'LN-45/2026-GOVEX')}
+              </div>
             </div>
-            <div className="text-[11px] text-slate-500 font-mono mt-0.5">
-              Lượt nhận: {currentDon?.luotNhanId || (isToGiac ? 'LN-2025-0819' : 'LN-45/2026-GOVEX')}
-            </div>
+
+            {/* Clickable applicant trigger button */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowApplicantNote(!showApplicantNote);
+              }}
+              className={`w-full mt-1.5 flex items-center justify-between px-2.5 py-1.5 rounded-lg border text-xs transition-all cursor-pointer ${
+                showApplicantNote
+                  ? 'bg-emerald-50 border-emerald-400 text-emerald-800 shadow-2xs'
+                  : 'bg-slate-50 hover:bg-emerald-50/70 border-slate-200 hover:border-emerald-300 text-slate-700 hover:text-emerald-800'
+              }`}
+              title="Nhấn để xem ghi chú thông tin người nộp đơn"
+            >
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                <span className="text-[11px] text-slate-500 shrink-0">Người nộp:</span>
+                <span className="font-bold text-[11.5px] text-slate-900 truncate">{applicantName}</span>
+              </div>
+              <div className="flex items-center gap-0.5 text-[10.5px] font-semibold text-emerald-700 bg-white px-1.5 py-0.5 rounded border border-emerald-200 shadow-2xs shrink-0 ml-1">
+                <span className="material-symbols-outlined text-[13px]">
+                  {showApplicantNote ? 'visibility_off' : 'info'}
+                </span>
+                <span>{showApplicantNote ? 'Ẩn' : 'Chi tiết'}</span>
+              </div>
+            </button>
           </div>
+
+          {/* Ghi chú chỉa thông tin người nộp đơn (Callout Speech Bubble) */}
+          {showApplicantNote && (
+            <div
+              className="absolute bg-white rounded-xl border-2 border-emerald-500 shadow-xl flex flex-col z-30 transition-all"
+              style={{
+                left: rootNode.x,
+                top: rootNode.y + rootNode.height + 14,
+                width: 330,
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Mũi tên chĩa lên Node Hồ sơ gốc */}
+              <div className="absolute -top-[9px] left-10 w-4 h-4 bg-white border-t-2 border-l-2 border-emerald-500 transform rotate-45 z-20"></div>
+
+              <div className="flex-1 flex flex-col justify-center pt-3 pb-2.5 px-4 relative z-10">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center justify-center shrink-0 border border-emerald-200">
+                      {avatarInitials}
+                    </div>
+                    <div>
+                      <div className="font-bold text-slate-900 text-sm">
+                        {applicantName}
+                      </div>
+                      <div className="flex items-center gap-1 text-[10.5px] text-emerald-700 font-semibold">
+                        <span className="material-symbols-outlined text-[13px]">verified</span>
+                        <span>Đã xác thực CCCD &amp; VNeID</span>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowApplicantNote(false)}
+                    className="text-slate-400 hover:text-slate-600 p-1 rounded-md hover:bg-slate-100 transition-colors cursor-pointer"
+                    title="Đóng ghi chú"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">close</span>
+                  </button>
+                </div>
+
+                <div className="text-[11.5px] text-slate-600 space-y-1.5 bg-slate-50/80 p-2.5 rounded-lg border border-slate-100">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500">Số CCCD:</span>
+                    <span className="font-mono font-bold text-slate-800 bg-white px-1.5 py-0.5 rounded border border-slate-200 text-[11px]">
+                      {isToGiac ? '001088019482' : '081089002891'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500">Số điện thoại:</span>
+                    <span className="font-mono font-semibold text-slate-800">
+                      {isToGiac ? '0912 345 678' : '0983 847 291'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500">Địa chỉ:</span>
+                    <span className="text-slate-800 text-right truncate max-w-[190px]">
+                      {isToGiac ? 'Phường Dịch Vọng Hậu, Cầu Giấy, Hà Nội' : 'Ninh Kiều, TP. Cần Thơ'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-emerald-50 border-t border-emerald-100 py-2 px-4 flex items-center justify-between text-[11px] text-emerald-800 font-semibold rounded-b-[10px]">
+                <span className="flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[15px]">person_check</span>
+                  Đương sự chính đứng đơn
+                </span>
+                <span className="material-symbols-outlined text-[15px] text-emerald-600">check_circle</span>
+              </div>
+            </div>
+          )}
 
           {/* Node 1: Đơn liên quan / Đơn ghép */}
           <div
@@ -249,7 +346,6 @@ export default function TabMoiLienHe({ currentDon }: TabMoiLienHeProps) {
             style={{ left: n2.x, top: n2.y, width: n2.width, height: n2.height }}
           >
             <div className="absolute left-[-5px] top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-amber-600"></div>
-            <div className="absolute right-[-5px] top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-amber-600"></div>
 
             <span className="px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 text-[10px] font-bold mb-0.5">
               {isToGiac ? 'ĐỐI TƯỢNG BỊ TỐ GIÁC' : 'BÊN BỊ KHIẾU NẠI'}
@@ -259,38 +355,6 @@ export default function TabMoiLienHe({ currentDon }: TabMoiLienHeProps) {
             </div>
             <div className="text-[10.5px] text-slate-500">
               {isToGiac ? 'Ông Trần Văn B (Tổng Giám đốc)' : 'Đại diện: Ban QLDA Giao thông'}
-            </div>
-          </div>
-
-          {/* Node 3: Người nộp đơn / Đương sự chính */}
-          <div
-            className="absolute bg-white rounded-xl border-2 z-10 shadow-md flex flex-col overflow-hidden"
-            style={{ left: n3.x, top: n3.y, width: n3.width, height: n3.height, borderColor: '#10B981' }}
-          >
-            <div className="absolute left-[-5px] top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-emerald-600 z-20"></div>
-
-            <div className="flex-1 flex flex-col justify-center pt-3 pb-2 px-4">
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center justify-center shrink-0">
-                  {isToGiac ? 'NVA' : 'LVH'}
-                </div>
-                <div>
-                  <div className="font-bold text-slate-900 text-sm">
-                    {isToGiac ? 'Nguyễn Văn A' : 'Lê Văn Hùng'}
-                  </div>
-                  <span className="text-[10.5px] text-emerald-700 font-semibold">Đã xác thực </span>
-                </div>
-              </div>
-
-              <div className="text-[11px] text-slate-600 mt-1 space-y-0.5">
-                <div>CCCD: <span className="font-mono">{isToGiac ? '001088019482' : '081089002891'}</span></div>
-                <div>SĐT: <span className="font-mono">{isToGiac ? '0912 345 678' : '0983 847 291'}</span></div>
-              </div>
-            </div>
-
-            <div className="bg-emerald-50 border-t border-emerald-100 py-1.5 px-4 flex items-center justify-between text-[11px] text-emerald-800 font-semibold">
-              <span>Đương sự chính đứng đơn</span>
-              <span className="material-symbols-outlined text-[14px]">check_circle</span>
             </div>
           </div>
 

@@ -16,7 +16,7 @@ interface LeaderSigningKanbanProps {
   onSelectHoSo?: (hoSoCode: string) => void;
   currentAccount?: CurrentUserAccount;
   onSwitchAccount?: (account: CurrentUserAccount) => void;
-  onOpenDetailedView?: () => void;
+  onOpenDetailedView?: (docId?: string) => void;
   onSwitchToTasksView?: () => void;
   initialKpiFilter?: 'all' | 'urgent' | 'pending' | 'returned' | 'signed';
 }
@@ -350,7 +350,7 @@ export default function LeaderSigningKanban({
           {onOpenDetailedView && (
             <button
               type="button"
-              onClick={onOpenDetailedView}
+              onClick={() => onOpenDetailedView()}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 transition-colors shadow-2xs cursor-pointer"
               title="Mở giao diện duyệt tuần tự văn bản kèm trình xem dự thảo tài liệu lớn"
             >
@@ -646,9 +646,13 @@ export default function LeaderSigningKanban({
                         setReturnReason('');
                       }}
                       onOpenDetail={() => {
-                        setActiveSignDoc(doc);
-                        setLeaderOpinion('');
+                        if (onOpenDetailedView) {
+                          onOpenDetailedView(doc.id);
+                        } else {
+                          onNav('van-ban-cho-ky');
+                        }
                       }}
+                      onOpenDetailedView={onOpenDetailedView}
                       onSelectHoSo={onSelectHoSo}
                     />
                   ))
@@ -692,9 +696,13 @@ export default function LeaderSigningKanban({
                         setReturnReason('');
                       }}
                       onOpenDetail={() => {
-                        setActiveSignDoc(doc);
-                        setLeaderOpinion('');
+                        if (onOpenDetailedView) {
+                          onOpenDetailedView(doc.id);
+                        } else {
+                          onNav('van-ban-cho-ky');
+                        }
                       }}
+                      onOpenDetailedView={onOpenDetailedView}
                       onSelectHoSo={onSelectHoSo}
                     />
                   ))
@@ -730,9 +738,13 @@ export default function LeaderSigningKanban({
                       doc={doc}
                       variant="returned"
                       onOpenDetail={() => {
-                        setActiveSignDoc(doc);
-                        setLeaderOpinion(doc.lyDoTraLai || '');
+                        if (onOpenDetailedView) {
+                          onOpenDetailedView(doc.id);
+                        } else {
+                          onNav('van-ban-cho-ky');
+                        }
                       }}
+                      onOpenDetailedView={onOpenDetailedView}
                       onSelectHoSo={onSelectHoSo}
                     />
                   ))
@@ -768,9 +780,13 @@ export default function LeaderSigningKanban({
                       doc={doc}
                       variant="signed"
                       onOpenDetail={() => {
-                        setActiveSignDoc(doc);
-                        setLeaderOpinion(doc.chuKyInfo?.yKienLanhDao || '');
+                        if (onOpenDetailedView) {
+                          onOpenDetailedView(doc.id);
+                        } else {
+                          onNav('van-ban-cho-ky');
+                        }
                       }}
+                      onOpenDetailedView={onOpenDetailedView}
                       onSelectHoSo={onSelectHoSo}
                     />
                   ))
@@ -816,8 +832,14 @@ export default function LeaderSigningKanban({
                               {doc.hoSoCode}
                             </div>
                           </td>
-                          <td className="py-3 px-4 max-w-xs">
-                            <div className="font-bold text-slate-900 leading-snug line-clamp-1">{doc.tenVanBan}</div>
+                          <td className="py-3 px-4 max-w-xs cursor-pointer group" onClick={() => {
+                            if (onOpenDetailedView) {
+                              onOpenDetailedView(doc.id);
+                            } else {
+                              onNav('van-ban-cho-ky');
+                            }
+                          }}>
+                            <div className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors leading-snug line-clamp-1">{doc.tenVanBan}</div>
                             <div className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">{doc.trichYeu}</div>
                           </td>
                           <td className="py-3 px-4">
@@ -875,13 +897,28 @@ export default function LeaderSigningKanban({
                                   <button
                                     type="button"
                                     onClick={() => {
+                                      if (onOpenDetailedView) {
+                                        onOpenDetailedView(doc.id);
+                                      } else {
+                                        onNav('van-ban-cho-ky');
+                                      }
+                                    }}
+                                    className="px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
+                                    title="Mở màn hình chi tiết Lãnh đạo ký"
+                                  >
+                                    <span className="material-symbols-outlined text-[15px]">draw</span>
+                                    <span>Chi tiết văn bản</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
                                       setActiveSignDoc(doc);
                                       setLeaderOpinion('');
                                     }}
-                                    className="px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
+                                    className="px-2 py-1 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100 border border-slate-300 transition-colors cursor-pointer"
+                                    title="Ký nhanh qua popup"
                                   >
-                                    <span className="material-symbols-outlined text-[15px]">draw</span>
-                                    <span>Ký số</span>
+                                    Nhanh
                                   </button>
                                   <button
                                     type="button"
@@ -899,12 +936,17 @@ export default function LeaderSigningKanban({
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    setActiveSignDoc(doc);
-                                    setLeaderOpinion(doc.chuKyInfo?.yKienLanhDao || doc.lyDoTraLai || '');
+                                    if (onOpenDetailedView) {
+                                      onOpenDetailedView(doc.id);
+                                    } else {
+                                      onNav('van-ban-cho-ky');
+                                    }
                                   }}
-                                  className="px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer"
+                                  className="px-2.5 py-1 rounded-lg text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition-colors cursor-pointer flex items-center gap-1"
+                                  title="Mở màn hình chi tiết Lãnh đạo ký"
                                 >
-                                  Chi tiết
+                                  <span className="material-symbols-outlined text-[14px]">visibility</span>
+                                  <span>Chi tiết văn bản</span>
                                 </button>
                               )}
                             </div>
@@ -963,13 +1005,32 @@ export default function LeaderSigningKanban({
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setActiveSignDoc(null)}
-                className="w-8 h-8 rounded-full hover:bg-slate-200 text-slate-400 hover:text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[20px]">close</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const id = activeSignDoc.id;
+                    setActiveSignDoc(null);
+                    if (onOpenDetailedView) {
+                      onOpenDetailedView(id);
+                    } else {
+                      onNav('van-ban-cho-ky');
+                    }
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
+                  title="Mở màn hình chi tiết Lãnh đạo ký văn bản toàn màn hình"
+                >
+                  <span className="material-symbols-outlined text-[16px]">open_in_new</span>
+                  <span>Mở màn chi tiết Lãnh đạo ký</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveSignDoc(null)}
+                  className="w-8 h-8 rounded-full hover:bg-slate-200 text-slate-400 hover:text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[20px]">close</span>
+                </button>
+              </div>
             </div>
 
             {/* Modal Body */}
@@ -1027,10 +1088,47 @@ export default function LeaderSigningKanban({
                     <span className="material-symbols-outlined text-[17px] text-indigo-600">article</span>
                     <span>Nội dung dự thảo trình Lãnh đạo phê duyệt</span>
                   </h4>
-                  <span className="text-[11px] text-slate-500">Định dạng hành chính chuẩn</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const id = activeSignDoc.id;
+                      setActiveSignDoc(null);
+                      if (onOpenDetailedView) onOpenDetailedView(id);
+                      else onNav('van-ban-cho-ky');
+                    }}
+                    className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 cursor-pointer hover:underline"
+                  >
+                    <span>Mở màn chi tiết Lãnh đạo ký</span>
+                    <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                  </button>
                 </div>
                 <div className="p-5 rounded-2xl border border-slate-300 bg-slate-50/30 text-xs font-serif leading-relaxed text-slate-900 whitespace-pre-line shadow-2xs max-h-72 overflow-y-auto">
                   {activeSignDoc.noiDungChiTiet}
+                </div>
+
+                <div className="mt-2.5 flex items-center justify-between p-3 bg-indigo-50/80 border border-indigo-200 rounded-2xl text-xs">
+                  <div className="flex items-center gap-2.5 text-indigo-950">
+                    <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                      <span className="material-symbols-outlined text-[18px]">draw</span>
+                    </div>
+                    <div>
+                      <div className="font-bold">Chuyển sang Bàn ký chi tiết của Lãnh đạo</div>
+                      <div className="text-[11px] text-indigo-700">Xem văn bản toàn khổ A4, kiểm tra tệp đính kèm song song, ghi ý kiến chỉ đạo và ký số VGCA</div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const id = activeSignDoc.id;
+                      setActiveSignDoc(null);
+                      if (onOpenDetailedView) onOpenDetailedView(id);
+                      else onNav('van-ban-cho-ky');
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95 shrink-0"
+                  >
+                    <span>Mở màn chi tiết Lãnh đạo ký</span>
+                    <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                  </button>
                 </div>
               </div>
 
@@ -1174,13 +1272,30 @@ export default function LeaderSigningKanban({
 
             {/* Modal Footer */}
             <div className="px-6 py-3.5 border-t border-slate-200 bg-slate-50 flex items-center justify-between gap-3">
-              <button
-                type="button"
-                onClick={() => setActiveSignDoc(null)}
-                className="px-4 py-2 rounded-xl border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-semibold cursor-pointer transition-colors"
-              >
-                Đóng
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveSignDoc(null)}
+                  className="px-4 py-2 rounded-xl border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-semibold cursor-pointer transition-colors"
+                >
+                  Đóng
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const id = activeSignDoc.id;
+                    setActiveSignDoc(null);
+                    if (onOpenDetailedView) onOpenDetailedView(id);
+                    else onNav('van-ban-cho-ky');
+                  }}
+                  className="px-4 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold cursor-pointer transition-colors flex items-center gap-1.5"
+                  title="Chuyển sang màn hình ký văn bản chi tiết của Lãnh đạo"
+                >
+                  <span className="material-symbols-outlined text-[17px]">open_in_new</span>
+                  <span>Mở màn chi tiết Lãnh đạo ký</span>
+                </button>
+              </div>
 
               <div className="flex items-center gap-2">
                 {activeSignDoc.status === 'da_trinh' && (
@@ -1317,6 +1432,7 @@ interface LeaderDocumentCardProps {
   onQuickSign?: () => void;
   onQuickReturn?: () => void;
   onOpenDetail?: () => void;
+  onOpenDetailedView?: (docId?: string) => void;
   onSelectHoSo?: (hoSoCode: string) => void;
 }
 
@@ -1326,13 +1442,22 @@ function LeaderDocumentCard({
   onQuickSign,
   onQuickReturn,
   onOpenDetail,
+  onOpenDetailedView,
   onSelectHoSo,
 }: LeaderDocumentCardProps) {
   const isUrgent = doc.mucDoUuTien === 'khan' || doc.mucDoUuTien === 'hoa_toc';
 
+  const handleCardClick = () => {
+    if (onOpenDetailedView) {
+      onOpenDetailedView(doc.id);
+    } else if (onOpenDetail) {
+      onOpenDetail();
+    }
+  };
+
   return (
     <div
-      onClick={onOpenDetail}
+      onClick={handleCardClick}
       className={`bg-white rounded-2xl p-3.5 shadow-2xs hover:shadow-md transition-all flex flex-col gap-2 relative cursor-pointer group/card border ${variant === 'urgent'
           ? 'border-rose-300 hover:border-rose-500 ring-1 ring-rose-100'
           : variant === 'returned'
@@ -1377,13 +1502,19 @@ function LeaderDocumentCard({
           {doc.hoSoCode}
         </span>
 
-        {/* Số lượng tệp đính kèm */}
-        {doc.tepDinhKem && doc.tepDinhKem.length > 0 && (
-          <div className="ml-auto flex items-center gap-0.5 text-[10px] font-semibold text-slate-400" title={`${doc.tepDinhKem.length} tệp đính kèm`}>
-            <span className="material-symbols-outlined text-[13px]">attach_file</span>
-            <span>{doc.tepDinhKem.length}</span>
-          </div>
-        )}
+        {/* Nút xem chi tiết bàn ký */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleCardClick();
+          }}
+          className="ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10.5px] font-bold border border-indigo-200 transition-colors cursor-pointer"
+          title="Mở màn hình chi tiết văn bản để Lãnh đạo xem và ký duyệt"
+        >
+          <span className="material-symbols-outlined text-[13px]">draw</span>
+          <span>Chi tiết văn bản</span>
+        </button>
       </div>
 
       {/* DÒNG 2: TÊN VĂN BẢN TRÌNH KÝ */}
@@ -1427,24 +1558,36 @@ function LeaderDocumentCard({
       </div>
 
       {/* DÒNG 5: HÀNG NÚT THAO TÁC CHO LÃNH ĐẠO */}
-      {variant !== 'signed' && (
+      {variant !== 'signed' ? (
         <div className="flex items-center gap-1.5 pt-1 border-t border-slate-100">
-          {/* Nút chính Ký số */}
           {variant !== 'returned' ? (
             <>
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (onQuickSign) onQuickSign();
+                  handleCardClick();
                 }}
                 className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-1 cursor-pointer shadow-2xs ${variant === 'urgent'
                     ? 'bg-rose-600 hover:bg-rose-700 text-white'
                     : 'bg-indigo-600 hover:bg-indigo-700 text-white'
                   }`}
+                title="Mở màn ký văn bản chi tiết của Lãnh đạo"
               >
-                <span className="material-symbols-outlined text-[14px]">draw</span>
-                <span>Ký số ngay</span>
+                <span className="material-symbols-outlined text-[14px]">splitscreen</span>
+                <span>Chi tiết văn bản</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onQuickSign) onQuickSign();
+                }}
+                className="py-1.5 px-2 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-medium transition-colors cursor-pointer"
+                title="Ký nhanh qua hộp thoại popup"
+              >
+                Ký nhanh
               </button>
 
               <button
@@ -1462,13 +1605,24 @@ function LeaderDocumentCard({
           ) : (
             <button
               type="button"
-              onClick={onOpenDetail}
-              className="w-full py-1.5 px-2 rounded-lg text-xs font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition-colors flex items-center justify-center gap-1"
+              onClick={handleCardClick}
+              className="w-full py-1.5 px-2 rounded-lg text-xs font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition-colors flex items-center justify-center gap-1 cursor-pointer"
             >
               <span className="material-symbols-outlined text-[14px]">visibility</span>
-              <span>Xem chi tiết ý kiến chỉ đạo</span>
+              <span>Chi tiết văn bản &amp; ý kiến chỉ đạo</span>
             </button>
           )}
+        </div>
+      ) : (
+        <div className="pt-1 border-t border-slate-100">
+          <button
+            type="button"
+            onClick={handleCardClick}
+            className="w-full py-1.5 px-2 rounded-lg text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors flex items-center justify-center gap-1 cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[14px]">visibility</span>
+            <span>Chi tiết văn bản đã ký</span>
+          </button>
         </div>
       )}
     </div>

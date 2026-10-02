@@ -10,6 +10,8 @@ interface VanBanChoKyScreenProps {
   onSelectHoSo?: (hoSoCode: string) => void;
   isEmbedded?: boolean;
   onSwitchAccount?: (role: 'can_bo' | 'lanh_dao') => void;
+  initialDocId?: string;
+  onBackToKanban?: () => void;
 }
 
 export default function VanBanChoKyScreen({
@@ -19,6 +21,8 @@ export default function VanBanChoKyScreen({
   onSelectHoSo,
   isEmbedded = false,
   onSwitchAccount,
+  initialDocId,
+  onBackToKanban,
 }: VanBanChoKyScreenProps) {
   // Lọc và Tìm kiếm
   const [searchTerm, setSearchTerm] = useState('');
@@ -30,10 +34,24 @@ export default function VanBanChoKyScreen({
 
   // Văn bản đang được mở chi tiết để ký
   const [activeDocId, setActiveDocId] = useState<string>(() => {
+    if (initialDocId) {
+      const matched = documents.find((d) => d.id === initialDocId || d.hoSoCode === initialDocId);
+      if (matched) return matched.id;
+    }
     // Mặc định chọn văn bản 'da_trinh' đầu tiên hoặc văn bản đầu tiên
     const firstPending = documents.find((d) => d.status === 'da_trinh');
     return firstPending ? firstPending.id : documents[0]?.id || '';
   });
+
+  // Tự động chuyển activeDocId khi prop initialDocId thay đổi
+  React.useEffect(() => {
+    if (initialDocId) {
+      const matched = documents.find((d) => d.id === initialDocId || d.hoSoCode === initialDocId);
+      if (matched) {
+        setActiveDocId(matched.id);
+      }
+    }
+  }, [initialDocId, documents]);
 
   const [activeTabLeft, setActiveTabLeft] = useState<'preview' | 'attachments' | 'dossier'>('preview');
   const [leaderOpinion, setLeaderOpinion] = useState<string>('');
@@ -264,6 +282,46 @@ export default function VanBanChoKyScreen({
       )}
 
       {/* ===================================================================== */}
+      {/* 1. HEADER CHÍNH NẾU ĐỘC LẬP (!isEmbedded)                             */}
+      {/* ===================================================================== */}
+      {!isEmbedded && (
+        <div className="bg-white border-b border-slate-200 px-5 py-3 flex items-center justify-between gap-4 shrink-0 shadow-2xs">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => onNav('cong-viec')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold cursor-pointer transition-colors shadow-2xs"
+            >
+              <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+              <span>Công việc của tôi</span>
+            </button>
+            <div className="h-5 w-px bg-slate-200"></div>
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-indigo-600 text-[20px]">draw</span>
+              <h1 className="text-sm font-bold text-slate-900">Bàn ký duyệt văn bản chi tiết</h1>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">
+                Lãnh đạo phê duyệt
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-1 rounded-xl text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+              {stats.choKy} chờ ký
+            </span>
+            {stats.khan > 0 && (
+              <span className="px-2.5 py-1 rounded-xl text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 animate-pulse">
+                {stats.khan} khẩn / hỏa tốc
+              </span>
+            )}
+            <span className="px-2.5 py-1 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              {stats.daKy} đã ký
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================================== */}
       {/* 2. BODY SPLIT WORKSPACE: DANH SÁCH BÊN TRÁI + CHI TIẾT KÝ BÊN PHẢI   */}
       {/* ===================================================================== */}
       <div className="flex-1 overflow-hidden flex flex-col lg:flex-row">
@@ -271,6 +329,22 @@ export default function VanBanChoKyScreen({
         <div className="w-full lg:w-[420px] xl:w-[460px] bg-white border-r border-slate-200 flex flex-col shrink-0 overflow-hidden">
           {/* Search & Filters */}
           <div className="p-3.5 border-b border-slate-200 space-y-2 bg-slate-50/60">
+            {onBackToKanban && (
+              <div className="flex items-center justify-between pb-1">
+                <button
+                  type="button"
+                  onClick={onBackToKanban}
+                  className="inline-flex items-center gap-1 text-xs font-bold text-indigo-700 hover:text-indigo-900 cursor-pointer hover:underline"
+                  title="Quay lại giao diện Kanban 4 cột"
+                >
+                  <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+                  <span>Quay lại Kanban ký duyệt</span>
+                </button>
+                <span className="text-[11px] font-medium text-slate-500 font-mono">
+                  {filteredAndSortedDocs.length} văn bản
+                </span>
+              </div>
+            )}
             <div className="relative">
               <span className="material-symbols-outlined absolute left-3 top-2 text-slate-400 text-[17px]">
                 search
@@ -360,8 +434,8 @@ export default function VanBanChoKyScreen({
                     key={doc.id}
                     onClick={() => setActiveDocId(doc.id)}
                     className={`p-3.5 transition-all cursor-pointer relative ${isSelected
-                        ? 'bg-indigo-50/70 border-l-4 border-indigo-600 shadow-2xs'
-                        : 'hover:bg-slate-50'
+                      ? 'bg-indigo-50/70 border-l-4 border-indigo-600 shadow-2xs'
+                      : 'hover:bg-slate-50'
                       }`}
                   >
                     {/* Hàng 1: Mã hồ sơ, nhãn khẩn, trạng thái */}
@@ -432,6 +506,17 @@ export default function VanBanChoKyScreen({
               {/* Top Action Bar của Lãnh đạo */}
               <div className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between gap-4 flex-wrap shrink-0">
                 <div className="flex items-center gap-2">
+                  {onBackToKanban && (
+                    <button
+                      type="button"
+                      onClick={onBackToKanban}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-700 text-xs font-bold cursor-pointer transition-colors shadow-2xs mr-1"
+                      title="Quay lại giao diện Kanban ký duyệt 4 cột"
+                    >
+                      <span className="material-symbols-outlined text-[15px]">arrow_back</span>
+                      <span>Kanban ký</span>
+                    </button>
+                  )}
                   <span className="text-xs font-mono font-bold text-slate-500">
                     VĂN BẢN: {activeDoc.id}
                   </span>
@@ -439,6 +524,17 @@ export default function VanBanChoKyScreen({
                   <span className="text-xs font-semibold text-slate-700">
                     Hồ sơ: <strong className="text-[#004ac6]">{activeDoc.hoSoCode}</strong>
                   </span>
+                  {onSelectHoSo && (
+                    <button
+                      type="button"
+                      onClick={() => onSelectHoSo(activeDoc.hoSoCode)}
+                      className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-800 hover:underline cursor-pointer ml-1"
+                      title="Xem hồ sơ gốc"
+                    >
+                      <span className="material-symbols-outlined text-[13px]">open_in_new</span>
+                      <span>Hồ sơ gốc</span>
+                    </button>
+                  )}
                 </div>
 
                 {/* 3 Nút thao tác chính: [Ký văn bản] [Trả lại chỉnh sửa] [Từ chối ký] */}
@@ -519,8 +615,8 @@ export default function VanBanChoKyScreen({
                         type="button"
                         onClick={() => setActiveTabLeft('preview')}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${activeTabLeft === 'preview'
-                            ? 'bg-white text-[#004ac6] shadow-2xs border border-slate-200'
-                            : 'text-slate-600 hover:bg-slate-200/60'
+                          ? 'bg-white text-[#004ac6] shadow-2xs border border-slate-200'
+                          : 'text-slate-600 hover:bg-slate-200/60'
                           }`}
                       >
                         <span className="material-symbols-outlined text-[16px]">visibility</span>
@@ -531,15 +627,15 @@ export default function VanBanChoKyScreen({
                         type="button"
                         onClick={() => setActiveTabLeft('attachments')}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${activeTabLeft === 'attachments'
-                            ? 'bg-white text-[#004ac6] shadow-2xs border border-slate-200'
-                            : 'text-slate-600 hover:bg-slate-200/60'
+                          ? 'bg-white text-[#004ac6] shadow-2xs border border-slate-200'
+                          : 'text-slate-600 hover:bg-slate-200/60'
                           }`}
                       >
                         <span className="material-symbols-outlined text-[16px]">attachment</span>
                         <span>Tài liệu đính kèm ({activeDoc.tepDinhKem.length})</span>
                       </button>
 
-                      <button
+                      {/* <button
                         type="button"
                         onClick={() => setActiveTabLeft('dossier')}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${activeTabLeft === 'dossier'
@@ -549,7 +645,7 @@ export default function VanBanChoKyScreen({
                       >
                         <span className="material-symbols-outlined text-[16px]">description</span>
                         <span>Hồ sơ vụ việc gốc</span>
-                      </button>
+                      </button> */}
                     </div>
 
                     <div className="text-[11px] text-slate-400">
@@ -685,7 +781,7 @@ export default function VanBanChoKyScreen({
                   )}
 
                   {/* Tab 3: Hồ sơ đơn gốc */}
-                  {activeTabLeft === 'dossier' && (
+                  {/* {activeTabLeft === 'dossier' && (
                     <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-2xs space-y-3 text-xs">
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-slate-800 text-xs">Trích xuất hồ sơ đơn gốc</span>
@@ -723,7 +819,7 @@ export default function VanBanChoKyScreen({
                         </div>
                       </div>
                     </div>
-                  )}
+                  )} */}
                 </div>
 
                 {/* ==================== KHU VỰC A, C, D: THÔNG TIN TRÌNH KÝ & THAO TÁC KÝ (5 cột) ==================== */}
@@ -739,7 +835,7 @@ export default function VanBanChoKyScreen({
                       </span>
                     </div>
 
-                    <div className="space-y-1.5 text-[11.5px]">
+                    <div className="space-y-2 text-[11.5px]">
                       <div>
                         <span className="text-slate-400">Số đơn:</span>{' '}
                         <strong className="text-slate-800">{activeDoc.hoSoCode}</strong>
@@ -749,19 +845,9 @@ export default function VanBanChoKyScreen({
                         <strong className="text-slate-800">{activeDoc.nguoiGuiDon}</strong>
                       </div>
                       <div>
-                        <span className="text-slate-400">Tiến độ quy trình:</span>
-                        <div className="mt-1 flex items-center gap-1.5 text-[10.5px]">
-                          <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-semibold">
-                            ✓ Tiếp nhận
-                          </span>
-                          <span className="text-slate-300">→</span>
-                          <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-semibold">
-                            ✓ Xác minh sơ bộ
-                          </span>
-                          <span className="text-slate-300">→</span>
-                          <span className="px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 font-bold border border-indigo-200">
-                            Trình phê duyệt
-                          </span>
+                        <span className="text-slate-400">Nội dung tóm tắt của đơn:</span>
+                        <div className="mt-1 p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 text-slate-800 leading-relaxed font-normal">
+                          {activeDoc.noiDungDon}
                         </div>
                       </div>
                     </div>
@@ -911,10 +997,10 @@ export default function VanBanChoKyScreen({
               <div className="flex items-center gap-2">
                 <span
                   className={`material-symbols-outlined text-[24px] ${confirmModalType === 'sign'
-                      ? 'text-emerald-600'
-                      : confirmModalType === 'return'
-                        ? 'text-amber-600'
-                        : 'text-rose-600'
+                    ? 'text-emerald-600'
+                    : confirmModalType === 'return'
+                      ? 'text-amber-600'
+                      : 'text-rose-600'
                     }`}
                 >
                   {confirmModalType === 'sign'

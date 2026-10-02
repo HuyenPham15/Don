@@ -45,6 +45,7 @@ export default function App() {
 
   // Danh sách văn bản Trình ký & Ký số (Dành cho Cán bộ và Lãnh đạo)
   const [signingDocuments, setSigningDocuments] = useState<SigningDocument[]>(INITIAL_SIGNING_DOCUMENTS);
+  const [selectedSigningDocId, setSelectedSigningDocId] = useState<string | undefined>();
 
   // Tài khoản người dùng đang đăng nhập (Cán bộ thụ lý hoặc Lãnh đạo ký duyệt)
   const [currentAccount, setCurrentAccount] = useState<CurrentUserAccount>(DEMO_ACCOUNTS[0]);
@@ -553,6 +554,7 @@ export default function App() {
                 onSwitchAccount={setCurrentAccount}
                 signingDocuments={signingDocuments}
                 onUpdateSigningDocuments={setSigningDocuments}
+                onSelectSigningDoc={setSelectedSigningDocId}
               />
             )}
             {screen === "nhan-don-list" && (
@@ -607,10 +609,12 @@ export default function App() {
                 onNav={setScreen}
                 documents={signingDocuments}
                 onUpdateDocuments={setSigningDocuments}
+                initialDocId={selectedSigningDocId}
                 onSelectHoSo={(hoSoCode) => {
                   const matched = acceptedDons.find((d) => d.code === hoSoCode || d.id === hoSoCode);
                   if (matched) setSelectedDon(matched);
                 }}
+                onBackToKanban={() => setScreen("cong-viec")}
                 onSwitchAccount={(role) => {
                   const target = DEMO_ACCOUNTS.find((a) => a.role === role);
                   if (target) {
