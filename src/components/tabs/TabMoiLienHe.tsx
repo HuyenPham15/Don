@@ -178,7 +178,6 @@ export default function TabMoiLienHe({ currentDon }: TabMoiLienHeProps) {
             />
           </svg>
 
-          {/* Root Node: Hồ sơ đơn gốc */}
           <div
             className="absolute bg-white rounded-xl border-2 flex flex-col justify-between p-3.5 z-10 shadow-md"
             style={{
@@ -211,11 +210,10 @@ export default function TabMoiLienHe({ currentDon }: TabMoiLienHeProps) {
                 e.stopPropagation();
                 setShowApplicantNote(!showApplicantNote);
               }}
-              className={`w-full mt-1.5 flex items-center justify-between px-2.5 py-1.5 rounded-lg border text-xs transition-all cursor-pointer ${
-                showApplicantNote
+              className={`w-full mt-1.5 flex items-center justify-between px-2.5 py-1.5 rounded-lg border text-xs transition-all cursor-pointer ${showApplicantNote
                   ? 'bg-emerald-50 border-emerald-400 text-emerald-800 shadow-2xs'
                   : 'bg-slate-50 hover:bg-emerald-50/70 border-slate-200 hover:border-emerald-300 text-slate-700 hover:text-emerald-800'
-              }`}
+                }`}
               title="Nhấn để xem ghi chú thông tin người nộp đơn"
             >
               <div className="flex items-center gap-1.5 min-w-0">

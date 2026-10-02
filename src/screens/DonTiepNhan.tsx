@@ -202,7 +202,7 @@ export default function DonTiepNhan({ onNav, donDetail }: DonTiepNhanProps) {
             </span>
           </button>
 
-          {/* Tab 3: Đơn khác */}
+          {/* Tab 3: Đơn khác (Đơn & lượt nhận đã ghép) */}
           <button
             type="button"
             onClick={() => setActiveTab('don-khac')}
@@ -211,10 +211,10 @@ export default function DonTiepNhan({ onNav, donDetail }: DonTiepNhanProps) {
               : 'border-transparent text-slate-500 hover:text-slate-800'
               }`}
           >
-            <span className="material-symbols-outlined text-[16px]">move_to_inbox</span>
+            <span className="material-symbols-outlined text-[16px]">folder_shared</span>
             <span>Đơn khác</span>
             <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 font-semibold text-[10px] border border-slate-200">
-              2 đơn ghép
+              2 đã ghép
             </span>
           </button>
 
