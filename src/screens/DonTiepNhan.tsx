@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Screen, DonDetail } from "../types";
 import TabThongTinChung from '../components/tabs/TabThongTinChung';
 import TabMoiLienHe from '../components/tabs/TabMoiLienHe';
@@ -7,22 +7,107 @@ import TabTaiLieu from '../components/tabs/TabTaiLieu';
 import { matchWorkflowByLoaiDon } from '../constants/workflows';
 import ThongBaoBoSungModal from '../components/workflow/ThongBaoBoSungModal';
 import ThucHienBuocTiepTheoModal from '../components/workflow/ThucHienBuocTiepTheoModal';
+import XacMinhVaDeXuatModal, { HuongGiaiQuyetType } from '../components/modals/XacMinhVaDeXuatModal';
+import KhongThuLyModal from '../components/modals/KhongThuLyModal';
+import TraLaiDonModal, { TraLaiDonSubmitData } from '../components/modals/TraLaiDonModal';
+import BanGiaoDonModal, { BanGiaoDonSubmitData } from '../components/modals/BanGiaoDonModal';
 
 interface DonTiepNhanProps {
   onNav: (s: Screen) => void;
   donDetail?: DonDetail | null;
+  /** Khi true: tự động mở XacMinhVaDeXuatModal ngay khi vào màn */
+  openXacMinhOnEnter?: boolean;
+  /** Callback báo App đã xử lý flag, để reset về false */
+  onXacMinhOpened?: () => void;
 }
 
-export default function DonTiepNhan({ onNav, donDetail }: DonTiepNhanProps) {
+export const HUONG_XU_LY_CONFIG: Record<
+  HuongGiaiQuyetType,
+  {
+    label: string;
+    subLabel: string;
+    badgeColor: string;
+    buttonText: string;
+    icon: string;
+  }
+> = {
+  thu_ly: {
+    label: 'Thụ lý giải quyết',
+    subLabel: 'Đủ điều kiện thụ lý theo Điều 29 Luật Tố cáo 2018',
+    badgeColor: 'bg-emerald-50 text-emerald-800 border-emerald-300',
+    buttonText: 'Lập Tờ trình & Thụ lý đơn',
+    icon: 'gavel',
+  },
+  khong_thu_ly: {
+    label: 'Không thụ lý giải quyết',
+    subLabel: 'Theo Điều 29 Luật Tố cáo / Điều 28 Luật Khiếu nại',
+    badgeColor: 'bg-rose-50 text-rose-800 border-rose-300',
+    buttonText: 'Lập Thông báo không thụ lý (Điều 29)',
+    icon: 'cancel',
+  },
+  tra_lai: {
+    label: 'Trả lại đơn & Hướng dẫn',
+    subLabel: 'Không thuộc thẩm quyền hoặc rút đơn',
+    badgeColor: 'bg-amber-50 text-amber-900 border-amber-300',
+    buttonText: 'Lập Phiếu trả lại đơn & Hướng dẫn',
+    icon: 'assignment_return',
+  },
+  yeu_cau_bo_sung: {
+    label: 'Yêu cầu bổ sung tài liệu',
+    subLabel: 'Chưa đủ chứng cứ hoặc thông tin theo luật định',
+    badgeColor: 'bg-blue-50 text-blue-800 border-blue-300',
+    buttonText: 'Tạo Thông báo yêu cầu bổ sung',
+    icon: 'note_add',
+  },
+  ban_giao: {
+    label: 'Chuyển cơ quan có thẩm quyền',
+    subLabel: 'Chuyển vụ việc theo đúng thẩm quyền nghiệp vụ',
+    badgeColor: 'bg-purple-50 text-purple-800 border-purple-300',
+    buttonText: 'Lập Phiếu chuyển cơ quan khác',
+    icon: 'drive_file_move',
+  },
+};
+
+export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXacMinhOpened }: DonTiepNhanProps) {
   const [activeTab, setActiveTab] = useState<'thong-tin' | 'lien-he' | 'don-khac' | 'tai-lieu'>('thong-tin');
   const [docCount, setDocCount] = useState<number>(6);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  // Trạng thái xác minh thông tin đơn: 'dang_xac_minh' -> 'da_xac_minh'
+  const isInitiallyVerified = Boolean(
+    donDetail?.statusBadge?.includes('Đã xác minh') ||
+    donDetail?.statusBadge?.includes('Đã thụ lý') ||
+    donDetail?.statusBadge?.includes('Đã hoàn thành')
+  );
+
+  const [trangThaiXacMinh, setTrangThaiXacMinh] = useState<'dang_xac_minh' | 'da_xac_minh'>(
+    isInitiallyVerified ? 'da_xac_minh' : 'dang_xac_minh'
+  );
+  const [huongXuLyDaChon, setHuongXuLyDaChon] = useState<HuongGiaiQuyetType | null>(null);
+
+  // State các Modal
+  const [showXacMinhModal, setShowXacMinhModal] = useState<boolean>(false);
+  const [showModalBoSung, setShowModalBoSung] = useState(false);
+  const [showModalBuocTiepTheo, setShowModalBuocTiepTheo] = useState(false);
+  const [showKhongThuLyModal, setShowKhongThuLyModal] = useState(false);
+  const [showTraLaiModal, setShowTraLaiModal] = useState(false);
+  const [showBanGiaoModal, setShowBanGiaoModal] = useState(false);
+  const [daHoanThanhBuoc, setDaHoanThanhBuoc] = useState(false);
+  const [daGuiThongBaoBoSung, setDaGuiThongBaoBoSung] = useState(false);
+
+  // Tự động mở modal nếu được yêu cầu từ props (nếu có)
+  useEffect(() => {
+    if (openXacMinhOnEnter) {
+      setShowXacMinhModal(true);
+      onXacMinhOpened?.();
+    }
+  }, [openXacMinhOnEnter, onXacMinhOpened]);
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
     setTimeout(() => {
       setToastMsg((curr) => (curr === msg ? null : curr));
-    }, 3500);
+    }, 4000);
   };
 
   const currentDon = donDetail || {
@@ -37,44 +122,58 @@ export default function DonTiepNhan({ onNav, donDetail }: DonTiepNhanProps) {
 
   const workflow = matchWorkflowByLoaiDon(currentDon.loaiDon || 'Đơn khiếu nại đất đai');
 
-  // Xác định bước tiếp theo theo quy trình
-  const nextStep = workflow.steps.find((s) => s.stepNumber === 2) || workflow.steps[1] || {
-    stepNumber: 2,
-    name: 'Thụ lý giải quyết',
-  };
+  // Xác định bước hiện tại của quy trình (từ currentDon hoặc mặc định)
+  const initialStepNumber = currentDon.currentStep || (trangThaiXacMinh === 'da_xac_minh' ? 2 : 1);
+  const [activeStepNumber, setActiveStepNumber] = useState<number>(initialStepNumber);
+
+  useEffect(() => {
+    if (currentDon.currentStep) {
+      setActiveStepNumber(currentDon.currentStep);
+      if (currentDon.currentStep >= 2) {
+        setTrangThaiXacMinh('da_xac_minh');
+      }
+    }
+  }, [currentDon.currentStep]);
+
+  // Bước hiện tại trong danh sách bước của quy trình
+  const currentStepObj =
+    workflow.steps.find((s) => s.stepNumber === activeStepNumber) ||
+    workflow.steps.find((s) => s.stepNumber === 2) ||
+    workflow.steps[0];
 
   const nextStepAction = {
-    stepNumber: nextStep.stepNumber,
-    name: nextStep.name,
+    stepNumber: currentStepObj.stepNumber,
+    name: currentStepObj.name,
     title:
-      workflow.id === 'to-giac'
-        ? 'Phân công Điều tra viên'
-        : workflow.id === 'to-cao'
-          ? 'Kích hoạt bảo mật & Thụ lý'
-          : workflow.id === 'kien-nghi'
-            ? 'Chuyển đơn vị xử lý'
-            : 'Ban hành Thông báo thụ lý',
+      activeStepNumber === 1
+        ? 'Tiếp nhận & Vào sổ'
+        : activeStepNumber === 2
+          ? (workflow.id === 'to-giac'
+              ? 'Phân công Điều tra viên'
+              : workflow.id === 'to-cao'
+                ? 'Kích hoạt bảo mật & Thụ lý'
+                : workflow.id === 'kien-nghi'
+                  ? 'Chuyển đơn vị xử lý'
+                  : 'Ban hành Thông báo thụ lý')
+          : `Thực hiện: ${currentStepObj.name}`,
     icon:
-      workflow.id === 'to-giac'
-        ? 'assignment_ind'
-        : workflow.id === 'to-cao'
-          ? 'lock'
-          : workflow.id === 'kien-nghi'
-            ? 'forward_to_inbox'
-            : 'mark_email_read',
+      activeStepNumber === 1
+        ? 'assignment'
+        : activeStepNumber === 2
+          ? (workflow.id === 'to-giac' ? 'assignment_ind' : workflow.id === 'to-cao' ? 'lock' : 'mark_email_read')
+          : activeStepNumber === 3
+            ? 'policy'
+            : activeStepNumber === 4
+              ? 'find_in_page'
+              : 'task_alt',
   };
-
-  const [showModalBoSung, setShowModalBoSung] = useState(false);
-  const [showModalBuocTiepTheo, setShowModalBuocTiepTheo] = useState(false);
-  const [daHoanThanhBuoc, setDaHoanThanhBuoc] = useState(false);
-  const [daGuiThongBaoBoSung, setDaGuiThongBaoBoSung] = useState(false);
 
   return (
     <div className="flex flex-col h-full bg-[#f8fafc] text-slate-800 overflow-hidden font-body-md select-none">
       {/* Toast Notification */}
       {toastMsg && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 bg-slate-900 text-white rounded-xl shadow-2xl border border-slate-700 text-xs font-medium animate-fade-in">
-          <span className="material-symbols-outlined text-blue-400 text-lg">info</span>
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 bg-slate-900 text-white rounded-xl shadow-2xl border border-slate-700 text-xs font-medium animate-fade-in max-w-lg">
+          <span className="material-symbols-outlined text-blue-400 text-lg shrink-0">info</span>
           <span>{toastMsg}</span>
         </div>
       )}
@@ -105,12 +204,33 @@ export default function DonTiepNhan({ onNav, donDetail }: DonTiepNhanProps) {
         </div>
 
         {/* Title Row & Action Buttons */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-3.5 gap-4">
           <div>
-            <h1 className="text-[19px] font-bold text-slate-900 tracking-tight font-headline-md leading-tight">
-              {currentDon.code}: {currentDon.title.startsWith(currentDon.code) ? currentDon.title.replace(`${currentDon.code}: `, '') : currentDon.title}
-            </h1>
-            <div className="flex items-center gap-2 text-[12px] text-slate-500 font-medium mt-1">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h1 className="text-[19px] font-bold text-slate-900 tracking-tight font-headline-md leading-tight">
+                {currentDon.code}: {currentDon.title.startsWith(currentDon.code) ? currentDon.title.replace(`${currentDon.code}: `, '') : currentDon.title}
+              </h1>
+
+              {/* Status Badge: Đang xác minh thông tin VS Đã xác minh */}
+              {trangThaiXacMinh === 'dang_xac_minh' ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-bold bg-amber-50 text-amber-900 border border-amber-300 shadow-2xs">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                  </span>
+                  <span>Đang xác minh thông tin</span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-2xs">
+                  <span className="material-symbols-outlined text-[16px] text-emerald-600">verified</span>
+                  <span>
+                    Đã xác minh {huongXuLyDaChon ? `• ${HUONG_XU_LY_CONFIG[huongXuLyDaChon]?.label || huongXuLyDaChon}` : ''}
+                  </span>
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 text-[12px] text-slate-500 font-medium mt-1.5 flex-wrap">
               <span>
                 Lượt tiếp nhận số{' '}
                 <span className="font-semibold text-slate-700">
@@ -129,44 +249,291 @@ export default function DonTiepNhan({ onNav, donDetail }: DonTiepNhanProps) {
                   {currentDon.ngayNhan || '15/09/2026 09:15'}
                 </span>
               </span>
+              <span>•</span>
+              <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-semibold border border-slate-200">
+                {currentDon.loaiDon || 'Đơn tiếp nhận hành chính'}
+              </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
+            {trangThaiXacMinh === 'dang_xac_minh' ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setShowModalBoSung(true)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold shadow-2xs transition-colors cursor-pointer ${
+                    daGuiThongBaoBoSung
+                      ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
+                      : 'border-slate-300 bg-white hover:bg-slate-50 text-slate-700'
+                  }`}
+                  title="Tạo thông báo yêu cầu bổ sung hồ sơ"
+                >
+                  <span className="material-symbols-outlined text-[16px]">
+                    {daGuiThongBaoBoSung ? 'check_circle' : 'note_add'}
+                  </span>
+                  <span>{daGuiThongBaoBoSung ? 'Đã tạo thông báo bổ sung' : 'Tạo thông báo bổ sung'}</span>
+                </button>
 
+                {/* NÚT CHÍNH: Xác minh và xác nhận hướng xử lý thông tin */}
+                <button
+                  type="button"
+                  onClick={() => setShowXacMinhModal(true)}
+                  className="inline-flex items-center gap-2 px-4.5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 active:scale-95 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all cursor-pointer ring-2 ring-blue-400/40"
+                  title="Nhấn để xác minh thông tin theo 4 tiêu chí luật định và chọn hướng giải quyết"
+                >
+                  <span className="material-symbols-outlined text-[18px]">fact_check</span>
+                  <span>Xác minh &amp; Xác nhận hướng xử lý</span>
+                  <span className="material-symbols-outlined text-[15px] opacity-80">arrow_forward</span>
+                </button>
+              </>
+            ) : (
+              <>
+                {/* Đã xác minh: Nút xem lại biên bản xác minh */}
+                <button
+                  type="button"
+                  onClick={() => setShowXacMinhModal(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold shadow-2xs transition-colors cursor-pointer"
+                  title="Xem lại hoặc chỉnh sửa kết quả xác minh & hướng xử lý"
+                >
+                  <span className="material-symbols-outlined text-[16px] text-emerald-600">verified</span>
+                  <span>Xem lại xác minh</span>
+                </button>
+
+                {/* Nút hành động tương ứng với hướng xử lý đã chọn */}
+                {(!huongXuLyDaChon || huongXuLyDaChon === 'thu_ly') && (
+                  <button
+                    type="button"
+                    onClick={() => setShowModalBuocTiepTheo(true)}
+                    className={`inline-flex items-center gap-1.5 px-4.5 py-2.5 rounded-xl active:scale-95 text-white text-xs font-bold shadow-sm transition-all cursor-pointer ${
+                      daHoanThanhBuoc ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-[#004ac6] hover:bg-[#003ea8]'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[16px]">
+                      {daHoanThanhBuoc ? 'check_circle' : nextStepAction.icon}
+                    </span>
+                    <span>
+                      {daHoanThanhBuoc ? `Đã hoàn tất ${nextStepAction.title.toLowerCase()}` : nextStepAction.title}
+                    </span>
+                    {!daHoanThanhBuoc && (
+                      <span className="material-symbols-outlined text-[14px] opacity-80">arrow_forward</span>
+                    )}
+                  </button>
+                )}
+
+                {huongXuLyDaChon === 'khong_thu_ly' && (
+                  <button
+                    type="button"
+                    onClick={() => setShowKhongThuLyModal(true)}
+                    className="inline-flex items-center gap-1.5 px-4.5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">cancel</span>
+                    <span>Lập Thông báo không thụ lý (Điều 29)</span>
+                    <span className="material-symbols-outlined text-[14px] opacity-80">arrow_forward</span>
+                  </button>
+                )}
+
+                {huongXuLyDaChon === 'tra_lai' && (
+                  <button
+                    type="button"
+                    onClick={() => setShowTraLaiModal(true)}
+                    className="inline-flex items-center gap-1.5 px-4.5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-95 text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">assignment_return</span>
+                    <span>Lập Phiếu trả lại đơn &amp; Hướng dẫn</span>
+                    <span className="material-symbols-outlined text-[14px] opacity-80">arrow_forward</span>
+                  </button>
+                )}
+
+                {huongXuLyDaChon === 'yeu_cau_bo_sung' && (
+                  <button
+                    type="button"
+                    onClick={() => setShowModalBoSung(true)}
+                    className="inline-flex items-center gap-1.5 px-4.5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">note_add</span>
+                    <span>Tạo thông báo bổ sung tài liệu</span>
+                    <span className="material-symbols-outlined text-[14px] opacity-80">arrow_forward</span>
+                  </button>
+                )}
+
+                {huongXuLyDaChon === 'ban_giao' && (
+                  <button
+                    type="button"
+                    onClick={() => setShowBanGiaoModal(true)}
+                    className="inline-flex items-center gap-1.5 px-4.5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 active:scale-95 text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">drive_file_move</span>
+                    <span>Lập Phiếu chuyển cơ quan có thẩm quyền</span>
+                    <span className="material-symbols-outlined text-[14px] opacity-80">arrow_forward</span>
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Banner hướng dẫn tiến trình Xác minh thông tin */}
+        {trangThaiXacMinh === 'dang_xac_minh' ? (
+          <div className="mb-3.5 bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-transparent border border-amber-200 rounded-xl px-4 py-2.5 flex items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2.5 text-amber-900">
+              <span className="material-symbols-outlined text-[18px] text-amber-600 animate-pulse shrink-0">fact_check</span>
+              <div>
+                <span className="font-bold text-amber-950">Bước 1: Xác minh thông tin &amp; Xác nhận hướng xử lý</span>
+                <p className="text-[11.5px] text-amber-800 font-normal mt-0.5">
+                  Đơn đang ở trạng thái <strong className="font-semibold underline decoration-amber-400">Đang xác minh thông tin</strong>. Vui lòng nhấn nút <strong className="font-semibold">"Xác minh &amp; Xác nhận hướng xử lý"</strong> để đối soát 4 tiêu chí luật định (Nhân thân, Thẩm quyền, Cơ sở chứng cứ, Không trùng lặp) và quyết định hướng giải quyết.
+                </p>
+              </div>
+            </div>
             <button
               type="button"
-              onClick={() => setShowModalBoSung(true)}
-              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold shadow-2xs transition-colors cursor-pointer ${daGuiThongBaoBoSung
-                  ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
-                  : 'border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900'
-                }`}
-              title="Chưa đủ thông tin: Tạo thông báo yêu cầu bổ sung hồ sơ"
+              onClick={() => setShowXacMinhModal(true)}
+              className="shrink-0 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold rounded-lg shadow-2xs flex items-center gap-1 cursor-pointer transition-all text-xs"
             >
-              <span className="material-symbols-outlined text-[16px]">
-                {daGuiThongBaoBoSung ? 'check_circle' : 'note_add'}
-              </span>
-              <span>{daGuiThongBaoBoSung ? 'Đã tạo thông báo bổ sung' : 'Tạo thông báo bổ sung'}</span>
+              <span className="material-symbols-outlined text-[14px]">fact_check</span>
+              <span>Bắt đầu xác minh</span>
             </button>
+          </div>
+        ) : (
+          <div className="mb-3.5 bg-gradient-to-r from-emerald-500/10 via-emerald-400/5 to-transparent border border-emerald-200 rounded-xl px-4 py-2.5 flex items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2.5 text-emerald-900">
+              <span className="material-symbols-outlined text-[18px] text-emerald-600 shrink-0">verified</span>
+              <div>
+                <span className="font-bold text-emerald-950">
+                  Đã hoàn thành xác minh thông tin • Hướng xử lý: {huongXuLyDaChon ? HUONG_XU_LY_CONFIG[huongXuLyDaChon]?.label : 'Thụ lý giải quyết'}
+                </span>
+                <p className="text-[11.5px] text-emerald-800 font-normal mt-0.5">
+                  Đơn đã chuyển trạng thái <strong className="font-semibold text-emerald-950">Đã xác minh</strong>. Hệ thống đã kích hoạt bước xử lý tiếp theo tương ứng với hướng giải quyết đã phê duyệt.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowXacMinhModal(true)}
+              className="shrink-0 text-emerald-700 hover:text-emerald-900 font-bold flex items-center gap-1 cursor-pointer hover:underline text-xs"
+            >
+              <span className="material-symbols-outlined text-[14px]">fact_check</span>
+              <span>Xem lại biên bản xác minh</span>
+            </button>
+          </div>
+        )}
 
+        {/* ========================================================================= */}
+        {/* TIẾN TRÌNH QUY TRÌNH XỬ LÝ ĐƠN (HIỂN THỊ ĐÚNG BƯỚC HIỆN TẠI)             */}
+        {/* ========================================================================= */}
+        <div className="mb-4 bg-slate-50/90 rounded-2xl border border-slate-200/90 p-3.5 shadow-2xs">
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="material-symbols-outlined text-[19px] text-[#004ac6]">account_tree</span>
+              <span className="text-xs font-bold text-slate-800 uppercase tracking-tight">
+                Quy trình xử lý: {workflow.name}
+              </span>
+              <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-blue-100 text-[#004ac6] border border-blue-200 font-label-technical">
+                {workflow.code}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[12px] text-slate-600 font-medium">
+                Đang ở bước: <strong className="text-[#004ac6] font-bold">Bước {activeStepNumber}/{workflow.steps.length}: {currentStepObj.name}</strong>
+              </span>
+              <button
+                type="button"
+                onClick={() => onNav('quy-trinh-xu-ly')}
+                className="inline-flex items-center gap-1 text-[11px] text-[#004ac6] hover:underline font-bold cursor-pointer ml-1"
+                title="Xem toàn bộ sơ đồ phân luồng nghiệp vụ"
+              >
+                <span className="material-symbols-outlined text-[13px]">open_in_new</span>
+                <span>Sơ đồ quy trình</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Thanh Stepper ngang hiển thị các bước */}
+          <div className="overflow-x-auto pb-1 scrollbar-thin">
+            <div className="flex items-center min-w-max gap-1">
+              {workflow.steps.map((st, idx) => {
+                const isDone = st.stepNumber < activeStepNumber;
+                const isCurrent = st.stepNumber === activeStepNumber;
+
+                return (
+                  <React.Fragment key={st.id || idx}>
+                    <button
+                      type="button"
+                      onClick={() => setActiveStepNumber(st.stepNumber)}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-xl text-left transition-all cursor-pointer ${
+                        isCurrent
+                          ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-300 font-bold'
+                          : isDone
+                          ? 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200 font-semibold'
+                          : 'bg-white text-slate-500 hover:bg-slate-100 border border-slate-200 font-medium opacity-80'
+                      }`}
+                      title={`Bấm để xem thông tin bước ${st.stepNumber}: ${st.name}`}
+                    >
+                      <div
+                        className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${
+                          isCurrent
+                            ? 'bg-white text-blue-700 shadow-xs'
+                            : isDone
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-slate-100 text-slate-500'
+                        }`}
+                      >
+                        {isDone ? (
+                          <span className="material-symbols-outlined text-[14px]">check</span>
+                        ) : (
+                          st.stepNumber
+                        )}
+                      </div>
+                      <div className="min-w-0 pr-1">
+                        <div className="text-[11.5px] leading-tight truncate max-w-[150px]" title={st.name}>
+                          {st.name}
+                        </div>
+                        <div
+                          className={`text-[10px] leading-none mt-0.5 ${
+                            isCurrent ? 'text-blue-100 font-normal' : isDone ? 'text-emerald-600' : 'text-slate-400'
+                          }`}
+                        >
+                          {isCurrent ? '● Đang thực hiện' : isDone ? '✓ Đã hoàn tất' : `Chờ thực hiện`}
+                        </div>
+                      </div>
+                    </button>
+
+                    {idx < workflow.steps.length - 1 && (
+                      <div
+                        className={`h-0.5 w-3.5 shrink-0 transition-colors ${
+                          st.stepNumber < activeStepNumber ? 'bg-emerald-400' : 'bg-slate-200'
+                        }`}
+                      />
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Chi tiết nhiệm vụ bước hiện tại */}
+          <div className="mt-2.5 pt-2.5 border-t border-slate-200/70 flex items-center justify-between flex-wrap gap-2 text-xs">
+            <div className="flex items-center gap-2 text-slate-600 flex-wrap">
+              <span className="font-semibold text-slate-800">
+                Trách nhiệm: <span className="text-slate-700 font-normal">{currentStepObj.responsibleRole} ({currentStepObj.responsibleUnit})</span>
+              </span>
+              <span>•</span>
+              <span className="font-semibold text-slate-800">
+                Thời hạn: <span className="text-slate-700 font-normal">~{currentStepObj.estimatedDays || 5} ngày</span>
+              </span>
+              <span>•</span>
+              <span className="text-slate-500 truncate max-w-[340px]" title={currentStepObj.description}>
+                {currentStepObj.description}
+              </span>
+            </div>
             <button
               type="button"
               onClick={() => setShowModalBuocTiepTheo(true)}
-              className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl active:scale-95 text-white text-xs font-bold shadow-xs transition-all cursor-pointer ${daHoanThanhBuoc
-                  ? 'bg-emerald-600 hover:bg-emerald-700'
-                  : 'bg-[#004ac6] hover:bg-[#003ea8]'
-                }`}
-              title="Đủ thông tin: Chuyển sang bước tiếp theo theo quy trình"
+              className="px-3 py-1.5 rounded-lg bg-[#004ac6] hover:bg-[#003ea8] text-white font-bold text-xs shadow-2xs flex items-center gap-1 cursor-pointer transition-all active:scale-95 ml-auto"
             >
-              <span className="material-symbols-outlined text-[16px]">
-                {daHoanThanhBuoc ? 'check_circle' : nextStepAction.icon}
-              </span>
-              <span>
-                {daHoanThanhBuoc ? `Đã hoàn tất ${nextStepAction.title.toLowerCase()}` : nextStepAction.title}
-              </span>
-              {!daHoanThanhBuoc && (
-                <span className="material-symbols-outlined text-[14px] opacity-80">arrow_forward</span>
-              )}
+              <span className="material-symbols-outlined text-[14px]">play_arrow</span>
+              <span>Thực hiện Bước {activeStepNumber}: {currentStepObj.name}</span>
             </button>
           </div>
         </div>
@@ -276,16 +643,114 @@ export default function DonTiepNhan({ onNav, donDetail }: DonTiepNhanProps) {
       <ThucHienBuocTiepTheoModal
         isOpen={showModalBuocTiepTheo}
         onClose={() => setShowModalBuocTiepTheo(false)}
+        stepNumber={activeStepNumber}
         onSuccess={(stepName, docTitle) => {
           showToast(`✓ Đã hoàn tất bước "${stepName}" và ban hành "${docTitle}" thành công!`);
           setDocCount((c) => c + 1);
           setDaHoanThanhBuoc(true);
+          if (activeStepNumber < workflow.steps.length) {
+            setActiveStepNumber((prev) => prev + 1);
+          }
         }}
         workflow={workflow}
         donCode={currentDon.code}
         donTitle={currentDon.title}
         nguoiNop={currentDon.nguoiNop}
         loaiDon={currentDon.loaiDon || 'Đơn khiếu nại đất đai'}
+      />
+      {/* Modal Xác minh & Đề xuất hướng giải quyết */}
+      <XacMinhVaDeXuatModal
+        isOpen={showXacMinhModal}
+        onClose={() => setShowXacMinhModal(false)}
+        onNav={onNav}
+        donInfo={{
+          code: currentDon.code,
+          luotNhanId: currentDon.luotNhanId,
+          nguoiNop: currentDon.nguoiNop,
+          loaiDon: currentDon.loaiDon,
+          ngayNhan: currentDon.ngayNhan,
+        }}
+        onSelectHuongXuLy={(huong: HuongGiaiQuyetType | 'quy_trinh') => {
+          setShowXacMinhModal(false);
+          if (huong === 'quy_trinh') {
+            onNav('quy-trinh-xu-ly');
+            return;
+          }
+          // Chuyển trạng thái đơn sang "Đã xác minh" và lưu hướng đã chọn
+          setTrangThaiXacMinh('da_xac_minh');
+          setHuongXuLyDaChon(huong);
+
+          if (huong === 'thu_ly') {
+            showToast(`✓ Đã xác minh hoàn tất: Đơn chuyển trạng thái "ĐÃ XÁC MINH" • Hướng xử lý: Thụ lý giải quyết`);
+            setTimeout(() => setShowModalBuocTiepTheo(true), 300);
+          } else if (huong === 'yeu_cau_bo_sung') {
+            showToast(`✓ Đã xác minh hoàn tất: Đơn chuyển trạng thái "ĐÃ XÁC MINH" • Hướng xử lý: Yêu cầu bổ sung tài liệu`);
+            setTimeout(() => setShowModalBoSung(true), 300);
+          } else if (huong === 'khong_thu_ly') {
+            showToast(`✓ Đã xác minh hoàn tất: Đơn chuyển trạng thái "ĐÃ XÁC MINH" • Hướng xử lý: Không thụ lý giải quyết`);
+            setTimeout(() => setShowKhongThuLyModal(true), 300);
+          } else if (huong === 'tra_lai') {
+            showToast(`✓ Đã xác minh hoàn tất: Đơn chuyển trạng thái "ĐÃ XÁC MINH" • Hướng xử lý: Trả lại đơn & Hướng dẫn`);
+            setTimeout(() => setShowTraLaiModal(true), 300);
+          } else if (huong === 'ban_giao') {
+            showToast(`✓ Đã xác minh hoàn tất: Đơn chuyển trạng thái "ĐÃ XÁC MINH" • Hướng xử lý: Chuyển cơ quan có thẩm quyền`);
+            setTimeout(() => setShowBanGiaoModal(true), 300);
+          }
+        }}
+      />
+
+      {/* Modal Không thụ lý giải quyết */}
+      <KhongThuLyModal
+        isOpen={showKhongThuLyModal}
+        onClose={() => setShowKhongThuLyModal(false)}
+        onSubmit={(data) => {
+          setShowKhongThuLyModal(false);
+          showToast(`✓ Đã lập Thông báo không thụ lý số ${data.soKyHieu} theo quy định.`);
+          setDocCount((c) => c + 1);
+        }}
+        donInfo={{
+          code: currentDon.code,
+          luotNhanId: currentDon.luotNhanId,
+          nguoiNop: currentDon.nguoiNop,
+          loaiDon: currentDon.loaiDon,
+          ngayNhan: currentDon.ngayNhan,
+        }}
+      />
+
+      {/* Modal Trả lại đơn & Hướng dẫn công dân */}
+      <TraLaiDonModal
+        isOpen={showTraLaiModal}
+        onClose={() => setShowTraLaiModal(false)}
+        onSubmit={(data: TraLaiDonSubmitData) => {
+          setShowTraLaiModal(false);
+          showToast(`✓ Đã ban hành Phiếu hướng dẫn trả đơn (${data.cauHinhVanBan.soKyHieu}) cho công dân ${data.nguoiNhan}.`);
+          setDocCount((c) => c + 1);
+        }}
+        donInfo={{
+          code: currentDon.code,
+          luotNhanId: currentDon.luotNhanId,
+          nguoiNop: currentDon.nguoiNop,
+          loaiDon: currentDon.loaiDon,
+          ngayNhan: currentDon.ngayNhan,
+        }}
+      />
+
+      {/* Modal Chuyển thẩm quyền / Bàn giao */}
+      <BanGiaoDonModal
+        isOpen={showBanGiaoModal}
+        onClose={() => setShowBanGiaoModal(false)}
+        onSubmit={(data: BanGiaoDonSubmitData) => {
+          setShowBanGiaoModal(false);
+          showToast(`✓ Đã lập văn bản chuyển thẩm quyền (${data.cauHinhVanBan.soKyHieu}) sang "${data.donViNhanName || 'đơn vị có thẩm quyền'}".`);
+          setDocCount((c) => c + 1);
+        }}
+        donInfo={{
+          code: currentDon.code,
+          luotNhanId: currentDon.luotNhanId,
+          nguoiNop: currentDon.nguoiNop,
+          loaiDon: currentDon.loaiDon,
+          ngayNhan: currentDon.ngayNhan,
+        }}
       />
     </div>
   );

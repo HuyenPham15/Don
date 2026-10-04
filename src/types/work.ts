@@ -102,4 +102,10 @@ export interface WorkItem {
   lyDoBanGiao?: string;
   completionResult?: string;
   completedAt?: string;
+
+  // Thuộc tính Trình ký & Ký tuần tự (Hiển thị chi tiết card công việc theo quy trình)
+  nguoiKyTruoc?: string;
+  thoiGianKyTruoc?: string;
+  tienTrinhKyHienTai?: string;
+  isSigningDoc?: boolean;
 }

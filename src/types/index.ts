@@ -37,7 +37,7 @@ export interface LuotNhan {
   sdt?: string;
   diaChi?: string;
   loaiDon?: string;
-  status?: 'cho_chuyen' | 'da_chuyen' | 'da_ban_giao' | 'da_tra_lai' | 'da_ghep' | 'da_thu_ly';
+  status?: 'cho_chuyen' | 'da_chuyen' | 'da_ban_giao' | 'da_tra_lai' | 'da_ghep' | 'da_thu_ly' | 'khong_thu_ly' | 'cho_bo_sung';
   hasFile?: boolean;
   fileCount?: number;
   files?: UploadedFile[];
@@ -59,6 +59,14 @@ export interface DonDetail {
   loaiDon?: string;
   type?: 'VỤ VIỆC' | 'ĐƠN TIẾP NHẬN' | 'LƯỢT NHẬN';
   statusBadge?: string;
+  currentStep?: number;
+  stepName?: string;
+  progress?: {
+    currentStep: number;
+    totalSteps: number;
+    stepName: string;
+    steps?: string[];
+  };
 }
 
 export interface UploadedFile { name: string; size: string; category: "main" | "attach" | "extra"; }

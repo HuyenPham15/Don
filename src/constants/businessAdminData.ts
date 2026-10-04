@@ -157,7 +157,7 @@ export const INITIAL_BIEU_MAU_ITEMS: BieuMauItem[] = [
   {
     id: 'bm-03',
     code: 'BM-03/XM',
-    name: 'Biên bản ghi nhận lời khai người tố cáo / đương sự',
+    name: 'Biên bản ghi nhận lời khai người tố cáo / người liên quan',
     loaiDonId: 'to-cao',
     loaiDonName: 'Tố cáo',
     applicableStepName: 'Xác minh nội dung tố cáo',

@@ -499,7 +499,7 @@ export default function TabDonKhac({ currentDon }: TabDonKhacProps) {
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
                 <div className="font-bold text-slate-800 uppercase tracking-tight text-[11px] flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-[15px] text-[#004ac6]">badge</span>
-                  <span>Thông tin đương sự / Người nộp</span>
+                  <span>Thông tin người nộp đơn</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-[12px]">
                   <div>Họ tên: <strong className="text-slate-900">{selectedDetailItem.nguoiNop}</strong></div>
@@ -639,7 +639,7 @@ export default function TabDonKhac({ currentDon }: TabDonKhacProps) {
                   className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="Tách để thụ lý độc lập theo thẩm quyền">Tách để thụ lý độc lập theo thẩm quyền</option>
-                  <option value="Đương sự yêu cầu giải quyết riêng biệt">Đương sự yêu cầu giải quyết riêng biệt</option>
+                  <option value="Người nộp yêu cầu giải quyết riêng biệt">Người nộp yêu cầu giải quyết riêng biệt</option>
                   <option value="Ghép nhầm / Nội dung không cùng vụ việc">Ghép nhầm / Nội dung không cùng vụ việc</option>
                   <option value="Chuyển sang cơ quan khác theo địa bàn">Chuyển sang cơ quan khác theo địa bàn</option>
                   <option value="Lý do khác...">Lý do khác...</option>

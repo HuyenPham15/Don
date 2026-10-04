@@ -97,7 +97,7 @@ export default function TabMoiLienHe({ currentDon }: TabMoiLienHeProps) {
         </div>
         <div className="flex items-center gap-2">
           <span className="w-3 h-3 rounded-md bg-emerald-500"></span>
-          <span className="text-slate-600">Đương sự / Người nộp</span>
+          <span className="text-slate-600">Người nộp đơn</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="w-3 h-3 rounded-md bg-purple-500"></span>
@@ -295,7 +295,7 @@ export default function TabMoiLienHe({ currentDon }: TabMoiLienHeProps) {
               <div className="bg-emerald-50 border-t border-emerald-100 py-2 px-4 flex items-center justify-between text-[11px] text-emerald-800 font-semibold rounded-b-[10px]">
                 <span className="flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-[15px]">person_check</span>
-                  Đương sự chính đứng đơn
+                  Người đứng đơn chính
                 </span>
                 <span className="material-symbols-outlined text-[15px] text-emerald-600">check_circle</span>
               </div>

@@ -271,7 +271,7 @@ export default function TabTaiLieu({ currentDon, onDocCountChange }: TabTaiLieuP
       excerpt: `CÔNG VĂN YÊU CẦU CUNG CẤP THÔNG TIN TÀI LIỆU\n\nKính gửi: Các Ngân hàng TMCP trên địa bàn thành phố\nCơ quan điều tra đang tiến hành thụ lý xác minh nguồn tin tố giác lừa đảo chiếm đoạt tài sản.\nĐề nghị Quý Ngân hàng phối hợp cung cấp lịch sử giao dịch và bản in sao kê tài khoản của các đối tượng liên quan theo danh sách đính kèm.`,
     },
     {
-      title: 'Biên bản làm việc / Ghi lời khai đương sự',
+      title: 'Biên bản làm việc / Ghi lời khai người làm đơn',
       category: 'Biên bản làm việc',
       soHieu: 'BB-01/XL',
       step: 'Bước 4: Làm việc & Thu thập chứng cứ',

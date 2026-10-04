@@ -10,6 +10,7 @@ interface ThucHienBuocTiepTheoModalProps {
   donTitle: string;
   nguoiNop: string;
   loaiDon: string;
+  stepNumber?: number;
 }
 
 export default function ThucHienBuocTiepTheoModal({
@@ -19,15 +20,17 @@ export default function ThucHienBuocTiepTheoModal({
   workflow,
   donCode,
   nguoiNop,
+  stepNumber,
 }: ThucHienBuocTiepTheoModalProps) {
   if (!isOpen) return null;
 
-  // Lấy bước tiếp theo
+  // Lấy bước theo stepNumber hoặc bước 2
+  const targetStepNumber = stepNumber || 2;
   const nextStep: WorkflowStepItem =
-    workflow.steps.find((s) => s.stepNumber === 2) ||
+    workflow.steps.find((s) => s.stepNumber === targetStepNumber) ||
     workflow.steps[1] || {
-      id: 'step-2',
-      stepNumber: 2,
+      id: `step-${targetStepNumber}`,
+      stepNumber: targetStepNumber,
       name: 'Thụ lý & Phân công giải quyết',
       responsibleRole: 'Cán bộ thụ lý',
       responsibleUnit: 'Bộ phận Tiếp dân & Xử lý đơn',
@@ -38,22 +41,24 @@ export default function ThucHienBuocTiepTheoModal({
     };
 
   const defaultDocTitle =
-    workflow.id === 'to-giac'
-      ? 'Quyết định phân công Điều tra viên thụ lý giải quyết nguồn tin tội phạm'
-      : workflow.id === 'to-cao'
-      ? 'Quyết định thụ lý giải quyết tố cáo'
-      : workflow.id === 'kien-nghi'
-      ? 'Phiếu chuyển đơn phản ánh, kiến nghị đến cơ quan có thẩm quyền'
-      : 'Thông báo thụ lý giải quyết khiếu nại (Mẫu số 01)';
+    targetStepNumber === 2
+      ? (workflow.id === 'to-giac'
+          ? 'Quyết định phân công Điều tra viên thụ lý giải quyết nguồn tin tội phạm'
+          : workflow.id === 'to-cao'
+          ? 'Quyết định thụ lý giải quyết tố cáo'
+          : workflow.id === 'kien-nghi'
+          ? 'Phiếu chuyển đơn phản ánh, kiến nghị đến cơ quan có thẩm quyền'
+          : 'Thông báo thụ lý giải quyết khiếu nại (Mẫu số 01)')
+      : `Báo cáo / Văn bản thực hiện ${nextStep.name}`;
 
   const defaultSoHieu =
     workflow.id === 'to-giac'
       ? `QĐ-PC03/${new Date().getFullYear()}/CSĐT`
-      : `TB-TL/${new Date().getFullYear()}/UBND`;
+      : `TB-${nextStep.stepNumber}/${new Date().getFullYear()}/UBND`;
 
   const defaultAssignee =
-    workflow.id === 'to-giac'
-      ? 'Trung tá Lê Văn Nam (Điều tra viên Đội 3 - PC03)'
+    nextStep.responsibleRole
+      ? `${nextStep.responsibleRole} - ${nextStep.responsibleUnit}`
       : 'Đ/c Nguyễn Minh Anh (Chuyên viên Phòng Tiếp dân & Xử lý đơn)';
 
   const [docTitle, setDocTitle] = useState(defaultDocTitle);

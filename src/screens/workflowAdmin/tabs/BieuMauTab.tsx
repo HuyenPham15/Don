@@ -262,7 +262,7 @@ export default function BieuMauTab() {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Vd: Giấy triệu tập đương sự..."
+                  placeholder="Vd: Giấy mời làm việc..."
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:border-blue-500 focus:outline-none"
                 />
               </div>

@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { OFFICERS, Officer } from '../../constants/departments';
+import { OFFICERS } from '../../constants/departments';
+import { INITIAL_LEADERS } from '../../constants/signingData';
+import { Screen } from '../../types';
 
 export interface ThuLyDonSubmitData {
   stepId: 'STEP-03A';
@@ -26,10 +28,19 @@ export interface ThuLyDonSubmitData {
   canBoThuLyName?: string;
   thoiHanXacMinhNgay: number;
   chiDaoDinhHuong?: string;
-  // Báo cáo đề xuất thụ lý (Mẫu số 01/TT-TTCP)
+  // Cấu hình Luồng trình ký Lãnh đạo
+  lanhDaoKyId: string;
+  lanhDaoKyName: string;
+  lanhDaoKyChucVu: string;
+  lanhDaoKyCoQuan?: string;
+  mucDoUuTien: 'thuong' | 'khan' | 'hoa_toc';
+  hanXuLy: string;
+  yKienTrinhLanhDao: string;
+  // Tờ trình đề xuất thụ lý (Mẫu số 01/TT-TTCP)
   cauHinhBaoCao: {
     taoBaoCao: boolean;
     soKyHieu: string;
+    tenToTrinh?: string;
     ngayLap: string;
     kinhGui: string;
     nguoiDeXuat: string;
@@ -48,6 +59,7 @@ export interface ThuLyDonModalProps {
   onSubmit: (data: ThuLyDonSubmitData) => void;
   currentOfficerName?: string;
   currentDepartmentName?: string;
+  onNav?: (screen: Screen) => void;
   donInfo?: {
     code?: string;
     luotNhanId?: string;
@@ -84,8 +96,9 @@ export default function ThuLyDonModal({
     chucVuNguoiBiToCao: 'Chuyên viên Chi nhánh Văn phòng Đăng ký đất đai',
     coQuanNguoiBiToCao: 'Chi nhánh Văn phòng Đăng ký đất đai quận Cầu Giấy',
   },
+  onNav,
 }: ThuLyDonModalProps) {
-  // Tab switcher: 'form' (Lập đề xuất 1 chạm) vs 'preview' (Xem trước Mẫu 01/TT-TTCP)
+  // Tab switcher: 'form' (Lập Tờ trình & Luồng trình ký) vs 'preview' (Xem trước Tờ trình Mẫu 01/TT-TTCP khổ A4)
   const [activeTab, setActiveTab] = useState<'form' | 'preview'>('form');
 
   // Điều kiện thụ lý theo Điều 29 Luật Tố cáo 2018
@@ -111,11 +124,19 @@ export default function ThuLyDonModal({
     'Tập trung thu thập hồ sơ địa chính, trích xuất nhật ký tiếp nhận xử lý hồ sơ hành chính để đối chiếu thời hạn quy định.'
   );
 
-  // Báo cáo Mẫu số 01/TT-TTCP
-  const [soKyHieu, setSoKyHieu] = useState<string>('01/BC-TCD');
-  const [kinhGui, setKinhGui] = useState<string>('Chủ tịch Ủy ban nhân dân quận Cầu Giấy');
-  const [noiDungDeXuat, setNoiDungDeXuat] = useState<string>(
-    'Đề xuất Chủ tịch UBND quận ban hành Quyết định thụ lý giải quyết tố cáo và thành lập Tổ xác minh nội dung tố cáo theo đúng quy định tại Điều 29, 30 Luật Tố cáo 2018.'
+  // Tờ trình Mẫu số 01/TT-TTCP
+  const [soKyHieu, setSoKyHieu] = useState<string>('01/TTr-TCD');
+  const [tenToTrinh, setTenToTrinh] = useState<string>(
+    'Tờ trình về việc đề xuất thụ lý giải quyết tố cáo và thành lập Tổ xác minh'
+  );
+  const [kinhGui, setKinhGui] = useState<string>('Lãnh đạo Thanh tra Thành phố');
+
+  // Cấu hình Luồng trình ký Lãnh đạo
+  const [selectedLeaderId, setSelectedLeaderId] = useState<string>('ld-01');
+  const [mucDoUuTien, setMucDoUuTien] = useState<'thuong' | 'khan' | 'hoa_toc'>('khan');
+  const [hanXuLy, setHanXuLy] = useState<string>('24 giờ (Hạn xử lý theo quy định)');
+  const [yKienTrinhLanhDao, setYKienTrinhLanhDao] = useState<string>(
+    'Kính trình Đ/c Phó Chánh Thanh tra xem xét, phê duyệt Tờ trình đề xuất thụ lý và ban hành Quyết định thụ lý giải quyết tố cáo theo quy định.'
   );
 
   // Chữ ký số cán bộ
@@ -136,7 +157,9 @@ export default function ThuLyDonModal({
     return OFFICERS.find((o) => o.id === canBoThuLyId) || OFFICERS[0];
   }, [canBoThuLyId]);
 
-  if (!isOpen) return null;
+  const selectedLeaderObj = useMemo(() => {
+    return INITIAL_LEADERS.find((l) => l.id === selectedLeaderId) || INITIAL_LEADERS[0];
+  }, [selectedLeaderId]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -166,11 +189,19 @@ export default function ThuLyDonModal({
         canBoThuLyName: phuongThucThuLy === 'phan_cong_can_bo' ? selectedOfficerObj?.name : currentOfficerName,
         thoiHanXacMinhNgay,
         chiDaoDinhHuong,
+        lanhDaoKyId: selectedLeaderObj.id,
+        lanhDaoKyName: selectedLeaderObj.name,
+        lanhDaoKyChucVu: selectedLeaderObj.chucVu,
+        lanhDaoKyCoQuan: selectedLeaderObj.coQuan,
+        mucDoUuTien,
+        hanXuLy,
+        yKienTrinhLanhDao,
         cauHinhBaoCao: {
           taoBaoCao: true,
           soKyHieu,
+          tenToTrinh,
           ngayLap: todayStr,
-          kinhGui,
+          kinhGui: kinhGui || selectedLeaderObj.name,
           nguoiDeXuat: currentOfficerName,
           chucVuNguoiDeXuat: 'Chuyên viên Tiếp công dân & Xử lý đơn',
           chuKySo: {
@@ -180,36 +211,42 @@ export default function ThuLyDonModal({
           },
         },
       });
-    }, 400);
+    }, 350);
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto animate-fade-in">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden animate-scale-up">
+      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden animate-scale-up transition-all duration-150">
         {/* ===================== HEADER ===================== */}
-        <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-white px-6 py-4 border-b border-emerald-100 flex items-center justify-between gap-4 shrink-0">
+        <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-white px-6 py-4 border-b border-emerald-100 flex items-center justify-between gap-4 shrink-0 flex-wrap">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-200">
-              <span className="material-symbols-outlined text-[24px]">verified</span>
+              <span className="material-symbols-outlined text-[24px]">assignment_turned_in</span>
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
                   Mẫu số 01 / TT 05/2021/TT-TTCP
+                </span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[13px]">draw</span>
+                  Luồng trình ký Lãnh đạo
                 </span>
                 <span className="text-[11px] text-slate-500 font-mono">
                   Luật Tố cáo 2018 (Điều 12, Điều 29)
                 </span>
               </div>
               <h2 className="text-base sm:text-lg font-bold text-slate-900 font-headline-md tracking-tight mt-0.5">
-                Báo cáo đề xuất thụ lý giải quyết tố cáo
+                Lập Tờ trình đề xuất thụ lý giải quyết &amp; Luồng trình ký
               </h2>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             {/* Tab switcher: Form vs Preview Mẫu 01 */}
-            <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-xs font-semibold">
+            <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-xs font-semibold flex-wrap">
               <button
                 type="button"
                 onClick={() => setActiveTab('form')}
@@ -219,8 +256,8 @@ export default function ThuLyDonModal({
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <span className="material-symbols-outlined text-[16px]">tune</span>
-                <span>Thông tin đề xuất</span>
+                <span className="material-symbols-outlined text-[16px]">edit_document</span>
+                <span>Thông tin Tờ trình &amp; Luồng ký</span>
               </button>
               <button
                 type="button"
@@ -232,7 +269,7 @@ export default function ThuLyDonModal({
                 }`}
               >
                 <span className="material-symbols-outlined text-[16px]">description</span>
-                <span>Xem trước Mẫu 01 (A4)</span>
+                <span>Xem trước Tờ trình (A4)</span>
               </button>
             </div>
 
@@ -267,7 +304,7 @@ export default function ThuLyDonModal({
             </span>
           </div>
           <div className="text-[11px] text-emerald-800 font-medium">
-            Người đề xuất: <strong>{currentOfficerName}</strong> ({currentDepartmentName})
+            Người lập tờ trình: <strong>{currentOfficerName}</strong> ({currentDepartmentName})
           </div>
         </div>
 
@@ -275,11 +312,11 @@ export default function ThuLyDonModal({
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
           {activeTab === 'form' ? (
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Notice Banner: Chuẩn hóa Thông tư 05/2021/TT-TTCP */}
+              {/* Notice Banner: Chuẩn hóa Thông tư 05/2021/TT-TTCP & Luồng trình ký */}
               <div className="p-3.5 bg-emerald-50/70 border border-emerald-200 rounded-xl text-xs text-emerald-950 flex items-start gap-2.5 leading-relaxed">
                 <span className="material-symbols-outlined text-emerald-600 text-[18px] shrink-0 mt-0.5">verified_user</span>
                 <div>
-                  <strong>Quy trình xử lý đơn tố cáo thuộc thẩm quyền:</strong> Theo Điều 12, Điều 29 Luật Tố cáo 2018 và Thông tư 05/2021/TT-TTCP, người xử lý đơn kiểm tra điều kiện thụ lý, báo cáo Người đứng đầu cơ quan để ban hành Quyết định thụ lý và thành lập Tổ xác minh. Hệ thống tự động lập sẵn <strong>Mẫu số 01</strong> kèm ký số VGCA.
+                  <strong>Quy định nghiệp vụ thụ lý:</strong> Khi kiểm tra đủ điều kiện theo quy định tại Điều 29 Luật Tố cáo 2018, Cán bộ lập <strong>Tờ trình đề xuất thụ lý (theo Mẫu số 01/TT-TTCP)</strong> kèm dự thảo Quyết định thụ lý, chuyển thẳng vào <strong>Luồng trình ký số</strong> để Lãnh đạo xem xét, phê duyệt và ban hành theo thẩm quyền.
                 </div>
               </div>
 
@@ -470,7 +507,7 @@ export default function ThuLyDonModal({
                       3
                     </span>
                     <h3 className="text-xs sm:text-sm font-bold text-slate-900 uppercase tracking-wide">
-                      Phương thức thụ lý &amp; Phân công cán bộ
+                      Phương thức thụ lý &amp; Phân công cán bộ xác minh
                     </h3>
                   </div>
                   <span className="text-[11px] text-slate-500 font-medium">Thời hạn xác minh: 30 ngày</span>
@@ -544,9 +581,9 @@ export default function ThuLyDonModal({
                 )}
 
                 {/* Định hướng chỉ đạo xác minh */}
-                <div className="pt-2">
+                <div className="pt-1">
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Định hướng nội dung xác minh (Đề xuất người đứng đầu):
+                    Định hướng nội dung xác minh (Kiến nghị ghi trong Tờ trình):
                   </label>
                   <textarea
                     rows={2}
@@ -557,7 +594,206 @@ export default function ThuLyDonModal({
                 </div>
               </div>
 
-              {/* ──────────────── 4. KÝ SỐ CÁN BỘ & GỬI BÁO CÁO ──────────────── */}
+              {/* ──────────────── 4. CẤU HÌNH TỜ TRÌNH & LUỒNG TRÌNH KÝ LÃNH ĐẠO ──────────────── */}
+              <div className="bg-white rounded-xl border border-blue-200 p-4 shadow-sm space-y-3">
+                <div className="flex items-center justify-between border-b border-blue-100 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">
+                      4
+                    </span>
+                    <h3 className="text-xs sm:text-sm font-bold text-slate-900 uppercase tracking-wide flex items-center gap-1.5">
+                      <span>Lập Tờ trình &amp; Luồng trình ký tuần tự tới Lãnh đạo</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 font-bold font-sans">
+                        BẮT BUỘC
+                      </span>
+                    </h3>
+                  </div>
+                  <span className="text-[11px] text-blue-700 font-semibold flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[15px]">verified</span>
+                    Ký số liên phòng ban
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Số / Ký hiệu Tờ trình:
+                    </label>
+                    <input
+                      type="text"
+                      value={soKyHieu}
+                      onChange={(e) => setSoKyHieu(e.target.value)}
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-bold text-slate-800 focus:bg-white focus:outline-none focus:border-blue-600"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Kính gửi (Cơ quan / Lãnh đạo cấp có thẩm quyền):
+                    </label>
+                    <input
+                      type="text"
+                      value={kinhGui}
+                      onChange={(e) => setKinhGui(e.target.value)}
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:bg-white focus:outline-none focus:border-blue-600"
+                    />
+                  </div>
+                </div>
+
+                {/* Chọn Lãnh đạo trình duyệt */}
+                <div className="p-3 bg-blue-50/60 border border-blue-200 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-blue-950 flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-blue-700 text-[18px]">how_to_reg</span>
+                      <span>Lãnh đạo tiếp nhận phê duyệt Tờ trình (Bước 1):</span>
+                    </label>
+                    <span className="text-[11px] text-blue-700 font-medium">
+                      Tự động chuyển vào danh sách chờ ký của Lãnh đạo
+                    </span>
+                  </div>
+
+                  <select
+                    value={selectedLeaderId}
+                    onChange={(e) => {
+                      setSelectedLeaderId(e.target.value);
+                      const ld = INITIAL_LEADERS.find((l) => l.id === e.target.value);
+                      if (ld) {
+                        setKinhGui(ld.name);
+                      }
+                    }}
+                    className="w-full p-2.5 bg-white border border-blue-300 rounded-xl text-xs text-slate-800 font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs"
+                  >
+                    {INITIAL_LEADERS.filter((l) => l.isAvailable).map((l) => (
+                      <option key={l.id} value={l.id}>
+                        {l.name} - {l.chucVu} ({l.coQuan})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* SƠ ĐỒ TIẾN TRÌNH LUỒNG KÝ TUẦN TỰ (Sequential Signing Timeline) */}
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                  <span className="text-xs font-bold text-slate-800 block">
+                    Tiến trình luồng ký tuần tự (Workflow trình ký số):
+                  </span>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                    {/* Bước 1: Cán bộ lập */}
+                    <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-300 flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                        ✓
+                      </div>
+                      <div className="min-w-0">
+                        <strong className="block text-slate-900 truncate font-semibold">1. {currentOfficerName}</strong>
+                        <span className="text-[10.5px] text-emerald-800 font-medium">Cán bộ lập (Đã ký nháy)</span>
+                      </div>
+                    </div>
+
+                    {/* Bước 2: Lãnh đạo duyệt */}
+                    <div className="p-2.5 rounded-lg bg-amber-50 border border-amber-300 flex items-center gap-2 shadow-2xs">
+                      <div className="w-6 h-6 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-xs shrink-0 animate-pulse">
+                        2
+                      </div>
+                      <div className="min-w-0">
+                        <strong className="block text-slate-900 truncate font-bold">2. {selectedLeaderObj.name}</strong>
+                        <span className="text-[10.5px] text-amber-800 font-semibold">Lãnh đạo duyệt (Chờ ký số)</span>
+                      </div>
+                    </div>
+
+                    {/* Bước 3: Người đứng đầu / Thủ trưởng cơ quan */}
+                    <div className="p-2.5 rounded-lg bg-slate-100 border border-slate-200 flex items-center gap-2 opacity-80">
+                      <div className="w-6 h-6 rounded-full bg-slate-300 text-slate-700 flex items-center justify-center font-bold text-xs shrink-0">
+                        3
+                      </div>
+                      <div className="min-w-0">
+                        <strong className="block text-slate-700 truncate font-medium">3. Đ/c Đặng Quốc Bảo</strong>
+                        <span className="text-[10.5px] text-slate-500">Chánh TT (Ký Quyết định)</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Độ ưu tiên & Hạn xử lý */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Mức độ ưu tiên trình ký:
+                    </label>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMucDoUuTien('thuong');
+                          setHanXuLy('48 giờ');
+                        }}
+                        className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
+                          mucDoUuTien === 'thuong'
+                            ? 'bg-slate-800 text-white border-slate-900'
+                            : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                        }`}
+                      >
+                        Thường
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMucDoUuTien('khan');
+                          setHanXuLy('24 giờ (Hạn xử lý theo quy định)');
+                        }}
+                        className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
+                          mucDoUuTien === 'khan'
+                            ? 'bg-amber-500 text-slate-950 border-amber-600 shadow-2xs'
+                            : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                        }`}
+                      >
+                        Khẩn (24h)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMucDoUuTien('hoa_toc');
+                          setHanXuLy('2 giờ');
+                        }}
+                        className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
+                          mucDoUuTien === 'hoa_toc'
+                            ? 'bg-rose-600 text-white border-rose-700 shadow-2xs'
+                            : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                        }`}
+                      >
+                        Hỏa tốc
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Thời hạn xử lý trình ký:
+                    </label>
+                    <input
+                      type="text"
+                      value={hanXuLy}
+                      onChange={(e) => setHanXuLy(e.target.value)}
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 focus:bg-white focus:outline-none focus:border-blue-600"
+                    />
+                  </div>
+                </div>
+
+                {/* Ý kiến cán bộ trình tới Lãnh đạo */}
+                <div className="pt-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Ý kiến cán bộ trình gửi tới Lãnh đạo:
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={yKienTrinhLanhDao}
+                    onChange={(e) => setYKienTrinhLanhDao(e.target.value)}
+                    placeholder="Ghi chú ý kiến trình ký..."
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:border-blue-600 resize-none leading-relaxed"
+                  />
+                </div>
+              </div>
+
+              {/* ──────────────── 5. KÝ SỐ CÁN BỘ LẬP TỜ TRÌNH ──────────────── */}
               <div className="p-4 bg-emerald-50/70 border border-emerald-200 rounded-xl flex items-center justify-between gap-4 flex-wrap">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-mono font-bold text-xs shrink-0 shadow-xs">
@@ -565,10 +801,10 @@ export default function ThuLyDonModal({
                   </div>
                   <div>
                     <span className="text-xs font-bold text-slate-900 block">
-                      Ký số xác nhận Báo cáo đề xuất thụ lý (Mẫu số 01/TT-TTCP)
+                      Ký số xác nhận Tờ trình đề xuất thụ lý (Mẫu số 01/TT-TTCP)
                     </span>
                     <span className="text-[11px] text-slate-500">
-                      Cán bộ đề xuất: <strong>{currentOfficerName}</strong> • Chức thư số Ban Cơ yếu Chính phủ
+                      Cán bộ trình: <strong>{currentOfficerName}</strong> • Chức thư số Ban Cơ yếu Chính phủ
                     </span>
                   </div>
                 </div>
@@ -576,7 +812,7 @@ export default function ThuLyDonModal({
                 <div className="flex items-center gap-2">
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    Sẵn sàng ký số
+                    Sẵn sàng ký số &amp; chuyển tiếp
                   </span>
                 </div>
               </div>
@@ -591,38 +827,29 @@ export default function ThuLyDonModal({
                   Hủy bỏ
                 </button>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <button
                     type="button"
                     onClick={() => setActiveTab('preview')}
                     className="px-4 py-2 rounded-xl border border-emerald-300 bg-white hover:bg-emerald-50 text-emerald-800 text-xs font-bold cursor-pointer transition-colors flex items-center gap-1.5"
                   >
                     <span className="material-symbols-outlined text-[16px]">visibility</span>
-                    <span>Xem bản in A4</span>
+                    <span>Xem bản in Tờ trình A4</span>
                   </button>
 
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold shadow-md shadow-emerald-200 cursor-pointer flex items-center gap-2 transition-all disabled:opacity-50"
+                    className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold shadow-md shadow-emerald-200 cursor-pointer flex items-center gap-2"
                   >
-                    {isSubmitting ? (
-                      <>
-                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                        <span>Đang xử lý...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="material-symbols-outlined text-[18px]">send</span>
-                        <span>Ký số &amp; Báo cáo Người đứng đầu đề xuất thụ lý ➔</span>
-                      </>
-                    )}
+                    <span className="material-symbols-outlined text-[18px]">send</span>
+                    <span>Lập Tờ trình &amp; Trình ký Lãnh đạo ({selectedLeaderObj.name}) ➔</span>
                   </button>
                 </div>
               </div>
             </form>
           ) : (
-            /* ===================== TAB PREVIEW: BẢN IN A4 MẪU SỐ 01 ===================== */
+            /* ===================== TAB PREVIEW: BẢN IN A4 TỜ TRÌNH MẪU SỐ 01 ===================== */
             <div className="space-y-4">
               <div className="flex items-center justify-between bg-slate-100 p-2.5 rounded-xl text-xs text-slate-600">
                 <span>
@@ -634,7 +861,7 @@ export default function ThuLyDonModal({
                   className="px-3 py-1 bg-white border border-slate-300 rounded-lg text-slate-800 font-semibold hover:bg-slate-50 flex items-center gap-1 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-[15px]">print</span>
-                  <span>In báo cáo</span>
+                  <span>In văn bản</span>
                 </button>
               </div>
 
@@ -643,9 +870,9 @@ export default function ThuLyDonModal({
                 {/* Header 2 cột Quốc hiệu & Tên cơ quan */}
                 <div className="grid grid-cols-2 gap-4 pb-4 border-b border-slate-200">
                   <div className="text-center space-y-0.5">
-                    <p className="uppercase font-sans font-bold text-xs tracking-wider">ỦY BAN NHÂN DÂN QUẬN CẦU GIẤY</p>
+                    <p className="uppercase font-sans font-bold text-xs tracking-wider">THANH TRA THÀNH PHỐ HÀ NỘI</p>
                     <p className="uppercase font-sans font-bold text-xs text-emerald-800 underline decoration-emerald-600">
-                      BAN TIẾP CÔNG DÂN
+                      PHÒNG TIẾP CÔNG DÂN &amp; XỬ LÝ ĐƠN
                     </p>
                     <p className="font-sans text-[11px] text-slate-500 mt-1">Số: {soKyHieu}</p>
                   </div>
@@ -653,7 +880,7 @@ export default function ThuLyDonModal({
                     <p className="uppercase font-sans font-bold text-xs">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p>
                     <p className="font-sans font-bold text-xs">Độc lập - Tự do - Hạnh phúc</p>
                     <p className="font-sans text-[11px] italic text-slate-600 mt-1">
-                      Cầu Giấy, ngày {todayStr.split('/')[0]} tháng {todayStr.split('/')[1]} năm {todayStr.split('/')[2]}
+                      Hà Nội, ngày {todayStr.split('/')[0]} tháng {todayStr.split('/')[1]} năm {todayStr.split('/')[2]}
                     </p>
                   </div>
                 </div>
@@ -661,34 +888,37 @@ export default function ThuLyDonModal({
                 {/* Tiêu đề văn bản */}
                 <div className="text-center space-y-1 pt-2">
                   <h1 className="font-sans font-bold text-base uppercase tracking-wide">
-                    BÁO CÁO
+                    TỜ TRÌNH
                   </h1>
                   <h2 className="font-sans font-bold text-sm uppercase text-slate-800">
-                    Đề xuất thụ lý giải quyết tố cáo
+                    Về việc đề xuất thụ lý giải quyết tố cáo và thành lập Tổ xác minh
                   </h2>
                   <p className="font-sans text-xs italic text-slate-500">
-                    (Ban hành kèm theo Thông tư số 05/2021/TT-TTCP ngày 01/10/2021 của Thanh tra Chính phủ)
+                    (Mẫu số 01 ban hành kèm theo Thông tư số 05/2021/TT-TTCP ngày 01/10/2021 của Thanh tra Chính phủ)
                   </p>
                 </div>
 
                 <div className="text-center font-sans text-xs pt-1">
                   Kính gửi:{' '}
-                  <span className="font-bold underline uppercase">{kinhGui}</span>
+                  <span className="font-bold underline uppercase">{kinhGui || selectedLeaderObj.name}</span>
                 </div>
 
-                {/* Nội dung báo cáo */}
+                {/* Nội dung Tờ trình */}
                 <div className="space-y-4 text-justify font-sans text-xs leading-relaxed text-slate-800">
                   <p>
                     Căn cứ Luật Tố cáo ngày 12 tháng 6 năm 2018;
                   </p>
                   <p>
+                    Căn cứ Nghị định số 31/2019/NĐ-CP ngày 10/04/2019 của Chính phủ quy định chi tiết một số điều và biện pháp thi hành Luật Tố cáo;
+                  </p>
+                  <p>
                     Căn cứ Thông tư số 05/2021/TT-TTCP ngày 01 tháng 10 năm 2021 của Thanh tra Chính phủ quy định quy trình xử lý đơn khiếu nại, đơn tố cáo, đơn kiến nghị, phản ánh;
                   </p>
                   <p>
-                    Ban Tiếp công dân quận Cầu Giấy báo cáo kết quả kiểm tra, xử lý đơn tố cáo với các nội dung cụ thể sau:
+                    Phòng Tiếp công dân &amp; Xử lý đơn kính trình Lãnh đạo kết quả kiểm tra, xác minh sơ bộ và đề xuất xử lý đơn tố cáo với các nội dung cụ thể sau:
                   </p>
 
-                  {/* Mục 1: Thông tin đương sự */}
+                  {/* Mục 1: Thông tin người tố cáo và người bị tố cáo */}
                   <div className="space-y-1.5 pl-2">
                     <p className="font-bold text-slate-900">
                       I. Thông tin về người tố cáo và người bị tố cáo:
@@ -731,7 +961,7 @@ export default function ThuLyDonModal({
                           <strong className="text-emerald-700">{duNangLucHVDS ? 'Đạt yêu cầu' : 'Chưa đạt'}</strong>.
                         </li>
                         <li>
-                          Vụ việc thuộc thẩm quyền giải quyết tố cáo của {kinhGui} theo quy định tại Điều 12 Luật Tố cáo 2018:{' '}
+                          Vụ việc thuộc thẩm quyền giải quyết tố cáo của {kinhGui || selectedLeaderObj.name} theo quy định tại Điều 12 Luật Tố cáo 2018:{' '}
                           <strong className="text-emerald-700">{thuocThamQuyen ? 'Đúng thẩm quyền' : 'Không đúng'}</strong>.
                         </li>
                         <li>
@@ -754,13 +984,13 @@ export default function ThuLyDonModal({
                     </p>
                     <div className="pl-4 space-y-1">
                       <p>
-                        Từ kết quả kiểm tra nêu trên, đối chiếu với quy định tại Điều 12, Điều 29, Điều 30 Luật Tố cáo năm 2018, Ban Tiếp công dân trân trọng đề xuất Người đứng đầu cơ quan:
+                        Từ kết quả kiểm tra nêu trên, đối chiếu với quy định tại Điều 12, Điều 29, Điều 30 Luật Tố cáo năm 2018, Phòng Tiếp công dân &amp; Xử lý đơn kính trình Lãnh đạo:
                       </p>
                       <p className="font-semibold text-slate-900">
-                        1. Ban hành Quyết định thụ lý giải quyết tố cáo đối với hành vi nêu trên.
+                        1. Phê duyệt thụ lý giải quyết nội dung tố cáo nêu trên.
                       </p>
                       <p className="font-semibold text-slate-900">
-                        2. Thành lập Tổ xác minh nội dung tố cáo; giao đồng chí{' '}
+                        2. Ký ban hành Quyết định thụ lý và thành lập Tổ xác minh; giao đồng chí{' '}
                         <u>{phuongThucThuLy === 'phan_cong_can_bo' ? selectedOfficerObj.name : currentOfficerName}</u> làm Tổ trưởng Tổ xác minh. Thời hạn xác minh là {thoiHanXacMinhNgay} ngày làm việc kể từ ngày ban hành Quyết định thụ lý.
                       </p>
                       {apDungBienPhapNganChan && (
@@ -777,27 +1007,30 @@ export default function ThuLyDonModal({
                   </div>
 
                   <p className="pt-2">
-                    Kính trình {kinhGui} xem xét, quyết định./.
+                    Kính trình Lãnh đạo xem xét, quyết định phê duyệt./.
                   </p>
                 </div>
 
                 {/* Phần ký duyệt 2 bên */}
                 <div className="grid grid-cols-2 gap-4 pt-6 font-sans text-xs">
                   <div className="text-left space-y-1">
-                    <p className="font-bold uppercase text-slate-700">Ý KIẾN PHÊ DUYỆT CỦA THỦ TRƯỞNG</p>
-                    <p className="italic text-[11px] text-slate-500">(Đồng ý thụ lý / Giao Tổ xác minh thực hiện)</p>
-                    <div className="h-16"></div>
-                    <p className="font-bold text-slate-400">....................................................</p>
+                    <p className="font-bold uppercase text-slate-700">Ý KIẾN PHÊ DUYỆT CỦA LÃNH ĐẠO</p>
+                    <p className="italic text-[11px] text-slate-500">(Ký duyệt trong Luồng trình ký điện tử)</p>
+                    <div className="p-3 border border-dashed border-amber-300 bg-amber-50/40 rounded-lg text-[11px] text-amber-900 mt-2">
+                      <p className="font-bold">Đang chờ ký: {selectedLeaderObj.name}</p>
+                      <p className="text-slate-600">{selectedLeaderObj.chucVu}</p>
+                      <p className="text-[10px] text-slate-500 mt-1">Độ ưu tiên: {mucDoUuTien === 'khan' ? 'Khẩn' : mucDoUuTien === 'hoa_toc' ? 'Hỏa tốc' : 'Thường'} • Hạn: {hanXuLy}</p>
+                    </div>
                   </div>
 
                   <div className="text-center space-y-1">
-                    <p className="font-bold uppercase text-slate-900">NGƯỜI BÁO CÁO ĐỀ XUẤT</p>
+                    <p className="font-bold uppercase text-slate-900">NGƯỜI LẬP TỜ TRÌNH</p>
                     <p className="italic text-[11px] text-slate-500">
                       (Ký số điện tử chuyên dùng VGCA)
                     </p>
 
                     <div className="py-2 flex flex-col items-center justify-center">
-                      <div className="p-2 border border-emerald-400 bg-emerald-50/50 rounded text-center w-52 text-[10.5px] leading-tight space-y-0.5">
+                      <div className="p-2 border border-emerald-400 bg-emerald-50/50 rounded text-center w-52 text-[10.5px] leading-tight space-y-0.5 shadow-2xs">
                         <span className="font-bold text-emerald-900 block flex items-center justify-center gap-1">
                           <span className="material-symbols-outlined text-[13px] text-emerald-700">verified</span>
                           ĐÃ KÝ SỐ ĐIỆN TỬ
@@ -813,7 +1046,7 @@ export default function ThuLyDonModal({
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex justify-between items-center gap-2 pt-2 border-t border-slate-200 flex-wrap">
                 <button
                   type="button"
                   onClick={() => setActiveTab('form')}
@@ -821,15 +1054,18 @@ export default function ThuLyDonModal({
                 >
                   Quay lại chỉnh sửa
                 </button>
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={isSubmitting}
-                  className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow cursor-pointer flex items-center gap-1.5"
-                >
-                  <span className="material-symbols-outlined text-[16px]">send</span>
-                  <span>Xác nhận nộp báo cáo Mẫu 01 ➔</span>
-                </button>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={handleSubmit}
+                    disabled={isSubmitting}
+                    className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-200 cursor-pointer flex items-center gap-2"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">send</span>
+                    <span>Xác nhận nộp Tờ trình &amp; Trình ký Lãnh đạo ➔</span>
+                  </button>
+                </div>
               </div>
             </div>
           )}

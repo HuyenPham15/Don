@@ -154,7 +154,7 @@ export default function ChuyenQuyTrinhModal({
                 setReason(e.target.value);
                 setError(null);
               }}
-              placeholder="Ví dụ: Đương sự nộp bổ sung tài liệu chứng minh bản chất vụ việc là khiếu nại hành chính thu hồi đất, không cấu thành tội phạm lừa đảo..."
+              placeholder="Ví dụ: Người gửi đơn nộp bổ sung tài liệu chứng minh bản chất vụ việc là khiếu nại hành chính thu hồi đất, không cấu thành tội phạm lừa đảo..."
               className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-none focus:bg-white focus:border-[#004ac6] resize-none"
             />
             {error && <p className="text-[11px] text-rose-600 font-semibold mt-1">{error}</p>}

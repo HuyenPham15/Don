@@ -53,7 +53,7 @@ export const WORKFLOW_DEFINITIONS: Record<QuyTrinhId, WorkflowDefinition> = {
       {
         id: 'step-4',
         stepNumber: 4,
-        name: 'Xác minh thực tế, dòng tiền & Triệu tập đương sự',
+        name: 'Xác minh thực tế, dòng tiền & Mời làm việc các bên',
         responsibleRole: 'Điều tra viên thụ lý chính',
         responsibleUnit: 'Đội Điều tra Kinh tế (PC03)',
         status: 'pending',
@@ -86,7 +86,7 @@ export const WORKFLOW_DEFINITIONS: Record<QuyTrinhId, WorkflowDefinition> = {
       {
         id: 'step-7',
         stepNumber: 7,
-        name: 'Ban hành thông báo & Trả lời đương sự',
+        name: 'Ban hành thông báo & Trả lời người gửi đơn',
         responsibleRole: 'Bộ phận Văn thư & Cán bộ thụ lý',
         responsibleUnit: 'Văn phòng Cơ quan CSĐT',
         status: 'pending',
@@ -148,10 +148,10 @@ export const WORKFLOW_DEFINITIONS: Record<QuyTrinhId, WorkflowDefinition> = {
         status: 'pending',
         relatedDocuments: ['Phiếu hướng dẫn bổ sung tài liệu'],
         aiAssistance: {
-          summary: 'AI phát hiện đương sự chưa cung cấp bản gốc sao kê tài khoản ngân hàng và hợp đồng ủy quyền công chứng của luật sư đại diện.',
+          summary: 'AI phát hiện người nộp đơn chưa cung cấp bản gốc sao kê tài khoản ngân hàng và hợp đồng ủy quyền công chứng của luật sư đại diện.',
           actionSuggestions: [
             'Tạo Thông báo yêu cầu bổ sung chứng cứ trong thời hạn 07 ngày',
-            'Liên hệ điện thoại trực tiếp đương sự để hướng dẫn thủ tục'
+            'Liên hệ điện thoại trực tiếp người nộp đơn để hướng dẫn thủ tục'
           ]
         }
       },
@@ -174,7 +174,7 @@ export const WORKFLOW_DEFINITIONS: Record<QuyTrinhId, WorkflowDefinition> = {
         id: 'task-4',
         title: 'Gửi văn bản tra soát tài khoản ngân hàng và triệu tập đối tượng',
         stepId: 'step-4',
-        stepName: 'Xác minh thực tế, dòng tiền & Triệu tập đương sự',
+        stepName: 'Xác minh thực tế, dòng tiền & Mời làm việc các bên',
         assignedTo: 'Trung tá Lê Văn Nam',
         assignedRole: 'Điều tra viên thụ lý chính',
         isCurrentUser: false,
@@ -191,8 +191,8 @@ export const WORKFLOW_DEFINITIONS: Record<QuyTrinhId, WorkflowDefinition> = {
         id: 'miss-1',
         title: 'Chưa có bản sao kê tài khoản ngân hàng có đóng dấu xác nhận',
         impactLevel: 'high',
-        description: 'Đương sự mới nộp ảnh chụp màn hình chuyển khoản qua ứng dụng, chưa có bản sao kê tài khoản chính thức có dấu mộc đỏ ngân hàng xác nhận giao dịch 3.5 tỷ VNĐ.',
-        suggestedAction: 'Yêu cầu đương sự đến Ngân hàng Vietcombank xin in sao kê có mộc để làm căn cứ giám định tài chính.',
+        description: 'Người nộp đơn mới nộp ảnh chụp màn hình chuyển khoản qua ứng dụng, chưa có bản sao kê tài khoản chính thức có dấu mộc đỏ ngân hàng xác nhận giao dịch 3.5 tỷ VNĐ.',
+        suggestedAction: 'Yêu cầu người nộp đơn đến Ngân hàng Vietcombank xin in sao kê có mộc để làm căn cứ giám định tài chính.',
         relatedDoc: 'Biên lai giao dịch điện tử đính kèm',
         aiSource: 'Trang 2 đơn: "Tôi đã chuyển tiền qua internet banking nhưng chưa in sao kê ngân hàng".'
       },
@@ -265,7 +265,7 @@ export const WORKFLOW_DEFINITIONS: Record<QuyTrinhId, WorkflowDefinition> = {
         responsibleUnit: 'Tổ công tác liên ngành',
         status: 'pending',
         description: 'Làm việc trực tiếp với người khiếu nại, đo đạc ranh giới thửa đất, đối chiếu bản đồ địa chính và phương án bồi thường đã duyệt.',
-        transferCondition: 'Biên bản làm việc thực tế có chữ ký của đương sự và chính quyền cơ sở.',
+        transferCondition: 'Biên bản làm việc thực tế có chữ ký của người khiếu nại và chính quyền cơ sở.',
         estimatedDays: 10,
       },
       {
@@ -438,7 +438,7 @@ export const WORKFLOW_DEFINITIONS: Record<QuyTrinhId, WorkflowDefinition> = {
         aiAssistance: {
           summary: 'Đơn tố cáo đích danh hành vi sai phạm trong thi hành công vụ. Cần áp dụng quy trình bảo mật danh tính tuyệt đối.',
           actionSuggestions: [
-            'Lập hồ sơ mã hóa danh tính đương sự',
+            'Lập hồ sơ mã hóa danh tính người tố cáo',
             'Kiểm tra tính xác thực của các tài liệu file ghi âm/ảnh kèm theo'
           ]
         }

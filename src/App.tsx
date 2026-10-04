@@ -25,7 +25,7 @@ import ProcessWorkflowModule from "./screens/workflowAdmin/ProcessWorkflowModule
 import QuanTriNghiepVuScreen from "./screens/workflowAdmin/QuanTriNghiepVuScreen";
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>("don-tiep-nhan");
+  const [screen, setScreen] = useState<Screen>("ban-phan-tich");
   const [selected, setSelected] = useState<LuotNhan>(LN19);
   const [luotNhanList, setLuotNhanList] = useState<LuotNhan[]>(ALL_LUOT_NHAN);
   const [selectedDon, setSelectedDon] = useState<DonDetail | null>({
@@ -42,6 +42,8 @@ export default function App() {
   const [acceptedDons, setAcceptedDons] = useState<DonDetail[]>([]);
   const [extraCard, setExtraCard] = useState<LuotNhan | null>(null);
   const [tiepNhanItems, setTiepNhanItems] = useState<TiepNhanDonItem[]>(INITIAL_TIEP_NHAN_ITEMS);
+  // Tự động mở XacMinhModal khi vào màn don-tiep-nhan sau tiếp nhận
+  const [openXacMinhOnDonTiepNhan, setOpenXacMinhOnDonTiepNhan] = useState<boolean>(false);
 
   // Danh sách văn bản Trình ký & Ký số (Dành cho Cán bộ và Lãnh đạo)
   const [signingDocuments, setSigningDocuments] = useState<SigningDocument[]>(INITIAL_SIGNING_DOCUMENTS);
@@ -111,6 +113,12 @@ export default function App() {
     setSelectedDon(don);
     const loaiDon = don.loaiDon || 'Đơn tố giác về tội phạm';
     const wfDef = matchWorkflowByLoaiDon(loaiDon);
+    const targetStepNumber = don.currentStep || 2;
+    const targetStep =
+      wfDef.steps.find((s) => s.stepNumber === targetStepNumber) ||
+      wfDef.steps[1] ||
+      wfDef.steps[0];
+
     setActiveWorkflow({
       donCode: don.code,
       donTitle: don.title,
@@ -118,7 +126,7 @@ export default function App() {
       nguoiNop: don.nguoiNop,
       loaiDonConfirmed: loaiDon,
       workflow: wfDef,
-      activeStepId: wfDef.steps[1]?.id || wfDef.steps[0].id,
+      activeStepId: targetStep.id,
       tasks: wfDef.defaultTasks,
       missingInfoList: wfDef.potentialMissingInfo,
       status: 'dang_xu_ly',
@@ -129,8 +137,12 @@ export default function App() {
   }, []);
 
   const handleAcceptFromBanPhanTich = useCallback((don: DonDetail, wfState?: ActiveWorkflowState) => {
-    setAcceptedDons((prev) => [don, ...prev.filter((d) => d.code !== don.code)]);
-    setSelectedDon(don);
+    const donWithStatus: DonDetail = {
+      ...don,
+      statusBadge: don.statusBadge || 'Đang xác minh thông tin',
+    };
+    setAcceptedDons((prev) => [donWithStatus, ...prev.filter((d) => d.code !== donWithStatus.code)]);
+    setSelectedDon(donWithStatus);
     if (wfState) {
       setActiveWorkflow(wfState);
     } else {
@@ -152,7 +164,12 @@ export default function App() {
         historyLogs: [],
       });
     }
-    setScreen("quy-trinh-xu-ly");
+    setOpenXacMinhOnDonTiepNhan(false);
+  }, []);
+
+  const handleCreateSigningDocument = useCallback((doc: SigningDocument) => {
+    setSigningDocuments((prev) => [doc, ...prev.filter((d) => d.id !== doc.id)]);
+    setSelectedSigningDocId(doc.id);
   }, []);
 
   // BR-06, BR-07: Xử lý khi cán bộ nhấn "Chuyển tiếp nhận và xử lý" từ Bàn phân tích
@@ -574,10 +591,19 @@ export default function App() {
                 onBanGiao={handleBanGiao}
                 onTraLai={handleTraLai}
                 onUpdateLuotNhan={handleUpdateLuotNhan}
+                onCreateSigningDocument={handleCreateSigningDocument}
+                signingDocuments={signingDocuments}
+                onUpdateSigningDocuments={setSigningDocuments}
+                currentAccount={currentAccount}
               />
             )}
             {screen === "don-tiep-nhan" && (
-              <DonTiepNhan onNav={setScreen} donDetail={selectedDon} />
+              <DonTiepNhan
+                onNav={setScreen}
+                donDetail={selectedDon}
+                openXacMinhOnEnter={openXacMinhOnDonTiepNhan}
+                onXacMinhOpened={() => setOpenXacMinhOnDonTiepNhan(false)}
+              />
             )}
             {screen === "quy-trinh-xu-ly" && (
               <QuyTrinhXuLyDon
@@ -591,6 +617,8 @@ export default function App() {
                 onNav={setScreen}
                 documents={signingDocuments}
                 onUpdateDocuments={setSigningDocuments}
+                initialDocId={selectedSigningDocId}
+                onBackToKanban={() => setScreen("cong-viec")}
                 onSelectHoSo={(hoSoCode) => {
                   const matched = acceptedDons.find((d) => d.code === hoSoCode || d.id === hoSoCode);
                   if (matched) setSelectedDon(matched);
@@ -610,6 +638,7 @@ export default function App() {
                 documents={signingDocuments}
                 onUpdateDocuments={setSigningDocuments}
                 initialDocId={selectedSigningDocId}
+                currentAccount={currentAccount}
                 onSelectHoSo={(hoSoCode) => {
                   const matched = acceptedDons.find((d) => d.code === hoSoCode || d.id === hoSoCode);
                   if (matched) setSelectedDon(matched);

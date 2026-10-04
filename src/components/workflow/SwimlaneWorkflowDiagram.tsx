@@ -139,7 +139,7 @@ export const KHOI_KIEN_WORKFLOW: SwimlaneWorkflowConfig = {
         title: 'Lãnh đạo ký số phê duyệt Quyết định thụ lý vụ án',
         items: [
           'Kiểm tra điều kiện khởi kiện theo luật định',
-          'Ký số Thông báo thụ lý vụ án gửi đương sự và Viện kiểm sát',
+          'Ký số Thông báo thụ lý vụ án gửi các bên liên quan và Viện kiểm sát',
           'Ban hành Quyết định phân công Thẩm phán chủ tọa'
         ],
         actionLabel: '✓ Lãnh đạo Ký số thụ lý & Chuyển sang chuẩn bị xét xử',
@@ -186,13 +186,13 @@ export const KHOI_KIEN_WORKFLOW: SwimlaneWorkflowConfig = {
         { id: 'c9', label: 'Bản án → Kết thúc', checked: false },
         { id: 'c10', label: 'Lời dặn dò', checked: false },
       ],
-      legalBasis: 'Điều 269 Bộ luật Tố tụng dân sự 2015: Giao bản án/quyết định cho các đương sự trong thời hạn 10 ngày kể từ ngày tuyên án.',
+      legalBasis: 'Điều 269 Bộ luật Tố tụng dân sự 2015: Giao bản án/quyết định cho các bên liên quan trong thời hạn 10 ngày kể từ ngày tuyên án.',
       timeLimit: '10 ngày',
       aiAction: 'AI tự động đồng bộ bản án lên Cổng thông tin Tòa án điện tử, tạo mã số lưu trữ hồ sơ vĩnh viễn và gửi thông báo SMS/Zalo cho công dân.',
       userConfirmationNeeded: {
         title: 'Văn thư xác nhận giao nhận văn bản và đóng sổ hồ sơ',
         items: [
-          'Tống đạt bản án cho Viện kiểm sát và các bên đương sự có ký nhận',
+          'Tống đạt bản án cho Viện kiểm sát và các bên liên quan có ký nhận',
           'Kiểm tra đủ thành phần tài liệu theo mục lục hồ sơ lưu trữ',
           'Khóa sổ theo dõi thụ lý và lưu kho điện tử'
         ],
@@ -472,7 +472,7 @@ export const TO_GIAC_WORKFLOW: SwimlaneWorkflowConfig = {
     {
       id: 'tg-4',
       stepNumber: 4,
-      name: 'Xác minh thực tế, dòng tiền & Triệu tập đương sự',
+      name: 'Xác minh thực tế, dòng tiền & Mời làm việc các bên',
       roleId: 'can-bo',
       stageIndex: 3,
       status: 'pending',
@@ -803,33 +803,10 @@ export default function SwimlaneWorkflowDiagram({
       <div className="flex flex-col h-full bg-[#f8fafc] text-slate-800 select-none overflow-hidden font-body-md">
         {/* Top switch selector */}
         <div className="bg-white border-b border-slate-200 px-6 py-2.5 flex items-center justify-between gap-4 flex-wrap shrink-0 shadow-2xs">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-[#0047AB] text-white flex items-center justify-center font-bold text-xs shadow-2xs">
-              GOV
-            </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-xs sm:text-sm font-bold text-slate-900 tracking-tight">
-                  Quy trình Xử lý Đơn tố cáo và Vụ việc (Chuẩn hóa GOVEX)
-                </h2>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-[#004ac6] border border-blue-200">
-                  6 Giai đoạn • 4 Làn bơi • Luồng rút đơn
-                </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                  Sơ đồ nghiệp vụ BRD
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                ⚖️ <strong className="text-slate-700">Căn cứ Luật Tố cáo 2018 &amp; Thông tư 05/2021/TT-TTCP</strong>
-              </p>
-            </div>
-          </div>
-
           {/* Quick Workflow Selector Pills */}
           <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-semibold">
             {[
-              { id: 'to-cao-govex', label: '⭐ Đơn tố cáo & Vụ việc (GOVEX BRD)' },
+              { id: 'to-cao-govex', label: '⭐ Đơn tố cáo (Tiếp nhận & Thụ lý)' },
               { id: 'khieu-nai', label: 'Khiếu nại đất đai (Luật KN)' },
               { id: 'khoi-kien', label: 'Khởi kiện dân sự (BLTTDS)' },
             ].map((wf) => (
@@ -837,11 +814,10 @@ export default function SwimlaneWorkflowDiagram({
                 key={wf.id}
                 type="button"
                 onClick={() => setCurrentWorkflowType(wf.id as WorkflowType)}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer text-xs ${
-                  currentWorkflowType === wf.id || (currentWorkflowType === 'to-giac' && wf.id === 'to-cao-govex')
-                    ? 'bg-[#004ac6] text-white shadow-2xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                }`}
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer text-xs ${currentWorkflowType === wf.id || (currentWorkflowType === 'to-giac' && wf.id === 'to-cao-govex')
+                  ? 'bg-[#004ac6] text-white shadow-2xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                  }`}
               >
                 {wf.label}
               </button>
@@ -900,7 +876,7 @@ export default function SwimlaneWorkflowDiagram({
           {/* Quick Workflow Selector Pills */}
           <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-semibold">
             {[
-              { id: 'to-cao-govex', label: '⭐ Đơn tố cáo & Vụ việc (GOVEX BRD)' },
+              { id: 'to-cao-govex', label: '⭐ Đơn tố cáo (Tiếp nhận & Thụ lý)' },
               { id: 'khieu-nai', label: 'Khiếu nại đất đai (Luật KN)' },
               { id: 'khoi-kien', label: 'Khởi kiện dân sự (BLTTDS)' },
             ].map((wf) => (
@@ -908,11 +884,10 @@ export default function SwimlaneWorkflowDiagram({
                 key={wf.id}
                 type="button"
                 onClick={() => setCurrentWorkflowType(wf.id as WorkflowType)}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer text-xs ${
-                  currentWorkflowType === wf.id
-                    ? 'bg-[#004ac6] text-white shadow-2xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                }`}
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer text-xs ${currentWorkflowType === wf.id
+                  ? 'bg-[#004ac6] text-white shadow-2xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                  }`}
               >
                 {wf.label}
               </button>
@@ -940,11 +915,10 @@ export default function SwimlaneWorkflowDiagram({
                 showToast('⏸ Đã tạm dừng mô phỏng AI.');
               }
             }}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer ${
-              isSimulating
-                ? 'bg-amber-500 hover:bg-amber-600 text-white'
-                : 'bg-indigo-600 hover:bg-indigo-700 text-white'
-            }`}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer ${isSimulating
+              ? 'bg-amber-500 hover:bg-amber-600 text-white'
+              : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+              }`}
           >
             <span className="material-symbols-outlined text-[16px]">
               {isSimulating ? 'pause' : 'play_arrow'}
@@ -959,7 +933,7 @@ export default function SwimlaneWorkflowDiagram({
         <div className="flex items-center gap-2.5 text-slate-700">
           <span className="material-symbols-outlined text-[18px] text-[#004ac6]">tips_and_updates</span>
           <span className="text-xs leading-relaxed">
-            <strong className="text-[#004ac6]">Gợi ý thao tác nghiệp vụ:</strong> Sơ đồ trực quan hóa các hành động cán bộ cần thực hiện theo quy định pháp luật. 
+            <strong className="text-[#004ac6]">Gợi ý thao tác nghiệp vụ:</strong> Sơ đồ trực quan hóa các hành động cán bộ cần thực hiện theo quy định pháp luật.
             <span className="text-slate-600 font-normal"> Cán bộ chủ động xử lý linh hoạt — <strong>không bắt buộc phải làm tuần tự từng bước</strong>. Có thể chọn thao tác, hoàn thành hoặc bỏ qua bước không áp dụng (miễn lệ phí, hòa giải không thành,...) tùy theo thực tế hồ sơ.</span>
           </span>
         </div>
@@ -1005,9 +979,8 @@ export default function SwimlaneWorkflowDiagram({
             type="button"
             title="Bật/Tắt đường lưới"
             onClick={() => setShowGrid(!showGrid)}
-            className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
-              showGrid ? 'bg-blue-50 text-[#004ac6]' : 'hover:bg-slate-100 text-slate-500'
-            }`}
+            className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${showGrid ? 'bg-blue-50 text-[#004ac6]' : 'hover:bg-slate-100 text-slate-500'
+              }`}
           >
             <span className="material-symbols-outlined text-[18px]">grid_4x4</span>
           </button>
@@ -1041,9 +1014,8 @@ export default function SwimlaneWorkflowDiagram({
           {/* B. SWIMLANES BODY (CÁC LÀN VAI TRÒ, KHỐI TÁC NGHIỆP & ĐƯỜNG NỐI SVG) */}
           <div
             style={{ width: `${canvasWidth}px`, height: `${canvasHeight}px` }}
-            className={`rounded-2xl border border-slate-200 bg-white shadow-2xs overflow-hidden relative ${
-              showGrid ? 'bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px]' : ''
-            }`}
+            className={`rounded-2xl border border-slate-200 bg-white shadow-2xs overflow-hidden relative ${showGrid ? 'bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px]' : ''
+              }`}
           >
             {/* C. CÁC LÀN BƠI VÀ CÁC THẺ BƯỚC TÁC NGHIỆP */}
             {workflow.roles.map((role, roleIdx) => (
@@ -1053,9 +1025,8 @@ export default function SwimlaneWorkflowDiagram({
                   height: `${LANE_ROW_HEIGHT}px`,
                   gridTemplateColumns: `${LANE_HEADER_WIDTH}px repeat(${workflow.stages.length}, ${STAGE_COL_WIDTH}px) ${CANVAS_EXTRA_RIGHT}px`,
                 }}
-                className={`grid relative z-10 ${
-                  roleIdx < workflow.roles.length - 1 ? 'border-b border-dashed border-slate-200' : ''
-                }`}
+                className={`grid relative z-10 ${roleIdx < workflow.roles.length - 1 ? 'border-b border-dashed border-slate-200' : ''
+                  }`}
               >
                 {/* Lane Label Header (Trái) */}
                 <div className="p-4 bg-slate-50/70 border-r border-slate-200 flex flex-col justify-center select-none">
@@ -1076,24 +1047,22 @@ export default function SwimlaneWorkflowDiagram({
                   return (
                     <div
                       key={stageIdx}
-                      className={`relative flex items-center justify-center p-2 ${
-                        stageIdx < workflow.stages.length - 1 ? 'border-r border-dashed border-slate-100' : ''
-                      }`}
+                      className={`relative flex items-center justify-center p-2 ${stageIdx < workflow.stages.length - 1 ? 'border-r border-dashed border-slate-100' : ''
+                        }`}
                     >
                       {/* Khối thẻ bước tác nghiệp */}
                       {nodeInCell && (
                         <div
                           onClick={() => setSelectedNodeId(nodeInCell.id)}
                           style={{ width: `${CARD_WIDTH}px`, minHeight: `${CARD_HEIGHT}px` }}
-                          className={`rounded-2xl p-3 transition-all cursor-pointer relative z-20 ${
-                            nodeInCell.status === 'active'
-                              ? 'bg-blue-50/95 border-2 border-blue-600 shadow-xl ring-4 ring-blue-400/30 -translate-y-0.5'
-                              : nodeInCell.status === 'completed'
+                          className={`rounded-2xl p-3 transition-all cursor-pointer relative z-20 ${nodeInCell.status === 'active'
+                            ? 'bg-blue-50/95 border-2 border-blue-600 shadow-xl ring-4 ring-blue-400/30 -translate-y-0.5'
+                            : nodeInCell.status === 'completed'
                               ? 'bg-emerald-50/80 border border-emerald-300 shadow-2xs hover:border-emerald-400'
                               : nodeInCell.status === 'skipped'
-                              ? 'bg-slate-50/85 border border-dashed border-slate-300 opacity-75 hover:opacity-100 shadow-2xs'
-                              : 'bg-white border border-slate-200 shadow-2xs hover:border-blue-300 hover:shadow-xs'
-                          }`}
+                                ? 'bg-slate-50/85 border border-dashed border-slate-300 opacity-75 hover:opacity-100 shadow-2xs'
+                                : 'bg-white border border-slate-200 shadow-2xs hover:border-blue-300 hover:shadow-xs'
+                            }`}
                         >
                           {/* Pulsing AI Badge nếu đang chạy ở bước này */}
                           {nodeInCell.status === 'active' && (
@@ -1106,28 +1075,26 @@ export default function SwimlaneWorkflowDiagram({
                           {/* Header card: Step Number + Tag */}
                           <div className="flex items-start justify-between gap-1.5 mb-1">
                             <span
-                              className={`text-[9.5px] font-bold px-1.5 py-0.2 rounded ${
-                                nodeInCell.status === 'completed'
-                                  ? 'bg-emerald-200 text-emerald-900'
-                                  : nodeInCell.status === 'active'
+                              className={`text-[9.5px] font-bold px-1.5 py-0.2 rounded ${nodeInCell.status === 'completed'
+                                ? 'bg-emerald-200 text-emerald-900'
+                                : nodeInCell.status === 'active'
                                   ? 'bg-blue-200 text-blue-900'
                                   : nodeInCell.status === 'skipped'
-                                  ? 'bg-slate-200 text-slate-500 line-through'
-                                  : 'bg-slate-100 text-slate-600'
-                              }`}
+                                    ? 'bg-slate-200 text-slate-500 line-through'
+                                    : 'bg-slate-100 text-slate-600'
+                                }`}
                             >
                               Bước {nodeInCell.stepNumber}
                             </span>
 
                             {nodeInCell.tag && (
                               <span
-                                className={`text-[9px] font-bold px-1.5 py-0.2 rounded ${
-                                  nodeInCell.tag === 'Bắt đầu'
-                                    ? 'bg-blue-100 text-blue-800'
-                                    : nodeInCell.tag === 'Kết thúc'
+                                className={`text-[9px] font-bold px-1.5 py-0.2 rounded ${nodeInCell.tag === 'Bắt đầu'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : nodeInCell.tag === 'Kết thúc'
                                     ? 'bg-rose-100 text-rose-800'
                                     : 'bg-slate-100 text-slate-700'
-                                }`}
+                                  }`}
                               >
                                 {nodeInCell.tag}
                               </span>
@@ -1168,33 +1135,32 @@ export default function SwimlaneWorkflowDiagram({
                           {/* Bottom Status & Time */}
                           <div className="flex items-center justify-between mt-1.5 pt-1 border-t border-slate-100 text-[9.5px] text-slate-500 font-label-technical">
                             <span
-                              className={`font-semibold flex items-center gap-0.5 ${
-                                nodeInCell.status === 'completed'
-                                  ? 'text-emerald-700'
-                                  : nodeInCell.status === 'active'
+                              className={`font-semibold flex items-center gap-0.5 ${nodeInCell.status === 'completed'
+                                ? 'text-emerald-700'
+                                : nodeInCell.status === 'active'
                                   ? 'text-blue-700'
                                   : nodeInCell.status === 'skipped'
-                                  ? 'text-slate-400'
-                                  : 'text-slate-500'
-                              }`}
+                                    ? 'text-slate-400'
+                                    : 'text-slate-500'
+                                }`}
                             >
                               <span className="material-symbols-outlined text-[12px]">
                                 {nodeInCell.status === 'completed'
                                   ? 'check_circle'
                                   : nodeInCell.status === 'active'
-                                  ? 'autorenew'
-                                  : nodeInCell.status === 'skipped'
-                                  ? 'block'
-                                  : 'radio_button_unchecked'}
+                                    ? 'autorenew'
+                                    : nodeInCell.status === 'skipped'
+                                      ? 'block'
+                                      : 'radio_button_unchecked'}
                               </span>
                               <span>
                                 {nodeInCell.status === 'completed'
                                   ? 'Đã xong'
                                   : nodeInCell.status === 'active'
-                                  ? 'Đang làm'
-                                  : nodeInCell.status === 'skipped'
-                                  ? 'Bỏ qua'
-                                  : 'Chờ'}
+                                    ? 'Đang làm'
+                                    : nodeInCell.status === 'skipped'
+                                      ? 'Bỏ qua'
+                                      : 'Chờ'}
                               </span>
                             </span>
                             <span>{nodeInCell.timeLimit}</span>
@@ -1316,23 +1282,23 @@ export default function SwimlaneWorkflowDiagram({
                   (conn.style === 'dashed'
                     ? '#ef4444'
                     : isEitherSkipped
-                    ? '#94a3b8'
-                    : isConnectedToActive
-                    ? '#2563eb'
-                    : isBothCompleted
-                    ? '#059669'
-                    : '#64748b');
+                      ? '#94a3b8'
+                      : isConnectedToActive
+                        ? '#2563eb'
+                        : isBothCompleted
+                          ? '#059669'
+                          : '#64748b');
 
                 const markerId =
                   conn.style === 'dashed'
                     ? 'arrow-dashed-rose'
                     : isEitherSkipped
-                    ? 'arrow-solid-slate'
-                    : isConnectedToActive
-                    ? 'arrow-solid-blue'
-                    : isBothCompleted
-                    ? 'arrow-solid-emerald'
-                    : 'arrow-solid-slate';
+                      ? 'arrow-solid-slate'
+                      : isConnectedToActive
+                        ? 'arrow-solid-blue'
+                        : isBothCompleted
+                          ? 'arrow-solid-emerald'
+                          : 'arrow-solid-slate';
 
                 const pathD = getOrthogonalPath(x1, y1, x2, y2, 8);
 
@@ -1449,15 +1415,14 @@ export default function SwimlaneWorkflowDiagram({
           {/* Left: Step Info & Status */}
           <div className="flex items-center gap-2.5">
             <div
-              className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs ${
-                selectedNode.status === 'completed'
-                  ? 'bg-emerald-100 text-emerald-800'
-                  : selectedNode.status === 'active'
+              className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs ${selectedNode.status === 'completed'
+                ? 'bg-emerald-100 text-emerald-800'
+                : selectedNode.status === 'active'
                   ? 'bg-blue-600 text-white shadow-xs'
                   : selectedNode.status === 'skipped'
-                  ? 'bg-slate-200 text-slate-600'
-                  : 'bg-slate-100 text-slate-700'
-              }`}
+                    ? 'bg-slate-200 text-slate-600'
+                    : 'bg-slate-100 text-slate-700'
+                }`}
             >
               {selectedNode.status === 'completed' ? '✓' : selectedNode.status === 'skipped' ? '⊘' : selectedNode.stepNumber}
             </div>
@@ -1467,23 +1432,22 @@ export default function SwimlaneWorkflowDiagram({
                   Bước {selectedNode.stepNumber}: {selectedNode.name}
                 </h3>
                 <span
-                  className={`px-2 py-0.2 rounded-full text-[10px] font-bold border ${
-                    selectedNode.status === 'completed'
-                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                      : selectedNode.status === 'active'
+                  className={`px-2 py-0.2 rounded-full text-[10px] font-bold border ${selectedNode.status === 'completed'
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : selectedNode.status === 'active'
                       ? 'bg-blue-50 text-blue-700 border-blue-200 animate-pulse'
                       : selectedNode.status === 'skipped'
-                      ? 'bg-slate-100 text-slate-600 border-slate-300'
-                      : 'bg-slate-100 text-slate-600 border-slate-200'
-                  }`}
+                        ? 'bg-slate-100 text-slate-600 border-slate-300'
+                        : 'bg-slate-100 text-slate-600 border-slate-200'
+                    }`}
                 >
                   {selectedNode.status === 'completed'
                     ? '✓ Đã hoàn thành'
                     : selectedNode.status === 'active'
-                    ? '● Đang tập trung xử lý'
-                    : selectedNode.status === 'skipped'
-                    ? '⊘ Đã bỏ qua (Không áp dụng)'
-                    : '○ Chưa thực hiện'}
+                      ? '● Đang tập trung xử lý'
+                      : selectedNode.status === 'skipped'
+                        ? '⊘ Đã bỏ qua (Không áp dụng)'
+                        : '○ Chưa thực hiện'}
                 </span>
                 <span className="text-[10.5px] text-slate-500 font-label-technical">
                   Thời hạn quy định: <strong>{selectedNode.timeLimit}</strong>

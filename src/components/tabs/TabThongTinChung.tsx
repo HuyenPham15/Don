@@ -76,7 +76,7 @@ export const THAM_QUYEN_SUGGESTIONS = [
   'Thuộc thẩm quyền giải quyết của Chủ tịch UBND tỉnh/thành phố',
   'Thuộc thẩm quyền giải quyết của Tòa án nhân dân quận/huyện',
   'Thuộc thẩm quyền của Thanh tra tỉnh / Thanh tra sở ngành',
-  'Không thuộc thẩm quyền thụ lý (Chuyển đơn hoặc Hướng dẫn đương sự)',
+  'Không thuộc thẩm quyền thụ lý (Chuyển đơn hoặc Hướng dẫn công dân)',
 ];
 
 export const HUONG_XU_LY_SUGGESTIONS = [
@@ -86,7 +86,7 @@ export const HUONG_XU_LY_SUGGESTIONS = [
   'Chuyển đơn đến Cơ quan Cảnh sát điều tra có thẩm quyền kèm phiếu chuyển đơn theo Thông tư liên tịch 01/2017',
   'Hướng dẫn công dân làm đơn khởi kiện vụ án dân sự tại Tòa án nhân dân có thẩm quyền',
   'Chuyển đơn và toàn bộ hồ sơ đến UBND quận/huyện để giải quyết theo đúng thẩm quyền hành chính',
-  'Yêu cầu đương sự bổ sung tài liệu chứng cứ chứng minh nội dung tố giác/khiếu nại trong thời hạn 10 ngày',
+  'Yêu cầu người gửi đơn bổ sung tài liệu chứng cứ chứng minh nội dung tố giác/khiếu nại trong thời hạn 10 ngày',
   'Lưu đơn do đơn trùng lặp, gửi nhiều nơi hoặc đã có quyết định giải quyết có hiệu lực pháp luật',
 ];
 
@@ -116,7 +116,7 @@ export default function TabThongTinChung({
     }, 3200);
   };
 
-  // Dữ liệu danh sách đương sự đa dạng nhiều người và nhiều vai trò từ Lượt nhận & AI đọc từ file ra
+  // Dữ liệu danh sách cá nhân, tổ chức liên quan đa dạng nhiều người và nhiều vai trò từ Lượt nhận & AI đọc từ file ra
   const initialDuongSuList: DuongSuItem[] = isToGiac
     ? [
       {
@@ -124,7 +124,7 @@ export default function TabThongTinChung({
         hoTen: 'Nguyễn Văn A',
         loaiDoiTuong: 'ca_nhan',
         phanNhom: 'nguoi_nop',
-        vaiTro: 'Người làm đơn (Đương sự chính)',
+        vaiTro: 'Người làm đơn (Chủ thể chính)',
         vaiTroColor: 'blue',
         isPrimary: true,
         dinhDanh: '001088019482',
@@ -250,7 +250,7 @@ export default function TabThongTinChung({
         hoTen: currentDon?.nguoiNop || 'Lê Văn Hùng',
         loaiDoiTuong: 'ca_nhan',
         phanNhom: 'nguoi_nop',
-        vaiTro: 'Người khiếu nại (Đương sự chính)',
+        vaiTro: 'Người khiếu nại (Chủ thể chính)',
         vaiTroColor: 'blue',
         isPrimary: true,
         dinhDanh: '081089002891',
@@ -508,9 +508,9 @@ export default function TabThongTinChung({
   };
 
   const handleDelete = (id: string, name: string) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa đương sự "${name}" khỏi danh sách vụ việc?`)) {
+    if (window.confirm(`Bạn có chắc chắn muốn xóa "${name}" khỏi danh sách vụ việc?`)) {
       setDuongSuList((prev) => prev.filter((d) => d.id !== id));
-      showToast(`✓ Đã xóa "${name}" khỏi danh sách đương sự.`);
+      showToast(`✓ Đã xóa "${name}" khỏi danh sách liên quan.`);
     }
   };
 
@@ -528,7 +528,7 @@ export default function TabThongTinChung({
           item.id === editingItem.id ? ({ ...item, ...formData } as DuongSuItem) : item
         )
       );
-      showToast(`✓ Đã cập nhật thông tin đương sự "${formData.hoTen}" thành công!`);
+      showToast(`✓ Đã cập nhật thông tin "${formData.hoTen}" thành công!`);
     } else {
       // Thêm mới
       const newItem: DuongSuItem = {
@@ -553,7 +553,7 @@ export default function TabThongTinChung({
         doTinCai: formData.doTinCai || '95%',
       };
       setDuongSuList((prev) => [...prev, newItem]);
-      showToast(`✓ Đã thêm "${newItem.hoTen}" vào danh sách đương sự.`);
+      showToast(`✓ Đã thêm "${newItem.hoTen}" vào danh sách liên quan.`);
     }
     setShowModal(false);
   };
@@ -681,7 +681,7 @@ export default function TabThongTinChung({
       )}
 
       {/* ========================================================================= */}
-      {/* KHỐI 1: THÔNG TIN TIẾP NHẬN & ĐƯƠNG SỰ                                     */}
+      {/* KHỐI 1: THÔNG TIN TIẾP NHẬN & ĐỐI TƯỢNG LIÊN QUAN                         */}
       {/* ========================================================================= */}
       <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden">
         {/* Header Khối 1 */}
@@ -754,17 +754,17 @@ export default function TabThongTinChung({
             </div>
           </div>
 
-          {/* B. DANH SÁCH ĐƯƠNG SỰ TRONG VỤ VIỆC */}
+          {/* B. DANH SÁCH ĐỐI TƯỢNG LIÊN QUAN TRONG VỤ VIỆC */}
           <div className="space-y-3 pt-2 border-t border-slate-100">
             {/* Tiêu đề & Ô tìm kiếm & Nút Thêm mới trên cùng 1 hàng */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#004ac6]"></span>
                 <h3 className="text-[12px] font-bold text-slate-800 uppercase tracking-tight font-label-technical">
-                  Danh sách đương sự trong vụ việc
+                  Danh sách cá nhân, tổ chức liên quan
                 </h3>
                 <span className="px-2 py-0.2 rounded-full bg-blue-50 text-[#004ac6] text-[10.5px] font-bold border border-blue-200 font-label-technical">
-                  {duongSuList.length} đương sự
+                  {duongSuList.length} đối tượng
                 </span>
               </div>
 
@@ -792,19 +792,19 @@ export default function TabThongTinChung({
                   )}
                 </div>
 
-                {/* Nút Thêm đương sự */}
+                {/* Nút Thêm người liên quan */}
                 <button
                   type="button"
                   onClick={handleOpenAdd}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-[#004ac6] hover:bg-[#003ea8] text-white shadow-xs transition-all cursor-pointer whitespace-nowrap active:scale-95"
                 >
                   <span className="material-symbols-outlined text-[16px]">person_add</span>
-                  <span>+ Thêm đương sự</span>
+                  <span>+ Thêm người liên quan</span>
                 </button>
               </div>
             </div>
 
-            {/* BẢNG DANH SÁCH ĐƯƠNG SỰ TINH GỌN */}
+            {/* BẢNG DANH SÁCH NGƯỜI LIÊN QUAN TINH GỌN */}
             <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
@@ -925,7 +925,7 @@ export default function TabThongTinChung({
                                 type="button"
                                 onClick={() => handleOpenEdit(item)}
                                 className="p-1 rounded-md text-slate-500 hover:text-[#004ac6] hover:bg-blue-50 transition-colors cursor-pointer"
-                                title="Chỉnh sửa thông tin đương sự"
+                                title="Chỉnh sửa thông tin"
                               >
                                 <span className="material-symbols-outlined text-[16px]">edit</span>
                               </button>
@@ -934,7 +934,7 @@ export default function TabThongTinChung({
                                   type="button"
                                   onClick={() => handleDelete(item.id, item.hoTen)}
                                   className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                                  title="Xóa đương sự"
+                                  title="Xóa khỏi danh sách"
                                 >
                                   <span className="material-symbols-outlined text-[16px]">delete</span>
                                 </button>
@@ -954,7 +954,7 @@ export default function TabThongTinChung({
                     group_off
                   </span>
                   <p className="text-xs font-semibold text-slate-600">
-                    Không tìm thấy đương sự nào phù hợp với bộ lọc hiện tại.
+                    Không tìm thấy đối tượng nào phù hợp với bộ lọc hiện tại.
                   </p>
                   <button
                     type="button"
@@ -1100,12 +1100,12 @@ export default function TabThongTinChung({
               </div>
             </div>
 
-            {/* Tóm tắt yêu cầu của đương sự */}
+            {/* Tóm tắt yêu cầu của người nộp đơn */}
             <div className="p-3.5 rounded-lg bg-slate-50/80 border border-slate-200/80">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-[10.5px] font-bold text-slate-500 uppercase tracking-tight flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-[15px] text-[#004ac6]">subject</span>
-                  Tóm tắt yêu cầu của đương sự
+                  Tóm tắt yêu cầu của người nộp đơn
                 </span>
                 <span className="text-[10.5px] text-slate-400 font-medium">Trích yếu nội dung đơn</span>
               </div>
@@ -1430,7 +1430,7 @@ export default function TabThongTinChung({
 
 
       {/* ========================================================================= */}
-      {/* MODAL THÊM / CHỈNH SỬA ĐƯƠNG SỰ VÀ VAI TRÒ                                */}
+      {/* MODAL THÊM / CHỈNH SỬA THÔNG TIN VÀ VAI TRÒ                                */}
       {/* ========================================================================= */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
@@ -1442,7 +1442,7 @@ export default function TabThongTinChung({
                   {editingItem ? 'edit_note' : 'person_add'}
                 </span>
                 <h3 className="font-bold text-slate-900 text-sm">
-                  {editingItem ? 'Chỉnh sửa thông tin & Vai trò đương sự' : 'Thêm người nộp đơn / Đương sự vào vụ việc'}
+                  {editingItem ? 'Chỉnh sửa thông tin & Vai trò' : 'Thêm người nộp đơn / Người liên quan vào vụ việc'}
                 </h3>
               </div>
               <button
@@ -1549,7 +1549,7 @@ export default function TabThongTinChung({
                   >
                     {formData.phanNhom === 'nguoi_nop' && (
                       <>
-                        <option value="Người làm đơn (Đương sự chính)">Người làm đơn (Đương sự chính)</option>
+                        <option value="Người làm đơn (Chủ thể chính)">Người làm đơn (Chủ thể chính)</option>
                         <option value="Đồng đứng đơn (Đồng người tố giác)">Đồng đứng đơn (Đồng người tố giác)</option>
                         <option value="Đồng đứng đơn khiếu nại">Đồng đứng đơn khiếu nại</option>
                         <option value="Người đại diện theo ủy quyền (Luật sư)">Người đại diện theo ủy quyền (Luật sư)</option>
@@ -1719,7 +1719,7 @@ export default function TabThongTinChung({
                   className="px-5 py-2 rounded-lg bg-[#004ac6] hover:bg-[#003ea8] text-white font-bold shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
                 >
                   <span className="material-symbols-outlined text-[16px]">save</span>
-                  <span>{editingItem ? 'Lưu thay đổi' : 'Thêm đương sự'}</span>
+                  <span>{editingItem ? 'Lưu thay đổi' : 'Thêm người liên quan'}</span>
                 </button>
               </div>
             </form>

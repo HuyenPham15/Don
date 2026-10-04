@@ -1,5 +1,5 @@
 // src/constants/signingData.ts
-import { SigningDocument, LanhDaoAuthority } from '../types/signing';
+import { SigningDocument, LanhDaoAuthority, SignerItem } from '../types/signing';
 
 export const INITIAL_LEADERS: LanhDaoAuthority[] = [
   {
@@ -12,10 +12,18 @@ export const INITIAL_LEADERS: LanhDaoAuthority[] = [
   },
   {
     id: 'ld-02',
-    name: 'Đ/c Lê Hồng Phong',
-    chucVu: 'Thủ trưởng Cơ quan CSĐT',
-    coQuan: 'Công an Thành phố',
-    thamQuyenKy: ['quyet_dinh_thu_ly', 'ket_luan_to_cao', 'thong_bao_khong_thu_ly'],
+    name: 'Đ/c Trần Văn Cường',
+    chucVu: 'Phó Chánh Thanh tra thành phố',
+    coQuan: 'Thanh tra Thành phố',
+    thamQuyenKy: ['to_trinh_thu_ly', 'quyet_dinh_thu_ly', 'bao_cao_xac_minh'],
+    isAvailable: true,
+  },
+  {
+    id: 'ld-05',
+    name: 'Đ/c Đặng Quốc Bảo',
+    chucVu: 'Chánh Thanh tra thành phố',
+    coQuan: 'Ban Lãnh đạo Thanh tra',
+    thamQuyenKy: ['to_trinh_thu_ly', 'quyet_dinh_thu_ly', 'bao_cao_xac_minh', 'ket_luan_to_cao'],
     isAvailable: true,
   },
   {
@@ -31,7 +39,15 @@ export const INITIAL_LEADERS: LanhDaoAuthority[] = [
     name: 'Đ/c Phạm Thu Hương',
     chucVu: 'Trưởng phòng Tiếp công dân & Xử lý đơn',
     coQuan: 'Ban Tiếp công dân',
-    thamQuyenKy: ['to_trinh_thu_ly', 'bien_ban_ban_giao', 'van_ban_tra_lai'],
+    thamQuyenKy: ['to_trinh_thu_ly', 'bien_ban_ban_giao', 'van_ban_tra_lai', 'thong_bao_khong_thu_ly'],
+    isAvailable: true,
+  },
+  {
+    id: 'ld-06',
+    name: 'Đ/c Lê Hồng Phong',
+    chucVu: 'Thủ trưởng Cơ quan CSĐT',
+    coQuan: 'Công an Thành phố',
+    thamQuyenKy: ['quyet_dinh_thu_ly', 'ket_luan_to_cao', 'thong_bao_khong_thu_ly'],
     isAvailable: true,
   },
 ];
@@ -39,6 +55,7 @@ export const INITIAL_LEADERS: LanhDaoAuthority[] = [
 export const INITIAL_SIGNING_DOCUMENTS: SigningDocument[] = [
   {
     id: 'VB-2026-0089',
+    soKyHieu: '89/TTr-TTTP',
     hoSoCode: 'Đ-2026-00125',
     luotNhanId: 'LN-2025-0819',
     loaiDon: 'Đơn tố cáo cán bộ vi phạm',
@@ -74,11 +91,43 @@ Kính trình Lãnh đạo Thanh tra Thành phố:
     thoiGianTrinh: '16/09/2026 14:30',
     yKienCanBo: 'Kính trình Đ/c Phó Chánh Thanh tra xem xét, phê duyệt để hệ thống cấp số thụ lý và triển khai thành lập Tổ xác minh thực địa theo quy định.',
     
+    // Luồng ký tuần tự: Lãnh đạo A -> Lãnh đạo B -> Lãnh đạo C
+    signers: [
+      {
+        id: 'ld-01',
+        name: 'Đ/c Trần Văn Hùng',
+        chucVu: 'Phó Chánh Thanh tra thành phố',
+        coQuan: 'Thanh tra Thành phố',
+        vaiTro: 'ky',
+        thuTu: 1,
+        status: 'cho_ky', // Đang chờ Lãnh đạo A ký
+      },
+      {
+        id: 'ld-02',
+        name: 'Đ/c Trần Văn Cường',
+        chucVu: 'Phó Chánh Thanh tra thành phố',
+        coQuan: 'Thanh tra Thành phố',
+        vaiTro: 'duyet',
+        thuTu: 2,
+        status: 'chua_den_luot',
+      },
+      {
+        id: 'ld-05',
+        name: 'Đ/c Đặng Quốc Bảo',
+        chucVu: 'Chánh Thanh tra thành phố',
+        coQuan: 'Ban Lãnh đạo Thanh tra',
+        vaiTro: 'ky',
+        thuTu: 3,
+        status: 'chua_den_luot',
+      },
+    ],
+    currentSignerIndex: 0,
+
     lanhDaoId: 'ld-01',
     lanhDaoName: 'Đ/c Trần Văn Hùng',
     lanhDaoChucVu: 'Phó Chánh Thanh tra thành phố',
     
-    status: 'da_trinh', // Đang chờ Lãnh đạo ký
+    status: 'da_trinh', // Đang chờ Lãnh đạo A ký
     hanXuLy: '24 giờ (Hạn: 17/09/2026 17:00)',
     mucDoUuTien: 'khan',
     
@@ -88,6 +137,18 @@ Kính trình Lãnh đạo Thanh tra Thành phố:
       { id: 'att-3', tenTep: 'Bien_ban_kiem_tra_hien_trang_xay_dung.pdf', dungLuong: '3.8 MB', loai: 'tai_lieu_kiem_tra' },
     ],
     
+    phienBanHienTai: 'V1',
+    versionHistory: [
+      {
+        version: 'V1',
+        thoiGian: '16/09/2026 14:30',
+        nguoiTao: 'Nguyễn Minh Anh',
+        trangThaiLucDo: 'Đã trình',
+        ghiChu: 'Bản thảo ban đầu trích xuất từ dữ liệu thụ lý và đối chiếu Luật Tố cáo 2018',
+        noiDungSnapshot: 'Bản thảo tờ trình số 89/TTr-TTTP phê duyệt thụ lý giải quyết đơn tố cáo vi phạm xây dựng số 45 Lê Lợi.',
+      },
+    ],
+
     history: [
       {
         id: 'h-1',
@@ -101,13 +162,49 @@ Kính trình Lãnh đạo Thanh tra Thành phố:
         time: '16/09/2026 14:30',
         actor: 'Nguyễn Minh Anh (Cán bộ thụ lý)',
         action: 'Nhấn nút [TRÌNH LÃNH ĐẠO] phê duyệt',
-        note: 'Đã hoàn tất kiểm tra hồ sơ và chọn Đ/c Trần Văn Hùng phê duyệt',
+        note: 'Đã chuyển đến Đ/c Trần Văn Hùng (Lãnh đạo bước 1)',
+      },
+    ],
+    auditLogs: [
+      {
+        id: 'al-1',
+        time: '16/09/2026 10:15',
+        actor: 'Nguyễn Minh Anh',
+        actorRole: 'Cán bộ thụ lý',
+        action: 'Khởi tạo văn bản dự thảo',
+        statusBefore: 'Khởi tạo',
+        statusAfter: 'Bản nháp',
+        version: 'V1',
+        note: 'Soạn thảo tờ trình đề xuất thụ lý số 89/TTr-TTTP',
+      },
+      {
+        id: 'al-2',
+        time: '16/09/2026 14:30',
+        actor: 'Nguyễn Minh Anh',
+        actorRole: 'Cán bộ thụ lý',
+        action: 'Trình văn bản đến Lãnh đạo A để ký',
+        statusBefore: 'Bản nháp',
+        statusAfter: 'Đã trình',
+        version: 'V1',
+        note: 'Kính trình Đ/c Trần Văn Hùng xem xét, phê duyệt bước 1',
+      },
+      {
+        id: 'al-3',
+        time: '16/09/2026 14:31',
+        actor: 'Hệ thống tự động',
+        actorRole: 'Hệ thống',
+        action: 'Tạo nhiệm vụ ký cho Lãnh đạo A (Đ/c Trần Văn Hùng)',
+        statusBefore: 'Đã trình',
+        statusAfter: 'Chờ ký',
+        version: 'V1',
+        note: 'Hạn xử lý theo quy chế: 24 giờ',
       },
     ],
     stepId: 'STEP-04',
   },
   {
     id: 'VB-2026-0072',
+    soKyHieu: '72/TTr-UBND',
     hoSoCode: 'Đ-2025-0105',
     luotNhanId: 'LN-2025-0105',
     loaiDon: 'Đơn khiếu nại đất đai',
@@ -131,6 +228,33 @@ Cán bộ thụ lý đã đối chiếu hồ sơ địa chính và bảng giá �
     thoiGianTrinh: '15/09/2026 16:45',
     yKienCanBo: 'Kính trình Lãnh đạo UBND phê duyệt thụ lý khiếu nại lần 1.',
     
+    signers: [
+      {
+        id: 'ld-04',
+        name: 'Đ/c Phạm Thu Hương',
+        chucVu: 'Trưởng phòng Tiếp công dân & Xử lý đơn',
+        coQuan: 'Ban Tiếp công dân',
+        vaiTro: 'duyet',
+        thuTu: 1,
+        status: 'da_ky',
+        thoiGianKy: '15/09/2026 17:15',
+        yKien: 'Đồng ý dự thảo tờ trình. Đề nghị chuyển Lãnh đạo UBND quận xem xét.',
+        signatureCert: 'VGCA - 89 22 14 BB 01',
+      },
+      {
+        id: 'ld-03',
+        name: 'Đ/c Nguyễn Hoàng Nam',
+        chucVu: 'Phó Chủ tịch UBND Quận',
+        coQuan: 'UBND Quận',
+        vaiTro: 'ky',
+        thuTu: 2,
+        status: 'tra_lai',
+        thoiGianKy: '16/09/2026 08:30',
+        yKien: 'Cần bổ sung văn bản xác nhận nguồn gốc đất của UBND Phường trước thời điểm thu hồi và bản trích lục bản đồ địa chính mới nhất trước khi trình ký thụ lý.',
+      },
+    ],
+    currentSignerIndex: 1,
+
     lanhDaoId: 'ld-03',
     lanhDaoName: 'Đ/c Nguyễn Hoàng Nam',
     lanhDaoChucVu: 'Phó Chủ tịch UBND Quận',
@@ -145,26 +269,90 @@ Cán bộ thụ lý đã đối chiếu hồ sơ địa chính và bảng giá �
       { id: 'att-22', tenTep: 'Quyet_dinh_thu_hoi_dat_so_45.pdf', dungLuong: '4.2 MB', loai: 'chung_cu' },
     ],
     
+    phienBanHienTai: 'V1',
+    versionHistory: [
+      {
+        version: 'V1',
+        thoiGian: '15/09/2026 16:45',
+        nguoiTao: 'Nguyễn Minh Anh',
+        trangThaiLucDo: 'Yêu cầu chỉnh sửa',
+        ghiChu: 'Lãnh đạo A (Đ/c Phạm Thu Hương) đã duyệt; Lãnh đạo B (Đ/c Nguyễn Hoàng Nam) yêu cầu chỉnh sửa.',
+        noiDungSnapshot: 'Tờ trình ban đầu chưa có bản xác nhận nguồn gốc đất của UBND Phường.',
+      },
+    ],
+
     history: [
       {
         id: 'h-11',
         time: '15/09/2026 16:45',
         actor: 'Nguyễn Minh Anh (Cán bộ thụ lý)',
         action: 'Trình lãnh đạo phê duyệt',
-        note: 'Trình Đ/c Nguyễn Hoàng Nam',
+        note: 'Trình Đ/c Phạm Thu Hương duyệt bước 1',
       },
       {
         id: 'h-12',
+        time: '15/09/2026 17:15',
+        actor: 'Đ/c Phạm Thu Hương (Trưởng phòng)',
+        action: 'Duyệt văn bản bước 1',
+        note: 'Chuyển Lãnh đạo UBND quận',
+      },
+      {
+        id: 'h-13',
         time: '16/09/2026 08:30',
         actor: 'Đ/c Nguyễn Hoàng Nam (Phó Chủ tịch UBND)',
         action: 'Yêu cầu chỉnh sửa tờ trình',
         note: 'Yêu cầu: Bổ sung xác nhận nguồn gốc đất của UBND Phường và bản trích lục bản đồ.',
       },
     ],
+    auditLogs: [
+      {
+        id: 'al-21',
+        time: '15/09/2026 16:45',
+        actor: 'Nguyễn Minh Anh',
+        actorRole: 'Cán bộ thụ lý',
+        action: 'Trình văn bản đến Lãnh đạo A (Trưởng phòng)',
+        statusBefore: 'Bản nháp',
+        statusAfter: 'Đã trình',
+        version: 'V1',
+      },
+      {
+        id: 'al-22',
+        time: '15/09/2026 17:15',
+        actor: 'Đ/c Phạm Thu Hương',
+        actorRole: 'Lãnh đạo A (Duyệt)',
+        action: 'Ký duyệt bước 1 thành công',
+        statusBefore: 'Đang ký',
+        statusAfter: 'Chờ ký',
+        version: 'V1',
+        note: 'Đồng ý dự thảo tờ trình',
+      },
+      {
+        id: 'al-23',
+        time: '15/09/2026 17:16',
+        actor: 'Hệ thống tự động',
+        actorRole: 'Hệ thống',
+        action: 'Chuyển nhiệm vụ ký cho Lãnh đạo B (Đ/c Nguyễn Hoàng Nam)',
+        statusBefore: 'Chờ ký',
+        statusAfter: 'Chờ ký',
+        version: 'V1',
+      },
+      {
+        id: 'al-24',
+        time: '16/09/2026 08:30',
+        actor: 'Đ/c Nguyễn Hoàng Nam',
+        actorRole: 'Lãnh đạo B (Ký chính)',
+        action: 'Yêu cầu chỉnh sửa nội dung văn bản',
+        statusBefore: 'Chờ ký',
+        statusAfter: 'Yêu cầu chỉnh sửa',
+        version: 'V1',
+        note: 'Cần bổ sung văn bản xác nhận nguồn gốc đất của UBND Phường trước khi trình ký lại',
+      },
+    ],
     stepId: 'STEP-03A',
   },
   {
     id: 'VB-2026-0095',
+    soKyHieu: '95/TB-BTCD',
     hoSoCode: 'Đ-2026-00142',
     luotNhanId: 'LN-2026-0912',
     loaiDon: 'Đơn tố cáo nặc danh',
@@ -185,6 +373,28 @@ Căn cứ Khoản 2 Điều 25 và Điều 29 Luật Tố cáo năm 2018;
     donViNguoiLap: 'Phòng Tiếp công dân & Xử lý đơn',
     ngayTao: '16/09/2026 11:30',
     
+    signers: [
+      {
+        id: 'ld-04',
+        name: 'Đ/c Phạm Thu Hương',
+        chucVu: 'Trưởng phòng Tiếp công dân & Xử lý đơn',
+        coQuan: 'Ban Tiếp công dân',
+        vaiTro: 'ky',
+        thuTu: 1,
+        status: 'cho_ky',
+      },
+      {
+        id: 'ld-01',
+        name: 'Đ/c Trần Văn Hùng',
+        chucVu: 'Phó Chánh Thanh tra thành phố',
+        coQuan: 'Thanh tra Thành phố',
+        vaiTro: 'duyet',
+        thuTu: 2,
+        status: 'chua_den_luot',
+      },
+    ],
+    currentSignerIndex: 0,
+
     lanhDaoId: 'ld-04',
     lanhDaoName: 'Đ/c Phạm Thu Hương',
     lanhDaoChucVu: 'Trưởng phòng Tiếp công dân & Xử lý đơn',
@@ -198,6 +408,18 @@ Căn cứ Khoản 2 Điều 25 và Điều 29 Luật Tố cáo năm 2018;
       { id: 'att-32', tenTep: 'Ban_chup_don_nac_danh.pdf', dungLuong: '2.0 MB', loai: 'chung_cu' },
     ],
     
+    phienBanHienTai: 'V1',
+    versionHistory: [
+      {
+        version: 'V1',
+        thoiGian: '16/09/2026 11:30',
+        nguoiTao: 'Nguyễn Minh Anh',
+        trangThaiLucDo: 'Chờ trình',
+        ghiChu: 'Hoàn tất soạn thảo dự thảo Thông báo không thụ lý',
+        noiDungSnapshot: 'Dự thảo văn bản không thụ lý áp dụng mẫu BM-03/KTL.',
+      },
+    ],
+
     history: [
       {
         id: 'h-21',
@@ -207,15 +429,29 @@ Căn cứ Khoản 2 Điều 25 và Điều 29 Luật Tố cáo năm 2018;
         note: 'Áp dụng mẫu BM-03/KTL',
       },
     ],
+    auditLogs: [
+      {
+        id: 'al-31',
+        time: '16/09/2026 11:30',
+        actor: 'Nguyễn Minh Anh',
+        actorRole: 'Cán bộ thụ lý',
+        action: 'Khởi tạo văn bản dự thảo',
+        statusBefore: 'Khởi tạo',
+        statusAfter: 'Chờ trình',
+        version: 'V1',
+        note: 'Soạn thảo hoàn tất dự thảo thông báo không thụ lý',
+      },
+    ],
     stepId: 'STEP-03B',
   },
   {
     id: 'VB-2026-0065',
+    soKyHieu: '65/QĐ-CQĐT',
     hoSoCode: 'Đ-2026-00088',
     luotNhanId: 'LN-2026-0801',
     loaiDon: 'Đơn tố giác tội phạm',
     nguoiGuiDon: 'Trần Đình Trọng',
-    noiDungDon: 'Tố giác công ty kinh doanh đa cấp có dấu hiệu lừa đảo huy động vốn trái phép số tiền hơn 12 tỷ đồng.',
+    noiDungDon: 'Tố giác công ty kinhdong đa cấp có dấu hiệu lừa đảo huy động vốn trái phép số tiền hơn 12 tỷ đồng.',
     
     tenVanBan: 'Quyết định phân công Điều tra viên thụ lý giải quyết nguồn tin tội phạm',
     loaiVanBan: 'quyet_dinh_thu_ly',
@@ -233,11 +469,52 @@ Quyết định:
     nguoiTrinh: 'Nguyễn Minh Anh',
     thoiGianTrinh: '12/09/2026 10:30',
     
-    lanhDaoId: 'ld-02',
+    signers: [
+      {
+        id: 'ld-04',
+        name: 'Đ/c Phạm Thu Hương',
+        chucVu: 'Trưởng phòng Tham mưu',
+        coQuan: 'Ban Tiếp công dân',
+        vaiTro: 'cho_y_kien',
+        thuTu: 1,
+        status: 'da_ky',
+        thoiGianKy: '12/09/2026 11:15',
+        yKien: 'Nhất trí chuyển hồ sơ sang CQĐT giải quyết theo thẩm quyền.',
+        signatureCert: 'VGCA - 33 01 99 FF 12',
+      },
+      {
+        id: 'ld-02',
+        name: 'Đ/c Trần Văn Cường',
+        chucVu: 'Phó Thủ trưởng CQĐT',
+        coQuan: 'Công an Thành phố',
+        vaiTro: 'duyet',
+        thuTu: 2,
+        status: 'da_ky',
+        thoiGianKy: '12/09/2026 13:40',
+        yKien: 'Đã thẩm định hồ sơ, đủ dấu hiệu tội phạm để thụ lý.',
+        signatureCert: 'VGCA - 12 AB 44 CD 55',
+      },
+      {
+        id: 'ld-06',
+        name: 'Đ/c Lê Hồng Phong',
+        chucVu: 'Thủ trưởng Cơ quan CSĐT',
+        coQuan: 'Công an Thành phố',
+        vaiTro: 'ky',
+        thuTu: 3,
+        status: 'da_ky',
+        thoiGianKy: '12/09/2026 15:20',
+        yKien: 'Đồng ý phân công Đ/c Đặng Đình Toàn và Lê Tuấn Anh. Ký ban hành quyết định.',
+        signatureCert: 'VGCA - 54 02 1A BC 89 22 FE 09',
+        soSeri: '54 02 1A BC 89 22 FE 09',
+      },
+    ],
+    currentSignerIndex: 2,
+
+    lanhDaoId: 'ld-06',
     lanhDaoName: 'Đ/c Lê Hồng Phong',
     lanhDaoChucVu: 'Thủ trưởng Cơ quan CSĐT',
     
-    status: 'da_ky', // Đã ký thành công
+    status: 'hoan_tat', // Đã ký hoàn tất toàn bộ các bước
     hanXuLy: 'Đã hoàn thành',
     mucDoUuTien: 'hoa_toc',
     
@@ -255,6 +532,18 @@ Quyết định:
       yKienLanhDao: 'Đồng ý phân công Đ/c Đặng Đình Toàn và Lê Tuấn Anh. Yêu cầu tập trung tra soát tài khoản ngân hàng và phong tỏa dòng tiền ngay.',
     },
     
+    phienBanHienTai: 'V1',
+    versionHistory: [
+      {
+        version: 'V1',
+        thoiGian: '12/09/2026 15:20',
+        nguoiTao: 'Nguyễn Minh Anh',
+        trangThaiLucDo: 'Hoàn tất',
+        ghiChu: 'Hoàn tất toàn bộ chu trình 3 cấp phê duyệt',
+        noiDungSnapshot: 'Quyết định số 65/QĐ-CQĐT đã ký số ban hành chính thức.',
+      },
+    ],
+
     history: [
       {
         id: 'h-31',
@@ -271,10 +560,55 @@ Quyết định:
         signatureCert: 'VGCA - 54 02 1A BC 89 22 FE 09',
       },
     ],
+    auditLogs: [
+      {
+        id: 'al-41',
+        time: '12/09/2026 10:30',
+        actor: 'Nguyễn Minh Anh',
+        actorRole: 'Cán bộ thụ lý',
+        action: 'Trình văn bản đến Lãnh đạo bước 1',
+        statusBefore: 'Bản nháp',
+        statusAfter: 'Đã trình',
+        version: 'V1',
+      },
+      {
+        id: 'al-42',
+        time: '12/09/2026 11:15',
+        actor: 'Đ/c Phạm Thu Hương',
+        actorRole: 'Lãnh đạo bước 1',
+        action: 'Cho ý kiến đồng ý & chuyển bước 2',
+        statusBefore: 'Chờ ký',
+        statusAfter: 'Đang ký',
+        version: 'V1',
+      },
+      {
+        id: 'al-43',
+        time: '12/09/2026 13:40',
+        actor: 'Đ/c Trần Văn Cường',
+        actorRole: 'Lãnh đạo bước 2',
+        action: 'Ký duyệt bước 2 & chuyển Thủ trưởng CQĐT',
+        statusBefore: 'Đang ký',
+        statusAfter: 'Đang ký',
+        version: 'V1',
+      },
+      {
+        id: 'al-44',
+        time: '12/09/2026 15:20',
+        actor: 'Đ/c Lê Hồng Phong',
+        actorRole: 'Lãnh đạo ký chính (Bước 3)',
+        action: 'Ký số VGCA phê duyệt ban hành',
+        statusBefore: 'Đang ký',
+        statusAfter: 'Hoàn tất',
+        version: 'V1',
+        note: 'Quyết định có hiệu lực thi hành kể từ ngày ký',
+        signatureCert: 'VGCA - 54 02 1A BC 89 22 FE 09',
+      },
+    ],
     stepId: 'STEP-05',
   },
   {
     id: 'VB-2026-0044',
+    soKyHieu: '44/BB-SYT',
     hoSoCode: 'Đ-2026-00041',
     luotNhanId: 'LN-2026-0715',
     loaiDon: 'Đơn tố cáo sai phạm tài chính',
@@ -291,6 +625,19 @@ Quyết định:
     donViNguoiLap: 'Phòng Tiếp công dân & Xử lý đơn',
     ngayTao: '10/09/2026 14:15',
     
+    signers: [
+      {
+        id: 'ld-04',
+        name: 'Đ/c Phạm Thu Hương',
+        chucVu: 'Trưởng phòng Tiếp công dân & Xử lý đơn',
+        coQuan: 'Ban Tiếp công dân',
+        vaiTro: 'ky',
+        thuTu: 1,
+        status: 'chua_den_luot',
+      },
+    ],
+    currentSignerIndex: 0,
+
     lanhDaoId: 'ld-04',
     lanhDaoName: 'Đ/c Phạm Thu Hương',
     lanhDaoChucVu: 'Trưởng phòng Tiếp công dân & Xử lý đơn',
@@ -302,6 +649,18 @@ Quyết định:
       { id: 'att-51', tenTep: 'Bien_ban_ban_giao_SYT.docx', dungLuong: '1.2 MB', loai: 'du_thao' },
     ],
     
+    phienBanHienTai: 'V1',
+    versionHistory: [
+      {
+        version: 'V1',
+        thoiGian: '10/09/2026 14:15',
+        nguoiTao: 'Nguyễn Minh Anh',
+        trangThaiLucDo: 'Bản nháp',
+        ghiChu: 'Lập bản thảo ban đầu',
+        noiDungSnapshot: 'Bản nháp biên bản bàn giao hồ sơ vụ việc sang Sở Y tế.',
+      },
+    ],
+
     history: [
       {
         id: 'h-41',
@@ -310,10 +669,23 @@ Quyết định:
         action: 'Lập bản thảo biên bản bàn giao',
       },
     ],
+    auditLogs: [
+      {
+        id: 'al-51',
+        time: '10/09/2026 14:15',
+        actor: 'Nguyễn Minh Anh',
+        actorRole: 'Cán bộ thụ lý',
+        action: 'Tạo bản thảo biên bản bàn giao',
+        statusBefore: 'Khởi tạo',
+        statusAfter: 'Bản nháp',
+        version: 'V1',
+      },
+    ],
     stepId: 'STEP-03C',
   },
   {
     id: 'VB-2026-0038',
+    soKyHieu: '38/TTr-TNMT',
     hoSoCode: 'Đ-2026-00032',
     luotNhanId: 'LN-2026-0688',
     loaiDon: 'Đơn kiến nghị đất đai',
@@ -333,6 +705,21 @@ Quyết định:
     nguoiTrinh: 'Trần Văn Nam',
     thoiGianTrinh: '08/09/2026 11:00',
     
+    signers: [
+      {
+        id: 'ld-03',
+        name: 'Đ/c Nguyễn Hoàng Nam',
+        chucVu: 'Phó Chủ tịch UBND Quận',
+        coQuan: 'UBND Quận',
+        vaiTro: 'ky',
+        thuTu: 1,
+        status: 'tu_choi',
+        thoiGianKy: '09/09/2026 14:00',
+        yKien: 'Đất nằm hoàn toàn trong chỉ giới bảo vệ hành lang an toàn đê điều theo Luật Đê điều 2006, nghiêm cấm cấp giấy chứng nhận. Yêu cầu lập văn bản trả lại đơn.',
+      },
+    ],
+    currentSignerIndex: 0,
+
     lanhDaoId: 'ld-03',
     lanhDaoName: 'Đ/c Nguyễn Hoàng Nam',
     lanhDaoChucVu: 'Phó Chủ tịch UBND Quận',
@@ -346,6 +733,18 @@ Quyết định:
       { id: 'att-61', tenTep: 'To_trinh_cap_GCN_LeVanCuong.docx', dungLuong: '1.9 MB', loai: 'du_thao' },
     ],
     
+    phienBanHienTai: 'V1',
+    versionHistory: [
+      {
+        version: 'V1',
+        thoiGian: '08/09/2026 09:30',
+        nguoiTao: 'Trần Văn Nam',
+        trangThaiLucDo: 'Từ chối',
+        ghiChu: 'Lãnh đạo từ chối phê duyệt do vi phạm Luật Đê điều',
+        noiDungSnapshot: 'Tờ trình ban đầu đề xuất cấp giấy chứng nhận.',
+      },
+    ],
+
     history: [
       {
         id: 'h-51',
@@ -361,9 +760,33 @@ Quyết định:
         note: 'Từ chối do vi phạm Luật Đê điều',
       },
     ],
+    auditLogs: [
+      {
+        id: 'al-61',
+        time: '08/09/2026 11:00',
+        actor: 'Trần Văn Nam',
+        actorRole: 'Cán bộ thụ lý',
+        action: 'Trình văn bản',
+        statusBefore: 'Bản nháp',
+        statusAfter: 'Đã trình',
+        version: 'V1',
+      },
+      {
+        id: 'al-62',
+        time: '09/09/2026 14:00',
+        actor: 'Đ/c Nguyễn Hoàng Nam',
+        actorRole: 'Lãnh đạo ký duyệt',
+        action: 'Từ chối ký văn bản',
+        statusBefore: 'Chờ ký',
+        statusAfter: 'Từ chối',
+        version: 'V1',
+        note: 'Nghiêm cấm cấp sổ theo Luật Đê điều',
+      },
+    ],
   },
   {
     id: 'VB-2026-0104',
+    soKyHieu: '104/KH-TTTP',
     hoSoCode: 'Đ-2026-00156',
     luotNhanId: 'LN-2026-1011',
     loaiDon: 'Đơn tố cáo vi phạm đất đai',
@@ -388,6 +811,29 @@ Kính trình Lãnh đạo Thanh tra xem xét, phê duyệt để triển khai th
     nguoiTrinh: 'Nguyễn Minh Anh',
     thoiGianTrinh: '16/09/2026 15:40',
     yKienCanBo: 'Kính trình Đ/c Phó Chánh Thanh tra phê duyệt Kế hoạch xác minh để Tổ công tác xuống địa bàn làm việc.',
+    
+    signers: [
+      {
+        id: 'ld-01',
+        name: 'Đ/c Trần Văn Hùng',
+        chucVu: 'Phó Chánh Thanh tra thành phố',
+        coQuan: 'Thanh tra Thành phố',
+        vaiTro: 'ky',
+        thuTu: 1,
+        status: 'cho_ky',
+      },
+      {
+        id: 'ld-05',
+        name: 'Đ/c Đặng Quốc Bảo',
+        chucVu: 'Chánh Thanh tra thành phố',
+        coQuan: 'Ban Lãnh đạo Thanh tra',
+        vaiTro: 'duyet',
+        thuTu: 2,
+        status: 'chua_den_luot',
+      },
+    ],
+    currentSignerIndex: 0,
+
     lanhDaoId: 'ld-01',
     lanhDaoName: 'Đ/c Trần Văn Hùng',
     lanhDaoChucVu: 'Phó Chánh Thanh tra thành phố',
@@ -398,6 +844,19 @@ Kính trình Lãnh đạo Thanh tra xem xét, phê duyệt để triển khai th
       { id: 'att-71', tenTep: 'Ke_hoach_xac_minh_so_156.docx', dungLuong: '1.4 MB', loai: 'du_thao' },
       { id: 'att-72', tenTep: 'So_do_ranh_gioi_thua_dat.pdf', dungLuong: '3.5 MB', loai: 'tai_lieu_kiem_tra' },
     ],
+    
+    phienBanHienTai: 'V1',
+    versionHistory: [
+      {
+        version: 'V1',
+        thoiGian: '16/09/2026 15:10',
+        nguoiTao: 'Nguyễn Minh Anh',
+        trangThaiLucDo: 'Đã trình',
+        ghiChu: 'Kế hoạch xác minh dự thảo ban đầu',
+        noiDungSnapshot: 'Kế hoạch xác minh 15 ngày đối với vụ việc số Đ-2026-00156.',
+      },
+    ],
+
     history: [
       {
         id: 'h-61',
@@ -406,103 +865,28 @@ Kính trình Lãnh đạo Thanh tra xem xét, phê duyệt để triển khai th
         action: 'Trình lãnh đạo phê duyệt Kế hoạch xác minh',
       },
     ],
-    stepId: 'STEP-04',
-  },
-  {
-    id: 'VB-2026-0108',
-    hoSoCode: 'Đ-2026-00162',
-    luotNhanId: 'LN-2026-1033',
-    loaiDon: 'Đơn tố giác hành vi tham nhũng',
-    nguoiGuiDon: 'Công dân đề nghị giữ bí mật',
-    noiDungDon: 'Tố giác hành vi tẩu tán tài sản của đối tượng đang trong quá trình thanh tra dự án xây dựng.',
-    tenVanBan: 'Quyết định thụ lý giải quyết tố cáo và áp dụng biện pháp ngăn chặn',
-    loaiVanBan: 'quyet_dinh_thu_ly',
-    loaiVanBanLabel: 'Quyết định thụ lý khẩn cấp',
-    trichYeu: 'V/v Thụ lý khẩn cấp và kiến nghị phong tỏa tài sản phục vụ xác minh tố cáo',
-    noiDungChiTiet: `Căn cứ Luật Tố cáo 2018 và các quy định về bảo vệ tài sản nhà nước;
-Xét tính chất cấp bách có nguy cơ tẩu tán tài sản ra nước ngoài:
-1. Thụ lý giải quyết tố cáo khẩn cấp đối với nội dung vụ việc.
-2. Thành lập Tổ xác minh đặc biệt do Trưởng phòng trực tiếp làm Tổ trưởng.
-3. Ký văn bản kiến nghị ngân hàng phong tỏa tài khoản liên quan.`,
-    nguoiLap: 'Trần Trọng Giáp',
-    donViNguoiLap: 'Phòng Tiếp công dân & Xử lý đơn',
-    ngayTao: '17/09/2026 08:00',
-    nguoiTrinh: 'Trần Trọng Giáp',
-    thoiGianTrinh: '17/09/2026 08:30',
-    yKienCanBo: 'BÁO CÁO HỎA TỐC: Kính trình Đ/c Phó Chánh Thanh tra ký duyệt ngay trong buổi sáng để kịp gửi văn bản ngăn chặn phong tỏa tài sản.',
-    lanhDaoId: 'ld-01',
-    lanhDaoName: 'Đ/c Trần Văn Hùng',
-    lanhDaoChucVu: 'Phó Chánh Thanh tra thành phố',
-    status: 'da_trinh',
-    hanXuLy: 'HỎA TỐC (Hạn: Hôm nay 11:30)',
-    mucDoUuTien: 'hoa_toc',
-    tepDinhKem: [
-      { id: 'att-81', tenTep: 'Quyet_dinh_thu_ly_hoa_toc_162.pdf', dungLuong: '2.8 MB', loai: 'du_thao' },
-      { id: 'att-82', tenTep: 'Chung_cu_giao_dich_ngan_hang.pdf', dungLuong: '6.2 MB', loai: 'chung_cu' },
-    ],
-    history: [
+    auditLogs: [
       {
-        id: 'h-71',
-        time: '17/09/2026 08:30',
-        actor: 'Trần Trọng Giáp (Trưởng phòng)',
-        action: 'Trình ký Hỏa tốc lên Phó Chánh Thanh tra',
-      },
-    ],
-    stepId: 'STEP-04',
-  },
-  {
-    id: 'VB-2026-0079',
-    hoSoCode: 'Đ-2026-00099',
-    luotNhanId: 'LN-2026-0855',
-    loaiDon: 'Đơn tố cáo lấn chiếm vỉa hè',
-    nguoiGuiDon: 'Bùi Đình Cảnh',
-    noiDungDon: 'Tố cáo hộ kinh doanh tại ngõ 20 Phố Huế chiếm dụng lối đi chung.',
-    tenVanBan: 'Kết luận nội dung tố cáo đối với hành vi chiếm dụng lối đi chung',
-    loaiVanBan: 'ket_luan_to_cao',
-    loaiVanBanLabel: 'Kết luận tố cáo',
-    trichYeu: 'V/v Kết luận nội dung tố cáo đúng một phần và giao UBND Phường cưỡng chế giải tỏa',
-    noiDungChiTiet: `Căn cứ Báo cáo kết quả xác minh số 99/BC-XM;
-Kết luận:
-- Nội dung tố cáo việc chiếm dụng lối đi chung là CÓ CƠ SỞ ĐÚNG.
-- Yêu cầu Chủ tịch UBND Phường ban hành quyết định xử phạt vi phạm hành chính và tổ chức cưỡng chế, khôi phục nguyên trạng trong vòng 07 ngày.`,
-    nguoiLap: 'Nguyễn Minh Anh',
-    donViNguoiLap: 'Phòng Tiếp công dân & Xử lý đơn',
-    ngayTao: '14/09/2026 08:30',
-    nguoiTrinh: 'Nguyễn Minh Anh',
-    thoiGianTrinh: '14/09/2026 14:00',
-    lanhDaoId: 'ld-01',
-    lanhDaoName: 'Đ/c Trần Văn Hùng',
-    lanhDaoChucVu: 'Phó Chánh Thanh tra thành phố',
-    status: 'da_ky',
-    hanXuLy: 'Đã hoàn thành',
-    mucDoUuTien: 'thuong',
-    tepDinhKem: [
-      { id: 'att-91', tenTep: 'Ket_luan_to_cao_so_99_signed.pdf', dungLuong: '3.4 MB', loai: 'du_thao' },
-    ],
-    chuKyInfo: {
-      nguoiKy: 'Trần Văn Hùng',
-      chucVu: 'Phó Chánh Thanh tra thành phố',
-      coQuan: 'Thanh tra Thành phố',
-      thoiGianKy: '15/09/2026 09:15',
-      loaiChungThu: 'Chữ ký số chuyên dùng công vụ - VGCA',
-      soSeri: '78 AA 99 12 DD EE 01',
-      yKienLanhDao: 'Đồng ý kết luận. Giao Tổ xác minh giám sát việc UBND Phường thực hiện cưỡng chế giải tỏa đúng hạn.',
-    },
-    history: [
-      {
-        id: 'h-81',
-        time: '14/09/2026 14:00',
+        id: 'al-71',
+        time: '16/09/2026 15:40',
         actor: 'Nguyễn Minh Anh',
-        action: 'Trình dự thảo Kết luận tố cáo',
+        actorRole: 'Cán bộ thụ lý',
+        action: 'Trình văn bản đến Lãnh đạo A',
+        statusBefore: 'Bản nháp',
+        statusAfter: 'Đã trình',
+        version: 'V1',
       },
       {
-        id: 'h-82',
-        time: '15/09/2026 09:15',
-        actor: 'Đ/c Trần Văn Hùng (Phó Chánh Thanh tra)',
-        action: 'Ký số văn bản bằng chứng thư VGCA',
-        signatureCert: 'VGCA - 78 AA 99 12 DD EE 01',
+        id: 'al-72',
+        time: '16/09/2026 15:41',
+        actor: 'Hệ thống tự động',
+        actorRole: 'Hệ thống',
+        action: 'Tạo nhiệm vụ ký cho Đ/c Trần Văn Hùng',
+        statusBefore: 'Đã trình',
+        statusAfter: 'Chờ ký',
+        version: 'V1',
       },
     ],
-    stepId: 'STEP-06',
+    stepId: 'STEP-04',
   },
 ];

@@ -15,7 +15,7 @@ export interface TraLaiDonSubmitData {
   lyDoChinh: string;
   lyDoChiTiet: string;
   canCuPhapLy: string;
-  // Thông tin đương sự & địa chỉ nhận lại
+  // Thông tin người nộp đơn & địa chỉ nhận lại
   nguoiNhan: string;
   diaChiNhan: string;
   sdtLienHe?: string;
@@ -164,7 +164,7 @@ export default function TraLaiDonModal({
   const [coQuanHuongDan, setCoQuanHuongDan] = useState<string>(TRA_LAI_REASONS[0].coQuanHuongDan);
   const [noiDungHuongDan, setNoiDungHuongDan] = useState<string>(TRA_LAI_REASONS[0].noiDungHuongDan);
 
-  // Thông tin địa chỉ trả lại của đương sự (mặc định lấy từ donInfo.diaChi)
+  // Thông tin địa chỉ trả lại của người nộp đơn (mặc định lấy từ donInfo.diaChi)
   const [diaChiTraLai, setDiaChiTraLai] = useState<string>(donInfo.diaChi || 'Cầu Giấy, Hà Nội');
 
   // Cấu hình văn bản trả lại
@@ -184,7 +184,7 @@ export default function TraLaiDonModal({
     return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
   }, []);
 
-  // Xác định hình thức nhận kết quả của đương sự tự động từ hình thức tiếp nhận của lượt nhận
+  // Xác định hình thức nhận kết quả của người nộp đơn tự động từ hình thức tiếp nhận của lượt nhận
   const hinhThucNhanInfo = useMemo(() => {
     const rawHinhThuc = (donInfo.hinhThucTiepNhan || 'Trực tiếp').toLowerCase();
 
@@ -192,7 +192,7 @@ export default function TraLaiDonModal({
       return {
         key: 'buu_chinh_cong_ich' as const,
         label: 'Gửi qua Bưu chính công ích',
-        moTa: 'Hồ sơ và Văn bản trả lời sẽ được gửi chuyển phát bảo đảm qua Bưu chính công ích về địa chỉ của đương sự.',
+        moTa: 'Hồ sơ và Văn bản trả lời sẽ được gửi chuyển phát bảo đảm qua Bưu chính công ích về địa chỉ của người nộp đơn.',
         icon: 'local_shipping',
         badge: 'Bưu chính công ích',
         badgeColor: 'bg-amber-100 text-amber-900 border-amber-300',
@@ -220,7 +220,7 @@ export default function TraLaiDonModal({
     return {
       key: 'truc_tiep_tai_bo_phan' as const,
       label: 'Nhận trực tiếp tại Bộ phận Tiếp công dân',
-      moTa: 'Đương sự trực tiếp đến trụ sở Tiếp công dân để ký nhận lại hồ sơ và văn bản trả lời.',
+      moTa: 'Người nộp đơn trực tiếp đến trụ sở Tiếp công dân để ký nhận lại hồ sơ và văn bản trả lời.',
       icon: 'person_pin_circle',
       badge: 'Trực tiếp tại trụ sở',
       badgeColor: 'bg-emerald-100 text-emerald-900 border-emerald-300',
@@ -251,11 +251,11 @@ export default function TraLaiDonModal({
     const errs: Record<string, string> = {};
 
     if (!lyDoChiTiet.trim()) {
-      errs.lyDo = 'Vui lòng nhập lý do trả lại đơn để thông báo cho đương sự.';
+      errs.lyDo = 'Vui lòng nhập lý do trả lại đơn để thông báo cho người nộp đơn.';
     }
 
     if (!diaChiTraLai.trim()) {
-      errs.diaChi = 'Vui lòng nhập địa chỉ nhận lại hồ sơ của đương sự.';
+      errs.diaChi = 'Vui lòng nhập địa chỉ nhận lại hồ sơ của người nộp đơn.';
     }
 
     setErrors(errs);
@@ -279,7 +279,7 @@ export default function TraLaiDonModal({
         lyDoChinh,
         lyDoChiTiet: lyDoChiTiet.trim(),
         canCuPhapLy: canCuPhapLy.trim(),
-        nguoiNhan: donInfo.nguoiNop || 'Đương sự',
+        nguoiNhan: donInfo.nguoiNop || 'Người nộp đơn',
         diaChiNhan: diaChiTraLai.trim(),
         sdtLienHe: donInfo.sdt,
         hinhThucNhan: hinhThucNhanInfo.label,
@@ -369,7 +369,7 @@ export default function TraLaiDonModal({
             </span>
             <span className="text-slate-400">|</span>
             <span className="text-slate-700">
-              Đương sự: <strong className="text-slate-900">{donInfo.nguoiNop}</strong>
+              Người nộp đơn: <strong className="text-slate-900">{donInfo.nguoiNop}</strong>
             </span>
             <span className="text-slate-400 hidden sm:inline">|</span>
             <span className="text-slate-700 hidden sm:inline">
@@ -441,7 +441,7 @@ export default function TraLaiDonModal({
                       rows={3}
                       value={lyDoChiTiet}
                       onChange={(e) => setLyDoChiTiet(e.target.value)}
-                      placeholder="Ghi rõ lý do trả lại đơn để thông báo cho đương sự..."
+                      placeholder="Ghi rõ lý do trả lại đơn để thông báo cho người nộp đơn..."
                       className="w-full p-2.5 bg-white border border-rose-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-rose-600 focus:ring-1 focus:ring-rose-200 resize-none shadow-2xs leading-relaxed"
                     />
                     {errors.lyDo && <p className="text-[11px] text-rose-600 font-medium">{errors.lyDo}</p>}
@@ -460,7 +460,7 @@ export default function TraLaiDonModal({
                 )}
               </div>
 
-              {/* ──────────────── 2. THÔNG TIN ĐỊA CHỈ TRẢ LẠI CỦA ĐƯƠNG SỰ ──────────────── */}
+              {/* ──────────────── 2. THÔNG TIN ĐỊA CHỈ TRẢ LẠI CỦA NGƯỜI NỘP ĐƠN ──────────────── */}
               <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs space-y-3">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                   <div className="flex items-center gap-2">
@@ -468,7 +468,7 @@ export default function TraLaiDonModal({
                       2
                     </span>
                     <h3 className="text-xs sm:text-sm font-bold text-slate-900 uppercase tracking-wide">
-                      Thông tin đương sự &amp; Địa chỉ trả lại hồ sơ
+                      Thông tin người nộp đơn &amp; Địa chỉ trả lại hồ sơ
                     </h3>
                   </div>
                   <span className="text-[11px] text-slate-500 font-medium">Địa chỉ nhận kết quả</span>
@@ -476,7 +476,7 @@ export default function TraLaiDonModal({
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                   <div>
-                    <span className="text-slate-500 block mb-1">Họ tên đương sự:</span>
+                    <span className="text-slate-500 block mb-1">Họ tên người nộp đơn:</span>
                     <strong className="text-slate-900 text-sm block">{donInfo.nguoiNop}</strong>
                     <span className="text-[11px] text-slate-500 font-mono">CCCD: {donInfo.cccd || '001088012345'}</span>
                   </div>
@@ -508,7 +508,7 @@ export default function TraLaiDonModal({
                 </div>
               </div>
 
-              {/* ──────────────── 3. HÌNH THỨC NHẬN CỦA ĐƯƠNG SỰ (ĐỒNG BỘ TỪ LƯỢT NHẬN) ──────────────── */}
+              {/* ──────────────── 3. HÌNH THỨC NHẬN CỦA NGƯỜI NỘP ĐƠN (ĐỒNG BỘ TỪ LƯỢT NHẬN) ──────────────── */}
               <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                   <div className="flex items-center gap-2">
@@ -516,7 +516,7 @@ export default function TraLaiDonModal({
                       3
                     </span>
                     <h3 className="text-xs sm:text-sm font-bold text-slate-900 uppercase tracking-wide">
-                      Hình thức nhận của đương sự
+                      Hình thức nhận của người nộp đơn
                     </h3>
                   </div>
                   <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-[10.5px] font-bold border border-emerald-200 flex items-center gap-1">
@@ -552,7 +552,7 @@ export default function TraLaiDonModal({
                   <span className="material-symbols-outlined text-rose-600 text-[20px]">assignment_turned_in</span>
                   <div>
                     <span className="font-bold text-slate-900 block">
-                      Văn bản trả lời đơn cho đương sự (Mẫu số 02/TL-Đ) • Số: <strong className="font-mono text-rose-800">{soKyHieu}</strong>
+                      Văn bản trả lời đơn cho người nộp đơn (Mẫu số 02/TL-Đ) • Số: <strong className="font-mono text-rose-800">{soKyHieu}</strong>
                     </span>
                     <span className="text-[11px] text-slate-500">
                       Cán bộ xử lý: <strong>{currentOfficerName}</strong> ({currentDepartmentName}) • Ngày ban hành: {todayStr}
@@ -651,7 +651,7 @@ export default function TraLaiDonModal({
                 {/* Tiêu đề văn bản */}
                 <div className="text-center space-y-1">
                   <h1 className="text-base sm:text-lg font-bold uppercase tracking-tight">
-                    VĂN BẢN TRẢ LỜI ĐƠN VÀ HƯỚNG DẪN ĐƯƠNG SỰ
+                    VĂN BẢN TRẢ LỜI ĐƠN VÀ HƯỚNG DẪN CÔNG DÂN
                   </h1>
                   <p className="text-xs italic font-sans text-slate-700">
                     (V/v Trả lại hồ sơ đơn {donInfo.code || donInfo.luotNhanId} của ông/bà {donInfo.nguoiNop})

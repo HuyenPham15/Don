@@ -405,7 +405,7 @@ export const INITIAL_PROCESS_WORKFLOWS: ProcessWorkflow[] = [
         name: 'Tống đạt quyết định & Lưu hồ sơ',
         laneId: 'lane-vt',
         stageId: 'stg-5',
-        description: 'Tống đạt quyết định cho các đương sự, lưu vào kho lưu trữ.',
+        description: 'Tống đạt quyết định cho các bên liên quan, lưu vào kho lưu trữ.',
         isStart: false,
         isEnd: true,
         timeLimitDays: 2,
