@@ -149,12 +149,12 @@ export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXa
         ? 'Tiếp nhận & Vào sổ'
         : activeStepNumber === 2
           ? (workflow.id === 'to-giac'
-              ? 'Phân công Điều tra viên'
-              : workflow.id === 'to-cao'
-                ? 'Kích hoạt bảo mật & Thụ lý'
-                : workflow.id === 'kien-nghi'
-                  ? 'Chuyển đơn vị xử lý'
-                  : 'Ban hành Thông báo thụ lý')
+            ? 'Phân công Điều tra viên'
+            : workflow.id === 'to-cao'
+              ? 'Kích hoạt bảo mật & Thụ lý'
+              : workflow.id === 'kien-nghi'
+                ? 'Chuyển đơn vị xử lý'
+                : 'Ban hành Thông báo thụ lý')
           : `Thực hiện: ${currentStepObj.name}`,
     icon:
       activeStepNumber === 1
@@ -263,11 +263,10 @@ export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXa
                 <button
                   type="button"
                   onClick={() => setShowModalBoSung(true)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold shadow-2xs transition-colors cursor-pointer ${
-                    daGuiThongBaoBoSung
-                      ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
-                      : 'border-slate-300 bg-white hover:bg-slate-50 text-slate-700'
-                  }`}
+                  className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold shadow-2xs transition-colors cursor-pointer ${daGuiThongBaoBoSung
+                    ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
+                    : 'border-slate-300 bg-white hover:bg-slate-50 text-slate-700'
+                    }`}
                   title="Tạo thông báo yêu cầu bổ sung hồ sơ"
                 >
                   <span className="material-symbols-outlined text-[16px]">
@@ -306,9 +305,8 @@ export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXa
                   <button
                     type="button"
                     onClick={() => setShowModalBuocTiepTheo(true)}
-                    className={`inline-flex items-center gap-1.5 px-4.5 py-2.5 rounded-xl active:scale-95 text-white text-xs font-bold shadow-sm transition-all cursor-pointer ${
-                      daHoanThanhBuoc ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-[#004ac6] hover:bg-[#003ea8]'
-                    }`}
+                    className={`inline-flex items-center gap-1.5 px-4.5 py-2.5 rounded-xl active:scale-95 text-white text-xs font-bold shadow-sm transition-all cursor-pointer ${daHoanThanhBuoc ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-[#004ac6] hover:bg-[#003ea8]'
+                      }`}
                   >
                     <span className="material-symbols-outlined text-[16px]">
                       {daHoanThanhBuoc ? 'check_circle' : nextStepAction.icon}
@@ -374,169 +372,6 @@ export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXa
           </div>
         </div>
 
-        {/* Banner hướng dẫn tiến trình Xác minh thông tin */}
-        {trangThaiXacMinh === 'dang_xac_minh' ? (
-          <div className="mb-3.5 bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-transparent border border-amber-200 rounded-xl px-4 py-2.5 flex items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-2.5 text-amber-900">
-              <span className="material-symbols-outlined text-[18px] text-amber-600 animate-pulse shrink-0">fact_check</span>
-              <div>
-                <span className="font-bold text-amber-950">Bước 1: Xác minh thông tin &amp; Xác nhận hướng xử lý</span>
-                <p className="text-[11.5px] text-amber-800 font-normal mt-0.5">
-                  Đơn đang ở trạng thái <strong className="font-semibold underline decoration-amber-400">Đang xác minh thông tin</strong>. Vui lòng nhấn nút <strong className="font-semibold">"Xác minh &amp; Xác nhận hướng xử lý"</strong> để đối soát 4 tiêu chí luật định (Nhân thân, Thẩm quyền, Cơ sở chứng cứ, Không trùng lặp) và quyết định hướng giải quyết.
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowXacMinhModal(true)}
-              className="shrink-0 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold rounded-lg shadow-2xs flex items-center gap-1 cursor-pointer transition-all text-xs"
-            >
-              <span className="material-symbols-outlined text-[14px]">fact_check</span>
-              <span>Bắt đầu xác minh</span>
-            </button>
-          </div>
-        ) : (
-          <div className="mb-3.5 bg-gradient-to-r from-emerald-500/10 via-emerald-400/5 to-transparent border border-emerald-200 rounded-xl px-4 py-2.5 flex items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-2.5 text-emerald-900">
-              <span className="material-symbols-outlined text-[18px] text-emerald-600 shrink-0">verified</span>
-              <div>
-                <span className="font-bold text-emerald-950">
-                  Đã hoàn thành xác minh thông tin • Hướng xử lý: {huongXuLyDaChon ? HUONG_XU_LY_CONFIG[huongXuLyDaChon]?.label : 'Thụ lý giải quyết'}
-                </span>
-                <p className="text-[11.5px] text-emerald-800 font-normal mt-0.5">
-                  Đơn đã chuyển trạng thái <strong className="font-semibold text-emerald-950">Đã xác minh</strong>. Hệ thống đã kích hoạt bước xử lý tiếp theo tương ứng với hướng giải quyết đã phê duyệt.
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowXacMinhModal(true)}
-              className="shrink-0 text-emerald-700 hover:text-emerald-900 font-bold flex items-center gap-1 cursor-pointer hover:underline text-xs"
-            >
-              <span className="material-symbols-outlined text-[14px]">fact_check</span>
-              <span>Xem lại biên bản xác minh</span>
-            </button>
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* TIẾN TRÌNH QUY TRÌNH XỬ LÝ ĐƠN (HIỂN THỊ ĐÚNG BƯỚC HIỆN TẠI)             */}
-        {/* ========================================================================= */}
-        <div className="mb-4 bg-slate-50/90 rounded-2xl border border-slate-200/90 p-3.5 shadow-2xs">
-          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="material-symbols-outlined text-[19px] text-[#004ac6]">account_tree</span>
-              <span className="text-xs font-bold text-slate-800 uppercase tracking-tight">
-                Quy trình xử lý: {workflow.name}
-              </span>
-              <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-blue-100 text-[#004ac6] border border-blue-200 font-label-technical">
-                {workflow.code}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[12px] text-slate-600 font-medium">
-                Đang ở bước: <strong className="text-[#004ac6] font-bold">Bước {activeStepNumber}/{workflow.steps.length}: {currentStepObj.name}</strong>
-              </span>
-              <button
-                type="button"
-                onClick={() => onNav('quy-trinh-xu-ly')}
-                className="inline-flex items-center gap-1 text-[11px] text-[#004ac6] hover:underline font-bold cursor-pointer ml-1"
-                title="Xem toàn bộ sơ đồ phân luồng nghiệp vụ"
-              >
-                <span className="material-symbols-outlined text-[13px]">open_in_new</span>
-                <span>Sơ đồ quy trình</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Thanh Stepper ngang hiển thị các bước */}
-          <div className="overflow-x-auto pb-1 scrollbar-thin">
-            <div className="flex items-center min-w-max gap-1">
-              {workflow.steps.map((st, idx) => {
-                const isDone = st.stepNumber < activeStepNumber;
-                const isCurrent = st.stepNumber === activeStepNumber;
-
-                return (
-                  <React.Fragment key={st.id || idx}>
-                    <button
-                      type="button"
-                      onClick={() => setActiveStepNumber(st.stepNumber)}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-xl text-left transition-all cursor-pointer ${
-                        isCurrent
-                          ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-300 font-bold'
-                          : isDone
-                          ? 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200 font-semibold'
-                          : 'bg-white text-slate-500 hover:bg-slate-100 border border-slate-200 font-medium opacity-80'
-                      }`}
-                      title={`Bấm để xem thông tin bước ${st.stepNumber}: ${st.name}`}
-                    >
-                      <div
-                        className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${
-                          isCurrent
-                            ? 'bg-white text-blue-700 shadow-xs'
-                            : isDone
-                            ? 'bg-emerald-600 text-white'
-                            : 'bg-slate-100 text-slate-500'
-                        }`}
-                      >
-                        {isDone ? (
-                          <span className="material-symbols-outlined text-[14px]">check</span>
-                        ) : (
-                          st.stepNumber
-                        )}
-                      </div>
-                      <div className="min-w-0 pr-1">
-                        <div className="text-[11.5px] leading-tight truncate max-w-[150px]" title={st.name}>
-                          {st.name}
-                        </div>
-                        <div
-                          className={`text-[10px] leading-none mt-0.5 ${
-                            isCurrent ? 'text-blue-100 font-normal' : isDone ? 'text-emerald-600' : 'text-slate-400'
-                          }`}
-                        >
-                          {isCurrent ? '● Đang thực hiện' : isDone ? '✓ Đã hoàn tất' : `Chờ thực hiện`}
-                        </div>
-                      </div>
-                    </button>
-
-                    {idx < workflow.steps.length - 1 && (
-                      <div
-                        className={`h-0.5 w-3.5 shrink-0 transition-colors ${
-                          st.stepNumber < activeStepNumber ? 'bg-emerald-400' : 'bg-slate-200'
-                        }`}
-                      />
-                    )}
-                  </React.Fragment>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Chi tiết nhiệm vụ bước hiện tại */}
-          <div className="mt-2.5 pt-2.5 border-t border-slate-200/70 flex items-center justify-between flex-wrap gap-2 text-xs">
-            <div className="flex items-center gap-2 text-slate-600 flex-wrap">
-              <span className="font-semibold text-slate-800">
-                Trách nhiệm: <span className="text-slate-700 font-normal">{currentStepObj.responsibleRole} ({currentStepObj.responsibleUnit})</span>
-              </span>
-              <span>•</span>
-              <span className="font-semibold text-slate-800">
-                Thời hạn: <span className="text-slate-700 font-normal">~{currentStepObj.estimatedDays || 5} ngày</span>
-              </span>
-              <span>•</span>
-              <span className="text-slate-500 truncate max-w-[340px]" title={currentStepObj.description}>
-                {currentStepObj.description}
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowModalBuocTiepTheo(true)}
-              className="px-3 py-1.5 rounded-lg bg-[#004ac6] hover:bg-[#003ea8] text-white font-bold text-xs shadow-2xs flex items-center gap-1 cursor-pointer transition-all active:scale-95 ml-auto"
-            >
-              <span className="material-symbols-outlined text-[14px]">play_arrow</span>
-              <span>Thực hiện Bước {activeStepNumber}: {currentStepObj.name}</span>
-            </button>
-          </div>
-        </div>
 
         {/* Navigation Tabs Bar */}
         <div className="flex items-center gap-8 text-xs font-bold border-b border-slate-200 -mb-px">
