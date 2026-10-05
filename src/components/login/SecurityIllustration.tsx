@@ -346,11 +346,11 @@ export default function SecurityIllustration({ className = "" }: SecurityIllustr
           />
 
           {/* ── NỘI DUNG VĂN BẢN TRÊN TỜ ĐƠN CHÍNH ("ĐƠN / HỒ SƠ") ── */}
-          {/* Tag nhận diện nhỏ gọn: ĐƠN / HỒ SƠ */}
-          <g transform="translate(206, 144)">
-            <rect width="64" height="11" rx="5.5" fill="#1557A6" fillOpacity="0.12" stroke="#1557A6" strokeWidth="0.8" strokeOpacity="0.4" />
-            <text x="32" y="8.5" textAnchor="middle" fill="#0F3B78" fontSize="6.5" fontWeight="700" letterSpacing="0.4px" fontFamily="sans-serif">
-              ĐƠN / HỒ SƠ
+          {/* Tag nhận diện nhỏ gọn: XÁC THỰC TẬP TRUNG */}
+          <g transform="translate(204, 144)">
+            <rect width="68" height="11" rx="5.5" fill="#1557A6" fillOpacity="0.12" stroke="#1557A6" strokeWidth="0.8" strokeOpacity="0.4" />
+            <text x="34" y="7.8" textAnchor="middle" fill="#0F3B78" fontSize="5.2" fontWeight="700" letterSpacing="0.2px" fontFamily="sans-serif">
+              XÁC THỰC TẬP TRUNG
             </text>
           </g>
 

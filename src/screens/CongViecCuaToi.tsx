@@ -2890,14 +2890,14 @@ function AIStatusBadge({ status, progress }: { status?: AIProcessingStatus; prog
       </span>
     );
   }
-  if (status === 'none') {
-    return (
-      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-300 shrink-0" title="Xử lý thủ công theo ghi chú (Không chạy OCR - BR-09)">
-        <span className="material-symbols-outlined text-[11px] text-slate-500">edit_note</span>
-        <span>Không OCR</span>
-      </span>
-    );
-  }
+  // if (status === 'none') {
+  //   return (
+  //     <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-300 shrink-0" title="Xử lý thủ công theo ghi chú (Không chạy OCR - BR-09)">
+  //       <span className="material-symbols-outlined text-[11px] text-slate-500">edit_note</span>
+  //       <span>Không OCR</span>
+  //     </span>
+  //   );
+  // }
   if (status === 'needs_review') {
     return (
       <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-orange-50 text-orange-800 border border-orange-200 shrink-0">
@@ -3048,7 +3048,7 @@ function TaskCard({ item, onClick, onRetryAI, onTiepNhanXuLy, onBanGiao, onBanGi
         </div>
       )}
 
-      {(item.aiStatus === 'none' || item.nguonXuLy === 'ghi_chu_thu_cong') && (
+      {/* {(item.aiStatus === 'none' || item.nguonXuLy === 'ghi_chu_thu_cong') && (
         <div className="p-2 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-700 flex items-start gap-1.5 leading-snug">
           <span className="material-symbols-outlined text-[14px] text-slate-500 shrink-0 mt-0.5">edit_note</span>
           <div>
@@ -3056,7 +3056,7 @@ function TaskCard({ item, onClick, onRetryAI, onTiepNhanXuLy, onBanGiao, onBanGi
             <span>Tiếp nhận trực tiếp theo ghi chú Một cửa (không có scan file). Cần nhập liệu &amp; xử lý thủ công.</span>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* CHI TIẾT TRÌNH KÝ TUẦN TỰ (YÊU CẦU MÀN HÌNH LÃNH ĐẠO / CÁN BỘ) */}
       {item.isSigningDoc && (

@@ -5,6 +5,7 @@ import {
   ProcessTransition,
   ProcessLane,
   ProcessStage,
+  WorkflowNodeType,
 } from '../../../types/workflowConfig';
 
 interface WorkflowCanvasProps {
@@ -20,6 +21,7 @@ interface WorkflowCanvasProps {
   onSelectTransition: (transId: string) => void;
   onMoveStep: (stepId: string, targetLaneId: string, targetStageId: string) => void;
   onConnectSteps: (fromStepId: string, toStepId: string) => void;
+  onDropNewNode?: (type: WorkflowNodeType, targetLaneId: string, targetStageId: string) => void;
   isReadOnly?: boolean;
 }
 
@@ -43,6 +45,7 @@ export default function WorkflowCanvas({
   onSelectTransition,
   onMoveStep,
   onConnectSteps,
+  onDropNewNode,
   isReadOnly = false,
 }: WorkflowCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -118,8 +121,12 @@ export default function WorkflowCanvas({
   const handleDrop = (e: React.DragEvent, targetLaneId: string, targetStageId: string) => {
     if (isReadOnly) return;
     e.preventDefault();
+    const componentType = e.dataTransfer.getData('application/workflow-node-type') as WorkflowNodeType | null;
     const stepId = e.dataTransfer.getData('text/plain') || draggingStepId;
-    if (stepId) {
+
+    if (componentType && onDropNewNode) {
+      onDropNewNode(componentType, targetLaneId, targetStageId);
+    } else if (stepId && !componentType) {
       onMoveStep(stepId, targetLaneId, targetStageId);
     }
     setDraggingStepId(null);
@@ -501,22 +508,59 @@ export default function WorkflowCanvas({
                 {/* Top card: Badges & Step Code */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-1.5">
-                      {step.isStart && (
+                    <div className="flex items-center gap-1 flex-wrap">
+                      {/* Node Type Badge */}
+                      {step.isStart || step.nodeType === 'START' ? (
                         <span className="px-1.5 py-0.2 rounded bg-blue-100 text-blue-800 font-bold text-[9px] uppercase tracking-wider flex items-center gap-0.5">
                           <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
                           Bắt đầu
                         </span>
-                      )}
-                      {step.isEnd && (
+                      ) : step.isEnd || step.nodeType === 'END' ? (
                         <span className="px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 font-bold text-[9px] uppercase tracking-wider flex items-center gap-0.5">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
                           Kết thúc
                         </span>
-                      )}
-                      {!step.isStart && !step.isEnd && (
+                      ) : step.nodeType === 'APPROVAL' ? (
+                        <span className="px-1.5 py-0.2 rounded bg-purple-100 text-purple-800 font-bold text-[9px] flex items-center gap-0.5">
+                          <span className="material-symbols-outlined text-[11px]">verified</span>
+                          Phê duyệt
+                        </span>
+                      ) : step.nodeType === 'NOTIFICATION' ? (
+                        <span className="px-1.5 py-0.2 rounded bg-sky-100 text-sky-800 font-bold text-[9px] flex items-center gap-0.5">
+                          <span className="material-symbols-outlined text-[11px]">notifications</span>
+                          Thông báo
+                        </span>
+                      ) : step.nodeType === 'CHECK' ? (
+                        <span className="px-1.5 py-0.2 rounded bg-indigo-100 text-indigo-800 font-bold text-[9px] flex items-center gap-0.5">
+                          <span className="material-symbols-outlined text-[11px]">fact_check</span>
+                          Kiểm tra
+                        </span>
+                      ) : step.nodeType === 'BRANCH' ? (
+                        <span className="px-1.5 py-0.2 rounded bg-orange-100 text-orange-800 font-bold text-[9px] flex items-center gap-0.5">
+                          <span className="material-symbols-outlined text-[11px]">call_split</span>
+                          Rẽ nhánh
+                        </span>
+                      ) : step.nodeType === 'MERGE' ? (
+                        <span className="px-1.5 py-0.2 rounded bg-teal-100 text-teal-800 font-bold text-[9px] flex items-center gap-0.5">
+                          <span className="material-symbols-outlined text-[11px]">call_merge</span>
+                          Gộp nhánh
+                        </span>
+                      ) : step.nodeType === 'INTEGRATION' ? (
+                        <span className="px-1.5 py-0.2 rounded bg-cyan-100 text-cyan-800 font-bold text-[9px] flex items-center gap-0.5">
+                          <span className="material-symbols-outlined text-[11px]">hub</span>
+                          Tích hợp
+                        </span>
+                      ) : (
                         <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-mono text-[9px] font-bold">
                           {step.code}
+                        </span>
+                      )}
+
+                      {/* AI Indicator badge */}
+                      {step.aiConfig?.enabled && (
+                        <span className="px-1 py-0.2 rounded bg-indigo-50 text-indigo-700 font-bold text-[8.5px] flex items-center gap-0.5" title="Trợ lý AI được kích hoạt">
+                          <span className="material-symbols-outlined text-[11px]">smart_toy</span>
+                          AI
                         </span>
                       )}
                     </div>
@@ -544,17 +588,25 @@ export default function WorkflowCanvas({
                   </h4>
                 </div>
 
-                {/* Bottom card: Time limit & Forms indicators */}
+                {/* Bottom card: Time limit, Actions & Forms indicators */}
                 <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10.5px] text-slate-500">
                   <span className="flex items-center gap-1 font-medium">
                     <span className="material-symbols-outlined text-[13px] text-slate-400">schedule</span>
                     {step.timeLimitDays > 0 ? `${step.timeLimitDays} ngày` : '—'}
                   </span>
 
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1">
+                    {step.actions && step.actions.length > 0 && (
+                      <span
+                        className="px-1 py-0.2 rounded bg-purple-50 text-purple-700 font-semibold text-[9px]"
+                        title={`${step.actions.length} hành động`}
+                      >
+                        {step.actions.length} HĐ
+                      </span>
+                    )}
                     {step.stepForms.length > 0 && (
                       <span
-                        className="px-1 py-0.2 rounded bg-blue-50 text-blue-700 font-semibold text-[9.5px]"
+                        className="px-1 py-0.2 rounded bg-blue-50 text-blue-700 font-semibold text-[9px]"
                         title={`${step.stepForms.length} biểu mẫu`}
                       >
                         {step.stepForms.length} BM
@@ -562,7 +614,7 @@ export default function WorkflowCanvas({
                     )}
                     {step.storedDocuments.length > 0 && (
                       <span
-                        className="px-1 py-0.2 rounded bg-slate-100 text-slate-600 font-semibold text-[9.5px]"
+                        className="px-1 py-0.2 rounded bg-slate-100 text-slate-600 font-semibold text-[9px]"
                         title={`${step.storedDocuments.length} văn bản lưu`}
                       >
                         {step.storedDocuments.length} VB

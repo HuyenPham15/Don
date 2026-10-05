@@ -4,11 +4,15 @@ import {
   ProcessWorkflow,
   ProcessStep,
   ProcessTransition,
+  ProcessLane,
+  ProcessStage,
   ValidationIssue,
   WorkflowAuditLogItem,
   WorkflowAuditActionType,
   VersionHistoryItem,
+  WorkflowNodeType,
 } from '../../types/workflowConfig';
+import { createDefaultStepFromRegistry } from './registry/workflowComponentRegistry';
 import WorkflowLeftPalette from './components/WorkflowLeftPalette';
 import WorkflowCanvas from './components/WorkflowCanvas';
 import StepPropertiesPanel from './components/StepPropertiesPanel';
@@ -386,108 +390,212 @@ export default function WorkflowDesignerScreen({
     );
   }, [workflow, pushToHistory, recordAuditChange]);
 
-  // Thêm bước mới từ palette
-  const handleAddStepFromPalette = (type: 'normal' | 'start' | 'end' | 'review' | 'approval' | 'archive') => {
-    pushToHistory(workflow);
-    const newId = `step-${Date.now()}`;
-    const codeNum = String(workflow.steps.length + 1).padStart(2, '0');
+  // Thêm bước mới từ Palette / Library (Generic)
+  const handleAddStep = useCallback(
+    (type: WorkflowNodeType, customConfig?: Partial<ProcessStep>) => {
+      pushToHistory(workflow);
+      const defaultLaneId = workflow.lanes[0]?.id || 'lane-default';
+      const defaultStageId = workflow.stages[0]?.id || 'stage-default';
+      const index = workflow.steps.length + 1;
 
-    let name = 'Bước xử lý thông thường';
-    let isStart = false;
-    let isEnd = false;
-    let laneId = workflow.lanes[0]?.id || 'lane-vt';
-    let stageId = workflow.stages[0]?.id || 'stg-1';
+      const newStep = createDefaultStepFromRegistry(
+        type,
+        index,
+        defaultLaneId,
+        defaultStageId,
+        customConfig
+      );
 
-    if (type === 'start') {
-      name = 'Tiếp nhận hồ sơ đầu vào';
-      isStart = true;
-      laneId = workflow.lanes[0]?.id || 'lane-vt';
-      stageId = workflow.stages[0]?.id || 'stg-1';
-    } else if (type === 'end') {
-      name = 'Lưu trữ & Đóng hồ sơ';
-      isEnd = true;
-      laneId = workflow.lanes[0]?.id || 'lane-vt';
-      stageId = workflow.stages[workflow.stages.length - 1]?.id || 'stg-5';
-    } else if (type === 'approval') {
-      name = 'Lãnh đạo phê duyệt';
-      laneId = workflow.lanes.find((l) => l.code === 'LD')?.id || workflow.lanes[workflow.lanes.length - 1]?.id;
-      stageId = workflow.stages[Math.min(3, workflow.stages.length - 1)]?.id;
-    } else if (type === 'archive') {
-      name = 'Thông báo kết quả đến công dân';
-      laneId = workflow.lanes[0]?.id || 'lane-vt';
-      stageId = workflow.stages[workflow.stages.length - 1]?.id;
-    }
+      setWorkflow((prev) => ({
+        ...prev,
+        steps: [...prev.steps, newStep],
+      }));
 
-    const newStep: ProcessStep = {
-      id: newId,
-      code: `STEP-${codeNum}`,
-      name,
-      laneId,
-      stageId,
-      isStart,
-      isEnd,
-      timeLimitDays: 3,
-      workHours: 24,
-      warningBeforeHours: 4,
-      workSchedule: 'Giờ hành chính (8h-17h, Thứ 2 - Thứ 6)',
-      storedDocuments: [],
-      stepForms: [],
-      statusChangeDoc: '',
-    };
+      setSelectedStepId(newStep.id);
+      setSelectedTransitionId(null);
+      setHasUnsavedChanges(true);
+      showToast(`✓ Đã thêm "${newStep.name}" vào sơ đồ.`);
 
-    setWorkflow((prev) => ({
-      ...prev,
-      steps: [...prev.steps, newStep],
-    }));
+      recordAuditChange(
+        'create_step',
+        'Thêm bước xử lý mới',
+        `${newStep.name} (${newStep.code})`,
+        newStep.id,
+        'step',
+        'Chưa có',
+        `Tên: ${newStep.name} | Mã: ${newStep.code} | Loại: ${newStep.nodeType || type}`
+      );
+    },
+    [workflow, pushToHistory, recordAuditChange]
+  );
 
-    setSelectedStepId(newStep.id);
-    setSelectedTransitionId(null);
-    setHasUnsavedChanges(true);
-    showToast(`✓ Đã thêm "${name}" vào sơ đồ.`);
+  // Thả bước mới vào ô chỉ định trên Canvas (Drag & Drop từ Palette)
+  const handleDropNewNode = useCallback(
+    (type: WorkflowNodeType, targetLaneId: string, targetStageId: string) => {
+      pushToHistory(workflow);
+      const index = workflow.steps.length + 1;
+      const newStep = createDefaultStepFromRegistry(type, index, targetLaneId, targetStageId);
 
-    recordAuditChange(
-      'create_step',
-      'Thêm bước xử lý mới',
-      `${name} (${newStep.code})`,
-      newStep.id,
-      'step',
-      'Chưa có',
-      `Tên: ${name} | Mã: ${newStep.code} | Hạn: 3 ngày`
-    );
-  };
+      setWorkflow((prev) => ({
+        ...prev,
+        steps: [...prev.steps, newStep],
+      }));
 
-  // Thêm Lane
-  const handleAddLane = (name: string, code: string) => {
-    pushToHistory(workflow);
-    const newLane = {
-      id: `lane-${Date.now()}`,
-      name,
-      code,
-      order: workflow.lanes.length + 1,
-    };
-    setWorkflow((prev) => ({
-      ...prev,
-      lanes: [...prev.lanes, newLane],
-    }));
-    setHasUnsavedChanges(true);
-    showToast(`✓ Đã thêm Nhóm trách nhiệm: "${name}".`);
-  };
+      setSelectedStepId(newStep.id);
+      setSelectedTransitionId(null);
+      setHasUnsavedChanges(true);
+      showToast(`✓ Đã thêm "${newStep.name}" vào ô.`);
 
-  // Thêm Giai đoạn
-  const handleAddStage = (name: string) => {
-    pushToHistory(workflow);
-    const newStage = {
-      id: `stage-${Date.now()}`,
-      name,
-      order: workflow.stages.length + 1,
-    };
-    setWorkflow((prev) => ({
-      ...prev,
-      stages: [...prev.stages, newStage],
-    }));
-    setHasUnsavedChanges(true);
-    showToast(`✓ Đã thêm Giai đoạn: "${name}".`);
-  };
+      recordAuditChange(
+        'create_step',
+        'Kéo thả bước xử lý mới vào ô',
+        `${newStep.name} (${newStep.code})`,
+        newStep.id,
+        'step',
+        'Chưa có',
+        `Loại: ${type} | Ô: Lane [${targetLaneId}], Stage [${targetStageId}]`
+      );
+    },
+    [workflow, pushToHistory, recordAuditChange]
+  );
+
+  // Quản lý Nhóm trách nhiệm (Lane)
+  const handleAddLane = useCallback(
+    (name: string, code: string, description?: string) => {
+      pushToHistory(workflow);
+      const newLane: ProcessLane = {
+        id: `lane-${Date.now()}`,
+        name,
+        code,
+        description: description || '',
+        order: workflow.lanes.length + 1,
+      };
+      setWorkflow((prev) => ({
+        ...prev,
+        lanes: [...prev.lanes, newLane],
+      }));
+      setHasUnsavedChanges(true);
+      showToast(`✓ Đã thêm Nhóm trách nhiệm: "${name}".`);
+      recordAuditChange('create_step', 'Thêm nhóm trách nhiệm', name, newLane.id, 'lane', 'Chưa có', `Tên: ${name} (${code})`);
+    },
+    [workflow, pushToHistory, recordAuditChange]
+  );
+
+  const handleUpdateLane = useCallback(
+    (laneId: string, updated: Partial<ProcessLane>) => {
+      pushToHistory(workflow);
+      setWorkflow((prev) => ({
+        ...prev,
+        lanes: prev.lanes.map((l) => (l.id === laneId ? { ...l, ...updated } : l)),
+      }));
+      setHasUnsavedChanges(true);
+      showToast('✓ Đã cập nhật nhóm trách nhiệm.');
+    },
+    [workflow, pushToHistory]
+  );
+
+  const handleDeleteLane = useCallback(
+    (laneId: string) => {
+      const laneSteps = workflow.steps.filter((s) => s.laneId === laneId);
+      if (laneSteps.length > 0) {
+        showToast(`⚠️ Không thể xóa nhóm này vì đang chứa ${laneSteps.length} bước xử lý.`);
+        return;
+      }
+      if (workflow.lanes.length <= 1) {
+        showToast('⚠️ Quy trình phải có ít nhất 1 nhóm trách nhiệm.');
+        return;
+      }
+      pushToHistory(workflow);
+      setWorkflow((prev) => ({
+        ...prev,
+        lanes: prev.lanes.filter((l) => l.id !== laneId),
+      }));
+      setHasUnsavedChanges(true);
+      showToast('✓ Đã xóa nhóm trách nhiệm.');
+    },
+    [workflow, pushToHistory]
+  );
+
+  const handleReorderLanes = useCallback(
+    (newLanes: ProcessLane[]) => {
+      pushToHistory(workflow);
+      setWorkflow((prev) => ({
+        ...prev,
+        lanes: newLanes.map((l, idx) => ({ ...l, order: idx + 1 })),
+      }));
+      setHasUnsavedChanges(true);
+      showToast('✓ Đã cập nhật thứ tự nhóm trách nhiệm.');
+    },
+    [workflow, pushToHistory]
+  );
+
+  // Quản lý Giai đoạn (Stage / Phase)
+  const handleAddStage = useCallback(
+    (name: string) => {
+      pushToHistory(workflow);
+      const newStage: ProcessStage = {
+        id: `stage-${Date.now()}`,
+        name,
+        order: workflow.stages.length + 1,
+      };
+      setWorkflow((prev) => ({
+        ...prev,
+        stages: [...prev.stages, newStage],
+      }));
+      setHasUnsavedChanges(true);
+      showToast(`✓ Đã thêm Giai đoạn: "${name}".`);
+      recordAuditChange('create_step', 'Thêm giai đoạn quy trình', name, newStage.id, 'stage', 'Chưa có', `Tên: ${name}`);
+    },
+    [workflow, pushToHistory, recordAuditChange]
+  );
+
+  const handleUpdateStage = useCallback(
+    (stageId: string, updated: Partial<ProcessStage>) => {
+      pushToHistory(workflow);
+      setWorkflow((prev) => ({
+        ...prev,
+        stages: prev.stages.map((s) => (s.id === stageId ? { ...s, ...updated } : s)),
+      }));
+      setHasUnsavedChanges(true);
+      showToast('✓ Đã cập nhật giai đoạn.');
+    },
+    [workflow, pushToHistory]
+  );
+
+  const handleDeleteStage = useCallback(
+    (stageId: string) => {
+      const stageSteps = workflow.steps.filter((s) => s.stageId === stageId);
+      if (stageSteps.length > 0) {
+        showToast(`⚠️ Không thể xóa giai đoạn này vì đang chứa ${stageSteps.length} bước xử lý.`);
+        return;
+      }
+      if (workflow.stages.length <= 1) {
+        showToast('⚠️ Quy trình phải có ít nhất 1 giai đoạn.');
+        return;
+      }
+      pushToHistory(workflow);
+      setWorkflow((prev) => ({
+        ...prev,
+        stages: prev.stages.filter((s) => s.id !== stageId),
+      }));
+      setHasUnsavedChanges(true);
+      showToast('✓ Đã xóa giai đoạn.');
+    },
+    [workflow, pushToHistory]
+  );
+
+  const handleReorderStages = useCallback(
+    (newStages: ProcessStage[]) => {
+      pushToHistory(workflow);
+      setWorkflow((prev) => ({
+        ...prev,
+        stages: newStages.map((s, idx) => ({ ...s, order: idx + 1 })),
+      }));
+      setHasUnsavedChanges(true);
+      showToast('✓ Đã cập nhật thứ tự giai đoạn.');
+    },
+    [workflow, pushToHistory]
+  );
 
   // Focus lỗi từ ValidationModal
   const handleFocusValidationTarget = (
@@ -744,17 +852,75 @@ export default function WorkflowDesignerScreen({
 
         {/* Right: Controls & Actions */}
         <div className="flex items-center gap-2">
-
-          {/* Auto layout button */}
           {activeTab === 'designer' && (
-            <button
-              type="button"
-              onClick={handleAutoLayout}
-              className="p-2 text-slate-600 hover:text-blue-700 hover:bg-blue-50 border border-slate-200 rounded-xl transition-colors cursor-pointer"
-              title="Tự động căn chỉnh sơ đồ (Auto layout)"
-            >
-              <span className="material-symbols-outlined text-[18px]">account_tree</span>
-            </button>
+            <>
+              {/* Undo / Redo controls */}
+              <div className="flex items-center gap-1 mr-1">
+                <button
+                  type="button"
+                  disabled={pastWorkflows.length === 0 || isReadOnly}
+                  onClick={handleUndo}
+                  title={pastWorkflows.length > 0 ? 'Hoàn tác (Undo)' : 'Không có thao tác để hoàn tác'}
+                  className={`p-1.5 rounded-lg border transition-all ${
+                    pastWorkflows.length > 0 && !isReadOnly
+                      ? 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 cursor-pointer shadow-2xs'
+                      : 'border-slate-200/50 bg-slate-100/50 text-slate-400 cursor-not-allowed'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[16px]">undo</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={futureWorkflows.length === 0 || isReadOnly}
+                  onClick={handleRedo}
+                  title={futureWorkflows.length > 0 ? 'Làm lại (Redo)' : 'Không có thao tác để làm lại'}
+                  className={`p-1.5 rounded-lg border transition-all ${
+                    futureWorkflows.length > 0 && !isReadOnly
+                      ? 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 cursor-pointer shadow-2xs'
+                      : 'border-slate-200/50 bg-slate-100/50 text-slate-400 cursor-not-allowed'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[16px]">redo</span>
+                </button>
+              </div>
+
+              {/* Zoom controls */}
+              <div className="flex items-center bg-slate-100 rounded-xl p-0.5 border border-slate-200/80 mr-1">
+                <button
+                  type="button"
+                  onClick={handleZoomOut}
+                  className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-white rounded-lg transition-all cursor-pointer"
+                  title="Thu nhỏ (-)"
+                >
+                  <span className="material-symbols-outlined text-[16px]">remove</span>
+                </button>
+                <span
+                  onClick={handleZoomReset}
+                  className="px-2 font-mono text-[11px] font-semibold text-slate-600 cursor-pointer select-none"
+                  title="Nhấp để reset về 100%"
+                >
+                  {Math.round(zoomLevel * 100)}%
+                </span>
+                <button
+                  type="button"
+                  onClick={handleZoomIn}
+                  className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-white rounded-lg transition-all cursor-pointer"
+                  title="Phóng to (+)"
+                >
+                  <span className="material-symbols-outlined text-[16px]">add</span>
+                </button>
+              </div>
+
+              {/* Auto layout button */}
+              <button
+                type="button"
+                onClick={handleAutoLayout}
+                className="p-2 text-slate-600 hover:text-blue-700 hover:bg-blue-50 border border-slate-200 rounded-xl transition-colors cursor-pointer"
+                title="Tự động căn chỉnh sơ đồ (Auto layout)"
+              >
+                <span className="material-symbols-outlined text-[18px]">account_tree</span>
+              </button>
+            </>
           )}
 
           {/* Button Kiểm chứng (Section 18) */}
@@ -980,68 +1146,63 @@ export default function WorkflowDesignerScreen({
 
       {/* 3. TAB WORKSPACES */}
       {activeTab === 'designer' && (
-        <div className="flex flex-col flex-1 overflow-hidden">
-          {/* Top Canvas Toolbar matching design image */}
+        <div className="flex flex-1 overflow-hidden relative">
+          {/* Left: Component Palette */}
           <WorkflowLeftPalette
             lanes={activeCanvasWorkflow.lanes}
             stages={activeCanvasWorkflow.stages}
-            onAddStep={handleAddStepFromPalette}
+            onAddStep={handleAddStep}
             onAddLane={handleAddLane}
+            onUpdateLane={handleUpdateLane}
+            onDeleteLane={handleDeleteLane}
+            onReorderLanes={handleReorderLanes}
             onAddStage={handleAddStage}
+            onUpdateStage={handleUpdateStage}
+            onDeleteStage={handleDeleteStage}
+            onReorderStages={handleReorderStages}
             isReadOnly={isReadOnly}
-            status={viewingVersion ? 'published' : workflow.status}
-            zoomLevel={zoomLevel}
-            onZoomIn={handleZoomIn}
-            onZoomOut={handleZoomOut}
-            onZoomReset={handleZoomReset}
-            onFitView={handleFitView}
-            canUndo={pastWorkflows.length > 0}
-            canRedo={futureWorkflows.length > 0}
-            onUndo={handleUndo}
-            onRedo={handleRedo}
           />
 
-          <div className="flex flex-1 overflow-hidden relative">
-            {/* Center: Interactive Swimlane Canvas */}
-            <WorkflowCanvas
-              steps={activeCanvasWorkflow.steps}
-              transitions={activeCanvasWorkflow.transitions}
+          {/* Center: Interactive Swimlane Canvas */}
+          <WorkflowCanvas
+            steps={activeCanvasWorkflow.steps}
+            transitions={activeCanvasWorkflow.transitions}
+            lanes={activeCanvasWorkflow.lanes}
+            stages={activeCanvasWorkflow.stages}
+            selectedStepId={selectedStepId}
+            selectedTransitionId={selectedTransitionId}
+            focusedTarget={focusedTarget}
+            zoomLevel={zoomLevel}
+            onSelectStep={handleSelectStep}
+            onSelectTransition={handleSelectTransition}
+            onMoveStep={handleMoveStep}
+            onConnectSteps={handleConnectSteps}
+            onDropNewNode={handleDropNewNode}
+            isReadOnly={isReadOnly}
+          />
+
+          {/* Right: Dynamic Properties Panel */}
+          {currentStep && (
+            <StepPropertiesPanel
+              step={currentStep}
               lanes={activeCanvasWorkflow.lanes}
               stages={activeCanvasWorkflow.stages}
-              selectedStepId={selectedStepId}
-              selectedTransitionId={selectedTransitionId}
-              focusedTarget={focusedTarget}
-              zoomLevel={zoomLevel}
-              onSelectStep={handleSelectStep}
-              onSelectTransition={handleSelectTransition}
-              onMoveStep={handleMoveStep}
-              onConnectSteps={handleConnectSteps}
-              isReadOnly={isReadOnly}
+              onUpdateStep={handleUpdateStep}
+              onDeleteStep={handleDeleteStep}
+              onClose={() => setSelectedStepId(null)}
             />
+          )}
 
-            {/* Right: Dynamic Properties Panel */}
-            {currentStep && (
-              <StepPropertiesPanel
-                step={currentStep}
-                lanes={activeCanvasWorkflow.lanes}
-                stages={activeCanvasWorkflow.stages}
-                onUpdateStep={handleUpdateStep}
-                onDeleteStep={handleDeleteStep}
-                onClose={() => setSelectedStepId(null)}
-              />
-            )}
-
-            {currentTransition && (
-              <TransitionPropertiesPanel
-                transition={currentTransition}
-                steps={activeCanvasWorkflow.steps}
-                lanes={activeCanvasWorkflow.lanes}
-                onUpdateTransition={handleUpdateTransition}
-                onDeleteTransition={handleDeleteTransition}
-                onClose={() => setSelectedTransitionId(null)}
-              />
-            )}
-          </div>
+          {currentTransition && (
+            <TransitionPropertiesPanel
+              transition={currentTransition}
+              steps={activeCanvasWorkflow.steps}
+              lanes={activeCanvasWorkflow.lanes}
+              onUpdateTransition={handleUpdateTransition}
+              onDeleteTransition={handleDeleteTransition}
+              onClose={() => setSelectedTransitionId(null)}
+            />
+          )}
         </div>
       )}
 

@@ -4,16 +4,17 @@ import { ProcessWorkflow, ValidationIssue } from '../types/workflowConfig';
 export function validateWorkflow(wf: ProcessWorkflow): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
 
-  // 1. Kiểm tra Loại đơn đã được chọn
-  if (!wf.loaiDonId || !wf.loaiDonName) {
+  // 1. Kiểm tra Tên quy trình và Mã quy trình
+  if (!wf.name?.trim() || !wf.code?.trim()) {
     issues.push({
-      id: 'val-loai-don',
+      id: 'val-general-info',
       severity: 'error',
       targetType: 'general',
-      message: 'Quy trình chưa được gắn với Loại đơn áp dụng cụ thể.',
-      hint: 'Vui lòng chọn loại đơn áp dụng trong phần thông tin chung.',
+      message: 'Quy trình chưa có đầy đủ Tên quy trình hoặc Mã định danh.',
+      hint: 'Vui lòng bổ sung Tên và Mã quy trình trong phần Thông tin chung.',
     });
   }
+
 
   // 2. Kiểm tra Có bước bắt đầu
   const startSteps = wf.steps.filter((s) => s.isStart);
@@ -85,6 +86,37 @@ export function validateWorkflow(wf: ProcessWorkflow): ValidationIssue[] {
         message: `Bước "${step.name}" chưa có thời hạn xử lý hợp lệ (phải lớn hơn 0 ngày).`,
         hint: 'Nhập số ngày xử lý định mức tại thuộc tính bước.',
       });
+    }
+
+    // Kiểm tra cấu hình Phê duyệt cho bước APPROVAL
+    if (step.nodeType === 'APPROVAL') {
+      if (!step.approvalConfig?.authorityRole?.trim()) {
+        issues.push({
+          id: `val-approval-role-${step.id}`,
+          severity: 'warning',
+          targetType: 'step',
+          targetId: step.id,
+          message: `Bước phê duyệt "${step.name}" (${step.code}) chưa chỉ định vai trò/người có thẩm quyền phê duyệt.`,
+          hint: 'Chọn vai trò có thẩm quyền trong tab Thuộc tính bước phê duyệt.',
+        });
+      }
+    }
+
+    // Kiểm tra bước có hành động nhưng thiếu hành động chuyển tiếp/hoàn tất
+    if (step.actions && step.actions.length > 0 && !step.isEnd) {
+      const hasForwardAction = step.actions.some(
+        (a) => a.type === 'COMPLETE' || a.type === 'APPROVE' || a.type === 'TRANSFER'
+      );
+      if (!hasForwardAction) {
+        issues.push({
+          id: `val-action-forward-${step.id}`,
+          severity: 'warning',
+          targetType: 'step',
+          targetId: step.id,
+          message: `Bước "${step.name}" (${step.code}) chưa có hành động kết thúc hoặc chuyển tiếp luồng (Hoàn tất/Phê duyệt).`,
+          hint: 'Bổ sung ít nhất 1 hành động loại "Hoàn tất" hoặc "Phê duyệt" trong danh sách hành động.',
+        });
+      }
     }
   });
 

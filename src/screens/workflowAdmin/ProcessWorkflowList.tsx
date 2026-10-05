@@ -357,9 +357,9 @@ export default function ProcessWorkflowList({
                         >
                           {wf.isLatestForLoaiDon ? (
                             <>
-                              <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs group-hover/ver:border-emerald-400 group-hover/ver:bg-emerald-100 transition-all flex items-center gap-1">
+                              {/* <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs group-hover/ver:border-emerald-400 group-hover/ver:bg-emerald-100 transition-all flex items-center gap-1">
                                 ★ {wf.version}
-                              </span>
+                              </span> */}
                               <span className="text-[10px] text-blue-600 font-semibold mt-1 flex items-center gap-0.5 group-hover/ver:underline">
                                 <span className="material-symbols-outlined text-[13px]">history</span>
                                 {wf.versionHistory?.length ? `${wf.versionHistory.length} bản` : 'Lịch sử'}

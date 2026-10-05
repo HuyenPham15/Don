@@ -31,6 +31,91 @@ export interface TransitionCondition {
   value: string;
 }
 
+// Component library and generic node types
+export type WorkflowNodeType =
+  | 'START'
+  | 'END'
+  | 'TASK'
+  | 'CHECK'
+  | 'APPROVAL'
+  | 'NOTIFICATION'
+  | 'BRANCH'
+  | 'MERGE'
+  | 'INTEGRATION';
+
+export type WorkflowComponentCategory =
+  | 'FLOW_CONTROL'
+  | 'PROCESSING'
+  | 'APPROVAL'
+  | 'COMMUNICATION'
+  | 'INTEGRATION';
+
+export type WorkflowActionType =
+  | 'COMPLETE'
+  | 'RETURN'
+  | 'REQUEST_INFO'
+  | 'TRANSFER'
+  | 'APPROVE'
+  | 'REJECT'
+  | 'REVISE'
+  | 'ESCALATE';
+
+export interface WorkflowAction {
+  id: string;
+  code: string;
+  label: string;
+  type: WorkflowActionType;
+  targetNodeId?: string;
+  conditionId?: string;
+  description?: string;
+  requireComment?: boolean;
+}
+
+export type AICapability =
+  | 'OCR'
+  | 'EXTRACT'
+  | 'SEARCH_RELATED'
+  | 'CHECK_CONDITION'
+  | 'SUGGEST';
+
+export interface AIConfig {
+  enabled: boolean;
+  capabilities: AICapability[];
+  requireUserConfirmation: boolean;
+  promptDescription?: string;
+}
+
+export interface ApprovalConfig {
+  approvalStyle: 'SINGLE' | 'ONE_OF_MANY' | 'CONSENSUS'; // 1 người, 1 trong nhiều, hoặc tất cả
+  authorityRole: string; // Chức danh / Vai trò có thẩm quyền
+  approveTargetNodeId?: string;
+  rejectTargetNodeId?: string;
+  reviseTargetNodeId?: string;
+}
+
+export interface NotificationConfig {
+  recipientType: 'OFFICER' | 'CITIZEN' | 'ALL_PARTIES' | 'CUSTOM_ROLE';
+  recipientRole?: string;
+  channels: ('SMS' | 'EMAIL' | 'PORTAL' | 'INTERNAL')[];
+  templateId?: string;
+  templateTitle?: string;
+  triggerEvent: 'ON_ENTER' | 'ON_EXIT' | 'MANUAL';
+}
+
+export interface BranchConfig {
+  branchMode: 'EXCLUSIVE_CONDITION' | 'PARALLEL' | 'INCLUSIVE';
+  defaultTargetNodeId?: string;
+}
+
+export interface IntegrationConfig {
+  systemCode: 'DVC_QUOC_GIA' | 'VNEID_DAN_CU' | 'VAN_BAN_DIEU_HANH' | 'CUSTOM_API';
+  systemName: string;
+  actionEndpoint: string;
+  method: 'GET' | 'POST' | 'PUT';
+  timeoutSeconds: number;
+  retryCount: number;
+}
+
 export interface ProcessTransition {
   id: string;
   actionName: string;
@@ -40,6 +125,12 @@ export interface ProcessTransition {
   toStepId: string;
   toStepName?: string;
   type: TransitionType;
+  connectorType?: 'NORMAL' | 'CONDITION' | 'RETURN' | 'APPROVE' | 'REJECT' | 'TIMEOUT';
+  sourceNodeId?: string;
+  targetNodeId?: string;
+  label?: string;
+  conditionId?: string;
+  actionCode?: string;
   allowedRoles: string[];
   createNextTask: boolean;
   taskAssigneeRole: string;
@@ -52,7 +143,8 @@ export interface ProcessStep {
   code: string; // Tự sinh: STEP-xxx
   name: string;
   laneId: string; // Nhóm trách nhiệm
-  stageId: string; // Giai đoạn
+  stageId: string; // Giai đoạn / Phase
+  nodeType?: WorkflowNodeType; // Generic type: START | END | TASK | CHECK | APPROVAL | NOTIFICATION | BRANCH | MERGE | INTEGRATION
   description?: string;
   isStart?: boolean;
   isEnd?: boolean;
@@ -60,11 +152,28 @@ export interface ProcessStep {
   workHours: number; // Số giờ làm việc
   warningBeforeHours: number; // Cảnh báo trước (giờ)
   workSchedule: string; // Lịch làm việc (Hành chính / 24/7 / Trực chiến)
-  storedDocuments: string[]; // Văn bản lưu tại bước
+  storedDocuments: string[]; // Văn bản lưu tại bước / output documents
+  inputDocuments?: string[]; // Văn bản đầu vào
   stepForms: string[]; // Biểu mẫu tại bước
   statusChangeDoc: string; // Văn bản đổi trạng thái tại bước
   customOrder?: number;
+  // Generic architecture extensions:
+  actions?: WorkflowAction[];
+  aiConfig?: AIConfig;
+  approvalConfig?: ApprovalConfig;
+  notificationConfig?: NotificationConfig;
+  branchConfig?: BranchConfig;
+  integrationConfig?: IntegrationConfig;
+  assigneeRole?: string;
+  position?: { x: number; y: number };
 }
+
+// Aliases for clean generic workflow architecture
+export type WorkflowNode = ProcessStep;
+export type WorkflowLane = ProcessLane;
+export type WorkflowPhase = ProcessStage;
+export type WorkflowConnector = ProcessTransition;
+export type Workflow = ProcessWorkflow;
 
 export interface ProcessLane {
   id: string;

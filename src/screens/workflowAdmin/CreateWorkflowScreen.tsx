@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { ProcessWorkflow } from '../../types/workflowConfig';
 import { LOAI_DON_OPTIONS } from '../../constants';
+import { WORKFLOW_TEMPLATES, WorkflowTemplateMeta } from './templates/workflowTemplates';
 
 interface CreateWorkflowScreenProps {
   onCancel: () => void;
@@ -16,24 +17,29 @@ export default function CreateWorkflowScreen({
   existingWorkflowsCount,
   existingWorkflows = [],
 }: CreateWorkflowScreenProps) {
+  const [creationMode, setCreationMode] = useState<'TEMPLATE' | 'BLANK'>('TEMPLATE');
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('tpl-basic');
+
   // Tự sinh mã quy trình
   const defaultCode = `QT-QD-2026-${String(existingWorkflowsCount + 1).padStart(3, '0')}`;
 
-  const [name, setName] = useState('');
-  const [code, setCode] = useState(defaultCode);
-  const [loaiDonId, setLoaiDonId] = useState('');
-  const [description, setDescription] = useState('');
+  const selectedTemplate = WORKFLOW_TEMPLATES.find((t) => t.id === selectedTemplateId) || WORKFLOW_TEMPLATES[0];
+
+  const [name, setName] = useState(selectedTemplate?.name || '');
+  const [code, setCode] = useState(selectedTemplate?.codePrefix ? `${selectedTemplate.codePrefix}-2026-${String(existingWorkflowsCount + 1).padStart(3, '0')}` : defaultCode);
+  const [loaiDonId, setLoaiDonId] = useState(selectedTemplate?.loaiDonId || '');
+  const [description, setDescription] = useState(selectedTemplate?.description || '');
   const [version, setVersion] = useState('v1.0');
   const [errors, setErrors] = useState<{ name?: string; loaiDonId?: string }>({});
 
-  // Tìm quy trình đang áp dụng hiện tại của Loại đơn đã chọn
-  const currentActiveWorkflow = existingWorkflows.find(
-    (w) => w.loaiDonId === loaiDonId && w.status === 'published' && w.isLatestForLoaiDon
-  ) || existingWorkflows.find(
-    (w) => w.loaiDonId === loaiDonId && w.status === 'published'
-  ) || existingWorkflows.find(
-    (w) => w.loaiDonId === loaiDonId
-  );
+  const handleSelectTemplate = (tpl: WorkflowTemplateMeta) => {
+    setSelectedTemplateId(tpl.id);
+    setName(tpl.name);
+    setCode(`${tpl.codePrefix}-2026-${String(existingWorkflowsCount + 1).padStart(3, '0')}`);
+    setLoaiDonId(tpl.loaiDonId);
+    setDescription(tpl.description);
+    setErrors({});
+  };
 
   const handleLoaiDonChange = (id: string) => {
     setLoaiDonId(id);
@@ -41,11 +47,11 @@ export default function CreateWorkflowScreen({
       setErrors((prev) => ({ ...prev, loaiDonId: undefined }));
     }
 
-    // Tự sinh mã theo loại đơn
     let prefix = 'QT-QD';
     if (id === 'to-cao') prefix = 'QT-TC';
     else if (id === 'khieu-nai') prefix = 'QT-KN';
     else if (id === 'kien-nghi') prefix = 'QT-KNPA';
+    else if (id === 'van-ban') prefix = 'QT-VB';
     else if (id === 'tranh-chap') prefix = 'QT-DC';
 
     setCode(`${prefix}-2026-${String(existingWorkflowsCount + 1).padStart(3, '0')}`);
@@ -56,6 +62,7 @@ export default function CreateWorkflowScreen({
     if (loaiDonId === 'to-cao') prefix = 'QT-TC';
     else if (loaiDonId === 'khieu-nai') prefix = 'QT-KN';
     else if (loaiDonId === 'kien-nghi') prefix = 'QT-KNPA';
+    else if (loaiDonId === 'van-ban') prefix = 'QT-VB';
     else if (loaiDonId === 'tranh-chap') prefix = 'QT-DC';
 
     setCode(`${prefix}-2026-${Math.floor(100 + Math.random() * 900)}`);
@@ -69,7 +76,7 @@ export default function CreateWorkflowScreen({
       newErrors.name = 'Vui lòng nhập tên quy trình xử lý.';
     }
     if (!loaiDonId) {
-      newErrors.loaiDonId = 'Quy trình bắt buộc phải gắn với 01 loại đơn cụ thể.';
+      newErrors.loaiDonId = 'Quy trình bắt buộc phải gắn với 01 loại đơn / hồ sơ.';
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -81,60 +88,87 @@ export default function CreateWorkflowScreen({
     const now = new Date();
     const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
-    // Khởi tạo các nhóm trách nhiệm và giai đoạn mặc định chuẩn Gov
-    const newWorkflow: ProcessWorkflow = {
-      id: `wf-${Date.now()}`,
-      code: code.trim() || defaultCode,
-      name: name.trim(),
-      loaiDonId: loaiDonId,
-      loaiDonName: selectedLoaiDon?.name || 'Chưa xác định',
-      version: version.trim() || 'v1.0',
-      status: 'draft',
-      description: description.trim(),
-      updatedAt: dateStr,
-      updatedBy: 'Nguyễn Minh Anh (Cán bộ thụ lý)',
-      lanes: [
-        { id: 'lane-vt', name: 'Văn thư', code: 'VT', order: 1, description: 'Tiếp nhận, vào sổ, phát hành' },
-        { id: 'lane-cm', name: 'Chuyên môn', code: 'CM', order: 2, description: 'Xác minh, thẩm định, đề xuất' },
-        { id: 'lane-ld', name: 'Lãnh đạo', code: 'LD', order: 3, description: 'Phê duyệt, kết luận, ký quyết định' },
-      ],
-      stages: [
-        { id: 'stg-1', name: 'Tiếp nhận đơn', order: 1 },
-        { id: 'stg-2', name: 'Xác minh & Xử lý', order: 2 },
-        { id: 'stg-3', name: 'Đề xuất & Báo cáo', order: 3 },
-        { id: 'stg-4', name: 'Phê duyệt & Kết luận', order: 4 },
-        { id: 'stg-5', name: 'Thông báo & Lưu hồ sơ', order: 5 },
-      ],
-      steps: [
-        {
-          id: `step-${Date.now()}-1`,
-          code: 'STEP-01',
-          name: 'Tiếp nhận & Vào sổ hồ sơ',
-          laneId: 'lane-vt',
-          stageId: 'stg-1',
-          description: 'Tiếp nhận ban đầu và cấp mã theo dõi hồ sơ.',
-          isStart: true,
-          isEnd: false,
-          timeLimitDays: 1,
-          workHours: 8,
-          warningBeforeHours: 2,
-          workSchedule: 'Giờ hành chính (8h-17h, Thứ 2 - Thứ 6)',
-          storedDocuments: ['Giấy biên nhận hồ sơ'],
-          stepForms: [],
-          statusChangeDoc: '',
-        },
-      ],
-      transitions: [],
-      versionHistory: [
-        {
-          version: version.trim() || 'v1.0',
-          publishedAt: 'Bản nháp khởi tạo',
-          publishedBy: 'Nguyễn Minh Anh',
-          notes: 'Khởi tạo quy trình mới',
-          isCurrentActive: true,
-        },
-      ],
-    };
+    let newWorkflow: ProcessWorkflow;
+
+    if (creationMode === 'TEMPLATE' && selectedTemplate) {
+      // Clone từ template mẫu mà không thay đổi template gốc
+      newWorkflow = {
+        ...JSON.parse(JSON.stringify(selectedTemplate.workflow)),
+        id: `wf-${Date.now()}`,
+        code: code.trim() || defaultCode,
+        name: name.trim(),
+        loaiDonId: loaiDonId,
+        loaiDonName: selectedLoaiDon?.name || selectedTemplate.loaiDonName,
+        version: version.trim() || 'v1.0',
+        status: 'draft',
+        description: description.trim(),
+        updatedAt: dateStr,
+        updatedBy: 'Nguyễn Minh Anh (Cán bộ thụ lý)',
+        versionHistory: [
+          {
+            version: version.trim() || 'v1.0',
+            publishedAt: 'Bản nháp khởi tạo từ mẫu',
+            publishedBy: 'Nguyễn Minh Anh',
+            notes: `Khởi tạo từ mẫu "${selectedTemplate.name}"`,
+            isCurrentActive: true,
+          },
+        ],
+      };
+    } else {
+      // Khởi tạo quy trình từ đầu (Blank)
+      newWorkflow = {
+        id: `wf-${Date.now()}`,
+        code: code.trim() || defaultCode,
+        name: name.trim(),
+        loaiDonId: loaiDonId,
+        loaiDonName: selectedLoaiDon?.name || 'Chưa xác định',
+        version: version.trim() || 'v1.0',
+        status: 'draft',
+        description: description.trim(),
+        updatedAt: dateStr,
+        updatedBy: 'Nguyễn Minh Anh (Cán bộ thụ lý)',
+        lanes: [
+          { id: 'lane-vt', name: 'Tiếp nhận / Văn thư', code: 'VT', order: 1, description: 'Tiếp nhận, vào sổ ban đầu' },
+          { id: 'lane-cm', name: 'Cán bộ Chuyên môn', code: 'CM', order: 2, description: 'Thụ lý và xử lý nghiệp vụ' },
+          { id: 'lane-ld', name: 'Lãnh đạo phê duyệt', code: 'LD', order: 3, description: 'Ký số và ban hành kết quả' },
+        ],
+        stages: [
+          { id: 'stg-1', name: 'Tiếp nhận', order: 1 },
+          { id: 'stg-2', name: 'Xử lý', order: 2 },
+          { id: 'stg-3', name: 'Phê duyệt & Ban hành', order: 3 },
+        ],
+        steps: [
+          {
+            id: `step-${Date.now()}-1`,
+            code: 'STEP-01',
+            name: 'Tiếp nhận hồ sơ',
+            nodeType: 'START',
+            laneId: 'lane-vt',
+            stageId: 'stg-1',
+            description: 'Tiếp nhận và khởi tạo hồ sơ trên hệ thống.',
+            isStart: true,
+            isEnd: false,
+            timeLimitDays: 1,
+            workHours: 8,
+            warningBeforeHours: 2,
+            workSchedule: 'Giờ hành chính (8h-17h, Thứ 2 - Thứ 6)',
+            storedDocuments: ['Giấy biên nhận hồ sơ'],
+            stepForms: [],
+            statusChangeDoc: '',
+          },
+        ],
+        transitions: [],
+        versionHistory: [
+          {
+            version: version.trim() || 'v1.0',
+            publishedAt: 'Bản nháp khởi tạo',
+            publishedBy: 'Nguyễn Minh Anh',
+            notes: 'Khởi tạo quy trình mới từ đầu',
+            isCurrentActive: true,
+          },
+        ],
+      };
+    }
 
     onCreateAndDesign(newWorkflow);
   };
@@ -167,18 +201,116 @@ export default function CreateWorkflowScreen({
           Tạo mới Quy trình xử lý
         </h1>
         <p className="text-xs text-slate-500 mt-0.5">
-          Khai báo thông tin định danh ban đầu và gắn quy trình với một Loại đơn trong hệ thống GOVEX
+          Thiết kế quy trình linh hoạt cho mọi loại nghiệp vụ hành chính: Tố cáo, Khiếu nại, Kiến nghị, Văn bản và Phê duyệt
         </p>
       </div>
 
       {/* 2. FORM BODY */}
-      <div className="p-6 max-w-4xl mx-auto w-full">
+      <div className="p-6 max-w-4xl mx-auto w-full space-y-6">
+        {/* Phương thức tạo: Template vs Blank */}
+        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5">
+          <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
+            <div>
+              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
+                1. Chọn phương thức khởi tạo
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Bạn có thể tạo nhanh dựa trên mẫu quy trình chuẩn hóa hoặc bắt đầu thiết kế từ sơ đồ trống
+              </p>
+            </div>
+
+            <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl">
+              <button
+                type="button"
+                onClick={() => setCreationMode('TEMPLATE')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  creationMode === 'TEMPLATE'
+                    ? 'bg-white text-blue-700 shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[16px]">auto_stories</span>
+                <span>Dùng mẫu quy trình ({WORKFLOW_TEMPLATES.length})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCreationMode('BLANK')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  creationMode === 'BLANK'
+                    ? 'bg-white text-blue-700 shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[16px]">add_circle</span>
+                <span>Tạo từ đầu (Trống)</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Grid of Templates if TEMPLATE mode */}
+          {creationMode === 'TEMPLATE' && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 animate-in fade-in duration-150">
+              {WORKFLOW_TEMPLATES.map((tpl) => {
+                const isSelected = selectedTemplateId === tpl.id;
+                return (
+                  <div
+                    key={tpl.id}
+                    onClick={() => handleSelectTemplate(tpl)}
+                    className={`p-3.5 rounded-xl border transition-all cursor-pointer text-left flex flex-col justify-between ${
+                      isSelected
+                        ? 'border-blue-600 bg-blue-50/40 ring-2 ring-blue-100 shadow-xs'
+                        : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-2xs'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${tpl.badgeColor}`}>
+                          {tpl.loaiDonName}
+                        </span>
+                        <div className="flex items-center gap-1.5 text-[10.5px] text-slate-500 font-mono">
+                          <span>{tpl.lanesCount} nhóm</span>
+                          <span>•</span>
+                          <span>{tpl.stepsCount} bước</span>
+                        </div>
+                      </div>
+
+                      <h3 className="font-bold text-slate-900 text-xs leading-snug mb-1">
+                        {tpl.name}
+                      </h3>
+                      <p className="text-[11px] text-slate-500 leading-relaxed line-clamp-2">
+                        {tpl.description}
+                      </p>
+                    </div>
+
+                    <div className="pt-2 mt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                      <span className="text-blue-700 font-semibold flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[14px]">tune</span>
+                        Mã tiền tố: {tpl.codePrefix}
+                      </span>
+                      {isSelected ? (
+                        <span className="font-bold text-blue-700 flex items-center gap-0.5">
+                          <span className="material-symbols-outlined text-[15px]">check_circle</span>
+                          Đã chọn
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 group-hover:text-slate-600">Chọn mẫu này</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Form thông tin chi tiết */}
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-6 space-y-6">
             <div className="flex items-center gap-2 pb-4 border-b border-slate-100">
               <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
               <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
-                Thông tin quy trình
+                2. Thông tin định danh quy trình
               </h2>
             </div>
 
@@ -194,7 +326,7 @@ export default function CreateWorkflowScreen({
                   setName(e.target.value);
                   if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
                 }}
-                placeholder="Ví dụ: Quy trình giải quyết đơn tố cáo sai phạm đất đai..."
+                placeholder="Ví dụ: Quy trình tiếp nhận và thụ lý xử lý hồ sơ..."
                 className={`w-full px-3.5 py-2.5 bg-slate-50 border ${
                   errors.name ? 'border-rose-400 focus:border-rose-500 bg-rose-50/20' : 'border-slate-200 focus:border-blue-500'
                 } rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none transition-all`}
@@ -207,7 +339,7 @@ export default function CreateWorkflowScreen({
               )}
             </div>
 
-            {/* Row 2: Mã quy trình & Loại đơn áp dụng */}
+            {/* Row 2: Mã quy trình & Loại hồ sơ áp dụng */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {/* Mã quy trình */}
               <div>
@@ -230,15 +362,12 @@ export default function CreateWorkflowScreen({
                   onChange={(e) => setCode(e.target.value)}
                   className="w-full px-3.5 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-mono font-bold text-blue-800 focus:bg-white focus:border-blue-500 focus:outline-none transition-all"
                 />
-                <span className="text-[10.5px] text-slate-400 mt-1 block">
-                  Mã duy nhất dùng để tra cứu và định danh trong toàn hệ thống
-                </span>
               </div>
 
-              {/* Loại đơn áp dụng */}
+              {/* Loại đơn / văn bản áp dụng */}
               <div>
                 <label className="block text-xs font-bold text-slate-800 mb-1.5">
-                  Loại đơn áp dụng <span className="text-rose-600">*</span>
+                  Loại nghiệp vụ / Đơn áp dụng <span className="text-rose-600">*</span>
                 </label>
                 <select
                   value={loaiDonId}
@@ -247,41 +376,19 @@ export default function CreateWorkflowScreen({
                     errors.loaiDonId ? 'border-rose-400 focus:border-rose-500 bg-rose-50/20' : 'border-slate-200 focus:border-blue-500'
                   } rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none transition-all cursor-pointer`}
                 >
-                  <option value="">-- Chọn 01 Loại đơn áp dụng trong hệ thống --</option>
-                  {LOAI_DON_OPTIONS.map((ld) => (
-                    <option key={ld.id} value={ld.id}>
-                      {ld.name}
-                    </option>
-                  ))}
+                  <option value="">-- Chọn loại đơn / nghiệp vụ áp dụng --</option>
+                  <option value="don-chung">Đơn thư thông thường</option>
+                  <option value="to-cao">Đơn tố cáo</option>
+                  <option value="khieu-nai">Đơn khiếu nại</option>
+                  <option value="kien-nghi">Kiến nghị, phản ánh</option>
+                  <option value="van-ban">Văn bản hành chính / Phê duyệt</option>
+                  <option value="tranh-chap">Tranh chấp đất đai</option>
                 </select>
-                {errors.loaiDonId ? (
+                {errors.loaiDonId && (
                   <span className="text-[11px] text-rose-600 font-medium mt-1 flex items-center gap-1">
                     <span className="material-symbols-outlined text-[14px]">error</span>
                     {errors.loaiDonId}
                   </span>
-                ) : (
-                  <span className="text-[10.5px] text-slate-400 mt-1 block">
-                    Mỗi quy trình khi tạo phải được gắn chặt với 01 loại đơn cụ thể
-                  </span>
-                )}
-
-                {/* Hộp thông tin tự động liên kết phiên bản mới nhất */}
-                {loaiDonId && (
-                  <div className="mt-2.5 p-3 rounded-xl bg-blue-50/70 border border-blue-200/80 text-[11px] text-blue-900 space-y-1">
-                    <div className="flex items-center gap-1.5 font-bold text-blue-800">
-                      <span className="material-symbols-outlined text-[15px] text-blue-600">sync_alt</span>
-                      Cơ chế cập nhật phiên bản tự động:
-                    </div>
-                    {currentActiveWorkflow ? (
-                      <p className="text-slate-600 leading-relaxed">
-                        Loại đơn này hiện đang gắn với quy trình: <strong className="text-slate-900">{currentActiveWorkflow.name}</strong> ({currentActiveWorkflow.code} • Phiên bản <span className="font-mono font-bold text-blue-700">{currentActiveWorkflow.version}</span>). Khi bạn thiết kế và phát hành quy trình mới này, loại đơn sẽ <strong>tự động chuyển sang áp dụng phiên bản mới nhất</strong> cho toàn bộ hồ sơ phát sinh mới.
-                      </p>
-                    ) : (
-                      <p className="text-slate-600 leading-relaxed">
-                        Loại đơn này chưa có quy trình hiệu lực. Quy trình này sau khi phát hành sẽ trở thành phiên bản mặc định đầu tiên áp dụng cho loại đơn.
-                      </p>
-                    )}
-                  </div>
                 )}
               </div>
             </div>
@@ -322,7 +429,7 @@ export default function CreateWorkflowScreen({
                 rows={3}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Ghi chú phạm vi áp dụng, căn cứ pháp luật (Luật, Nghị định, Thông tư liên quan)..."
+                placeholder="Ghi chú phạm vi áp dụng, căn cứ pháp lý, quy chế nội bộ hoặc văn bản chỉ đạo liên quan..."
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:outline-none transition-all"
               />
             </div>
