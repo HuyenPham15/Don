@@ -987,33 +987,7 @@ export default function TabThongTinChung({
 
           </div>
 
-          <div className="flex items-center gap-2">
-            {!isEditingPhanLoai ? (
-              <button
-                type="button"
-                onClick={handleStartEditPhanLoai}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[#004ac6] bg-blue-50/80 hover:bg-blue-100/80 border border-blue-200/80 transition-colors cursor-pointer shadow-2xs"
-                title="Chỉnh sửa phân loại đơn, thẩm quyền thụ lý và hướng xử lý"
-              >
-                <span className="material-symbols-outlined text-[15px]">edit</span>
-                <span>Chỉnh sửa phân loại</span>
-              </button>
-            ) : (
-              <div className="flex items-center gap-2">
-                <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-[#004ac6] border border-blue-200 flex items-center gap-1.5 shadow-2xs">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span>
-                  Chế độ chỉnh sửa phân loại
-                </span>
-                <button
-                  type="button"
-                  onClick={handleCancelEditPhanLoai}
-                  className="px-3 py-1 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer"
-                >
-                  Đóng
-                </button>
-              </div>
-            )}
-          </div>
+
         </div>
 
         {/* ========================================================================= */}
@@ -1066,39 +1040,9 @@ export default function TabThongTinChung({
                 </div>
               </div>
 
-              {/* Thẻ 3: Cơ quan có thẩm quyền giải quyết */}
-              <div className="p-3.5 rounded-lg bg-slate-50/80 border border-slate-200/80 flex flex-col justify-between">
-                <span className="text-[10.5px] font-bold text-slate-500 uppercase tracking-tight flex items-center gap-1.5 mb-1.5">
-                  <span className="material-symbols-outlined text-[15px] text-[#004ac6]">account_balance</span>
-                  Cơ quan có thẩm quyền giải quyết
-                </span>
-                <div className="text-xs text-slate-800 font-medium leading-relaxed">
-                  {phanLoai.thamQuyen}
-                </div>
-              </div>
 
-              {/* Thẻ 4: Hướng xử lý đề xuất */}
-              <div className="p-3.5 rounded-lg bg-slate-50/80 border border-slate-200/80 flex flex-col justify-between">
-                <span className="text-[10.5px] font-bold text-slate-500 uppercase tracking-tight flex items-center gap-1.5 mb-1.5">
-                  <span className="material-symbols-outlined text-[15px] text-emerald-600">alt_route</span>
-                  Hướng xử lý đề xuất tiếp theo
-                </span>
-                <div className="text-xs text-slate-800 font-medium leading-relaxed">
-                  {phanLoai.huongXuLy}
-                </div>
-              </div>
             </div>
 
-            {/* Căn cứ pháp lý áp dụng */}
-            <div className="p-3.5 rounded-lg bg-slate-50/80 border border-slate-200/80">
-              <span className="text-[10.5px] font-bold text-slate-500 uppercase tracking-tight flex items-center gap-1.5 mb-1.5">
-                <span className="material-symbols-outlined text-[15px] text-amber-600">menu_book</span>
-                Căn cứ pháp lý áp dụng
-              </span>
-              <div className="text-xs text-slate-800 font-medium leading-relaxed">
-                {phanLoai.canCuPhapLy}
-              </div>
-            </div>
 
             {/* Tóm tắt yêu cầu của người nộp đơn */}
             <div className="p-3.5 rounded-lg bg-slate-50/80 border border-slate-200/80">

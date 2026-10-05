@@ -780,7 +780,7 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
       hinhThuc: hinhThucNhan,
       noiDung: ghiChu.trim() || 'Đơn tiếp nhận mới vào hệ thống (Chờ xử lý)',
       donVi: donViNhan,
-      aiJob: 0, // BR-08: Chuyển tiếp nhận & xử lý mới trigger OCR
+      aiJob: hasAnyFile ? 1 : 0, // Kích hoạt AI phân tích khi có tệp tài liệu
       status: 'cho_chuyen', // BR-01, BR-02: Lượt nhận mới có trạng thái cho_chuyen
       hasFile: hasAnyFile,
       fileCount: files.length,
@@ -2864,53 +2864,16 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
             </div>
           </div>
 
-          {/* Danh sách tệp đã đính kèm */}
+
           {files.length === 0 ? (
-            <div
-              onDragOver={(e) => {
-                e.preventDefault();
-                setIsDragging(true);
-              }}
-              onDragLeave={() => setIsDragging(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setIsDragging(false);
-                handleAddFiles(e.dataTransfer.files);
-              }}
-              className={`p-6 rounded-2xl border-2 border-dashed text-center transition-colors ${isDragging ? 'border-blue-500 bg-blue-50/60' : 'border-slate-200 bg-slate-50 hover:bg-slate-100/50'
-                }`}
-            >
-              <div className="w-10 h-10 mx-auto rounded-full bg-blue-100 text-[#004ac6] flex items-center justify-center mb-2">
-                <span className="material-symbols-outlined text-xl">cloud_upload</span>
+            <div className="p-6 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 flex flex-col items-center justify-center text-center">
+              <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 mb-2">
+                <span className="material-symbols-outlined text-2xl">upload_file</span>
               </div>
-              <p className="text-[13px] font-semibold text-slate-800">Kéo thả tệp vào đây hoặc nhấn tải lên</p>
-              <p className="text-[11.5px] text-slate-500 mt-0.5 mb-3">
-                Hỗ trợ định dạng PDF, Word (.doc, .docx), hình ảnh (.jpg, .png). Tối đa 25MB/tệp.
+              <p className="text-xs font-semibold text-slate-700">Chưa có tài liệu số hóa hoặc tệp đính kèm</p>
+              <p className="text-[11px] text-slate-400 mt-0.5 max-w-md">
+                Tải tệp PDF/ảnh hoặc bấm &quot;Quét tài liệu từ máy scan&quot;. Khi có tài liệu đính kèm, hệ thống sẽ tự động kích hoạt tiến trình AI phân tích bóc tách 6 bước ngay khi ghi nhận lượt nhận.
               </p>
-              <div className="flex items-center justify-center gap-2">
-                <label className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#004ac6] hover:bg-blue-700 text-white font-semibold text-xs shadow-xs transition-all cursor-pointer">
-                  <span className="material-symbols-outlined text-[16px]">upload_file</span>
-                  <span>Chọn tệp từ máy tính</span>
-                  <input
-                    type="file"
-                    multiple
-                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.rar,.zip"
-                    onChange={(e) => {
-                      handleAddFiles(e.target.files);
-                      e.target.value = '';
-                    }}
-                    className="hidden"
-                  />
-                </label>
-                <button
-                  type="button"
-                  onClick={handleScanDocument}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-medium text-xs border border-slate-200 transition-colors cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-[16px] text-slate-600">scanner</span>
-                  <span>Quét từ máy scan</span>
-                </button>
-              </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -2956,6 +2919,25 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
             </div>
           )}
         </section>
+
+        {/* ─── BOTTOM SUBMIT BAR ──────────────────────────────── */}
+        <div className="pt-4 pb-8 flex items-center justify-end gap-3 border-t border-slate-200">
+          <button
+            type="button"
+            onClick={() => onNav('nhan-don-list')}
+            className="px-5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs transition-colors cursor-pointer"
+          >
+            Hủy
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#004ac6] hover:bg-[#003ea8] active:scale-95 text-white font-bold text-xs shadow-md transition-all cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[18px]">save</span>
+            <span>Ghi nhận lượt nhận</span>
+          </button>
+        </div>
       </div>
 
       {previewDoc && (

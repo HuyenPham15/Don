@@ -23,9 +23,10 @@ import { INITIAL_TIEP_NHAN_ITEMS, TiepNhanDonItem } from "./constants/department
 import { PhanCongSubmitData } from "./components/modals/PhanCongModal";
 import ProcessWorkflowModule from "./screens/workflowAdmin/ProcessWorkflowModule";
 import QuanTriNghiepVuScreen from "./screens/workflowAdmin/QuanTriNghiepVuScreen";
+import LoginScreen from "./screens/LoginScreen";
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>("ban-phan-tich");
+  const [screen, setScreen] = useState<Screen>("login");
   const [selected, setSelected] = useState<LuotNhan>(LN19);
   const [luotNhanList, setLuotNhanList] = useState<LuotNhan[]>(ALL_LUOT_NHAN);
   const [selectedDon, setSelectedDon] = useState<DonDetail | null>({
@@ -369,6 +370,19 @@ export default function App() {
     }
   }, []);
 
+  if (screen === "login") {
+    return (
+      <LoginScreen
+        initialAccount={currentAccount}
+        onLoginSuccess={(acc) => {
+          setCurrentAccount(acc);
+          setScreen("cong-viec");
+        }}
+        onBackToApp={() => setScreen("cong-viec")}
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-[#f4f7fb] text-[#0b1c30] font-body-md antialiased selection:bg-[#004ac6] selection:text-white">
       {/* 1. ADMINISTRATIVE HEADER */}
@@ -452,6 +466,17 @@ export default function App() {
             <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500"></span>
           </button>
 
+          {/* Nút xem Màn hình Đăng nhập (UI/UX) */}
+          <button
+            type="button"
+            onClick={() => setScreen("login")}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200/80 text-xs font-semibold transition-all cursor-pointer shadow-2xs"
+            title="Xem thiết kế Màn hình Đăng nhập (UI/UX)"
+          >
+            <span className="material-symbols-outlined text-[17px]">lock_open</span>
+            <span className="hidden sm:inline">Màn hình Đăng nhập</span>
+          </button>
+
           {/* Profile & Account Switcher */}
           <div className="relative pl-2 border-l border-slate-200">
             <button
@@ -468,11 +493,10 @@ export default function App() {
                   <span className="text-xs font-bold text-slate-900 leading-tight group-hover:text-blue-700 transition-colors">
                     {currentAccount.name}
                   </span>
-                  <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
-                    currentAccount.role === 'lanh_dao' 
-                      ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' 
-                      : 'bg-blue-100 text-[#004ac6] border border-blue-200'
-                  }`}>
+                  <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${currentAccount.role === 'lanh_dao'
+                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                    : 'bg-blue-100 text-[#004ac6] border border-blue-200'
+                    }`}>
                     {currentAccount.role === 'lanh_dao' ? 'LÃNH ĐẠO' : 'CÁN BỘ'}
                   </span>
                 </div>
@@ -488,19 +512,19 @@ export default function App() {
             {/* Dropdown Menu chuyển tài khoản */}
             {isAccountDropdownOpen && (
               <>
-                <div 
-                  className="fixed inset-0 z-40" 
-                  onClick={() => setIsAccountDropdownOpen(false)} 
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setIsAccountDropdownOpen(false)}
                 />
                 <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-slate-200 rounded-2xl shadow-xl p-2 z-50 animate-fade-in flex flex-col gap-1">
-                  <div className="px-3 py-2 border-b border-slate-100">
+                  {/* <div className="px-3 py-2 border-b border-slate-100">
                     <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider font-label-technical">
                       CHUYỂN ĐỔI TÀI KHOẢN NGƯỜI DÙNG
                     </div>
                     <p className="text-[11px] text-slate-500 mt-0.5">
                       Giao diện "Công việc của tôi" tự động đổi theo tài khoản đang chọn
                     </p>
-                  </div>
+                  </div> */}
 
                   {DEMO_ACCOUNTS.map((acc) => {
                     const isSelected = acc.id === currentAccount.id;
@@ -515,11 +539,10 @@ export default function App() {
                             setScreen('cong-viec');
                           }
                         }}
-                        className={`w-full flex items-start gap-3 p-2.5 rounded-xl text-left transition-all cursor-pointer ${
-                          isSelected 
-                            ? 'bg-blue-50 border border-blue-200/80 shadow-2xs' 
-                            : 'hover:bg-slate-50 border border-transparent'
-                        }`}
+                        className={`w-full flex items-start gap-3 p-2.5 rounded-xl text-left transition-all cursor-pointer ${isSelected
+                          ? 'bg-blue-50 border border-blue-200/80 shadow-2xs'
+                          : 'hover:bg-slate-50 border border-transparent'
+                          }`}
                       >
                         <div className={`w-9 h-9 rounded-full ${acc.avatarBg} text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs mt-0.5`}>
                           {acc.shortName}
@@ -545,6 +568,36 @@ export default function App() {
                       </button>
                     );
                   })}
+
+                  {/* Tùy chọn Màn hình đăng nhập & Đăng xuất */}
+                  <div className="pt-2 mt-1 border-t border-slate-100 flex flex-col gap-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAccountDropdownOpen(false);
+                        setScreen("login");
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-700 rounded-xl transition-colors cursor-pointer text-left"
+                    >
+                      <span className="material-symbols-outlined text-[18px] text-blue-600">
+                        lock_open
+                      </span>
+                      <span>Xem Màn hình Đăng nhập</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAccountDropdownOpen(false);
+                        setScreen("login");
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer text-left"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">
+                        logout
+                      </span>
+                      <span>Đăng xuất khỏi hệ thống</span>
+                    </button>
+                  </div>
                 </div>
               </>
             )}

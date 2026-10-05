@@ -15,7 +15,8 @@ export type Screen =
   | "thu-vien" 
   | "bao-cao" 
   | "tiep-nhan-xu-ly"
-  | "ai-tiep-nhan-chat";
+  | "ai-tiep-nhan-chat"
+  | "login";
 
 export * from './signing';
 
