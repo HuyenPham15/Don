@@ -35,24 +35,6 @@ export default function WorkflowDataConditionsTab({
     <div className="flex-1 flex flex-col overflow-hidden bg-[#f4f7fb]">
       {/* Top Controls */}
       <div className="p-4 sm:p-5 bg-white border-b border-slate-200/90 shadow-2xs space-y-3 shrink-0">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <h3 className="text-sm font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-              <span className="material-symbols-outlined text-blue-700 text-lg">alt_route</span>
-              <span>Ma trận điều kiện chuyển bước &amp; Dữ liệu nghiệp vụ</span>
-            </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Cấu hình các quy tắc logic (AND/OR), ràng buộc dữ liệu hồ sơ, văn bản lưu trữ và quyền hạn chuyển giao giữa các bước
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-mono px-2.5 py-1 rounded-lg bg-blue-50 text-blue-800 font-bold border border-blue-200">
-              {transitions.length} đường chuyển luồng
-            </span>
-          </div>
-        </div>
-
         {/* Filter Toolbar */}
         <div className="flex flex-wrap items-center gap-3 pt-1">
           <div className="relative min-w-[220px]">
@@ -72,33 +54,30 @@ export default function WorkflowDataConditionsTab({
             <button
               type="button"
               onClick={() => setFilterType('all')}
-              className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
-                filterType === 'all'
-                  ? 'bg-white text-slate-900 shadow-2xs'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
+              className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer ${filterType === 'all'
+                ? 'bg-white text-slate-900 shadow-2xs'
+                : 'text-slate-500 hover:text-slate-800'
+                }`}
             >
               Tất cả
             </button>
             <button
               type="button"
               onClick={() => setFilterType('normal')}
-              className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
-                filterType === 'normal'
-                  ? 'bg-white text-blue-700 shadow-2xs'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
+              className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer ${filterType === 'normal'
+                ? 'bg-white text-blue-700 shadow-2xs'
+                : 'text-slate-500 hover:text-slate-800'
+                }`}
             >
               Chuyển tiếp (Bình thường)
             </button>
             <button
               type="button"
               onClick={() => setFilterType('return')}
-              className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
-                filterType === 'return'
-                  ? 'bg-white text-amber-700 shadow-2xs'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
+              className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer ${filterType === 'return'
+                ? 'bg-white text-amber-700 shadow-2xs'
+                : 'text-slate-500 hover:text-slate-800'
+                }`}
             >
               Đường trả lại hồ sơ
             </button>
@@ -132,29 +111,26 @@ export default function WorkflowDataConditionsTab({
             return (
               <div
                 key={t.id}
-                className={`p-4 rounded-2xl border transition-all bg-white text-left ${
-                  t.type === 'return'
-                    ? 'border-amber-200 hover:border-amber-300'
-                    : 'border-slate-200/90 hover:border-blue-300'
-                } shadow-2xs hover:shadow-xs`}
+                className={`p-4 rounded-2xl border transition-all bg-white text-left ${t.type === 'return'
+                  ? 'border-amber-200 hover:border-amber-300'
+                  : 'border-slate-200/90 hover:border-blue-300'
+                  } shadow-2xs hover:shadow-xs`}
               >
                 {/* Header of Transition */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3 border-b border-slate-100">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span
-                      className={`material-symbols-outlined text-[19px] ${
-                        t.type === 'return' ? 'text-amber-600' : 'text-blue-600'
-                      }`}
+                      className={`material-symbols-outlined text-[19px] ${t.type === 'return' ? 'text-amber-600' : 'text-blue-600'
+                        }`}
                     >
                       {t.type === 'return' ? 'undo' : 'trending_flat'}
                     </span>
                     <span className="font-extrabold text-slate-900 text-sm">{t.name}</span>
                     <span
-                      className={`px-2 py-0.5 rounded text-[10.5px] font-bold uppercase tracking-wider ${
-                        t.type === 'return'
-                          ? 'bg-amber-50 text-amber-800 border border-amber-200'
-                          : 'bg-blue-50 text-blue-800 border border-blue-200'
-                      }`}
+                      className={`px-2 py-0.5 rounded text-[10.5px] font-bold uppercase tracking-wider ${t.type === 'return'
+                        ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                        : 'bg-blue-50 text-blue-800 border border-blue-200'
+                        }`}
                     >
                       {t.type === 'return' ? 'Đường trả lại' : 'Chuyển bình thường'}
                     </span>
@@ -259,13 +235,6 @@ export default function WorkflowDataConditionsTab({
                   ) : (
                     <div className="text-xs text-slate-400 italic p-2 rounded-xl bg-slate-50 border border-slate-100">
                       Không có điều kiện ràng buộc. Cán bộ có quyền có thể chuyển bước trực tiếp khi hoàn thành.
-                    </div>
-                  )}
-
-                  {t.warningMessage && (
-                    <div className="mt-2 flex items-center gap-1.5 text-xs text-amber-800 bg-amber-50 p-2 rounded-xl border border-amber-200">
-                      <span className="material-symbols-outlined text-[15px] text-amber-600">warning</span>
-                      <span>Thông báo cảnh báo khi thiếu điều kiện: <strong>"{t.warningMessage}"</strong></span>
                     </div>
                   )}
                 </div>

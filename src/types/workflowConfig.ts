@@ -101,6 +101,12 @@ export interface VersionHistoryItem {
   lanesCount?: number;
   formsCount?: number;
   changes?: VersionChangeItem[];
+  snapshotWorkflow?: {
+    steps: ProcessStep[];
+    transitions: ProcessTransition[];
+    lanes?: ProcessLane[];
+    stages?: ProcessStage[];
+  };
 }
 
 export type WorkflowAuditActionType =

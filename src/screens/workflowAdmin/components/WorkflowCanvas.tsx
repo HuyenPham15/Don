@@ -160,6 +160,7 @@ export default function WorkflowCanvas({
   return (
     <div
       ref={containerRef}
+      id="workflow-canvas-scroll-container"
       className="flex-1 overflow-auto bg-[#f8fafc] relative select-none cursor-grab active:cursor-grabbing"
       onClick={() => {
         if (connectingSourceStepId) setConnectingSourceStepId(null);

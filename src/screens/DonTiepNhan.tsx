@@ -7,7 +7,7 @@ import TabTaiLieu from '../components/tabs/TabTaiLieu';
 import { matchWorkflowByLoaiDon } from '../constants/workflows';
 import ThongBaoBoSungModal from '../components/workflow/ThongBaoBoSungModal';
 import ThucHienBuocTiepTheoModal from '../components/workflow/ThucHienBuocTiepTheoModal';
-import XacMinhVaDeXuatModal, { HuongGiaiQuyetType } from '../components/modals/XacMinhVaDeXuatModal';
+import XacMinhVaDeXuatModal, { HuongGiaiQuyetType, VanBanXacMinhItem } from '../components/modals/XacMinhVaDeXuatModal';
 import KhongThuLyModal from '../components/modals/KhongThuLyModal';
 import TraLaiDonModal, { TraLaiDonSubmitData } from '../components/modals/TraLaiDonModal';
 import BanGiaoDonModal, { BanGiaoDonSubmitData } from '../components/modals/BanGiaoDonModal';
@@ -94,6 +94,50 @@ export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXa
   const [showBanGiaoModal, setShowBanGiaoModal] = useState(false);
   const [daHoanThanhBuoc, setDaHoanThanhBuoc] = useState(false);
   const [daGuiThongBaoBoSung, setDaGuiThongBaoBoSung] = useState(false);
+
+  // Danh sách văn bản xác minh dùng chung giữa Modal Xác minh và Tab Hồ sơ & Văn bản
+  const [vanBanXacMinhList, setVanBanXacMinhList] = useState<VanBanXacMinhItem[]>([
+    {
+      id: 'DOC-XM-01',
+      loai: 'giay_moi',
+      tenVanBan: 'Giấy mời làm việc với người gửi đơn',
+      soKyHieu: '18/GM-TCD',
+      ngayLap: '16/09/2026',
+      nguoiNhan: 'Nguyễn Văn A',
+      trichYeu: 'V/v Làm việc, cung cấp thông tin, tài liệu liên quan đến nội dung đơn',
+      thoiGianHen: '08:30 ngày 18/09/2026',
+      diaDiem: 'Phòng Tiếp công dân & Xử lý đơn (Phòng 102, Trụ sở UBND quận)',
+      noiDungChiTiet: 'Kính mời Ông/Bà Nguyễn Văn A có mặt tại Phòng Tiếp công dân để làm việc về nội dung đơn đề ngày 16/09/2026.\nKhi đi mang theo Căn cước công dân và toàn bộ bản chính tài liệu, chứng cứ có liên quan đến việc phản ánh/tố cáo để đối chiếu, xác minh làm rõ theo quy định pháp luật.',
+      trangThai: 'da_ban_hanh',
+    },
+    {
+      id: 'DOC-XM-02',
+      loai: 'bien_ban',
+      tenVanBan: 'Biên bản làm việc xác minh thông tin ban đầu',
+      soKyHieu: '02/BB-XM',
+      ngayLap: '17/09/2026',
+      nguoiNhan: 'Nguyễn Văn A (Người đứng đơn)',
+      trichYeu: 'Ghi nhận ý kiến trình bày và tiếp nhận tài liệu gốc của công dân',
+      thoiGianHen: '14:30 ngày 17/09/2026',
+      diaDiem: 'Phòng Tiếp công dân & Xử lý đơn',
+      noiDungChiTiet: 'Tại buổi làm việc, công dân Nguyễn Văn A khẳng định nội dung đơn gửi là hoàn toàn chính xác, cam kết chịu trách nhiệm trước pháp luật.\nCông dân đã giao nộp bản sao chứng thực Hợp đồng góp vốn, phiếu thu tiền và biên bản làm việc với Chi nhánh Văn phòng Đăng ký đất đai.\nCán bộ thụ lý đã tiếp nhận, kiểm tra tính pháp lý ban đầu và lập biên nhận bàn giao tài liệu phục vụ xác minh.',
+      trangThai: 'du_thao',
+    },
+  ]);
+
+  // Văn bản đang được mở chỉnh sửa trực tiếp tại tab Hồ sơ & Văn bản
+  const [editingDocInTab, setEditingDocInTab] = useState<any | null>(null);
+
+  // Chuyển sang Tab Hồ sơ & Văn bản để chỉnh sửa trực tiếp văn bản
+  const handleOpenDocInTab = (docData: any, allDocs?: VanBanXacMinhItem[]) => {
+    setShowXacMinhModal(false);
+    if (allDocs && allDocs.length > 0) {
+      setVanBanXacMinhList(allDocs);
+    }
+    setEditingDocInTab(docData);
+    setActiveTab('tai-lieu');
+    showToast(`✓ Đã chuyển sang tab "Hồ sơ & Văn bản" để chỉnh sửa trực tiếp: ${docData.soHieu || docData.tenVanBan}`);
+  };
 
   // Tự động mở modal nếu được yêu cầu từ props (nếu có)
   useEffect(() => {
@@ -249,10 +293,7 @@ export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXa
                   {currentDon.ngayNhan || '15/09/2026 09:15'}
                 </span>
               </span>
-              <span>•</span>
-              <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-semibold border border-slate-200">
-                {currentDon.loaiDon || 'Đơn tiếp nhận hành chính'}
-              </span>
+
             </div>
           </div>
 
@@ -289,17 +330,6 @@ export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXa
               </>
             ) : (
               <>
-                {/* Đã xác minh: Nút xem lại biên bản xác minh */}
-                <button
-                  type="button"
-                  onClick={() => setShowXacMinhModal(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold shadow-2xs transition-colors cursor-pointer"
-                  title="Xem lại hoặc chỉnh sửa kết quả xác minh & hướng xử lý"
-                >
-                  <span className="material-symbols-outlined text-[16px] text-emerald-600">verified</span>
-                  <span>Xem lại xác minh</span>
-                </button>
-
                 {/* Nút hành động tương ứng với hướng xử lý đã chọn */}
                 {(!huongXuLyDaChon || huongXuLyDaChon === 'thu_ly') && (
                   <button
@@ -420,7 +450,7 @@ export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXa
             </span>
           </button>
 
-          {/* Tab 4: Hồ sơ & Tài liệu */}
+          {/* Tab 4: Hồ sơ & Văn bản */}
           <button
             type="button"
             onClick={() => setActiveTab('tai-lieu')}
@@ -430,9 +460,9 @@ export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXa
               }`}
           >
             <span className="material-symbols-outlined text-[16px]">folder</span>
-            <span>Hồ sơ &amp; Tài liệu</span>
+            <span>Hồ sơ &amp; Văn bản</span>
             <span className="px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 font-semibold text-[10px] border border-emerald-200">
-              {docCount} file
+              {docCount} văn bản
             </span>
           </button>
         </div>
@@ -453,7 +483,15 @@ export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXa
           {activeTab === 'lien-he' && <TabMoiLienHe currentDon={currentDon} />}
           {activeTab === 'don-khac' && <TabDonKhac currentDon={currentDon} />}
           {activeTab === 'tai-lieu' && (
-            <TabTaiLieu currentDon={currentDon} onDocCountChange={setDocCount} />
+            <TabTaiLieu
+              currentDon={currentDon}
+              onDocCountChange={setDocCount}
+              initialEditingDoc={editingDocInTab}
+              onClearInitialEditingDoc={() => setEditingDocInTab(null)}
+              onReturnToXacMinh={() => setShowXacMinhModal(true)}
+              sharedVanBanList={vanBanXacMinhList}
+              onUpdateSharedVanBanList={setVanBanXacMinhList}
+            />
           )}
         </div>
       </div>
@@ -498,6 +536,9 @@ export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXa
         isOpen={showXacMinhModal}
         onClose={() => setShowXacMinhModal(false)}
         onNav={onNav}
+        onOpenDocInTab={handleOpenDocInTab}
+        sharedVanBanList={vanBanXacMinhList}
+        onUpdateSharedVanBanList={setVanBanXacMinhList}
         donInfo={{
           code: currentDon.code,
           luotNhanId: currentDon.luotNhanId,

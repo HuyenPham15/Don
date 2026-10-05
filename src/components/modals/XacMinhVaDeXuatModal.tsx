@@ -24,6 +24,28 @@ export interface XacMinhVaDeXuatModalProps {
   onClose: () => void;
   onSelectHuongXuLy: (huong: HuongGiaiQuyetType | 'quy_trinh') => void;
   onNav?: (screen: Screen) => void;
+  sharedVanBanList?: VanBanXacMinhItem[];
+  onUpdateSharedVanBanList?: (list: VanBanXacMinhItem[] | ((prev: VanBanXacMinhItem[]) => VanBanXacMinhItem[])) => void;
+  onOpenDocInTab?: (
+    docData: {
+      id?: string;
+      loai: 'giay_moi' | 'bien_ban' | 'cong_van' | 'file_scan' | string;
+      soHieu: string;
+      tenVanBan: string;
+      category: string;
+      ngayLap: string;
+      coQuanBanHanh?: string;
+      nguoiNhan: string;
+      diaDiem?: string;
+      thoiGianHen?: string;
+      trichYeu: string;
+      noiDungChiTiet: string;
+      signer?: string;
+      trangThai?: 'du_thao' | 'da_ban_hanh' | 'da_dinh_kem';
+      fromXacMinh?: boolean;
+    },
+    allDocs?: VanBanXacMinhItem[]
+  ) => void;
   donInfo?: {
     code?: string;
     luotNhanId?: string;
@@ -42,6 +64,9 @@ export default function XacMinhVaDeXuatModal({
   onClose,
   onSelectHuongXuLy,
   onNav,
+  onOpenDocInTab,
+  sharedVanBanList,
+  onUpdateSharedVanBanList,
   donInfo = {
     code: 'Đ-2026-00125',
     luotNhanId: 'LN-2026-0819',
@@ -55,9 +80,9 @@ export default function XacMinhVaDeXuatModal({
   },
 }: XacMinhVaDeXuatModalProps) {
   // ─── 1. DANH SÁCH VĂN BẢN XÁC MINH CẦN THIẾT ──────────────────────────
-  const [danhSachVanBan, setDanhSachVanBan] = useState<VanBanXacMinhItem[]>([
+  const [localDanhSachVanBan, setLocalDanhSachVanBan] = useState<VanBanXacMinhItem[]>([
     {
-      id: 'vb-xm-01',
+      id: 'DOC-XM-01',
       loai: 'giay_moi',
       tenVanBan: 'Giấy mời làm việc với người gửi đơn',
       soKyHieu: '18/GM-TCD',
@@ -70,7 +95,7 @@ export default function XacMinhVaDeXuatModal({
       trangThai: 'da_ban_hanh',
     },
     {
-      id: 'vb-xm-02',
+      id: 'DOC-XM-02',
       loai: 'bien_ban',
       tenVanBan: 'Biên bản làm việc xác minh thông tin ban đầu',
       soKyHieu: '02/BB-XM',
@@ -82,6 +107,21 @@ export default function XacMinhVaDeXuatModal({
       trangThai: 'du_thao',
     },
   ]);
+
+  const danhSachVanBan = sharedVanBanList || localDanhSachVanBan;
+
+  const updateDanhSachVanBan = (
+    updater: VanBanXacMinhItem[] | ((prev: VanBanXacMinhItem[]) => VanBanXacMinhItem[])
+  ) => {
+    if (typeof updater === 'function') {
+      const next = updater(danhSachVanBan);
+      setLocalDanhSachVanBan(next);
+      onUpdateSharedVanBanList?.(next);
+    } else {
+      setLocalDanhSachVanBan(updater);
+      onUpdateSharedVanBanList?.(updater);
+    }
+  };
 
   // Trạng thái modal con: Tạo mới hoặc Xem chi tiết văn bản
   const [editingVanBan, setEditingVanBan] = useState<VanBanXacMinhItem | null>(null);
@@ -118,50 +158,101 @@ export default function XacMinhVaDeXuatModal({
     }, 3000);
   };
 
-  // Mở trình soạn thảo tạo văn bản mới
+  // Tạo văn bản mới và thêm ngay vào danh sách xác minh (không đóng popup để cán bộ có thể tạo nhiều văn bản)
   const handleOpenCreateVanBan = (type: 'giay_moi' | 'bien_ban' | 'cong_van') => {
-    setSelectedVanBanType(type);
     const now = new Date();
     const todayStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
     const nextDayStr = `${String(now.getDate() + 2).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
 
+    let newDoc: VanBanXacMinhItem;
     if (type === 'giay_moi') {
-      setFormSoKyHieu(`${Math.floor(19 + Math.random() * 80)}/GM-TCD`);
-      setFormTenVanBan('Giấy mời làm việc xác minh nội dung đơn');
-      setFormNguoiNhan(donInfo.nguoiNop || 'Nguyễn Văn A');
-      setFormThoiGianHen(`09:00 ngày ${nextDayStr}`);
-      setFormDiaDiem('Phòng Tiếp công dân & Xử lý đơn (Phòng 102, Trụ sở UBND quận)');
-      setFormTrichYeu(`V/v Mời làm việc xác minh nội dung đơn số ${donInfo.code || 'Đ-2026-00125'}`);
-      setFormNoiDung(
-        `Kính mời Ông/Bà ${donInfo.nguoiNop || 'Nguyễn Văn A'} có mặt tại Phòng Tiếp công dân để làm việc về các nội dung đã nêu trong đơn. Đề nghị mang theo CCCD và các chứng cứ, tài liệu liên quan.`
-      );
+      const countGM = danhSachVanBan.filter((v) => v.loai === 'giay_moi').length;
+      const soHieu = `${18 + countGM}/GM-TCD`;
+      newDoc = {
+        id: `vb-xm-${Date.now()}`,
+        loai: 'giay_moi',
+        soKyHieu: soHieu,
+        tenVanBan: countGM === 0 ? 'Giấy mời làm việc với người gửi đơn' : `Giấy mời làm việc xác minh số ${countGM + 1}`,
+        ngayLap: todayStr,
+        nguoiNhan: donInfo.nguoiNop || 'Nguyễn Văn A',
+        thoiGianHen: `09:00 ngày ${nextDayStr}`,
+        diaDiem: 'Phòng Tiếp công dân & Xử lý đơn (Phòng 102, Trụ sở UBND quận)',
+        trichYeu: `V/v Mời làm việc xác minh nội dung đơn số ${donInfo.code || 'Đ-2026-00125'}`,
+        noiDungChiTiet: `Kính mời Ông/Bà ${donInfo.nguoiNop || 'Nguyễn Văn A'} có mặt tại Phòng Tiếp công dân để làm việc về nội dung đơn đề ngày ${donInfo.ngayNhan || '16/09/2026'}.\nKhi đi mang theo Căn cước công dân và toàn bộ bản chính tài liệu, chứng cứ có liên quan đến việc phản ánh/tố cáo để đối chiếu, xác minh làm rõ theo quy định pháp luật.`,
+        trangThai: 'du_thao',
+      };
     } else if (type === 'bien_ban') {
-      setFormSoKyHieu(`0${danhSachVanBan.length + 1}/BB-XM`);
-      setFormTenVanBan('Biên bản làm việc xác minh nội dung phản ánh/tố cáo');
-      setFormNguoiNhan(`${donInfo.nguoiNop || 'Nguyễn Văn A'} (Công dân đứng đơn)`);
-      setFormThoiGianHen(`${todayStr} (14:30)`);
-      setFormDiaDiem('Phòng Tiếp công dân & Xử lý đơn');
-      setFormTrichYeu(`Biên bản ghi nhận ý kiến và giao nhận tài liệu hồ sơ ${donInfo.code || 'Đ-2026-00125'}`);
-      setFormNoiDung(
-        `Thành phần làm việc gồm Cán bộ thụ lý và Ông/Bà ${donInfo.nguoiNop || 'Nguyễn Văn A'}. Tại buổi làm việc, cán bộ đã làm rõ các mốc thời gian, người có hành vi vi phạm và lập biên nhận các tài liệu gồm: Bản sao GCNQSDĐ, giấy biên nhận hồ sơ.`
-      );
+      const countBB = danhSachVanBan.filter((v) => v.loai === 'bien_ban').length;
+      const soHieu = `0${2 + countBB}/BB-XM`;
+      newDoc = {
+        id: `vb-xm-${Date.now()}`,
+        loai: 'bien_ban',
+        soKyHieu: soHieu,
+        tenVanBan: countBB === 0 ? 'Biên bản làm việc xác minh thông tin ban đầu' : `Biên bản làm việc xác minh số ${countBB + 1}`,
+        ngayLap: todayStr,
+        nguoiNhan: `${donInfo.nguoiNop || 'Nguyễn Văn A'} (Công dân đứng đơn)`,
+        thoiGianHen: `${todayStr} (14:30)`,
+        diaDiem: 'Phòng Tiếp công dân & Xử lý đơn',
+        trichYeu: `Biên bản ghi nhận ý kiến và giao nhận tài liệu hồ sơ ${donInfo.code || 'Đ-2026-00125'}`,
+        noiDungChiTiet: `Tại buổi làm việc, công dân ${donInfo.nguoiNop || 'Nguyễn Văn A'} khẳng định nội dung đơn gửi là hoàn toàn chính xác, cam kết chịu trách nhiệm trước pháp luật.\nCông dân đã giao nộp bản sao chứng thực Hợp đồng góp vốn, phiếu thu tiền và biên bản làm việc với Chi nhánh Văn phòng Đăng ký đất đai.\nCán bộ thụ lý đã tiếp nhận, kiểm tra tính pháp lý ban đầu và lập biên nhận bàn giao tài liệu phục vụ xác minh.`,
+        trangThai: 'du_thao',
+      };
     } else {
-      setFormSoKyHieu(`${Math.floor(100 + Math.random() * 200)}/CV-UBND`);
-      setFormTenVanBan('Công văn đề nghị cung cấp hồ sơ, tài liệu phục vụ xác minh');
-      setFormNguoiNhan('Chi nhánh Văn phòng Đăng ký đất đai quận Cầu Giấy');
-      setFormThoiGianHen(`Thời hạn phản hồi: Trong 03 ngày làm việc kể từ ngày nhận công văn`);
-      setFormDiaDiem('Gửi qua Trục liên thông văn bản điện tử thành phố');
-      setFormTrichYeu(`V/v Đề nghị cung cấp hồ sơ địa chính và tình trạng giải quyết liên quan đến đơn ${donInfo.code || 'Đ-2026-00125'}`);
-      setFormNoiDung(
-        `Để có căn cứ xử lý đơn của công dân ${donInfo.nguoiNop || 'Nguyễn Văn A'} theo đúng quy định pháp luật, Phòng Tiếp công dân & Xử lý đơn đề nghị Quý cơ quan kiểm tra, sao lục và cung cấp toàn bộ hồ sơ đăng ký cấp GCNQSDĐ của đương sự trước ngày ${nextDayStr}.`
-      );
+      const countCV = danhSachVanBan.filter((v) => v.loai === 'cong_van').length;
+      const soHieu = `${105 + countCV}/CV-UBND`;
+      newDoc = {
+        id: `vb-xm-${Date.now()}`,
+        loai: 'cong_van',
+        soHieu: soHieu,
+        tenVanBan: countCV === 0 ? 'Công văn đề nghị cung cấp hồ sơ, tài liệu phục vụ xác minh' : `Công văn phối hợp xác minh số ${countCV + 1}`,
+        ngayLap: todayStr,
+        nguoiNhan: 'Chi nhánh Văn phòng Đăng ký đất đai quận Cầu Giấy',
+        thoiGianHen: `Thời hạn phản hồi: Trong 03 ngày làm việc kể từ ngày nhận công văn`,
+        diaDiem: 'Gửi qua Trục liên thông văn bản điện tử thành phố',
+        trichYeu: `V/v Đề nghị cung cấp hồ sơ địa chính và tình trạng giải quyết liên quan đến đơn ${donInfo.code || 'Đ-2026-00125'}`,
+        noiDungChiTiet: `Để có căn cứ xử lý đơn của công dân ${donInfo.nguoiNop || 'Nguyễn Văn A'} theo đúng quy định pháp luật, Phòng Tiếp công dân & Xử lý đơn đề nghị Quý cơ quan kiểm tra, sao lục và cung cấp toàn bộ hồ sơ đăng ký cấp GCNQSDĐ của đương sự trước ngày ${nextDayStr}.\nVăn bản phản hồi đề nghị gửi về Phòng Tiếp công dân qua Trục liên thông văn bản điện tử thành phố.`,
+        trangThai: 'du_thao',
+      };
     }
-    setEditingVanBan(null);
-    setShowEditorModal(true);
+
+    const nextList = [newDoc, ...danhSachVanBan];
+    updateDanhSachVanBan(nextList);
+    showToast(`✓ Đã tạo "${newDoc.tenVanBan}" (Số: ${newDoc.soKyHieu}). Cán bộ có thể tiếp tục tạo thêm văn bản hoặc bấm "Xem / Sửa trực tiếp".`);
   };
 
   // Mở xem/sửa văn bản đã có trong danh sách
   const handleOpenEditVanBan = (vb: VanBanXacMinhItem) => {
+    if (onOpenDocInTab) {
+      onOpenDocInTab(
+        {
+          id: vb.id,
+          loai: vb.loai === 'file_scan' ? 'bien_ban' : vb.loai,
+          soHieu: vb.soKyHieu,
+          tenVanBan: vb.tenVanBan,
+          category:
+            vb.loai === 'giay_moi'
+              ? 'Giấy mời xác minh'
+              : vb.loai === 'bien_ban'
+                ? 'Biên bản làm việc'
+                : vb.loai === 'file_scan'
+                  ? 'Tài liệu scan'
+                  : 'Công văn phối hợp',
+          ngayLap: vb.ngayLap,
+          coQuanBanHanh: 'Phòng Tiếp công dân & Xử lý đơn - UBND quận',
+          nguoiNhan: vb.nguoiNhan,
+          thoiGianHen: vb.thoiGianHen || '',
+          diaDiem: vb.diaDiem || '',
+          trichYeu: vb.trichYeu,
+          noiDungChiTiet: vb.noiDungChiTiet,
+          signer: 'Nguyễn Minh Anh - Cán bộ thụ lý',
+          trangThai: vb.trangThai === 'da_ban_hanh' ? 'da_ban_hanh' : 'du_thao',
+          fromXacMinh: true,
+        },
+        danhSachVanBan
+      );
+      return;
+    }
+
     setSelectedVanBanType(vb.loai === 'file_scan' ? 'bien_ban' : vb.loai);
     setFormSoKyHieu(vb.soKyHieu);
     setFormTenVanBan(vb.tenVanBan);
@@ -189,15 +280,15 @@ export default function XacMinhVaDeXuatModal({
         prev.map((item) =>
           item.id === editingVanBan.id
             ? {
-                ...item,
-                tenVanBan: formTenVanBan,
-                soKyHieu: formSoKyHieu,
-                nguoiNhan: formNguoiNhan,
-                trichYeu: formTrichYeu,
-                noiDungChiTiet: formNoiDung,
-                thoiGianHen: formThoiGianHen,
-                diaDiem: formDiaDiem,
-              }
+              ...item,
+              tenVanBan: formTenVanBan,
+              soKyHieu: formSoKyHieu,
+              nguoiNhan: formNguoiNhan,
+              trichYeu: formTrichYeu,
+              noiDungChiTiet: formNoiDung,
+              thoiGianHen: formThoiGianHen,
+              diaDiem: formDiaDiem,
+            }
             : item
         )
       );
@@ -216,7 +307,7 @@ export default function XacMinhVaDeXuatModal({
         diaDiem: formDiaDiem,
         trangThai: 'du_thao',
       };
-      setDanhSachVanBan((prev) => [newItem, ...prev]);
+      updateDanhSachVanBan([newItem, ...danhSachVanBan]);
       showToast(`✓ Đã tạo thành công văn bản ${formSoKyHieu} phục vụ xác minh!`);
     }
     setShowEditorModal(false);
@@ -224,7 +315,8 @@ export default function XacMinhVaDeXuatModal({
 
   // Xóa văn bản
   const handleDeleteVanBan = (id: string, soHieu: string) => {
-    setDanhSachVanBan((prev) => prev.filter((v) => v.id !== id));
+    const nextList = danhSachVanBan.filter((v) => v.id !== id);
+    updateDanhSachVanBan(nextList);
     showToast(`Đã gỡ văn bản ${soHieu} khỏi danh sách xác minh.`);
   };
 
@@ -251,8 +343,9 @@ export default function XacMinhVaDeXuatModal({
       dungLuongFile: `${fileSizeMb} MB`,
     };
 
-    setDanhSachVanBan((prev) => [scanDoc, ...prev]);
-    showToast(`✓ Đã đính kèm thành công tệp: ${file.name} (${fileSizeMb} MB) vào hồ sơ xác minh.`);
+    const nextList = [scanDoc, ...danhSachVanBan];
+    updateDanhSachVanBan(nextList);
+    showToast(`✓ Đã đính kèm thành công tệp: ${file.name} (${fileSizeMb} MB) vào danh sách văn bản xác minh.`);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -273,7 +366,6 @@ export default function XacMinhVaDeXuatModal({
 
       {/* Main Modal Box */}
       <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-5xl max-h-[94vh] flex flex-col overflow-hidden animate-scale-up">
-        {/* ===================== HEADER ===================== */}
         <div className="bg-gradient-to-r from-blue-50 via-slate-50 to-white px-6 py-3.5 border-b border-slate-200 flex items-center justify-between gap-4 shrink-0 flex-wrap">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#004ac6] text-white flex items-center justify-center shrink-0 shadow-md shadow-blue-200">
@@ -303,18 +395,6 @@ export default function XacMinhVaDeXuatModal({
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
         </div>
-
-        {/* ===================== BANNER NÊU RÕ BẢN CHẤT NGHIỆP VỤ THỦ CÔNG ===================== */}
-        <div className="bg-blue-50/70 border-b border-blue-100 px-6 py-2.5 flex items-start gap-2.5 text-xs text-blue-950 shrink-0">
-          <span className="material-symbols-outlined text-blue-600 text-[18px] shrink-0 mt-0.5">info</span>
-          <div className="leading-relaxed">
-            <span className="font-bold text-blue-900">Quy định nghiệp vụ:</span>{' '}
-            <span>
-              Công tác xác minh thông tin, gặp gỡ đương sự và thu thập tài liệu do cán bộ thụ lý thực hiện <strong>thủ công ngoài thực tế</strong>. Tại màn hình này, cán bộ chỉ <strong>tạo các văn bản hành chính cần thiết khi xác minh</strong> (Giấy mời làm việc, Biên bản xác minh, Công văn đề nghị phối hợp...) và ghi nhận kết luận để đề xuất hướng xử lý tiếp theo.
-            </span>
-          </div>
-        </div>
-
         {/* ===================== BODY CHÍNH CỦA MODAL ===================== */}
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
           {/* KHỐI 1: THÔNG TIN TÓM TẮT ĐƠN CẦN XÁC MINH */}
@@ -350,9 +430,22 @@ export default function XacMinhVaDeXuatModal({
                   1. Văn bản phục vụ quá trình xác minh ({danhSachVanBan.length} văn bản):
                 </h3>
               </div>
-              <span className="text-[11px] text-slate-500 italic">
-                * Cán bộ tạo văn bản hành chính theo mẫu chuẩn hoặc đính kèm biên bản giấy scan
-              </span>
+              <div className="flex items-center gap-2">
+                {danhSachVanBan.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEditVanBan(danhSachVanBan[0])}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-[#004ac6] border border-blue-200 text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95"
+                    title="Chuyển sang Tab Hồ sơ & Văn bản để xem và chỉnh sửa trực tiếp các văn bản này trên khổ A4"
+                  >
+                    <span className="material-symbols-outlined text-[15px]">edit_document</span>
+                    <span>Soạn thảo trực tiếp trên Tab Hồ sơ ({danhSachVanBan.length} VB) →</span>
+                  </button>
+                )}
+                <span className="text-[11px] text-slate-500 italic hidden md:inline">
+                  * Cán bộ tạo nhiều văn bản theo mẫu chuẩn hoặc đính kèm biên bản giấy scan
+                </span>
+              </div>
             </div>
 
             {/* Thanh công cụ 4 nút tạo văn bản nhanh */}
@@ -430,28 +523,33 @@ export default function XacMinhVaDeXuatModal({
                           <td className="py-2.5 px-3">
                             <div className="flex items-center gap-2">
                               <span
-                                className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
-                                  vb.loai === 'giay_moi'
-                                    ? 'bg-blue-100 text-[#004ac6]'
-                                    : vb.loai === 'bien_ban'
+                                className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${vb.loai === 'giay_moi'
+                                  ? 'bg-blue-100 text-[#004ac6]'
+                                  : vb.loai === 'bien_ban'
                                     ? 'bg-indigo-100 text-indigo-700'
                                     : vb.loai === 'cong_van'
-                                    ? 'bg-amber-100 text-amber-700'
-                                    : 'bg-emerald-100 text-emerald-700'
-                                }`}
+                                      ? 'bg-amber-100 text-amber-700'
+                                      : 'bg-emerald-100 text-emerald-700'
+                                  }`}
                               >
                                 <span className="material-symbols-outlined text-[16px]">
                                   {vb.loai === 'giay_moi'
                                     ? 'mail'
                                     : vb.loai === 'bien_ban'
-                                    ? 'edit_note'
-                                    : vb.loai === 'cong_van'
-                                    ? 'send'
-                                    : 'picture_as_pdf'}
+                                      ? 'edit_note'
+                                      : vb.loai === 'cong_van'
+                                        ? 'send'
+                                        : 'picture_as_pdf'}
                                 </span>
                               </span>
                               <div>
-                                <strong className="text-slate-900 block leading-tight">{vb.tenVanBan}</strong>
+                                <strong
+                                  onClick={() => handleOpenEditVanBan(vb)}
+                                  className="text-slate-900 block leading-tight hover:text-[#004ac6] hover:underline cursor-pointer"
+                                  title="Nhấp để mở xem và chỉnh sửa trực tiếp văn bản này trên Tab Hồ sơ & Văn bản"
+                                >
+                                  {vb.tenVanBan}
+                                </strong>
                                 <span className="text-[11px] text-slate-500 font-mono">
                                   Số: <span className="font-semibold text-slate-700">{vb.soKyHieu}</span>
                                   {vb.dungLuongFile && ` • Dung lượng: ${vb.dungLuongFile}`}
@@ -484,10 +582,11 @@ export default function XacMinhVaDeXuatModal({
                               <button
                                 type="button"
                                 onClick={() => handleOpenEditVanBan(vb)}
-                                className="px-2 py-1 rounded-md text-[11px] font-bold text-[#004ac6] hover:bg-blue-100/70 border border-blue-200 transition-colors cursor-pointer"
-                                title="Xem nội dung và chỉnh sửa văn bản"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold text-[#004ac6] hover:bg-blue-100/80 border border-blue-200 transition-colors cursor-pointer"
+                                title="Chuyển sang tab Hồ sơ & Văn bản để xem và chỉnh sửa trực tiếp văn bản này"
                               >
-                                Xem / Sửa
+                                <span className="material-symbols-outlined text-[13px]">edit_document</span>
+                                <span>Xem / Sửa trực tiếp</span>
                               </button>
                               <button
                                 type="button"
@@ -596,11 +695,10 @@ export default function XacMinhVaDeXuatModal({
               {/* Hướng 1: Thụ lý đơn */}
               <div
                 onClick={() => setSelectedHuong('thu_ly')}
-                className={`p-3.5 rounded-xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
-                  selectedHuong === 'thu_ly'
-                    ? 'border-emerald-600 bg-emerald-50/90 ring-2 ring-emerald-200 shadow-sm'
-                    : 'border-slate-200 bg-white hover:border-emerald-300'
-                }`}
+                className={`p-3.5 rounded-xl border-2 transition-all cursor-pointer flex flex-col justify-between ${selectedHuong === 'thu_ly'
+                  ? 'border-emerald-600 bg-emerald-50/90 ring-2 ring-emerald-200 shadow-sm'
+                  : 'border-slate-200 bg-white hover:border-emerald-300'
+                  }`}
               >
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
@@ -625,11 +723,10 @@ export default function XacMinhVaDeXuatModal({
               {/* Hướng 2: YÊU CẦU BỔ SUNG */}
               <div
                 onClick={() => setSelectedHuong('yeu_cau_bo_sung')}
-                className={`p-3.5 rounded-xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
-                  selectedHuong === 'yeu_cau_bo_sung'
-                    ? 'border-blue-600 bg-blue-50/90 ring-2 ring-blue-200 shadow-sm'
-                    : 'border-slate-200 bg-white hover:border-blue-300'
-                }`}
+                className={`p-3.5 rounded-xl border-2 transition-all cursor-pointer flex flex-col justify-between ${selectedHuong === 'yeu_cau_bo_sung'
+                  ? 'border-blue-600 bg-blue-50/90 ring-2 ring-blue-200 shadow-sm'
+                  : 'border-slate-200 bg-white hover:border-blue-300'
+                  }`}
               >
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
@@ -654,11 +751,10 @@ export default function XacMinhVaDeXuatModal({
               {/* Hướng 3: KHÔNG THỤ LÝ */}
               <div
                 onClick={() => setSelectedHuong('khong_thu_ly')}
-                className={`p-3.5 rounded-xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
-                  selectedHuong === 'khong_thu_ly'
-                    ? 'border-red-600 bg-red-50/90 ring-2 ring-red-200 shadow-sm'
-                    : 'border-slate-200 bg-white hover:border-red-300'
-                }`}
+                className={`p-3.5 rounded-xl border-2 transition-all cursor-pointer flex flex-col justify-between ${selectedHuong === 'khong_thu_ly'
+                  ? 'border-red-600 bg-red-50/90 ring-2 ring-red-200 shadow-sm'
+                  : 'border-slate-200 bg-white hover:border-red-300'
+                  }`}
               >
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
@@ -683,11 +779,10 @@ export default function XacMinhVaDeXuatModal({
               {/* Hướng 4: Bàn giao / Chuyển đơn */}
               <div
                 onClick={() => setSelectedHuong('ban_giao')}
-                className={`p-3.5 rounded-xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
-                  selectedHuong === 'ban_giao'
-                    ? 'border-amber-600 bg-amber-50/90 ring-2 ring-amber-200 shadow-sm'
-                    : 'border-slate-200 bg-white hover:border-amber-300'
-                }`}
+                className={`p-3.5 rounded-xl border-2 transition-all cursor-pointer flex flex-col justify-between ${selectedHuong === 'ban_giao'
+                  ? 'border-amber-600 bg-amber-50/90 ring-2 ring-amber-200 shadow-sm'
+                  : 'border-slate-200 bg-white hover:border-amber-300'
+                  }`}
               >
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
@@ -712,11 +807,10 @@ export default function XacMinhVaDeXuatModal({
               {/* Hướng 5: Trả lại đơn & Hướng dẫn */}
               <div
                 onClick={() => setSelectedHuong('tra_lai')}
-                className={`p-3.5 rounded-xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
-                  selectedHuong === 'tra_lai'
-                    ? 'border-rose-600 bg-rose-50/90 ring-2 ring-rose-200 shadow-sm'
-                    : 'border-slate-200 bg-white hover:border-rose-300'
-                }`}
+                className={`p-3.5 rounded-xl border-2 transition-all cursor-pointer flex flex-col justify-between ${selectedHuong === 'tra_lai'
+                  ? 'border-rose-600 bg-rose-50/90 ring-2 ring-rose-200 shadow-sm'
+                  : 'border-slate-200 bg-white hover:border-rose-300'
+                  }`}
               >
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
@@ -767,39 +861,38 @@ export default function XacMinhVaDeXuatModal({
             <button
               type="button"
               onClick={handleConfirm}
-              className={`px-5 py-2.5 rounded-xl text-white text-xs font-bold shadow-md cursor-pointer flex items-center gap-2 transition-all active:scale-95 ${
-                selectedHuong === 'thu_ly'
-                  ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200'
-                  : selectedHuong === 'yeu_cau_bo_sung'
+              className={`px-5 py-2.5 rounded-xl text-white text-xs font-bold shadow-md cursor-pointer flex items-center gap-2 transition-all active:scale-95 ${selectedHuong === 'thu_ly'
+                ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200'
+                : selectedHuong === 'yeu_cau_bo_sung'
                   ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-200'
                   : selectedHuong === 'khong_thu_ly'
-                  ? 'bg-red-600 hover:bg-red-700 shadow-red-200'
-                  : selectedHuong === 'ban_giao'
-                  ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-200'
-                  : 'bg-rose-600 hover:bg-rose-700 shadow-rose-200'
-              }`}
+                    ? 'bg-red-600 hover:bg-red-700 shadow-red-200'
+                    : selectedHuong === 'ban_giao'
+                      ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-200'
+                      : 'bg-rose-600 hover:bg-rose-700 shadow-rose-200'
+                }`}
             >
               <span className="material-symbols-outlined text-[17px]">
                 {selectedHuong === 'thu_ly'
                   ? 'verified'
                   : selectedHuong === 'yeu_cau_bo_sung'
-                  ? 'note_add'
-                  : selectedHuong === 'khong_thu_ly'
-                  ? 'block'
-                  : selectedHuong === 'ban_giao'
-                  ? 'swap_horiz'
-                  : 'assignment_return'}
+                    ? 'note_add'
+                    : selectedHuong === 'khong_thu_ly'
+                      ? 'block'
+                      : selectedHuong === 'ban_giao'
+                        ? 'swap_horiz'
+                        : 'assignment_return'}
               </span>
               <span>
                 {selectedHuong === 'thu_ly'
                   ? 'Xác nhận ➔ Lập Tờ trình đề xuất thụ lý'
                   : selectedHuong === 'yeu_cau_bo_sung'
-                  ? 'Xác nhận ➔ Lập Thông báo bổ sung hồ sơ'
-                  : selectedHuong === 'khong_thu_ly'
-                  ? 'Xác nhận ➔ Ban hành Thông báo Không thụ lý'
-                  : selectedHuong === 'ban_giao'
-                  ? 'Xác nhận ➔ Bàn giao sang cơ quan khác'
-                  : 'Xác nhận ➔ Lập văn bản Trả lại đơn'}
+                    ? 'Xác nhận ➔ Lập Thông báo bổ sung hồ sơ'
+                    : selectedHuong === 'khong_thu_ly'
+                      ? 'Xác nhận ➔ Ban hành Thông báo Không thụ lý'
+                      : selectedHuong === 'ban_giao'
+                        ? 'Xác nhận ➔ Bàn giao sang cơ quan khác'
+                        : 'Xác nhận ➔ Lập văn bản Trả lại đơn'}
               </span>
             </button>
           </div>
@@ -819,8 +912,8 @@ export default function XacMinhVaDeXuatModal({
                   {selectedVanBanType === 'giay_moi'
                     ? 'mail'
                     : selectedVanBanType === 'bien_ban'
-                    ? 'edit_note'
-                    : 'send'}
+                      ? 'edit_note'
+                      : 'send'}
                 </span>
                 <div>
                   <h3 className="font-bold text-sm">
@@ -830,8 +923,8 @@ export default function XacMinhVaDeXuatModal({
                     {selectedVanBanType === 'giay_moi'
                       ? 'Biểu mẫu Giấy mời làm việc chuẩn'
                       : selectedVanBanType === 'bien_ban'
-                      ? 'Biểu mẫu Biên bản làm việc trực tiếp'
-                      : 'Biểu mẫu Công văn đề nghị phối hợp cung cấp tài liệu'}
+                        ? 'Biểu mẫu Biên bản làm việc trực tiếp'
+                        : 'Biểu mẫu Công văn đề nghị phối hợp cung cấp tài liệu'}
                   </p>
                 </div>
               </div>
@@ -956,8 +1049,8 @@ export default function XacMinhVaDeXuatModal({
                       {selectedVanBanType === 'giay_moi'
                         ? 'GIẤY MỜI LÀM VIỆC'
                         : selectedVanBanType === 'bien_ban'
-                        ? 'BIÊN BẢN LÀM VIỆC'
-                        : 'CÔNG VĂN ĐỀ NGHỊ PHỐI HỢP'}
+                          ? 'BIÊN BẢN LÀM VIỆC'
+                          : 'CÔNG VĂN ĐỀ NGHỊ PHỐI HỢP'}
                     </h4>
                     <p className="text-[11px] italic font-sans text-slate-600 mt-0.5">
                       ({formTrichYeu || 'V/v Xác minh làm rõ nội dung đơn'})

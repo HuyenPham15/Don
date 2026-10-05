@@ -7,6 +7,7 @@ import {
   ValidationIssue,
   WorkflowAuditLogItem,
   WorkflowAuditActionType,
+  VersionHistoryItem,
 } from '../../types/workflowConfig';
 import WorkflowLeftPalette from './components/WorkflowLeftPalette';
 import WorkflowCanvas from './components/WorkflowCanvas';
@@ -15,7 +16,6 @@ import TransitionPropertiesPanel from './components/TransitionPropertiesPanel';
 import ValidationModal from './components/ValidationModal';
 import PublishModal from './components/PublishModal';
 import WorkflowVersionHistoryModal from './components/WorkflowVersionHistoryModal';
-import WorkflowEditHistoryTab from './components/WorkflowEditHistoryTab';
 import WorkflowDataConditionsTab from './components/WorkflowDataConditionsTab';
 import WorkflowVersionsTab from './components/WorkflowVersionsTab';
 import UnsavedChangesModal from './components/UnsavedChangesModal';
@@ -45,8 +45,11 @@ export default function WorkflowDesignerScreen({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
   const [isUnsavedModalOpen, setIsUnsavedModalOpen] = useState<boolean>(false);
 
-  // 4 Tabs chính: Thiết kế, Điều kiện dữ liệu, Lịch sử chỉnh sửa, Phiên bản (Section 3)
-  const [activeTab, setActiveTab] = useState<'designer' | 'conditions' | 'history' | 'versions'>('designer');
+  // 3 Tabs chính: Thiết kế, Điều kiện dữ liệu, Lịch sử & Phiên bản (Gộp lịch sử và phiên bản)
+  const [activeTab, setActiveTab] = useState<'designer' | 'conditions' | 'versions'>('designer');
+
+  // Chế độ xem đúng version quy trình từ tab Lịch sử & Phiên bản
+  const [viewingVersion, setViewingVersion] = useState<VersionHistoryItem | null>(null);
 
   // Node & Transition được chọn
   const [selectedStepId, setSelectedStepId] = useState<string | null>(() => {
@@ -73,7 +76,11 @@ export default function WorkflowDesignerScreen({
   // Chế độ Snapshot xem thời điểm cũ (Section 10)
   const [snapshotLog, setSnapshotLog] = useState<WorkflowAuditLogItem | null>(null);
 
-  const isReadOnly = workflow.status === 'published' || initialMode === 'view' || Boolean(snapshotLog);
+  const isReadOnly =
+    workflow.status === 'published' ||
+    initialMode === 'view' ||
+    Boolean(snapshotLog) ||
+    Boolean(viewingVersion);
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -130,6 +137,48 @@ export default function WorkflowDesignerScreen({
   const handleZoomOut = () => setZoomLevel((z) => Math.max(0.6, Number((z - 0.1).toFixed(1))));
   const handleZoomReset = () => setZoomLevel(1.0);
 
+  // Undo / Redo history stacks
+  const [pastWorkflows, setPastWorkflows] = useState<ProcessWorkflow[]>([]);
+  const [futureWorkflows, setFutureWorkflows] = useState<ProcessWorkflow[]>([]);
+
+  const pushToHistory = useCallback((currentWf: ProcessWorkflow) => {
+    setPastWorkflows((prev) => [...prev.slice(-25), currentWf]);
+    setFutureWorkflows([]);
+  }, []);
+
+  const handleUndo = useCallback(() => {
+    setPastWorkflows((prev) => {
+      if (prev.length === 0) return prev;
+      const last = prev[prev.length - 1];
+      setFutureWorkflows((f) => [workflow, ...f]);
+      setWorkflow(last);
+      setHasUnsavedChanges(true);
+      showToast('↺ Đã hoàn tác thao tác vừa thực hiện.');
+      return prev.slice(0, prev.length - 1);
+    });
+  }, [workflow]);
+
+  const handleRedo = useCallback(() => {
+    setFutureWorkflows((f) => {
+      if (f.length === 0) return f;
+      const next = f[0];
+      setPastWorkflows((prev) => [...prev, workflow]);
+      setWorkflow(next);
+      setHasUnsavedChanges(true);
+      showToast('↻ Đã làm lại thao tác.');
+      return f.slice(1);
+    });
+  }, [workflow]);
+
+  const handleFitView = useCallback(() => {
+    setZoomLevel(1.0);
+    const el = document.getElementById('workflow-canvas-scroll-container');
+    if (el) {
+      el.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
+    }
+    showToast('⊙ Đã căn giữa sơ đồ.');
+  }, []);
+
   // Auto Layout
   const handleAutoLayout = () => {
     showToast('✓ Đã tự động căn chỉnh sơ đồ theo chuẩn luồng hành chính.');
@@ -150,6 +199,7 @@ export default function WorkflowDesignerScreen({
 
   // Update step
   const handleUpdateStep = useCallback((updatedStep: ProcessStep) => {
+    pushToHistory(workflow);
     const oldStep = workflow.steps.find((s) => s.id === updatedStep.id);
     setWorkflow((prev) => ({
       ...prev,
@@ -165,10 +215,11 @@ export default function WorkflowDesignerScreen({
       oldStep ? `Tên: ${oldStep.name}, SLA: ${oldStep.timeLimitDays} ngày` : 'Chưa có',
       `Tên: ${updatedStep.name}, SLA: ${updatedStep.timeLimitDays} ngày`
     );
-  }, [workflow.steps, recordAuditChange]);
+  }, [workflow, pushToHistory, recordAuditChange]);
 
   // Delete step
   const handleDeleteStep = useCallback((stepId: string) => {
+    pushToHistory(workflow);
     const stepToDelete = workflow.steps.find((s) => s.id === stepId);
     setWorkflow((prev) => ({
       ...prev,
@@ -189,10 +240,11 @@ export default function WorkflowDesignerScreen({
         'Đã xóa khỏi quy trình'
       );
     }
-  }, [workflow.steps, recordAuditChange]);
+  }, [workflow, pushToHistory, recordAuditChange]);
 
   // Move step (Drag & drop)
   const handleMoveStep = useCallback((stepId: string, targetLaneId: string, targetStageId: string) => {
+    pushToHistory(workflow);
     const targetStep = workflow.steps.find((s) => s.id === stepId);
     const oldLane = workflow.lanes.find((l) => l.id === targetStep?.laneId)?.name || targetStep?.laneId;
     const oldStage = workflow.stages.find((s) => s.id === targetStep?.stageId)?.name || targetStep?.stageId;
@@ -226,10 +278,11 @@ export default function WorkflowDesignerScreen({
         `Nhóm: ${newLane} | Giai đoạn: ${newStage}`
       );
     }
-  }, [workflow.steps, workflow.lanes, workflow.stages, recordAuditChange]);
+  }, [workflow, pushToHistory, recordAuditChange]);
 
   // Update transition
   const handleUpdateTransition = useCallback((updatedTrans: ProcessTransition) => {
+    pushToHistory(workflow);
     const oldTrans = workflow.transitions.find((t) => t.id === updatedTrans.id);
     setWorkflow((prev) => ({
       ...prev,
@@ -247,10 +300,11 @@ export default function WorkflowDesignerScreen({
       oldTrans ? `${oldName} (${oldTrans.conditions?.length || 0} điều kiện)` : 'Chưa có',
       `${transName} (${updatedTrans.conditions?.length || 0} điều kiện)`
     );
-  }, [workflow.transitions, recordAuditChange]);
+  }, [workflow, pushToHistory, recordAuditChange]);
 
   // Delete transition
   const handleDeleteTransition = useCallback((transId: string) => {
+    pushToHistory(workflow);
     const transToDelete = workflow.transitions.find((t) => t.id === transId);
     setWorkflow((prev) => ({
       ...prev,
@@ -271,7 +325,7 @@ export default function WorkflowDesignerScreen({
         'Đã xóa'
       );
     }
-  }, [workflow.transitions, recordAuditChange]);
+  }, [workflow, pushToHistory, recordAuditChange]);
 
   // Nối connector giữa 2 bước
   const handleConnectSteps = useCallback((fromStepId: string, toStepId: string) => {
@@ -311,6 +365,7 @@ export default function WorkflowDesignerScreen({
       conditions: [],
     };
 
+    pushToHistory(workflow);
     setWorkflow((prev) => ({
       ...prev,
       transitions: [...prev.transitions, newTrans],
@@ -329,14 +384,15 @@ export default function WorkflowDesignerScreen({
       'Chưa nối',
       `${fromStep?.name} ➔ ${toStep?.name} (${newTrans.type === 'return' ? 'Trả lại' : 'Bình thường'})`
     );
-  }, [workflow.steps, workflow.transitions, workflow.stages, recordAuditChange]);
+  }, [workflow, pushToHistory, recordAuditChange]);
 
   // Thêm bước mới từ palette
   const handleAddStepFromPalette = (type: 'normal' | 'start' | 'end' | 'review' | 'approval' | 'archive') => {
+    pushToHistory(workflow);
     const newId = `step-${Date.now()}`;
     const codeNum = String(workflow.steps.length + 1).padStart(2, '0');
 
-    let name = 'Bước xử lý mới';
+    let name = 'Bước xử lý thông thường';
     let isStart = false;
     let isEnd = false;
     let laneId = workflow.lanes[0]?.id || 'lane-vt';
@@ -402,6 +458,7 @@ export default function WorkflowDesignerScreen({
 
   // Thêm Lane
   const handleAddLane = (name: string, code: string) => {
+    pushToHistory(workflow);
     const newLane = {
       id: `lane-${Date.now()}`,
       name,
@@ -418,6 +475,7 @@ export default function WorkflowDesignerScreen({
 
   // Thêm Giai đoạn
   const handleAddStage = (name: string) => {
+    pushToHistory(workflow);
     const newStage = {
       id: `stage-${Date.now()}`,
       name,
@@ -536,6 +594,7 @@ export default function WorkflowDesignerScreen({
   // Kích hoạt xem snapshot từ Lịch sử chỉnh sửa (Section 10)
   const handleViewSnapshot = (logItem: WorkflowAuditLogItem) => {
     setSnapshotLog(logItem);
+    setViewingVersion(null);
     setActiveTab('designer');
     setFocusedTarget({ type: logItem.targetType as any, id: logItem.targetId });
     if (logItem.targetType === 'step') {
@@ -554,9 +613,80 @@ export default function WorkflowDesignerScreen({
     showToast('Đã quay về phiên bản hiện tại.');
   };
 
+  // Kích hoạt xem đúng phiên bản quy trình từ tab Lịch sử & Phiên bản
+  const handleViewVersion = useCallback((versionItem: VersionHistoryItem) => {
+    setViewingVersion(versionItem);
+    setSnapshotLog(null);
+    setActiveTab('designer');
+
+    const verSteps =
+      versionItem.snapshotWorkflow?.steps && versionItem.snapshotWorkflow.steps.length > 0
+        ? versionItem.snapshotWorkflow.steps
+        : versionItem.isCurrentActive
+        ? workflow.steps
+        : workflow.steps.slice(0, versionItem.totalSteps || workflow.steps.length);
+
+    if (verSteps.length > 0) {
+      setSelectedStepId(verSteps[0].id);
+      setSelectedTransitionId(null);
+    }
+    showToast(
+      `Đang xem sơ đồ Phiên bản ${versionItem.version} (${versionItem.isCurrentActive ? 'Đang hiệu lực' : 'Bản lưu trữ'})`
+    );
+  }, [workflow]);
+
+  // Thoát chế độ xem phiên bản
+  const handleExitViewingVersion = useCallback(() => {
+    setViewingVersion(null);
+    setSelectedStepId(workflow.steps[0]?.id || null);
+    setSelectedTransitionId(null);
+    showToast(`Đã quay về phiên bản hiện tại (${workflow.version})`);
+  }, [workflow]);
+
+  // Cấu hình quy trình hiển thị trên Canvas (theo phiên bản được chọn hoặc bản hiện tại)
+  const activeCanvasWorkflow = useMemo(() => {
+    if (viewingVersion) {
+      if (viewingVersion.snapshotWorkflow) {
+        return {
+          steps: viewingVersion.snapshotWorkflow.steps,
+          transitions: viewingVersion.snapshotWorkflow.transitions,
+          lanes: viewingVersion.snapshotWorkflow.lanes || workflow.lanes,
+          stages: viewingVersion.snapshotWorkflow.stages || workflow.stages,
+        };
+      }
+      if (viewingVersion.isCurrentActive) {
+        return {
+          steps: workflow.steps,
+          transitions: workflow.transitions,
+          lanes: workflow.lanes,
+          stages: workflow.stages,
+        };
+      }
+      // Fallback: Lấy số bước tương ứng và chuyển tiếp hợp lệ giữa các bước đó
+      const count = viewingVersion.totalSteps || workflow.steps.length;
+      const filteredSteps = workflow.steps.slice(0, count);
+      const stepIds = new Set(filteredSteps.map((s) => s.id));
+      const filteredTransitions = workflow.transitions.filter(
+        (t) => stepIds.has(t.fromStepId) && stepIds.has(t.toStepId)
+      );
+      return {
+        steps: filteredSteps,
+        transitions: filteredTransitions,
+        lanes: workflow.lanes,
+        stages: workflow.stages,
+      };
+    }
+    return {
+      steps: workflow.steps,
+      transitions: workflow.transitions,
+      lanes: workflow.lanes,
+      stages: workflow.stages,
+    };
+  }, [viewingVersion, workflow]);
+
   // Đối tượng được chọn hiện tại cho panel phải
-  const currentStep = workflow.steps.find((s) => s.id === selectedStepId);
-  const currentTransition = workflow.transitions.find((t) => t.id === selectedTransitionId);
+  const currentStep = activeCanvasWorkflow.steps.find((s) => s.id === selectedStepId);
+  const currentTransition = activeCanvasWorkflow.transitions.find((t) => t.id === selectedTransitionId);
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#f4f7fb]">
@@ -614,34 +744,6 @@ export default function WorkflowDesignerScreen({
 
         {/* Right: Controls & Actions */}
         <div className="flex items-center gap-2">
-          {/* Zoom controls (Only on designer tab) */}
-          {activeTab === 'designer' && (
-            <div className="flex items-center bg-slate-100 rounded-xl p-0.5 border border-slate-200/80 mr-1">
-              <button
-                type="button"
-                onClick={handleZoomOut}
-                className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-white rounded-lg transition-all cursor-pointer"
-                title="Thu nhỏ (-)"
-              >
-                <span className="material-symbols-outlined text-[16px]">remove</span>
-              </button>
-              <span
-                onClick={handleZoomReset}
-                className="px-2 font-mono text-[11px] font-semibold text-slate-600 cursor-pointer"
-                title="Nhấp để reset về 100%"
-              >
-                {Math.round(zoomLevel * 100)}%
-              </span>
-              <button
-                type="button"
-                onClick={handleZoomIn}
-                className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-white rounded-lg transition-all cursor-pointer"
-                title="Phóng to (+)"
-              >
-                <span className="material-symbols-outlined text-[16px]">add</span>
-              </button>
-            </div>
-          )}
 
           {/* Auto layout button */}
           {activeTab === 'designer' && (
@@ -731,7 +833,7 @@ export default function WorkflowDesignerScreen({
         </div>
       </header>
 
-      {/* 2. FOUR TABS BAR (SECTION 3) */}
+      {/* 2. THREE TABS BAR (SECTION 3 - GỘP LỊCH SỬ & PHIÊN BẢN) */}
       <div className="bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0 shadow-2xs">
         <div className="flex items-center gap-1 -mb-px text-xs font-bold">
           <button
@@ -767,24 +869,6 @@ export default function WorkflowDesignerScreen({
 
           <button
             type="button"
-            onClick={() => setActiveTab('history')}
-            className={`py-3 px-4 border-b-2 flex items-center gap-2 transition-all cursor-pointer ${
-              activeTab === 'history'
-                ? 'border-[#004ac6] text-[#004ac6]'
-                : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[17px]">history</span>
-            <span>Lịch sử chỉnh sửa</span>
-            {workflow.auditLogs && workflow.auditLogs.length > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-purple-100 text-purple-800">
-                {workflow.auditLogs.length}
-              </span>
-            )}
-          </button>
-
-          <button
-            type="button"
             onClick={() => setActiveTab('versions')}
             className={`py-3 px-4 border-b-2 flex items-center gap-2 transition-all cursor-pointer ${
               activeTab === 'versions'
@@ -793,9 +877,9 @@ export default function WorkflowDesignerScreen({
             }`}
           >
             <span className="material-symbols-outlined text-[17px]">layers</span>
-            <span>Phiên bản</span>
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800">
-              {workflow.versionHistory?.length || 1}
+            <span>Lịch sử & Phiên bản</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-purple-100 text-purple-800">
+              {workflow.versionHistory?.length || 1} bản
             </span>
           </button>
         </div>
@@ -820,8 +904,39 @@ export default function WorkflowDesignerScreen({
         </div>
       </div>
 
+      {/* VIEWING VERSION BANNER */}
+      {viewingVersion && (
+        <div className="bg-[#1e1b4b] text-white px-6 py-2.5 flex items-center justify-between text-xs z-20 shadow-md border-b border-indigo-500/30">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-purple-300 text-[18px]">layers</span>
+              <span className="text-purple-200">Đang xem sơ đồ phiên bản:</span>
+              <span className="font-mono font-bold bg-purple-600/40 text-purple-100 px-2 py-0.5 rounded border border-purple-400/40">
+                {viewingVersion.version}
+              </span>
+            </div>
+            <span className="text-slate-400">•</span>
+            <span>Hiệu lực từ: <strong>{viewingVersion.publishedAt}</strong></span>
+            <span className="text-slate-400">•</span>
+            <span>Người phát hành: <strong>{viewingVersion.publishedBy}</strong></span>
+            <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-amber-500/20 text-amber-300 border border-amber-400/30">
+              Chế độ xem phiên bản (Chỉ đọc)
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleExitViewingVersion}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white text-indigo-950 font-bold hover:bg-purple-50 transition-all shadow-xs cursor-pointer text-xs"
+          >
+            <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+            <span>Quay về phiên bản hiện tại ({workflow.version})</span>
+          </button>
+        </div>
+      )}
+
       {/* SNAPSHOT MODE BANNER (SECTION 10) */}
-      {snapshotLog && (
+      {snapshotLog && !viewingVersion && (
         <div className="bg-purple-900 text-white px-6 py-2.5 flex items-center justify-between text-xs z-20 shadow-md">
           <div className="flex items-center gap-2.5">
             <span className="material-symbols-outlined text-purple-300 text-[18px]">history</span>
@@ -845,7 +960,7 @@ export default function WorkflowDesignerScreen({
       )}
 
       {/* Banner thông báo chế độ chỉ đọc nếu đã phát hành */}
-      {isReadOnly && !snapshotLog && (
+      {isReadOnly && !snapshotLog && !viewingVersion && (
         <div className="bg-emerald-50 border-b border-emerald-200 px-6 py-2 flex items-center justify-between text-xs text-emerald-900">
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-[16px] text-emerald-700">lock</span>
@@ -865,56 +980,68 @@ export default function WorkflowDesignerScreen({
 
       {/* 3. TAB WORKSPACES */}
       {activeTab === 'designer' && (
-        <div className="flex flex-1 overflow-hidden relative">
-          {/* Left: Palette */}
+        <div className="flex flex-col flex-1 overflow-hidden">
+          {/* Top Canvas Toolbar matching design image */}
           <WorkflowLeftPalette
-            lanes={workflow.lanes}
-            stages={workflow.stages}
+            lanes={activeCanvasWorkflow.lanes}
+            stages={activeCanvasWorkflow.stages}
             onAddStep={handleAddStepFromPalette}
             onAddLane={handleAddLane}
             onAddStage={handleAddStage}
             isReadOnly={isReadOnly}
-          />
-
-          {/* Center: Interactive Swimlane Canvas */}
-          <WorkflowCanvas
-            steps={workflow.steps}
-            transitions={workflow.transitions}
-            lanes={workflow.lanes}
-            stages={workflow.stages}
-            selectedStepId={selectedStepId}
-            selectedTransitionId={selectedTransitionId}
-            focusedTarget={focusedTarget}
+            status={viewingVersion ? 'published' : workflow.status}
             zoomLevel={zoomLevel}
-            onSelectStep={handleSelectStep}
-            onSelectTransition={handleSelectTransition}
-            onMoveStep={handleMoveStep}
-            onConnectSteps={handleConnectSteps}
-            isReadOnly={isReadOnly}
+            onZoomIn={handleZoomIn}
+            onZoomOut={handleZoomOut}
+            onZoomReset={handleZoomReset}
+            onFitView={handleFitView}
+            canUndo={pastWorkflows.length > 0}
+            canRedo={futureWorkflows.length > 0}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
           />
 
-          {/* Right: Dynamic Properties Panel */}
-          {currentStep && (
-            <StepPropertiesPanel
-              step={currentStep}
-              lanes={workflow.lanes}
-              stages={workflow.stages}
-              onUpdateStep={handleUpdateStep}
-              onDeleteStep={handleDeleteStep}
-              onClose={() => setSelectedStepId(null)}
+          <div className="flex flex-1 overflow-hidden relative">
+            {/* Center: Interactive Swimlane Canvas */}
+            <WorkflowCanvas
+              steps={activeCanvasWorkflow.steps}
+              transitions={activeCanvasWorkflow.transitions}
+              lanes={activeCanvasWorkflow.lanes}
+              stages={activeCanvasWorkflow.stages}
+              selectedStepId={selectedStepId}
+              selectedTransitionId={selectedTransitionId}
+              focusedTarget={focusedTarget}
+              zoomLevel={zoomLevel}
+              onSelectStep={handleSelectStep}
+              onSelectTransition={handleSelectTransition}
+              onMoveStep={handleMoveStep}
+              onConnectSteps={handleConnectSteps}
+              isReadOnly={isReadOnly}
             />
-          )}
 
-          {currentTransition && (
-            <TransitionPropertiesPanel
-              transition={currentTransition}
-              steps={workflow.steps}
-              lanes={workflow.lanes}
-              onUpdateTransition={handleUpdateTransition}
-              onDeleteTransition={handleDeleteTransition}
-              onClose={() => setSelectedTransitionId(null)}
-            />
-          )}
+            {/* Right: Dynamic Properties Panel */}
+            {currentStep && (
+              <StepPropertiesPanel
+                step={currentStep}
+                lanes={activeCanvasWorkflow.lanes}
+                stages={activeCanvasWorkflow.stages}
+                onUpdateStep={handleUpdateStep}
+                onDeleteStep={handleDeleteStep}
+                onClose={() => setSelectedStepId(null)}
+              />
+            )}
+
+            {currentTransition && (
+              <TransitionPropertiesPanel
+                transition={currentTransition}
+                steps={activeCanvasWorkflow.steps}
+                lanes={activeCanvasWorkflow.lanes}
+                onUpdateTransition={handleUpdateTransition}
+                onDeleteTransition={handleDeleteTransition}
+                onClose={() => setSelectedTransitionId(null)}
+              />
+            )}
+          </div>
         </div>
       )}
 
@@ -929,17 +1056,12 @@ export default function WorkflowDesignerScreen({
         />
       )}
 
-      {activeTab === 'history' && (
-        <WorkflowEditHistoryTab
-          workflow={workflow}
-          onViewSnapshot={handleViewSnapshot}
-        />
-      )}
-
       {activeTab === 'versions' && (
         <WorkflowVersionsTab
           workflow={workflow}
           onCreateNewVersion={onCreateNewVersion}
+          onViewVersionDetail={handleViewVersion}
+          onViewSnapshot={handleViewSnapshot}
         />
       )}
 

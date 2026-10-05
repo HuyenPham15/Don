@@ -181,7 +181,7 @@ export default function ProcessWorkflowList({
             </div>
 
             {/* Loại đơn dropdown */}
-            <div>
+            {/* <div>
               <select
                 value={selectedLoaiDon}
                 onChange={(e) => setSelectedLoaiDon(e.target.value)}
@@ -194,7 +194,7 @@ export default function ProcessWorkflowList({
                   </option>
                 ))}
               </select>
-            </div>
+            </div> */}
 
             {/* Trạng thái dropdown */}
             <div>
@@ -211,7 +211,7 @@ export default function ProcessWorkflowList({
             </div>
 
             {/* Phiên bản dropdown */}
-            <div>
+            {/* <div>
               <select
                 value={selectedVersion}
                 onChange={(e) => setSelectedVersion(e.target.value)}
@@ -224,7 +224,7 @@ export default function ProcessWorkflowList({
                   </option>
                 ))}
               </select>
-            </div>
+            </div> */}
           </div>
 
           {/* Active filters notice & reset */}
