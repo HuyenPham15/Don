@@ -122,7 +122,7 @@ export default function ProcessWorkflowList({
   };
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 bg-[#f4f7fb] overflow-y-auto">
+    <div className="bg-[#f4f7fb]">
       {/* 1. TOP HEADER & BREADCRUMB */}
       <div className="bg-white border-b border-slate-200/90 px-6 py-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

@@ -8,6 +8,11 @@ import {
   WorkflowActionType,
   AICapability,
 } from '../../../types/workflowConfig';
+import {
+  getStandardStepTemplate,
+  resetStepToStandard,
+  resetStepSectionToStandard,
+} from '../registry/workflowComponentRegistry';
 
 interface StepPropertiesPanelProps {
   step: ProcessStep;
@@ -30,6 +35,29 @@ const ACTION_TYPE_LABELS: Record<WorkflowActionType, { label: string; color: str
   ESCALATE: { label: 'Chuyển cấp thẩm quyền', color: 'bg-cyan-50 text-cyan-700 border-cyan-200' },
 };
 
+function InheritBadge({ isOverridden }: { isOverridden?: boolean }) {
+  if (isOverridden) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-300">
+        <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+        Tùy chỉnh riêng
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-sky-50 text-sky-700 border border-sky-200">
+      <span className="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
+      Mặc định
+    </span>
+  );
+}
+
+interface RevertModalState {
+  isOpen: boolean;
+  targetSection: 'ALL' | 'conditions' | 'forms' | 'inputDocs' | 'outputDocs' | 'sla' | 'actions';
+  targetTitle: string;
+}
+
 export default function StepPropertiesPanel({
   step,
   lanes,
@@ -40,6 +68,18 @@ export default function StepPropertiesPanel({
   onClose,
 }: StepPropertiesPanelProps) {
   const [copiedCode, setCopiedCode] = useState(false);
+
+  // Revert confirmation modal
+  const [revertModal, setRevertModal] = useState<RevertModalState>({
+    isOpen: false,
+    targetSection: 'ALL',
+    targetTitle: '',
+  });
+
+  // Conditions input states
+  const [newConditionText, setNewConditionText] = useState('');
+  const [editingConditionIdx, setEditingConditionIdx] = useState<number | null>(null);
+  const [editConditionText, setEditConditionText] = useState('');
 
   // Document & Form inputs
   const [newDocText, setNewDocText] = useState('');
@@ -55,18 +95,92 @@ export default function StepPropertiesPanel({
 
   const nodeType = step.nodeType || (step.isStart ? 'START' : step.isEnd ? 'END' : 'TASK');
 
+  // Standard library template match
+  const standardTpl = getStandardStepTemplate(
+    nodeType,
+    undefined,
+    step.inheritedFromId
+  );
+  const inheritedName = step.inheritedFromName || standardTpl.name;
+
+  // Determine if overall step is overridden
+  const isStepOverridden = Boolean(
+    step.isCustomized ||
+    step.conditionsOverride ||
+    step.formsOverride ||
+    step.inputDocsOverride ||
+    step.outputDocsOverride ||
+    step.slaOverride ||
+    step.actionsOverride
+  );
+
   const handleCopyCode = () => {
     navigator.clipboard.writeText(step.code);
     setCopiedCode(true);
     setTimeout(() => setCopiedCode(false), 2000);
   };
 
-  // Add / remove documents
+  // Revert handler
+  const handleConfirmRevert = () => {
+    if (revertModal.targetSection === 'ALL') {
+      const reset = resetStepToStandard(step);
+      onUpdateStep(reset);
+    } else {
+      const reset = resetStepSectionToStandard(step, revertModal.targetSection as any);
+      onUpdateStep(reset);
+    }
+    setRevertModal({ isOpen: false, targetSection: 'ALL', targetTitle: '' });
+  };
+
+  // Condition handlers
+  const currentConditions = step.conditions !== undefined ? step.conditions : standardTpl.defaultConditions;
+
+  const handleAddCondition = () => {
+    if (!newConditionText.trim()) return;
+    onUpdateStep({
+      ...step,
+      conditions: [...currentConditions, newConditionText.trim()],
+      conditionsOverride: true,
+      isCustomized: true,
+    });
+    setNewConditionText('');
+  };
+
+  const handleRemoveCondition = (idx: number) => {
+    onUpdateStep({
+      ...step,
+      conditions: currentConditions.filter((_, i) => i !== idx),
+      conditionsOverride: true,
+      isCustomized: true,
+    });
+  };
+
+  const handleStartEditCondition = (idx: number, val: string) => {
+    setEditingConditionIdx(idx);
+    setEditConditionText(val);
+  };
+
+  const handleSaveEditCondition = (idx: number) => {
+    if (!editConditionText.trim()) return;
+    const next = [...currentConditions];
+    next[idx] = editConditionText.trim();
+    onUpdateStep({
+      ...step,
+      conditions: next,
+      conditionsOverride: true,
+      isCustomized: true,
+    });
+    setEditingConditionIdx(null);
+  };
+
+  // Document handlers
   const handleAddStoredDoc = () => {
     if (!newDocText.trim()) return;
     onUpdateStep({
       ...step,
       storedDocuments: [...step.storedDocuments, newDocText.trim()],
+      outputDocsOverride: true,
+      isCustomized: true,
     });
     setNewDocText('');
   };
@@ -75,6 +189,8 @@ export default function StepPropertiesPanel({
     onUpdateStep({
       ...step,
       storedDocuments: step.storedDocuments.filter((_, i) => i !== idx),
+      outputDocsOverride: true,
+      isCustomized: true,
     });
   };
 
@@ -83,6 +199,8 @@ export default function StepPropertiesPanel({
     onUpdateStep({
       ...step,
       inputDocuments: [...(step.inputDocuments || []), newInDocText.trim()],
+      inputDocsOverride: true,
+      isCustomized: true,
     });
     setNewInDocText('');
   };
@@ -91,6 +209,8 @@ export default function StepPropertiesPanel({
     onUpdateStep({
       ...step,
       inputDocuments: (step.inputDocuments || []).filter((_, i) => i !== idx),
+      inputDocsOverride: true,
+      isCustomized: true,
     });
   };
 
@@ -99,6 +219,8 @@ export default function StepPropertiesPanel({
     onUpdateStep({
       ...step,
       stepForms: [...step.stepForms, newFormText.trim()],
+      formsOverride: true,
+      isCustomized: true,
     });
     setNewFormText('');
   };
@@ -107,6 +229,8 @@ export default function StepPropertiesPanel({
     onUpdateStep({
       ...step,
       stepForms: step.stepForms.filter((_, i) => i !== idx),
+      formsOverride: true,
+      isCustomized: true,
     });
   };
 
@@ -127,6 +251,8 @@ export default function StepPropertiesPanel({
     onUpdateStep({
       ...step,
       actions: [...(step.actions || []), newAction],
+      actionsOverride: true,
+      isCustomized: true,
     });
 
     setNewActionLabel('');
@@ -140,6 +266,8 @@ export default function StepPropertiesPanel({
     onUpdateStep({
       ...step,
       actions: (step.actions || []).filter((a) => a.id !== actionId),
+      actionsOverride: true,
+      isCustomized: true,
     });
   };
 
@@ -184,9 +312,12 @@ export default function StepPropertiesPanel({
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 truncate">
               Thuộc tính bước
             </h3>
-            <span className="text-[10px] text-slate-400 font-mono">
-              Loại: <strong className="text-blue-700">{nodeType}</strong>
-            </span>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="text-[10px] text-slate-400 font-mono">
+                Loại: <strong className="text-blue-700">{nodeType}</strong>
+              </span>
+              <InheritBadge isOverridden={isStepOverridden} />
+            </div>
           </div>
         </div>
 
@@ -213,13 +344,13 @@ export default function StepPropertiesPanel({
       {/* 2. Scrollable Body */}
       <div className="flex-1 overflow-y-auto p-5 space-y-5 text-xs">
         {/* ============================================================== */}
-        {/* SECTION A: THÔNG TIN CHUNG (COMMON FOR ALL NODES)              */}
+        {/* SECTION A: THÔNG TIN CHUNG                                     */}
         {/* ============================================================== */}
         <div className="space-y-3">
           <div className="flex items-center gap-1.5 pb-1 border-b border-slate-100">
             <span className="w-2 h-2 rounded-full bg-blue-600"></span>
             <span className="text-[11px] font-bold text-slate-800 uppercase tracking-wide">
-              Thông tin chung
+              A. Thông tin chung
             </span>
           </div>
 
@@ -297,27 +428,516 @@ export default function StepPropertiesPanel({
               </select>
             </div>
           </div>
+        </div>
 
-          {/* Diễn giải / Mô tả nghiệp vụ */}
-          <div>
-            <label className="block font-bold text-slate-800 mb-1">
-              Diễn giải nghiệp vụ
-            </label>
-            <textarea
-              rows={2}
-              value={step.description || ''}
-              onChange={(e) => onUpdateStep({ ...step, description: e.target.value })}
-              placeholder="Mô tả mục tiêu và quy định thao tác tại bước này..."
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:border-blue-500 focus:outline-none resize-none transition-all"
-            />
+        {/* ============================================================== */}
+        {/* SECTION B: CẤU HÌNH & KẾ THỪA                                  */}
+        {/* ============================================================== */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between pb-1 border-b border-slate-100">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
+              <span className="text-[11px] font-bold text-slate-800 uppercase tracking-wide">
+                B. Cấu hình
+              </span>
+            </div>
+            <InheritBadge isOverridden={isStepOverridden} />
+          </div>
+
+          <div className="p-3.5 bg-slate-50/90 border border-slate-200/90 rounded-2xl space-y-3 shadow-2xs">
+            <div>
+              <span className="text-[11px] text-slate-500 font-medium block">
+                Đang kế thừa từ:
+              </span>
+              <div className="text-xs font-bold text-slate-900 mt-0.5 flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-[17px] text-indigo-600">
+                  library_books
+                </span>
+                <span className="truncate">{inheritedName}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200/80">
+              {!isStepOverridden ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onUpdateStep({
+                      ...step,
+                      isCustomized: true,
+                    });
+                  }}
+                  className="px-3 py-1.5 bg-white hover:bg-blue-50 text-blue-700 hover:text-blue-900 border border-blue-200 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[15px]">edit_note</span>
+                  Chỉnh sửa riêng
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setRevertModal({
+                      isOpen: true,
+                      targetSection: 'ALL',
+                      targetTitle: 'toàn bộ cấu hình bước về mặc định chuẩn',
+                    })
+                  }
+                  className="px-3 py-1.5 bg-white hover:bg-rose-50 text-rose-700 hover:text-rose-900 border border-rose-200 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[15px]">restart_alt</span>
+                  Khôi phục mặc định
+                </button>
+              )}
+
+              <span className="text-[10px] text-slate-400 font-mono">
+                {step.inheritedFromId || standardTpl.id}
+              </span>
+            </div>
+
           </div>
         </div>
 
         {/* ============================================================== */}
-        {/* SECTION B: NODE TYPE SPECIFIC RENDERERS                        */}
+        {/* SECTION C: ĐIỀU KIỆN (REQUIREMENT 2)                            */}
         {/* ============================================================== */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between pb-1 border-b border-slate-100">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
+              <span className="text-[11px] font-bold text-slate-800 uppercase tracking-wide">
+                Điều kiện ({currentConditions.length})
+              </span>
+            </div>
 
-        {/* ── B.1: APPROVAL NODE TYPE ── */}
+            <div className="flex items-center gap-2">
+              <InheritBadge isOverridden={step.conditionsOverride} />
+              {step.conditionsOverride ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setRevertModal({
+                      isOpen: true,
+                      targetSection: 'conditions',
+                      targetTitle: 'danh sách Điều kiện nghiệp vụ',
+                    })
+                  }
+                  className="text-[11px] font-bold text-rose-600 hover:text-rose-800 flex items-center gap-0.5 cursor-pointer"
+                  title="Khôi phục danh sách điều kiện chuẩn"
+                >
+                  <span className="material-symbols-outlined text-[13px]">restart_alt</span>
+                  Khôi phục
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() =>
+                    onUpdateStep({
+                      ...step,
+                      conditionsOverride: true,
+                      isCustomized: true,
+                    })
+                  }
+                  className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-0.5 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[13px]">edit</span>
+                  Chỉnh sửa riêng
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Sub-indicator */}
+          {!step.conditionsOverride && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50/70 border border-emerald-200 rounded-xl text-[11px] font-semibold text-emerald-800">
+              <span className="material-symbols-outlined text-emerald-600 text-[15px]">
+                verified
+              </span>
+              <span>Kế thừa cấu hình chuẩn ({currentConditions.length} điều kiện)</span>
+            </div>
+          )}
+
+          {/* Danh sách điều kiện dạng compact */}
+          <div className="space-y-1.5">
+            {currentConditions.map((cond, idx) => (
+              <div
+                key={idx}
+                className={`p-2 rounded-xl border flex items-start justify-between gap-2 text-xs transition-all ${step.conditionsOverride
+                  ? 'bg-amber-50/30 border-amber-200'
+                  : 'bg-slate-50/80 border-slate-200'
+                  }`}
+              >
+                {editingConditionIdx === idx ? (
+                  <div className="flex-1 flex gap-1">
+                    <input
+                      type="text"
+                      autoFocus
+                      value={editConditionText}
+                      onChange={(e) => setEditConditionText(e.target.value)}
+                      className="flex-1 px-2 py-1 bg-white border border-blue-400 rounded-lg text-xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleSaveEditCondition(idx)}
+                      className="px-2 py-1 bg-blue-600 text-white rounded-lg text-xs font-bold"
+                    >
+                      Lưu
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingConditionIdx(null)}
+                      className="px-2 py-1 bg-slate-200 text-slate-700 rounded-lg text-xs"
+                    >
+                      Hủy
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-start gap-2 min-w-0 flex-1">
+                      <span className="text-emerald-600 font-bold shrink-0 mt-0.5">✓</span>
+                      <span className="text-slate-800 leading-snug break-words">
+                        {cond}
+                      </span>
+                    </div>
+
+                    {step.conditionsOverride && (
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleStartEditCondition(idx, cond)}
+                          className="text-slate-400 hover:text-blue-600 p-0.5"
+                          title="Sửa điều kiện"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">edit</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveCondition(idx)}
+                          className="text-slate-400 hover:text-rose-600 p-0.5"
+                          title="Xóa điều kiện"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">close</span>
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            ))}
+
+            {currentConditions.length === 0 && (
+              <p className="text-[11px] text-slate-400 italic">
+                Chưa có điều kiện nào được thiết lập cho bước này.
+              </p>
+            )}
+          </div>
+
+          {/* Form thêm điều kiện mới khi ở chế độ tùy chỉnh */}
+          {step.conditionsOverride && (
+            <div className="flex gap-1.5 pt-1">
+              <input
+                type="text"
+                value={newConditionText}
+                onChange={(e) => setNewConditionText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddCondition();
+                  }
+                }}
+                placeholder="Thêm điều kiện mới..."
+                className="flex-1 px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:border-blue-500 focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={handleAddCondition}
+                disabled={!newConditionText.trim()}
+                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
+              >
+                + Thêm
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* ============================================================== */}
+        {/* SECTION D: DỮ LIỆU & TÀI LIỆU (REQUIREMENT 3)                  */}
+        {/* ============================================================== */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-1.5 pb-1 border-b border-slate-100">
+            <span className="w-2 h-2 rounded-full bg-teal-600"></span>
+            <span className="text-[11px] font-bold text-slate-800 uppercase tracking-wide">
+              Dữ liệu & Tài liệu
+            </span>
+          </div>
+
+          {/* Sub-section A: Biểu mẫu điện tử */}
+          <div className="p-3 bg-slate-50/70 border border-slate-200/90 rounded-2xl space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="font-bold text-slate-800 text-xs block">
+                  A. Biểu mẫu điện tử ({step.stepForms.length})
+                </span>
+                <span className="text-[10px] text-slate-500 block leading-tight">
+                  Form / cấu trúc dữ liệu để người dùng nhập thông tin nghiệp vụ
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <InheritBadge isOverridden={step.formsOverride} />
+                {step.formsOverride && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setRevertModal({
+                        isOpen: true,
+                        targetSection: 'forms',
+                        targetTitle: 'Biểu mẫu điện tử về mặc định',
+                      })
+                    }
+                    className="text-[11px] font-bold text-rose-600 hover:text-rose-800 flex items-center gap-0.5 cursor-pointer"
+                    title="Khôi phục biểu mẫu chuẩn"
+                  >
+                    <span className="material-symbols-outlined text-[13px]">restart_alt</span>
+                    Khôi phục
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              {step.stepForms.map((form, i) => (
+                <div
+                  key={i}
+                  className="p-2 bg-white rounded-xl border border-slate-200 flex items-center justify-between text-xs shadow-2xs"
+                >
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="material-symbols-outlined text-blue-600 text-[16px]">
+                      dynamic_form
+                    </span>
+                    <span className="font-semibold text-slate-800 truncate">{form}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveForm(i)}
+                    className="text-slate-400 hover:text-rose-600 p-1 rounded"
+                    title="Xóa biểu mẫu"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">close</span>
+                  </button>
+                </div>
+              ))}
+
+              {step.stepForms.length === 0 && (
+                <p className="text-[11px] text-slate-400 italic">
+                  Không áp dụng biểu mẫu điện tử nào.
+                </p>
+              )}
+            </div>
+
+            <div className="flex gap-1.5 pt-1">
+              <input
+                type="text"
+                value={newFormText}
+                onChange={(e) => setNewFormText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddForm();
+                  }
+                }}
+                placeholder="Tên / mã biểu mẫu điện tử..."
+                className="flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs focus:border-blue-500 focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={handleAddForm}
+                disabled={!newFormText.trim()}
+                className="px-2.5 py-1.5 bg-slate-200 hover:bg-slate-300 disabled:opacity-50 text-slate-800 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+              >
+                + Thêm
+              </button>
+            </div>
+          </div>
+
+          {/* Sub-section B: Văn bản đầu vào */}
+          <div className="p-3 bg-slate-50/70 border border-slate-200/90 rounded-2xl space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="font-bold text-slate-800 text-xs block">
+                  B. Văn bản đầu vào ({step.inputDocuments?.length || 0})
+                </span>
+                <span className="text-[10px] text-slate-500 block leading-tight">
+                  Tài liệu được sử dụng để đọc / kiểm tra trong bước
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <InheritBadge isOverridden={step.inputDocsOverride} />
+                {step.inputDocsOverride && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setRevertModal({
+                        isOpen: true,
+                        targetSection: 'inputDocs',
+                        targetTitle: 'Văn bản đầu vào về mặc định',
+                      })
+                    }
+                    className="text-[11px] font-bold text-rose-600 hover:text-rose-800 flex items-center gap-0.5 cursor-pointer"
+                    title="Khôi phục văn bản đầu vào chuẩn"
+                  >
+                    <span className="material-symbols-outlined text-[13px]">restart_alt</span>
+                    Khôi phục
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              {(step.inputDocuments || []).map((doc, i) => (
+                <div
+                  key={i}
+                  className="p-2 bg-white rounded-xl border border-slate-200 flex items-center justify-between text-xs shadow-2xs"
+                >
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="material-symbols-outlined text-amber-600 text-[16px]">
+                      file_open
+                    </span>
+                    <span className="font-semibold text-slate-800 truncate">{doc}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveInputDoc(i)}
+                    className="text-slate-400 hover:text-rose-600 p-1 rounded"
+                    title="Xóa văn bản"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">close</span>
+                  </button>
+                </div>
+              ))}
+
+              {(!step.inputDocuments || step.inputDocuments.length === 0) && (
+                <p className="text-[11px] text-slate-400 italic">
+                  Chưa có văn bản đầu vào nào được chỉ định.
+                </p>
+              )}
+            </div>
+
+            <div className="flex gap-1.5 pt-1">
+              <input
+                type="text"
+                value={newInDocText}
+                onChange={(e) => setNewInDocText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddInputDoc();
+                  }
+                }}
+                placeholder="Tên văn bản đầu vào..."
+                className="flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs focus:border-blue-500 focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={handleAddInputDoc}
+                disabled={!newInDocText.trim()}
+                className="px-2.5 py-1.5 bg-slate-200 hover:bg-slate-300 disabled:opacity-50 text-slate-800 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+              >
+                + Thêm
+              </button>
+            </div>
+          </div>
+
+          {/* Sub-section C: Văn bản lưu / đầu ra */}
+          <div className="p-3 bg-slate-50/70 border border-slate-200/90 rounded-2xl space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="font-bold text-slate-800 text-xs block">
+                  C. Văn bản lưu / đầu ra ({step.storedDocuments.length})
+                </span>
+                <span className="text-[10px] text-slate-500 block leading-tight">
+                  Tài liệu được tạo / lưu / phát hành sau bước xử lý
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <InheritBadge isOverridden={step.outputDocsOverride} />
+                {step.outputDocsOverride && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setRevertModal({
+                        isOpen: true,
+                        targetSection: 'outputDocs',
+                        targetTitle: 'Văn bản lưu / đầu ra về mặc định',
+                      })
+                    }
+                    className="text-[11px] font-bold text-rose-600 hover:text-rose-800 flex items-center gap-0.5 cursor-pointer"
+                    title="Khôi phục văn bản lưu chuẩn"
+                  >
+                    <span className="material-symbols-outlined text-[13px]">restart_alt</span>
+                    Khôi phục
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              {step.storedDocuments.map((doc, i) => (
+                <div
+                  key={i}
+                  className="p-2 bg-white rounded-xl border border-slate-200 flex items-center justify-between text-xs shadow-2xs"
+                >
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="material-symbols-outlined text-teal-600 text-[16px]">
+                      task_alt
+                    </span>
+                    <span className="font-semibold text-slate-800 truncate">{doc}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveStoredDoc(i)}
+                    className="text-slate-400 hover:text-rose-600 p-1 rounded"
+                    title="Xóa văn bản"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">close</span>
+                  </button>
+                </div>
+              ))}
+
+              {step.storedDocuments.length === 0 && (
+                <p className="text-[11px] text-slate-400 italic">
+                  Chưa có văn bản lưu / đầu ra được chỉ định.
+                </p>
+              )}
+            </div>
+
+            <div className="flex gap-1.5 pt-1">
+              <input
+                type="text"
+                value={newDocText}
+                onChange={(e) => setNewDocText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddStoredDoc();
+                  }
+                }}
+                placeholder="Tên văn bản lưu / đầu ra..."
+                className="flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs focus:border-blue-500 focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={handleAddStoredDoc}
+                disabled={!newDocText.trim()}
+                className="px-2.5 py-1.5 bg-slate-200 hover:bg-slate-300 disabled:opacity-50 text-slate-800 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+              >
+                + Thêm
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* ============================================================== */}
+        {/* NODE TYPE SPECIFIC RENDERERS                                  */}
+        {/* ============================================================== */}
         {nodeType === 'APPROVAL' && (
           <div className="p-3.5 bg-purple-50/60 border border-purple-200 rounded-2xl space-y-3">
             <div className="flex items-center gap-1.5 pb-1 border-b border-purple-200/80">
@@ -376,7 +996,6 @@ export default function StepPropertiesPanel({
           </div>
         )}
 
-        {/* ── B.2: NOTIFICATION NODE TYPE ── */}
         {nodeType === 'NOTIFICATION' && (
           <div className="p-3.5 bg-sky-50/60 border border-sky-200 rounded-2xl space-y-3">
             <div className="flex items-center gap-1.5 pb-1 border-b border-sky-200/80">
@@ -447,7 +1066,6 @@ export default function StepPropertiesPanel({
           </div>
         )}
 
-        {/* ── B.3: INTEGRATION NODE TYPE ── */}
         {nodeType === 'INTEGRATION' && (
           <div className="p-3.5 bg-emerald-50/60 border border-emerald-200 rounded-2xl space-y-3">
             <div className="flex items-center gap-1.5 pb-1 border-b border-emerald-200/80">
@@ -487,15 +1105,37 @@ export default function StepPropertiesPanel({
         )}
 
         {/* ============================================================== */}
-        {/* SECTION C: SLA & WORKING HOURS (FOR TASK, CHECK, APPROVAL)     */}
+        {/* SECTION E: THỜI HẠN & ĐỊNH MỨC (SLA)                           */}
         {/* ============================================================== */}
         {nodeType !== 'START' && nodeType !== 'END' && (
           <div className="space-y-3">
-            <div className="flex items-center gap-1.5 pb-1 border-b border-slate-100">
-              <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-              <span className="text-[11px] font-bold text-slate-800 uppercase tracking-wide">
-                Thời hạn & Định mức (SLA)
-              </span>
+            <div className="flex items-center justify-between pb-1 border-b border-slate-100">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                <span className="text-[11px] font-bold text-slate-800 uppercase tracking-wide">
+                  Thời hạn & Định mức (SLA)
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <InheritBadge isOverridden={step.slaOverride} />
+                {step.slaOverride && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setRevertModal({
+                        isOpen: true,
+                        targetSection: 'sla',
+                        targetTitle: 'Định mức thời hạn SLA về mặc định',
+                      })
+                    }
+                    className="text-[11px] font-bold text-rose-600 hover:text-rose-800 flex items-center gap-0.5 cursor-pointer"
+                    title="Khôi phục SLA chuẩn"
+                  >
+                    <span className="material-symbols-outlined text-[13px]">restart_alt</span>
+                    Khôi phục
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-3 gap-2">
@@ -507,7 +1147,14 @@ export default function StepPropertiesPanel({
                   type="number"
                   min="0"
                   value={step.timeLimitDays}
-                  onChange={(e) => onUpdateStep({ ...step, timeLimitDays: parseInt(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    onUpdateStep({
+                      ...step,
+                      timeLimitDays: parseInt(e.target.value) || 0,
+                      slaOverride: true,
+                      isCustomized: true,
+                    })
+                  }
                   className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-bold text-center"
                 />
               </div>
@@ -520,7 +1167,14 @@ export default function StepPropertiesPanel({
                   type="number"
                   min="0"
                   value={step.workHours}
-                  onChange={(e) => onUpdateStep({ ...step, workHours: parseInt(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    onUpdateStep({
+                      ...step,
+                      workHours: parseInt(e.target.value) || 0,
+                      slaOverride: true,
+                      isCustomized: true,
+                    })
+                  }
                   className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-bold text-center"
                 />
               </div>
@@ -533,7 +1187,14 @@ export default function StepPropertiesPanel({
                   type="number"
                   min="0"
                   value={step.warningBeforeHours}
-                  onChange={(e) => onUpdateStep({ ...step, warningBeforeHours: parseInt(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    onUpdateStep({
+                      ...step,
+                      warningBeforeHours: parseInt(e.target.value) || 0,
+                      slaOverride: true,
+                      isCustomized: true,
+                    })
+                  }
                   className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-bold text-center text-amber-700"
                 />
               </div>
@@ -545,7 +1206,14 @@ export default function StepPropertiesPanel({
               </label>
               <select
                 value={step.workSchedule}
-                onChange={(e) => onUpdateStep({ ...step, workSchedule: e.target.value })}
+                onChange={(e) =>
+                  onUpdateStep({
+                    ...step,
+                    workSchedule: e.target.value,
+                    slaOverride: true,
+                    isCustomized: true,
+                  })
+                }
                 className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800"
               >
                 <option value="Giờ hành chính (8h-17h, Thứ 2 - Thứ 6)">Giờ hành chính (8h-17h, Thứ 2 - Thứ 6)</option>
@@ -557,7 +1225,7 @@ export default function StepPropertiesPanel({
         )}
 
         {/* ============================================================== */}
-        {/* SECTION D: ACTIONS LIST (TÁCH KHỎI NODE THEO YÊU CẦU 7)       */}
+        {/* SECTION F: HÀNH ĐỘNG TẠI BƯỚC                                 */}
         {/* ============================================================== */}
         {nodeType !== 'START' && nodeType !== 'END' && (
           <div className="space-y-3">
@@ -569,16 +1237,37 @@ export default function StepPropertiesPanel({
                 </span>
               </div>
 
-              {!isAddingAction && (
-                <button
-                  type="button"
-                  onClick={() => setIsAddingAction(true)}
-                  className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-0.5 cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-[14px]">add</span>
-                  Thêm hành động
-                </button>
-              )}
+              <div className="flex items-center gap-1.5">
+                <InheritBadge isOverridden={step.actionsOverride} />
+                {step.actionsOverride ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setRevertModal({
+                        isOpen: true,
+                        targetSection: 'actions',
+                        targetTitle: 'danh sách Hành động về mặc định',
+                      })
+                    }
+                    className="text-[11px] font-bold text-rose-600 hover:text-rose-800 flex items-center gap-0.5 cursor-pointer"
+                    title="Khôi phục danh sách hành động chuẩn"
+                  >
+                    <span className="material-symbols-outlined text-[13px]">restart_alt</span>
+                    Khôi phục
+                  </button>
+                ) : (
+                  !isAddingAction && (
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingAction(true)}
+                      className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-0.5 cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">add</span>
+                      Thêm
+                    </button>
+                  )
+                )}
+              </div>
             </div>
 
             {/* List existing actions */}
@@ -594,11 +1283,11 @@ export default function StepPropertiesPanel({
                     className="p-2 bg-slate-50/80 rounded-xl border border-slate-200 flex items-center justify-between shadow-2xs"
                   >
                     <div className="flex items-center gap-2 min-w-0">
-                      {/* <span className={`px-1.5 py-0.5 rounded border text-[9.5px] font-bold ${meta.color}`}>
-                        {action.code}
-                      </span> */}
                       <span className="font-semibold text-slate-800 truncate text-xs">
                         {action.label}
+                      </span>
+                      <span className={`px-1.5 py-0.2 rounded border text-[9px] font-mono font-bold ${meta.color}`}>
+                        {action.code}
                       </span>
                     </div>
 
@@ -698,120 +1387,7 @@ export default function StepPropertiesPanel({
         )}
 
         {/* ============================================================== */}
-        {/* SECTION E: DATA & DOCUMENTS (FORMS, INPUT, OUTPUT DOCS)       */}
-        {/* ============================================================== */}
-        {nodeType !== 'BRANCH' && nodeType !== 'MERGE' && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-1.5 pb-1 border-b border-slate-100">
-              <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
-              <span className="text-[11px] font-bold text-slate-800 uppercase tracking-wide">
-                Dữ liệu & Biểu mẫu
-              </span>
-            </div>
-
-            {/* Step Forms */}
-            <div>
-              <label className="block text-slate-700 font-semibold mb-1 text-[11px]">
-                Biểu mẫu điện tử ({step.stepForms.length})
-              </label>
-              <div className="space-y-1.5 mb-2">
-                {step.stepForms.map((form, i) => (
-                  <div key={i} className="p-1.5 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between text-xs">
-                    <span className="truncate">{form}</span>
-                    <button type="button" onClick={() => handleRemoveForm(i)} className="text-slate-400 hover:text-rose-600">
-                      <span className="material-symbols-outlined text-[14px]">close</span>
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <div className="flex gap-1.5">
-                <input
-                  type="text"
-                  value={newFormText}
-                  onChange={(e) => setNewFormText(e.target.value)}
-                  placeholder="Mã & tên biểu mẫu..."
-                  className="flex-1 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddForm}
-                  className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-bold text-slate-700"
-                >
-                  + Thêm
-                </button>
-              </div>
-            </div>
-
-            {/* Input Documents */}
-            <div>
-              <label className="block text-slate-700 font-semibold mb-1 text-[11px]">
-                Văn bản đầu vào ({step.inputDocuments?.length || 0})
-              </label>
-              <div className="space-y-1.5 mb-2">
-                {(step.inputDocuments || []).map((doc, i) => (
-                  <div key={i} className="p-1.5 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between text-xs">
-                    <span className="truncate">{doc}</span>
-                    <button type="button" onClick={() => handleRemoveInputDoc(i)} className="text-slate-400 hover:text-rose-600">
-                      <span className="material-symbols-outlined text-[14px]">close</span>
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <div className="flex gap-1.5">
-                <input
-                  type="text"
-                  value={newInDocText}
-                  onChange={(e) => setNewInDocText(e.target.value)}
-                  placeholder="Tên văn bản đầu vào..."
-                  className="flex-1 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddInputDoc}
-                  className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-bold text-slate-700"
-                >
-                  + Thêm
-                </button>
-              </div>
-            </div>
-
-            {/* Stored / Output Documents */}
-            <div>
-              <label className="block text-slate-700 font-semibold mb-1 text-[11px]">
-                Văn bản lưu / Đầu ra ({step.storedDocuments.length})
-              </label>
-              <div className="space-y-1.5 mb-2">
-                {step.storedDocuments.map((doc, i) => (
-                  <div key={i} className="p-1.5 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between text-xs">
-                    <span className="truncate">{doc}</span>
-                    <button type="button" onClick={() => handleRemoveStoredDoc(i)} className="text-slate-400 hover:text-rose-600">
-                      <span className="material-symbols-outlined text-[14px]">close</span>
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <div className="flex gap-1.5">
-                <input
-                  type="text"
-                  value={newDocText}
-                  onChange={(e) => setNewDocText(e.target.value)}
-                  placeholder="Tên văn bản lưu trữ..."
-                  className="flex-1 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddStoredDoc}
-                  className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-bold text-slate-700"
-                >
-                  + Thêm
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ============================================================== */}
-        {/* SECTION F: AI CAPABILITY CONFIGURATION (REQUIREMENT 10)         */}
+        {/* SECTION G: AI TRỢ LÝ NGHIỆP VỤ                                 */}
         {/* ============================================================== */}
         {nodeType !== 'START' && nodeType !== 'END' && (
           <div className="p-3.5 bg-gradient-to-br from-indigo-50/60 to-blue-50/60 border border-indigo-200 rounded-2xl space-y-3">
@@ -901,6 +1477,55 @@ export default function StepPropertiesPanel({
           </div>
         )}
       </div>
+
+      {/* ============================================================== */}
+      {/* CONFIRMATION MODAL CHO "KHÔI PHỤC MẶC ĐỊNH"                    */}
+      {/* ============================================================== */}
+      {revertModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-5 border border-slate-200 space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-[24px]">restart_alt</span>
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-slate-900">
+                  Khôi phục cấu hình mặc định?
+                </h4>
+                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                  Nội dung tùy chỉnh hiện tại của bước sẽ được thay thế bằng cấu hình chuẩn.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1">
+              <div className="text-slate-500 text-[10.5px]">Nội dung khôi phục:</div>
+              <div className="font-bold text-slate-900">{revertModal.targetTitle}</div>
+              <div className="text-[11px] text-indigo-700 font-medium">
+                Kế thừa từ: {inheritedName}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setRevertModal({ isOpen: false, targetSection: 'ALL', targetTitle: '' })}
+                className="px-3.5 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmRevert}
+                className="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+              >
+                <span className="material-symbols-outlined text-[16px]">check</span>
+                Khôi phục
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }

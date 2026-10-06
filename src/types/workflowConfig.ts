@@ -157,6 +157,24 @@ export interface ProcessStep {
   stepForms: string[]; // Biểu mẫu tại bước
   statusChangeDoc: string; // Văn bản đổi trạng thái tại bước
   customOrder?: number;
+  // Thư viện cấu hình chuẩn, Kế thừa & Override:
+  inheritedFromId?: string; // ID mẫu trong Thư viện cấu hình chuẩn
+  inheritedFromName?: string; // Tên mẫu cấu hình đang kế thừa
+  isCustomized?: boolean; // false = [ Mặc định ], true = [ Tùy chỉnh riêng ]
+
+  // Section Điều kiện nghiệp vụ:
+  conditions?: string[]; // Danh sách tiêu chí/điều kiện nghiệp vụ của bước
+  conditionsOverride?: boolean; // true = [ Tùy chỉnh riêng ], false = [ Mặc định ]
+
+  // Section Dữ liệu & Biểu mẫu:
+  formsOverride?: boolean; // Tùy chỉnh riêng Biểu mẫu điện tử (stepForms)
+  inputDocsOverride?: boolean; // Tùy chỉnh riêng Văn bản đầu vào (inputDocuments)
+  outputDocsOverride?: boolean; // Tùy chỉnh riêng Văn bản lưu / đầu ra (storedDocuments)
+
+  // Cờ override SLA & Actions:
+  slaOverride?: boolean;
+  actionsOverride?: boolean;
+
   // Generic architecture extensions:
   actions?: WorkflowAction[];
   aiConfig?: AIConfig;

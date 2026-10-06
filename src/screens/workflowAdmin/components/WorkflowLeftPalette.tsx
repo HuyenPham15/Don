@@ -155,11 +155,10 @@ export default function WorkflowLeftPalette({
           <button
             type="button"
             onClick={() => setActiveTab('components')}
-            className={`py-1.5 px-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${
-              activeTab === 'components'
-                ? 'bg-white text-blue-700 shadow-2xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
+            className={`py-1.5 px-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${activeTab === 'components'
+              ? 'bg-white text-blue-700 shadow-2xs'
+              : 'text-slate-600 hover:text-slate-900'
+              }`}
           >
             <span className="material-symbols-outlined text-[15px]">widgets</span>
             <span>Thành phần</span>
@@ -168,11 +167,10 @@ export default function WorkflowLeftPalette({
           <button
             type="button"
             onClick={() => setActiveTab('lanes')}
-            className={`py-1.5 px-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${
-              activeTab === 'lanes'
-                ? 'bg-white text-blue-700 shadow-2xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
+            className={`py-1.5 px-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${activeTab === 'lanes'
+              ? 'bg-white text-blue-700 shadow-2xs'
+              : 'text-slate-600 hover:text-slate-900'
+              }`}
           >
             <span className="material-symbols-outlined text-[15px]">table_rows</span>
             <span>Nhóm ({lanes.length})</span>
@@ -181,11 +179,10 @@ export default function WorkflowLeftPalette({
           <button
             type="button"
             onClick={() => setActiveTab('stages')}
-            className={`py-1.5 px-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${
-              activeTab === 'stages'
-                ? 'bg-white text-blue-700 shadow-2xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
+            className={`py-1.5 px-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${activeTab === 'stages'
+              ? 'bg-white text-blue-700 shadow-2xs'
+              : 'text-slate-600 hover:text-slate-900'
+              }`}
           >
             <span className="material-symbols-outlined text-[15px]">view_column</span>
             <span>Giai đoạn ({stages.length})</span>
@@ -228,11 +225,10 @@ export default function WorkflowLeftPalette({
               <button
                 type="button"
                 onClick={() => setSelectedCategory('ALL')}
-                className={`px-2 py-0.5 rounded-lg font-semibold shrink-0 transition-colors cursor-pointer ${
-                  selectedCategory === 'ALL'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
+                className={`px-2 py-0.5 rounded-lg font-semibold shrink-0 transition-colors cursor-pointer ${selectedCategory === 'ALL'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
               >
                 Tất cả ({WORKFLOW_COMPONENT_REGISTRY.length})
               </button>
@@ -241,11 +237,10 @@ export default function WorkflowLeftPalette({
                   key={cat.id}
                   type="button"
                   onClick={() => setSelectedCategory(cat.id)}
-                  className={`px-2 py-0.5 rounded-lg font-semibold shrink-0 transition-colors cursor-pointer flex items-center gap-1 ${
-                    selectedCategory === cat.id
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
+                  className={`px-2 py-0.5 rounded-lg font-semibold shrink-0 transition-colors cursor-pointer flex items-center gap-1 ${selectedCategory === cat.id
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
                   title={cat.description}
                 >
                   <span>{cat.title}</span>
@@ -253,7 +248,7 @@ export default function WorkflowLeftPalette({
               ))}
             </div>
 
-            {/* Component Cards Grouped by Category */}
+
             {WORKFLOW_COMPONENT_CATEGORIES.filter(
               (cat) => selectedCategory === 'ALL' || selectedCategory === cat.id
             ).map((cat) => {
@@ -277,13 +272,11 @@ export default function WorkflowLeftPalette({
                         draggable={!isReadOnly}
                         onDragStart={(e) => handleDragStart(e, comp)}
                         onClick={() => handleSelectComponent(comp)}
-                        className={`p-2.5 rounded-xl border bg-white flex items-center justify-between transition-all group ${
-                          comp.color.border
-                        } ${
-                          isReadOnly
+                        className={`p-2.5 rounded-xl border bg-white flex items-center justify-between transition-all group ${comp.color.border
+                          } ${isReadOnly
                             ? 'opacity-60 cursor-not-allowed'
                             : 'hover:border-blue-400 hover:shadow-xs hover:bg-slate-50/60 cursor-grab active:cursor-grabbing shadow-2xs'
-                        }`}
+                          }`}
                         title={isReadOnly ? 'Chế độ chỉ đọc' : 'Kéo thả vào Canvas hoặc nhấp để thêm'}
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
@@ -423,9 +416,8 @@ export default function WorkflowLeftPalette({
                             type="button"
                             disabled={index === 0}
                             onClick={() => handleMoveLane(index, 'up')}
-                            className={`p-1 rounded hover:bg-slate-100 ${
-                              index === 0 ? 'text-slate-300 cursor-not-allowed' : 'text-slate-500 hover:text-slate-800 cursor-pointer'
-                            }`}
+                            className={`p-1 rounded hover:bg-slate-100 ${index === 0 ? 'text-slate-300 cursor-not-allowed' : 'text-slate-500 hover:text-slate-800 cursor-pointer'
+                              }`}
                             title="Di chuyển lên trên"
                           >
                             <span className="material-symbols-outlined text-[15px]">arrow_upward</span>
@@ -436,11 +428,10 @@ export default function WorkflowLeftPalette({
                             type="button"
                             disabled={index === lanes.length - 1}
                             onClick={() => handleMoveLane(index, 'down')}
-                            className={`p-1 rounded hover:bg-slate-100 ${
-                              index === lanes.length - 1
-                                ? 'text-slate-300 cursor-not-allowed'
-                                : 'text-slate-500 hover:text-slate-800 cursor-pointer'
-                            }`}
+                            className={`p-1 rounded hover:bg-slate-100 ${index === lanes.length - 1
+                              ? 'text-slate-300 cursor-not-allowed'
+                              : 'text-slate-500 hover:text-slate-800 cursor-pointer'
+                              }`}
                             title="Di chuyển xuống dưới"
                           >
                             <span className="material-symbols-outlined text-[15px]">arrow_downward</span>
@@ -511,11 +502,10 @@ export default function WorkflowLeftPalette({
                 <button
                   type="submit"
                   disabled={!newLaneName.trim()}
-                  className={`w-full py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs ${
-                    newLaneName.trim()
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
-                      : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                  }`}
+                  className={`w-full py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs ${newLaneName.trim()
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
+                    : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                    }`}
                 >
                   + Thêm nhóm trách nhiệm
                 </button>
@@ -585,9 +575,8 @@ export default function WorkflowLeftPalette({
                             type="button"
                             disabled={index === 0}
                             onClick={() => handleMoveStage(index, 'up')}
-                            className={`p-1 rounded hover:bg-slate-100 ${
-                              index === 0 ? 'text-slate-300 cursor-not-allowed' : 'text-slate-500 hover:text-slate-800 cursor-pointer'
-                            }`}
+                            className={`p-1 rounded hover:bg-slate-100 ${index === 0 ? 'text-slate-300 cursor-not-allowed' : 'text-slate-500 hover:text-slate-800 cursor-pointer'
+                              }`}
                             title="Di chuyển sang trái"
                           >
                             <span className="material-symbols-outlined text-[15px]">arrow_upward</span>
@@ -598,11 +587,10 @@ export default function WorkflowLeftPalette({
                             type="button"
                             disabled={index === stages.length - 1}
                             onClick={() => handleMoveStage(index, 'down')}
-                            className={`p-1 rounded hover:bg-slate-100 ${
-                              index === stages.length - 1
-                                ? 'text-slate-300 cursor-not-allowed'
-                                : 'text-slate-500 hover:text-slate-800 cursor-pointer'
-                            }`}
+                            className={`p-1 rounded hover:bg-slate-100 ${index === stages.length - 1
+                              ? 'text-slate-300 cursor-not-allowed'
+                              : 'text-slate-500 hover:text-slate-800 cursor-pointer'
+                              }`}
                             title="Di chuyển sang phải"
                           >
                             <span className="material-symbols-outlined text-[15px]">arrow_downward</span>
@@ -656,11 +644,10 @@ export default function WorkflowLeftPalette({
                 <button
                   type="submit"
                   disabled={!newStageName.trim()}
-                  className={`w-full py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs ${
-                    newStageName.trim()
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
-                      : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                  }`}
+                  className={`w-full py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs ${newStageName.trim()
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
+                    : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                    }`}
                 >
                   + Thêm cột giai đoạn
                 </button>

@@ -57,6 +57,14 @@ export default function WorkflowCanvas({
   // Connect mode state (click to connect)
   const [connectingSourceStepId, setConnectingSourceStepId] = useState<string | null>(null);
 
+  // Lọc bỏ phần / làn Văn thư theo yêu cầu nghiệp vụ
+  const activeLanes = React.useMemo(() => {
+    const filtered = lanes.filter(
+      (l) => !l.name.toLowerCase().includes('văn thư') && l.code !== 'VT'
+    );
+    return filtered.length > 0 ? filtered : lanes;
+  }, [lanes]);
+
   // Tính toán tọa độ tâm và biên của từng bước
   const stepPositions = React.useMemo(() => {
     const map = new Map<
@@ -69,7 +77,12 @@ export default function WorkflowCanvas({
 
     steps.forEach((step) => {
       const stageIdx = stages.findIndex((s) => s.id === step.stageId);
-      const laneIdx = lanes.findIndex((l) => l.id === step.laneId);
+      let laneIdx = activeLanes.findIndex((l) => l.id === step.laneId);
+
+      // Nếu bước thuộc làn Văn thư đã được bỏ, chuyển về làn đầu tiên
+      if (laneIdx < 0) {
+        laneIdx = 0;
+      }
 
       const validStageIdx = stageIdx >= 0 ? stageIdx : 0;
       const validLaneIdx = laneIdx >= 0 ? laneIdx : 0;
@@ -96,10 +109,10 @@ export default function WorkflowCanvas({
     });
 
     return map;
-  }, [steps, lanes, stages]);
+  }, [steps, activeLanes, stages]);
 
   const canvasTotalWidth = LANE_HEADER_WIDTH + stages.length * STAGE_COL_WIDTH + 80;
-  const canvasTotalHeight = 48 + lanes.length * LANE_ROW_HEIGHT + 60;
+  const canvasTotalHeight = 48 + activeLanes.length * LANE_ROW_HEIGHT + 60;
 
   // Xử lý kéo thả HTML5
   const handleDragStart = (e: React.DragEvent, stepId: string) => {
@@ -234,7 +247,7 @@ export default function WorkflowCanvas({
 
         {/* 2. LANES ROWS & GRID CELLS */}
         <div className="absolute top-12 left-0 right-0 bottom-0" style={{ width: canvasTotalWidth }}>
-          {lanes.map((lane, lIdx) => {
+          {activeLanes.map((lane, lIdx) => {
             const laneTop = lIdx * LANE_ROW_HEIGHT;
             return (
               <div
@@ -265,9 +278,7 @@ export default function WorkflowCanvas({
                       </span>
                     )}
                   </div>
-                  <span className="text-[9.5px] font-mono font-bold uppercase text-slate-400 px-1.5 py-0.5 rounded bg-slate-200/60 w-fit">
-                    Lane {lIdx + 1} • {lane.code}
-                  </span>
+
                 </div>
 
                 {/* Grid Cells theo từng Giai đoạn */}
@@ -279,9 +290,8 @@ export default function WorkflowCanvas({
                       key={stg.id}
                       onDragOver={(e) => handleDragOver(e, lane.id, stg.id)}
                       onDrop={(e) => handleDrop(e, lane.id, stg.id)}
-                      className={`h-full border-r border-slate-200/80 transition-colors ${
-                        isHovered ? 'bg-blue-100/50 border-blue-400 border-2' : ''
-                      }`}
+                      className={`h-full border-r border-slate-200/80 transition-colors ${isHovered ? 'bg-blue-100/50 border-blue-400 border-2' : ''
+                        }`}
                       style={{ width: STAGE_COL_WIDTH }}
                     ></div>
                   );
@@ -399,16 +409,16 @@ export default function WorkflowCanvas({
             const strokeColor = isFocused
               ? '#ef4444'
               : isSelected
-              ? '#7c3aed'
-              : isReturn
-              ? '#d97706'
-              : '#004ac6';
+                ? '#7c3aed'
+                : isReturn
+                  ? '#d97706'
+                  : '#004ac6';
 
             const markerId = isFocused || isSelected
               ? 'url(#arrow-selected)'
               : isReturn
-              ? 'url(#arrow-return)'
-              : 'url(#arrow-normal)';
+                ? 'url(#arrow-return)'
+                : 'url(#arrow-normal)';
 
             return (
               <g key={trans.id} className="cursor-pointer pointer-events-auto">
@@ -453,13 +463,12 @@ export default function WorkflowCanvas({
                         e.stopPropagation();
                         onSelectTransition(trans.id);
                       }}
-                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold text-center truncate border shadow-2xs transition-all cursor-pointer ${
-                        isSelected
-                          ? 'bg-purple-600 text-white border-purple-700 shadow-md ring-2 ring-purple-300'
-                          : isReturn
+                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold text-center truncate border shadow-2xs transition-all cursor-pointer ${isSelected
+                        ? 'bg-purple-600 text-white border-purple-700 shadow-md ring-2 ring-purple-300'
+                        : isReturn
                           ? 'bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-200'
                           : 'bg-white text-blue-900 border-blue-200 hover:border-blue-400'
-                      }`}
+                        }`}
                       title={trans.actionName}
                     >
                       {isReturn && '↩ '}
@@ -495,15 +504,14 @@ export default function WorkflowCanvas({
                   width: CARD_WIDTH,
                   height: CARD_HEIGHT,
                 }}
-                className={`absolute top-0 left-0 bg-white rounded-2xl border p-3 flex flex-col justify-between transition-all pointer-events-auto shadow-xs group cursor-pointer ${
-                  isFocused
-                    ? 'border-rose-500 ring-4 ring-rose-200 animate-pulse bg-rose-50/20'
-                    : isSelected
+                className={`absolute top-0 left-0 bg-white rounded-2xl border p-3 flex flex-col justify-between transition-all pointer-events-auto shadow-xs group cursor-pointer ${isFocused
+                  ? 'border-rose-500 ring-4 ring-rose-200 animate-pulse bg-rose-50/20'
+                  : isSelected
                     ? 'border-blue-600 ring-3 ring-blue-100 shadow-md'
                     : isConnectSource
-                    ? 'border-purple-600 ring-3 ring-purple-200 bg-purple-50/30'
-                    : 'border-slate-200/90 hover:border-blue-400 hover:shadow-md'
-                }`}
+                      ? 'border-purple-600 ring-3 ring-purple-200 bg-purple-50/30'
+                      : 'border-slate-200/90 hover:border-blue-400 hover:shadow-md'
+                  }`}
               >
                 {/* Top card: Badges & Step Code */}
                 <div>
@@ -563,6 +571,17 @@ export default function WorkflowCanvas({
                           AI
                         </span>
                       )}
+
+                      {/* Inheritance / Override indicator */}
+                      {(step.isCustomized || step.conditionsOverride || step.formsOverride || step.inputDocsOverride || step.outputDocsOverride) ? (
+                        <span className="px-1 py-0.2 rounded bg-amber-50 text-amber-800 font-semibold text-[8px] border border-amber-300" title="Đang tùy chỉnh riêng (Override)">
+                          Tùy chỉnh
+                        </span>
+                      ) : (
+                        <span className="px-1 py-0.2 rounded bg-sky-50 text-sky-700 font-semibold text-[8px] border border-sky-200" title={step.inheritedFromName ? `Kế thừa từ: ${step.inheritedFromName}` : 'Kế thừa chuẩn'}>
+                          Mặc định
+                        </span>
+                      )}
                     </div>
 
                     {/* Quick Connect Button */}
@@ -570,11 +589,10 @@ export default function WorkflowCanvas({
                       <button
                         type="button"
                         onClick={(e) => handleStartConnect(e, step.id)}
-                        className={`w-6 h-6 rounded-md flex items-center justify-center transition-colors ${
-                          isConnectSource
-                            ? 'bg-purple-600 text-white shadow-xs'
-                            : 'text-slate-400 hover:text-blue-700 hover:bg-blue-50'
-                        }`}
+                        className={`w-6 h-6 rounded-md flex items-center justify-center transition-colors ${isConnectSource
+                          ? 'bg-purple-600 text-white shadow-xs'
+                          : 'text-slate-400 hover:text-blue-700 hover:bg-blue-50'
+                          }`}
                         title={isConnectSource ? 'Đang chọn bước này' : 'Nối bước từ đây'}
                       >
                         <span className="material-symbols-outlined text-[15px]">cable</span>

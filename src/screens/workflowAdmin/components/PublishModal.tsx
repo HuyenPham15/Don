@@ -91,22 +91,9 @@ export default function PublishModal({
               onChange={(e) => setEffectiveDate(e.target.value)}
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:border-blue-500 focus:outline-none"
             />
-            <span className="text-[10.5px] text-slate-400 mt-1 block">
+            {/* <span className="text-[10.5px] text-slate-400 mt-1 block">
               Từ thời điểm này, các hồ sơ mới tiếp nhận thuộc Loại đơn sẽ tự động áp dụng quy trình phiên bản mới nhất này
-            </span>
-          </div>
-
-          {/* Ghi chú phát hành */}
-          <div>
-            <label className="block font-bold text-slate-800 mb-1">
-              Ghi chú phát hành &amp; Căn cứ ban hành
-            </label>
-            <textarea
-              rows={2}
-              value={releaseNotes}
-              onChange={(e) => setReleaseNotes(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:outline-none"
-            />
+            </span> */}
           </div>
 
           {/* Rules Reminder (Notice Box) */}
