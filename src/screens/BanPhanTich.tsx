@@ -15,6 +15,7 @@ import ThongBaoBoSungModal from '../components/workflow/ThongBaoBoSungModal';
 import { getSuggestedActionsForWorkflow } from '../components/workflow/QuyTrinhSuggestedActions';
 import { SigningDocument, CurrentUserAccount } from '../types/signing';
 import { INITIAL_LEADERS } from '../constants/signingData';
+import DonTrungDetailDrawer, { DonTrungItem } from '../components/modals/DonTrungDetailDrawer';
 
 interface BanPhanTichProps {
   luotNhan: LuotNhan;
@@ -51,6 +52,14 @@ export default function BanPhanTich({
 
   // BR-01..BR-24 State controls
   const [currentLuotNhanStatus, setCurrentLuotNhanStatus] = useState<string>(luotNhan?.status || 'cho_chuyen');
+  const hasDeterminedHuongXuLy = currentLuotNhanStatus !== 'cho_chuyen' && currentLuotNhanStatus !== 'cho_xu_ly' && currentLuotNhanStatus !== 'chua_xu_ly';
+
+  useEffect(() => {
+    if (luotNhan?.status) {
+      setCurrentLuotNhanStatus(luotNhan.status);
+    }
+  }, [luotNhan?.status]);
+
   const [validationErrorModal, setValidationErrorModal] = useState<string | null>(null);
   const [isOfficialData, setIsOfficialData] = useState<boolean>(Boolean(luotNhan?.isOfficialData));
   const [tiepNhanHuong, setTiepNhanHuong] = useState<'tu_xu_ly' | 'phan_cong'>('tu_xu_ly');
@@ -71,7 +80,7 @@ export default function BanPhanTich({
   const [activeHighlightKey, setActiveHighlightKey] = useState<string | null>(null);
 
   // Dữ liệu đơn trùng phục vụ đối soát CSDL và chọn đơn ghép
-  const DON_TRUNG_LIST = [
+  const DON_TRUNG_LIST: DonTrungItem[] = [
     {
       id: 'dt-1',
       code: 'DS-29/2026-GOVEX',
@@ -81,35 +90,173 @@ export default function BanPhanTich({
       tags: ['Người đứng đơn', 'Nội dung tương tự'],
       ngayNhan: '10/09/2026',
       nguoiNop: 'Đại diện KDC số 4',
+      cccd: '001075018392',
+      soDienThoai: '0912 345 678',
+      diaChi: 'Tổ dân phố số 4, phường Nghĩa Đô, quận Cầu Giấy, Hà Nội',
+      loaiDon: 'Phản ánh / Kiến nghị',
+      linhVuc: 'Môi trường & Trật tự đô thị',
+      doiTuongBiPhanAnh: 'Cơ sở tái chế phế liệu Minh Phát',
       canBoThuLy: 'Nguyễn Minh Anh',
       donVi: 'Phòng QLĐT',
       noiDungGhepGoiY: 'Gói này giống hồ sơ DS-29/2026-GOVEX đang mở – ghép vào đó không sinh đơn mới, không tốn số',
+      tomTatNoiDung: 'Tập thể người dân KDC số 4 phản ánh cơ sở tái chế phế liệu Minh Phát hoạt động phát tán mùi khói khét độc hại và xả thải không qua xử lý, đồng thời gây tiếng ồn nghiêm trọng từ 22h đêm đến 04h sáng, ảnh hưởng đến người già và trẻ nhỏ.',
+      quaTrinhXuLy: [
+        {
+          date: '10/09/2026',
+          title: 'Tiếp nhận đơn & Vào sổ theo dõi',
+          actor: 'Nguyễn Minh Anh (Cán bộ thụ lý - Phòng QLĐT)',
+          desc: 'Tiếp nhận đơn thư, đối chiếu thông tin chủ thể và cấp mã hồ sơ chính thức DS-29/2026-GOVEX.',
+          status: 'done',
+        },
+        {
+          date: '12/09/2026',
+          title: 'Kiểm tra hiện trường & Lập biên bản xác minh',
+          actor: 'Tổ công tác TDP 4 & Cán bộ thụ lý',
+          desc: 'Lập biên bản xác minh thực địa, ghi nhận hiện trạng phản ánh cơ sở tái chế phế liệu Minh Phát.',
+          status: 'done',
+        },
+        {
+          date: '16/09/2026',
+          title: 'Phối hợp Phòng TN&MT đo kiểm khí thải, tiếng ồn',
+          actor: 'Phòng Tài nguyên & Môi trường quận',
+          desc: 'Tiến hành đo đạc nồng độ khí thải và cường độ âm thanh ban đêm tại khu vực dân sinh giáp ranh.',
+          status: 'done',
+        },
+        {
+          date: '20/09/2026',
+          title: 'Tổng hợp kết quả & Dự thảo văn bản xử lý',
+          actor: 'Nguyễn Minh Anh',
+          desc: 'Đang tổng hợp báo cáo kiểm tra và dự thảo văn bản yêu cầu cơ sở chấp hành quy định hoặc áp dụng biện pháp đình chỉ.',
+          status: 'in_progress',
+        },
+      ],
+      taiLieuDinhKem: [
+        {
+          name: 'Don_kien_nghi_goc_DS-29_2026_GOVEX.pdf',
+          size: '2.4 MB',
+          type: 'Đơn thư gốc scan (Bản có chữ ký tập thể hộ dân)',
+        },
+        {
+          name: 'Bien_ban_kiem_tra_hien_truong_12-09.pdf',
+          size: '1.8 MB',
+          type: 'Biên bản làm việc thực địa',
+        },
+        {
+          name: 'Hinh_anh_khoi_bui_co_so_Minh_Phat.jpg',
+          size: '3.6 MB',
+          type: 'Hình ảnh bằng chứng vi phạm',
+        },
+        {
+          name: 'Phieu_de_nghi_do_kiem_TNMT.pdf',
+          size: '780 KB',
+          type: 'Phiếu kiểm tra chuyên môn',
+        },
+      ],
+      tieuChiSoSanh: [
+        {
+          tieuChi: 'Người đứng đơn',
+          donGoc: 'Đại diện KDC số 4',
+          donMoi: 'Đại diện KDC số 4',
+          match: true,
+          note: 'Trùng khớp 100% chủ thể',
+        },
+        {
+          tieuChi: 'Số định danh CCCD',
+          donGoc: '001075018392',
+          donMoi: '001075018392',
+          match: true,
+          note: 'Trùng khớp số CCCD/Định danh',
+        },
+        {
+          tieuChi: 'Đối tượng bị phản ánh',
+          donGoc: 'Cơ sở tái chế phế liệu Minh Phát',
+          donMoi: 'Cơ sở tái chế Minh Phát',
+          match: true,
+          note: 'Trùng khớp đối tượng vi phạm',
+        },
+        {
+          tieuChi: 'Địa bàn phát sinh',
+          donGoc: 'Khu dân cư TDP số 4, Cầu Giấy, Hà Nội',
+          donMoi: 'KDC số 4, Cầu Giấy, Hà Nội',
+          match: true,
+          note: 'Cùng vị trí địa bàn vụ việc',
+        },
+        {
+          tieuChi: 'Nội dung & Chứng cứ mới',
+          donGoc: 'Biên bản ghi nhận ngày 10/09/2026',
+          donMoi: 'Bổ sung hợp đồng & biên bản đo đạc ban đêm',
+          match: false,
+          note: 'Cung cấp chứng cứ bổ sung cho đơn gốc',
+        },
+      ],
     },
     {
       id: 'dt-2',
       code: 'DS-4/2026-CATPHN',
       status: 'Đang xử lý',
-      title: 'Chưa có tên đơn',
+      title: 'Tố giác cơ sở kinh doanh phế liệu Minh Phát lấn chiếm lối đi chung và xả khói bụi',
       matchPercent: 89,
       tags: ['Người đứng đơn', 'Nội dung tương tự'],
       ngayNhan: '05/09/2026',
       nguoiNop: 'Nguyễn Văn A',
+      cccd: '001088019234',
+      soDienThoai: '0903 888 999',
+      diaChi: 'Số 12 ngõ 45 Cầu Giấy, Hà Nội',
+      loaiDon: 'Tố giác vi phạm',
+      linhVuc: 'An ninh trật tự & Môi trường',
+      doiTuongBiPhanAnh: 'Cơ sở tái chế Minh Phát & chủ cơ sở',
       canBoThuLy: 'Trần Hoàng Long',
       donVi: 'Công an TP. Hà Nội',
       noiDungGhepGoiY: 'Gói này giống hồ sơ DS-4/2026-CATPHN đang mở – ghép vào đó không sinh đơn mới, không tốn số',
+      tomTatNoiDung: 'Tố giác việc tụ tập xe tải bốc dỡ phế liệu lấn chiếm lòng lề đường, phát tán khói bụi độc hại vào ban đêm.',
+      quaTrinhXuLy: [
+        {
+          date: '05/09/2026',
+          title: 'Tiếp nhận tin báo tố giác',
+          actor: 'Trần Hoàng Long (Cán bộ thụ lý)',
+          desc: 'Tiếp nhận thông tin tố giác từ công dân, phân loại hồ sơ ban đầu.',
+          status: 'done',
+        },
+        {
+          date: '09/09/2026',
+          title: 'Xác minh trật tự đô thị tại cơ sở',
+          actor: 'Công an phường phối hợp',
+          desc: 'Kiểm tra hiện trạng đỗ xe lấn chiếm ngõ xóm và lập biên bản nhắc nhở.',
+          status: 'done',
+        },
+      ],
+      taiLieuDinhKem: [
+        {
+          name: 'Don_to_giac_DS-4.pdf',
+          size: '1.5 MB',
+          type: 'Đơn tố giác của công dân',
+        },
+        {
+          name: 'Anh_chup_xe_tai_lan_chiem.jpg',
+          size: '2.8 MB',
+          type: 'Hình ảnh vi phạm',
+        },
+      ],
     },
     {
       id: 'dt-3',
       code: 'DS-5/2026-CATPHN',
       status: 'Đang xử lý',
-      title: 'Chưa có tên đơn',
+      title: 'Kiến nghị kiểm tra khí thải độc hại phát tán từ điểm thu mua phế liệu Minh Phát',
       matchPercent: 84,
       tags: ['Người đứng đơn', 'Nội dung tương tự'],
       ngayNhan: '01/09/2026',
       nguoiNop: 'Trần Thị C (Đồng đứng đơn)',
+      cccd: '001180023412',
+      soDienThoai: '0987 654 321',
+      diaChi: 'KDC số 4, Cầu Giấy, Hà Nội',
+      loaiDon: 'Kiến nghị / Phản ánh',
+      linhVuc: 'Môi trường dân sinh',
+      doiTuongBiPhanAnh: 'Cơ sở tái chế Minh Phát',
       canBoThuLy: 'Lê Thanh Tùng',
       donVi: 'Công an TP. Hà Nội',
       noiDungGhepGoiY: 'Gói này giống hồ sơ DS-5/2026-CATPHN đang mở – ghép vào đó không sinh đơn mới, không tốn số',
+      tomTatNoiDung: 'Kiến nghị phối hợp cơ quan chức năng kiểm tra khí thải, mùi hóa chất đốt nhựa tái chế vào ban đêm.',
     },
     {
       id: 'dt-4',
@@ -120,15 +267,24 @@ export default function BanPhanTich({
       tags: ['Cùng đối tượng', 'Nội dung tương tự'],
       ngayNhan: '15/12/2025',
       nguoiNop: 'Đại diện KDC số 4',
+      cccd: '001075018392',
+      soDienThoai: '0912 345 678',
+      diaChi: 'KDC số 4, Cầu Giấy, Hà Nội',
+      loaiDon: 'Khiếu nại',
+      linhVuc: 'Đất đai & Bồi thường GPMB',
+      doiTuongBiPhanAnh: 'Hội đồng Bồi thường GPMB Dự án Y',
       canBoThuLy: 'Phạm Thu Hằng',
       donVi: 'Thanh tra Sở Xây dựng',
       noiDungGhepGoiY: 'Gói này giống hồ sơ Đ-2025-00341 đang mở – ghép vào đó không sinh đơn mới, không tốn số',
+      tomTatNoiDung: 'Khiếu nại về đơn giá bồi thường đất nông nghiệp và phương án giao đất tái định cư.',
     },
   ];
 
   // Officer inputs
   const [selectedGhepDonCode, setSelectedGhepDonCode] = useState<string>('DS-29/2026-GOVEX');
   const [showAllDonTrung, setShowAllDonTrung] = useState<boolean>(false);
+  const [selectedDonTrungForDrawer, setSelectedDonTrungForDrawer] = useState<DonTrungItem | null>(null);
+  const [showDonTrungDrawer, setShowDonTrungDrawer] = useState<boolean>(false);
   const [officerNote, setOfficerNote] = useState<string>(
     'Gói này giống hồ sơ DS-29/2026-GOVEX đang mở – ghép vào đó không sinh đơn mới, không tốn số'
   );
@@ -1060,6 +1216,42 @@ Kính trình Lãnh đạo phê duyệt:
               <span>2. AI đã đọc xong (Ảnh mẫu)</span>
             </button>
           </div>
+
+          <div className="hidden sm:flex items-center gap-1.5 ml-2 pl-3 border-l border-slate-600">
+            <span className="font-semibold text-slate-300">Hướng xử lý:</span>
+            <div className="flex items-center p-0.5 bg-slate-800 rounded-lg border border-slate-600">
+              <button
+                type="button"
+                onClick={() => {
+                  setCurrentLuotNhanStatus('cho_chuyen');
+                  showToast('Chuyển sang: Chưa có hướng xử lý (Hiển thị các nút Ghép đơn & Tiếp nhận đơn).');
+                }}
+                className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 ${!hasDeterminedHuongXuLy
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'text-slate-400 hover:text-white'
+                  }`}
+                title="Hồ sơ chưa có hướng xử lý: Hiển thị các nút để cán bộ thao tác"
+              >
+                <span className="material-symbols-outlined text-[13px]">pending</span>
+                <span>Chưa có hướng</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCurrentLuotNhanStatus('da_chuyen');
+                  showToast('Chuyển sang: Đã xác định hướng xử lý (Ẩn các nút Ghép đơn & Tiếp nhận đơn).');
+                }}
+                className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 ${hasDeterminedHuongXuLy
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'text-slate-400 hover:text-white'
+                  }`}
+                title="Hồ sơ đã xác định hướng xử lý: Ẩn các nút Ghép đơn & Tiếp nhận đơn"
+              >
+                <span className="material-symbols-outlined text-[13px]">task_alt</span>
+                <span>Đã xác định hướng</span>
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
@@ -1188,12 +1380,6 @@ Kính trình Lãnh đạo phê duyệt:
           {/* BR-03: Thao tác theo tiến trình quy trình nghiệp vụ đã cấu hình */}
           {currentLuotNhanStatus === 'da_chuyen' ? (
             <div className="flex items-center gap-2 flex-wrap">
-              {/* Badge: Đã hoàn tất Tiếp nhận */}
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-300 text-xs font-bold shadow-2xs">
-                <span className="material-symbols-outlined text-[16px] text-emerald-600">check_circle</span>
-                <span>Đã tiếp nhận đơn</span>
-              </span>
-
               {/* NÚT CHÍNH: BƯỚC TIẾP THEO THEO QUY TRÌNH: XÁC MINH THÔNG TIN & ĐỀ XUẤT HƯỚNG XỬ LÝ */}
               <button
                 type="button"
@@ -1203,17 +1389,6 @@ Kính trình Lãnh đạo phê duyệt:
               >
                 <span className="material-symbols-outlined text-[18px]">fact_check</span>
                 <span>Xác minh thông tin &amp; Đề xuất hướng xử lý ➔</span>
-              </button>
-
-              {/* Sơ đồ quy trình cấu hình */}
-              <button
-                type="button"
-                onClick={() => onNav('quy-trinh-xu-ly')}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 text-xs font-bold shadow-2xs transition-all cursor-pointer"
-                title="Xem toàn bộ luồng quy trình được cấu hình"
-              >
-                <span className="material-symbols-outlined text-[16px] text-indigo-600">account_tree</span>
-                <span>Sơ đồ quy trình</span>
               </button>
             </div>
           ) : currentLuotNhanStatus === 'da_thu_ly' ? (
@@ -1295,14 +1470,14 @@ Kính trình Lãnh đạo phê duyệt:
             </button>
           )}
 
-          <button
+          {/* <button
             type="button"
             onClick={() => showToast('Đang tải xuống tài liệu đơn...')}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
           >
             <span className="material-symbols-outlined text-[16px] text-slate-500">download</span>
             <span>Tải xuống</span>
-          </button>
+          </button> */}
         </div>
       </div>
 
@@ -2250,8 +2425,8 @@ Kính trình Lãnh đạo phê duyệt:
                           </span>
                         </div>
 
-                        {/* Tỉ lệ % đơn trùng */}
-                        <div className="flex items-center gap-1.5">
+                        {/* Tỉ lệ % đơn trùng & Nút xem chi tiết */}
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <span
                             className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${item.matchPercent >= 90
                               ? 'bg-rose-100/90 text-rose-800 border-rose-200'
@@ -2262,6 +2437,20 @@ Kính trình Lãnh đạo phê duyệt:
                           >
                             Trùng {item.matchPercent}%
                           </span>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedDonTrungForDrawer(item);
+                              setShowDonTrungDrawer(true);
+                            }}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-[#004ac6] hover:text-[#003da8] text-[11px] font-bold border border-blue-200/90 transition-all shadow-2xs cursor-pointer active:scale-95"
+                            title="Xem chi tiết đơn trùng này trong drawer"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">visibility</span>
+                            <span>Xem chi tiết</span>
+                          </button>
                         </div>
                       </div>
 
@@ -2284,9 +2473,11 @@ Kính trình Lãnh đạo phê duyệt:
                             </span>
                           ))}
                         </div>
-                        <span className="text-[11px] text-slate-500 font-mono">
-                          Thụ lý: <strong>{item.canBoThuLy}</strong> ({item.ngayNhan})
-                        </span>
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-[11px] text-slate-500 font-mono">
+                            Thụ lý: <strong>{item.canBoThuLy}</strong> ({item.ngayNhan})
+                          </span>
+                        </div>
                       </div>
                     </div>
                   );
@@ -2333,21 +2524,31 @@ Kính trình Lãnh đạo phê duyệt:
                   Gợi ý hướng xử lý
                 </h3>
               </div>
-              <span className="text-xs text-slate-500 font-medium">4 đề xuất nghiệp vụ</span>
+              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${hasDeterminedHuongXuLy
+                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold'
+                : 'text-slate-500'
+                }`}>
+                {hasDeterminedHuongXuLy ? '✓ Đã xác định hướng xử lý' : '4 đề xuất nghiệp vụ'}
+              </span>
             </div>
 
             <div className="space-y-3">
               {/* Card 1: Ghép vào đơn */}
               <div
                 onClick={() => {
+                  if (hasDeterminedHuongXuLy) return;
                   setHuongXuLy('ghep');
                   setOfficerNote(
                     `Gói này giống hồ sơ ${selectedGhepDonCode} đang mở – ghép vào đó không sinh đơn mới, không tốn số`
                   );
                 }}
-                className={`p-3.5 sm:p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-3 ${huongXuLy === 'ghep'
-                  ? 'border-[#a61c1c] bg-[#fffaf9] shadow-2xs ring-1 ring-[#a61c1c]/30'
-                  : 'border-[#a61c1c]/60 bg-white hover:border-[#a61c1c]'
+                className={`p-3.5 sm:p-4 rounded-2xl border-2 transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 ${hasDeterminedHuongXuLy
+                  ? currentLuotNhanStatus === 'da_ghep'
+                    ? 'border-[#a61c1c] bg-[#fffaf9] shadow-2xs ring-1 ring-[#a61c1c]/30 cursor-default'
+                    : 'border-slate-200 bg-slate-50/50 opacity-60 cursor-default'
+                  : huongXuLy === 'ghep'
+                    ? 'border-[#a61c1c] bg-[#fffaf9] shadow-2xs ring-1 ring-[#a61c1c]/30 cursor-pointer'
+                    : 'border-[#a61c1c]/60 bg-white hover:border-[#a61c1c] cursor-pointer'
                   }`}
               >
                 <div className="min-w-0 flex-1">
@@ -2355,41 +2556,35 @@ Kính trình Lãnh đạo phê duyệt:
                     <h4 className="text-xs sm:text-sm font-bold text-slate-900">
                       Ghép vào đơn — {selectedGhepDonCode}
                     </h4>
+                    {hasDeterminedHuongXuLy && currentLuotNhanStatus === 'da_ghep' && (
+                      <span className="px-2 py-0.5 rounded-full bg-[#a61c1c] text-white text-[10px] font-bold">
+                        ✓ Hướng đã chọn
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-slate-600 mt-1 leading-relaxed">
                     Gói này giống hồ sơ {selectedGhepDonCode} đang mở – ghép vào đó không sinh đơn mới, không tốn số
                   </p>
                 </div>
 
-                <div className="shrink-0 flex items-center justify-end">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setHuongXuLy('ghep');
-                      setOfficerNote(
-                        `Gói này giống hồ sơ ${selectedGhepDonCode} đang mở – ghép vào đó không sinh đơn mới, không tốn số`
-                      );
-                      setShowGhepModal(true);
-                    }}
-                    className="px-4.5 py-2.5 bg-[#a61c1c] hover:bg-[#8b1414] active:scale-95 text-white text-xs font-bold rounded-xl shadow-2xs flex items-center gap-1.5 cursor-pointer transition-all"
-                  >
-                    <span>Ghép vào đơn</span>
-                  </button>
-                </div>
               </div>
 
               {/* Card 2: Tiếp nhận — chạy workflow theo loại đơn */}
               <div
                 onClick={() => {
+                  if (hasDeterminedHuongXuLy) return;
                   setHuongXuLy('tiep-nhan');
                   setOfficerNote(
                     'Hồ sơ phát sinh mới, không trùng lặp. Đề xuất tiếp nhận tạo Đơn mới để chuyển tiếp sang quy trình thụ lý giải quyết theo quy định.'
                   );
                 }}
-                className={`p-3.5 sm:p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-3 ${huongXuLy === 'tiep-nhan'
-                  ? 'border-[#004ac6] bg-blue-50/50 shadow-2xs ring-1 ring-[#004ac6]/30'
-                  : 'border-slate-200 bg-white hover:border-[#004ac6]'
+                className={`p-3.5 sm:p-4 rounded-2xl border-2 transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 ${hasDeterminedHuongXuLy
+                  ? currentLuotNhanStatus === 'da_chuyen' || currentLuotNhanStatus === 'da_thu_ly'
+                    ? 'border-[#004ac6] bg-blue-50/50 shadow-2xs ring-1 ring-[#004ac6]/30 cursor-default'
+                    : 'border-slate-200 bg-slate-50/50 opacity-60 cursor-default'
+                  : huongXuLy === 'tiep-nhan'
+                    ? 'border-[#004ac6] bg-blue-50/50 shadow-2xs ring-1 ring-[#004ac6]/30 cursor-pointer'
+                    : 'border-slate-200 bg-white hover:border-[#004ac6] cursor-pointer'
                   }`}
               >
                 <div className="min-w-0 flex-1">
@@ -2397,33 +2592,19 @@ Kính trình Lãnh đạo phê duyệt:
                     <h4 className="text-xs sm:text-sm font-bold text-slate-900">
                       Tiếp nhận — {extractData.loaiNoiDung || 'Đơn tố cáo trong tố tụng hình sự'}
                     </h4>
+                    {hasDeterminedHuongXuLy && (currentLuotNhanStatus === 'da_chuyen' || currentLuotNhanStatus === 'da_thu_ly') && (
+                      <span className="px-2 py-0.5 rounded-full bg-[#004ac6] text-white text-[10px] font-bold">
+                        ✓ Hướng đã chọn
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-slate-600 mt-1 leading-relaxed">
                     Hồ sơ đủ điều kiện tiếp nhận ban đầu theo thẩm quyền; lập mã đơn điện tử và chạy workflow theo loại đơn.
                   </p>
                 </div>
 
-                <div className="shrink-0 flex items-center justify-end">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setHuongXuLy('tiep-nhan');
-                      setOfficerNote(
-                        'Hồ sơ phát sinh mới, không trùng lặp. Đề xuất tiếp nhận tạo Đơn mới để chuyển tiếp sang quy trình thụ lý giải quyết theo quy định.'
-                      );
-                      // Tiếp nhận trực tiếp → chuyển sang màn chi tiết đơn + workflow
-                      handleConfirmTiepNhan();
-                    }}
-                    className="px-4.5 py-2.5 bg-[#004ac6] hover:bg-[#003da6] active:scale-95 text-white text-xs font-bold rounded-xl shadow-2xs flex items-center gap-1.5 cursor-pointer transition-all"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">assignment_turned_in</span>
-                    <span>Tiếp nhận đơn</span>
-                  </button>
-                </div>
+
               </div>
-
-
             </div>
           </div>
 
@@ -2477,7 +2658,7 @@ Kính trình Lãnh đạo phê duyệt:
               </button>
 
               <div className="flex flex-wrap items-center gap-2">
-                {currentLuotNhanStatus === 'cho_chuyen' ? (
+                {!hasDeterminedHuongXuLy ? (
                   <>
                     {huongXuLy === 'ghep' ? (
                       <>
@@ -2530,35 +2711,50 @@ Kính trình Lãnh đạo phê duyệt:
                     )}
                   </>
                 ) : (
-                  <span
-                    className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border ${currentLuotNhanStatus === 'da_chuyen'
-                      ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                      : currentLuotNhanStatus === 'da_ghep'
-                        ? 'bg-indigo-50 text-indigo-800 border-indigo-300'
-                        : currentLuotNhanStatus === 'da_ban_giao'
-                          ? 'bg-amber-50 text-amber-800 border-amber-300'
-                          : 'bg-rose-50 text-rose-800 border-rose-300'
-                      }`}
-                  >
-                    <span className="material-symbols-outlined text-[16px]">
-                      {currentLuotNhanStatus === 'da_chuyen'
-                        ? 'check_circle'
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border ${currentLuotNhanStatus === 'da_chuyen'
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
                         : currentLuotNhanStatus === 'da_ghep'
-                          ? 'merge_type'
+                          ? 'bg-indigo-50 text-indigo-800 border-indigo-300'
                           : currentLuotNhanStatus === 'da_ban_giao'
-                            ? 'swap_horiz'
-                            : 'assignment_return'}
+                            ? 'bg-amber-50 text-amber-800 border-amber-300'
+                            : 'bg-rose-50 text-rose-800 border-rose-300'
+                        }`}
+                    >
+                      <span className="material-symbols-outlined text-[16px]">
+                        {currentLuotNhanStatus === 'da_chuyen'
+                          ? 'check_circle'
+                          : currentLuotNhanStatus === 'da_ghep'
+                            ? 'merge_type'
+                            : currentLuotNhanStatus === 'da_ban_giao'
+                              ? 'swap_horiz'
+                              : 'assignment_return'}
+                      </span>
+                      <span>
+                        {currentLuotNhanStatus === 'da_chuyen'
+                          ? 'Đã tiếp nhận tạo Đơn'
+                          : currentLuotNhanStatus === 'da_ghep'
+                            ? `Đã ghép vào ${selectedGhepDonCode}`
+                            : currentLuotNhanStatus === 'da_ban_giao'
+                              ? 'Đã bàn giao'
+                              : 'Đã trả lại'}
+                      </span>
                     </span>
-                    <span>
-                      {currentLuotNhanStatus === 'da_chuyen'
-                        ? 'Đã tiếp nhận tạo Đơn'
-                        : currentLuotNhanStatus === 'da_ghep'
-                          ? `Đã ghép vào ${selectedGhepDonCode}`
-                          : currentLuotNhanStatus === 'da_ban_giao'
-                            ? 'Đã bàn giao'
-                            : 'Đã trả lại'}
-                    </span>
-                  </span>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCurrentLuotNhanStatus('cho_chuyen');
+                        showToast('Đã mở lại chế độ để cán bộ chọn lại hướng xử lý.');
+                      }}
+                      className="px-2.5 py-1.5 text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer flex items-center gap-1 border border-slate-200"
+                      title="Mở lại chế độ chọn hướng xử lý"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">edit</span>
+                      <span>Đổi hướng</span>
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -3179,6 +3375,30 @@ Kính trình Lãnh đạo phê duyệt:
           </div>
         </div>
       )}
+
+      {/* DRAWER XEM CHI TIẾT ĐƠN TRÙNG */}
+      <DonTrungDetailDrawer
+        isOpen={showDonTrungDrawer}
+        onClose={() => setShowDonTrungDrawer(false)}
+        donTrung={selectedDonTrungForDrawer}
+        currentLuotNhanCode={luotNhan?.id || 'LN-56/2026-GOVEX'}
+        currentNguoiGui={extractData.nguoiGui || luotNhan?.nguoiNop || 'Đại diện KDC số 4'}
+        currentCccd={extractData.cccd || '001075018392'}
+        isSelectedForGhep={selectedGhepDonCode === selectedDonTrungForDrawer?.code}
+        isDetermined={hasDeterminedHuongXuLy}
+        onSelectForGhep={(item) => {
+          setSelectedGhepDonCode(item.code);
+          setHuongXuLy('ghep');
+          setOfficerNote(`Gói này giống hồ sơ ${item.code} đang mở – ghép vào đó không sinh đơn mới, không tốn số`);
+          setGhiChuGhep(`Ghép lượt nhận vào hồ sơ ${item.code} để theo dõi tập trung, không tạo mã đơn mới.`);
+          showToast(`✓ Đã chọn hồ sơ ${item.code} để ghép vào lượt nhận này`);
+        }}
+        onOpenSoSanhChiTiet={(item) => {
+          setSelectedGhepDonCode(item.code);
+          setShowDonTrungDrawer(false);
+          setShowDetailTargetDonModal(true);
+        }}
+      />
 
       {/* MODAL VĂN BẢN TRÌNH KÝ LIÊN KẾT TRỰC TIẾP CỦA ĐƠN */}
       {showSigningDocModal && activeSigningDoc && (

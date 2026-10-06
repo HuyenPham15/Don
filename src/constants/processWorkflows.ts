@@ -1,5 +1,5 @@
 // src/constants/processWorkflows.ts
-import { ProcessWorkflow } from '../types/workflowConfig';
+import { ProcessWorkflow, RealDocumentEntity } from '../types/workflowConfig';
 
 export const INITIAL_PROCESS_WORKFLOWS: ProcessWorkflow[] = [
   {
@@ -116,7 +116,7 @@ export const INITIAL_PROCESS_WORKFLOWS: ProcessWorkflow[] = [
         id: 'step-tc-06',
         code: 'STEP-TC-06',
         name: 'Thông báo kết quả và lưu hồ sơ',
-        laneId: 'lane-van-thu',
+        laneId: 'lane-chuyen-mon',
         stageId: 'stage-thong-bao-luu-tru',
         description: 'Phát hành thông báo kết luận giải quyết tố cáo gửi người tố cáo, người bị tố cáo và cơ quan cấp trên; đóng hồ sơ lưu trữ theo quy định.',
         isStart: false,
@@ -137,10 +137,17 @@ export const INITIAL_PROCESS_WORKFLOWS: ProcessWorkflow[] = [
         fromStepId: 'step-tc-01',
         toStepId: 'step-tc-02',
         type: 'normal',
-        allowedRoles: ['Cán bộ Văn thư', 'Cán bộ Tiếp nhận'],
+        allowedRoles: ['Cán bộ Chuyên môn', 'Cán bộ Tiếp nhận'],
         createNextTask: true,
         taskAssigneeRole: 'Tổ công tác Chuyên môn',
         warningMessage: 'Hồ sơ chưa có đủ giấy tờ định danh hoặc chưa xác thực đơn thư hợp lệ.',
+        docCheckType: 'check_existing',
+        docCheckMode: 'all',
+        documentConditions: [
+          { id: 'dc-tc-1', documentType: 'Đơn tố cáo', documentName: 'Đơn tố cáo của công dân', required: true, status: 'available', documentId: 'DOC-001' },
+          { id: 'dc-tc-2', documentType: 'Biên bản tiếp nhận', documentName: 'Biên bản tiếp nhận đơn thư', required: true, status: 'available', documentId: 'DOC-002' },
+          { id: 'dc-tc-3', documentType: 'Tài liệu xác minh', documentName: 'Tài liệu xác minh bước đầu', required: false, status: 'missing' },
+        ],
         conditions: [
           {
             id: 'cond-1',
@@ -178,6 +185,7 @@ export const INITIAL_PROCESS_WORKFLOWS: ProcessWorkflow[] = [
         createNextTask: true,
         taskAssigneeRole: 'Cán bộ Chuyên môn',
         warningMessage: 'Chưa có đầy đủ biên bản làm việc hoặc báo cáo đối soát xác minh.',
+        docCheckType: 'none',
         conditions: [
           {
             id: 'cond-4',
@@ -199,6 +207,11 @@ export const INITIAL_PROCESS_WORKFLOWS: ProcessWorkflow[] = [
         createNextTask: true,
         taskAssigneeRole: 'Lãnh đạo đơn vị',
         warningMessage: 'Chưa đính kèm dự thảo tờ trình xem xét phê duyệt.',
+        docCheckType: 'require_on_transition',
+        requiredDocuments: [
+          { id: 'rd-tc-1', documentType: 'Báo cáo đề xuất', documentName: 'Báo cáo đề xuất xử lý tố cáo', required: true, providerRole: 'Cán bộ thụ lý' },
+          { id: 'rd-tc-2', documentType: 'Biên bản xác minh', documentName: 'Biên bản làm việc đối thoại', required: true, providerRole: 'Cán bộ thụ lý' },
+        ],
         conditions: [
           {
             id: 'cond-5',
@@ -318,9 +331,8 @@ export const INITIAL_PROCESS_WORKFLOWS: ProcessWorkflow[] = [
     updatedBy: 'Trần Trọng Giáp (Trưởng phòng)',
     effectiveDate: '15/09/2026',
     lanes: [
-      { id: 'lane-vt', name: 'Văn thư', code: 'VT', order: 1 },
-      { id: 'lane-cm', name: 'Chuyên môn', code: 'CM', order: 2 },
-      { id: 'lane-ld', name: 'Lãnh đạo', code: 'LD', order: 3 },
+      { id: 'lane-cm', name: 'Chuyên môn', code: 'CM', order: 1 },
+      { id: 'lane-ld', name: 'Lãnh đạo', code: 'LD', order: 2 },
     ],
     stages: [
       { id: 'stg-1', name: 'Tiếp nhận đơn', order: 1 },
@@ -335,7 +347,7 @@ export const INITIAL_PROCESS_WORKFLOWS: ProcessWorkflow[] = [
         code: 'STEP-KN-01',
         name: 'Tiếp nhận & Kiểm tra điều kiện thụ lý',
         nodeType: 'CHECK',
-        laneId: 'lane-vt',
+        laneId: 'lane-cm',
         stageId: 'stg-1',
         description: 'Kiểm tra thẩm quyền, thời hiệu và 4 điều kiện thụ lý ban đầu theo Luật Khiếu nại.',
         isStart: true,
@@ -356,6 +368,8 @@ export const INITIAL_PROCESS_WORKFLOWS: ProcessWorkflow[] = [
         conditionsOverride: false,
         stepForms: ['Phiếu kiểm tra điều kiện thụ lý'],
         formsOverride: false,
+        usedDocuments: ['Đơn khiếu nại'],
+        usedDocsOverride: false,
         inputDocuments: ['Đơn khiếu nại'],
         inputDocsOverride: false,
         storedDocuments: ['Phiếu tiếp nhận đơn khiếu nại'],
@@ -417,7 +431,7 @@ export const INITIAL_PROCESS_WORKFLOWS: ProcessWorkflow[] = [
         id: 'st-kn-5',
         code: 'STEP-KN-05',
         name: 'Tống đạt quyết định & Lưu hồ sơ',
-        laneId: 'lane-vt',
+        laneId: 'lane-cm',
         stageId: 'stg-5',
         description: 'Tống đạt quyết định cho các bên liên quan, lưu vào kho lưu trữ.',
         isStart: false,
@@ -438,9 +452,16 @@ export const INITIAL_PROCESS_WORKFLOWS: ProcessWorkflow[] = [
         fromStepId: 'st-kn-1',
         toStepId: 'st-kn-2',
         type: 'normal',
-        allowedRoles: ['Cán bộ Văn thư'],
+        allowedRoles: ['Cán bộ Chuyên môn', 'Cán bộ Tiếp nhận'],
         createNextTask: true,
         taskAssigneeRole: 'Tổ Chuyên môn',
+        docCheckType: 'check_existing',
+        docCheckMode: 'all',
+        documentConditions: [
+          { id: 'dc-kn-1', documentType: 'Đơn khiếu nại', documentName: 'Đơn khiếu nại của công dân', required: true, status: 'available', documentId: 'DOC-001' },
+          { id: 'dc-kn-2', documentType: 'Phiếu kiểm tra', documentName: 'Phiếu kiểm tra điều kiện thụ lý', required: true, status: 'available', documentId: 'DOC-003' },
+          { id: 'dc-kn-3', documentType: 'Biên bản tiếp nhận', documentName: 'Giấy biên nhận đơn khiếu nại', required: false, status: 'available', documentId: 'DOC-002' },
+        ],
         conditions: [
           {
             id: 'c-kn-1',
@@ -461,6 +482,7 @@ export const INITIAL_PROCESS_WORKFLOWS: ProcessWorkflow[] = [
         allowedRoles: ['Cán bộ thụ lý'],
         createNextTask: true,
         taskAssigneeRole: 'Tổ Chuyên môn',
+        docCheckType: 'none',
         conditions: [],
       },
       {
@@ -472,6 +494,11 @@ export const INITIAL_PROCESS_WORKFLOWS: ProcessWorkflow[] = [
         allowedRoles: ['Trưởng phòng Chuyên môn'],
         createNextTask: true,
         taskAssigneeRole: 'Lãnh đạo',
+        docCheckType: 'require_on_transition',
+        requiredDocuments: [
+          { id: 'rd-kn-1', documentType: 'Biên bản đối thoại', documentName: 'Biên bản đối thoại có chữ ký các bên', required: true, providerRole: 'Cán bộ thụ lý' },
+          { id: 'rd-kn-2', documentType: 'Báo cáo xác minh', documentName: 'Báo cáo kết quả xác minh khiếu nại', required: true, providerRole: 'Cán bộ thụ lý' },
+        ],
         conditions: [],
       },
       {
@@ -482,7 +509,8 @@ export const INITIAL_PROCESS_WORKFLOWS: ProcessWorkflow[] = [
         type: 'normal',
         allowedRoles: ['Văn phòng'],
         createNextTask: true,
-        taskAssigneeRole: 'Văn thư',
+        taskAssigneeRole: 'Bộ phận chuyên môn lưu trữ',
+        docCheckType: 'none',
         conditions: [],
       },
     ],
@@ -1085,3 +1113,64 @@ export const CONDITION_OPERATORS = [
   { id: 'thuoc_danh_sach', label: 'Thuộc danh sách' },
   { id: 'khong_thuoc_danh_sach', label: 'Không thuộc danh sách' },
 ] as const;
+
+// ── KHO TÀI LIỆU THỰC TẾ TRONG HỒ SƠ (SINGLE SOURCE OF TRUTH) ──
+// Nguyên tắc: ONE BUSINESS DOCUMENT = ONE DOCUMENT ENTITY
+// Cả "Tài liệu sử dụng tại bước" và "Điều kiện chuyển bước" đều tham chiếu đến cùng Document ID này.
+export const INITIAL_RECORD_DOCUMENTS: RealDocumentEntity[] = [
+  {
+    id: 'DOC-001',
+    code: 'VB-TC-001',
+    name: 'Đơn tố cáo của công dân',
+    documentType: 'Đơn tố cáo',
+    status: 'attached',
+    fileName: 'Don_to_cao_nguyen_van_a.pdf',
+    fileSize: '2.4 MB',
+    createdAt: '15/09/2026 08:30',
+    createdBy: 'Công dân Nguyễn Văn A',
+  },
+  {
+    id: 'DOC-002',
+    code: 'VB-TN-002',
+    name: 'Biên bản tiếp nhận đơn thư',
+    documentType: 'Biên bản tiếp nhận',
+    status: 'signed',
+    fileName: 'Bien_ban_tiep_nhan_002.pdf',
+    fileSize: '1.1 MB',
+    createdAt: '15/09/2026 09:15',
+    createdBy: 'Cán bộ Tiếp nhận',
+  },
+  {
+    id: 'DOC-003',
+    code: 'VB-PKT-003',
+    name: 'Phiếu kiểm tra điều kiện thụ lý',
+    documentType: 'Phiếu kiểm tra',
+    status: 'attached',
+    fileName: 'Phieu_kiem_tra_dieu_kien.pdf',
+    fileSize: '820 KB',
+    createdAt: '15/09/2026 14:00',
+    createdBy: 'Chuyên viên thụ lý',
+  },
+  {
+    id: 'DOC-004',
+    code: 'VB-XM-004',
+    name: 'Biên bản làm việc với người gửi đơn',
+    documentType: 'Biên bản làm việc',
+    status: 'attached',
+    fileName: 'Bien_ban_lam_viec_xac_minh.pdf',
+    fileSize: '1.5 MB',
+    createdAt: '16/09/2026 10:20',
+    createdBy: 'Tổ xác minh',
+  },
+  {
+    id: 'DOC-005',
+    code: 'VB-CC-005',
+    name: 'Tài liệu chứng cứ xác minh thực tế',
+    documentType: 'Tài liệu xác minh',
+    status: 'attached',
+    fileName: 'Tai_lieu_xac_minh_thuc_te.zip',
+    fileSize: '5.8 MB',
+    createdAt: '17/09/2026 15:45',
+    createdBy: 'Cán bộ Chuyên môn',
+  },
+];

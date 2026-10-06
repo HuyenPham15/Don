@@ -198,10 +198,85 @@ export default function WorkflowDataConditionsTab({
                   </div>
                 </div>
 
+                {/* Document Condition Check Block */}
+                <div className="pt-2 border-t border-slate-100">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                      Kiểm tra văn bản / tài liệu:
+                    </span>
+                    <span className={`px-2 py-0.5 rounded text-[10.5px] font-bold ${
+                      t.docCheckType === 'check_existing'
+                        ? 'bg-blue-50 text-blue-800 border border-blue-200'
+                        : t.docCheckType === 'require_on_transition'
+                        ? 'bg-indigo-50 text-indigo-800 border border-indigo-200'
+                        : 'bg-slate-100 text-slate-600'
+                    }`}>
+                      {t.docCheckType === 'check_existing'
+                        ? 'Kiểm tra văn bản tại bước'
+                        : t.docCheckType === 'require_on_transition'
+                        ? 'Yêu cầu văn bản khi chuyển bước'
+                        : 'Không kiểm tra văn bản'}
+                    </span>
+                  </div>
+
+                  {t.docCheckType === 'check_existing' && t.documentConditions && t.documentConditions.length > 0 && (
+                    <div className="p-2.5 bg-blue-50/50 border border-blue-200/80 rounded-xl space-y-1.5 mb-2">
+                      <div className="flex items-center justify-between text-[11px] text-blue-900 font-semibold">
+                        <span>Chế độ: {t.docCheckMode === 'any' ? 'Một trong các văn bản' : 'Tất cả văn bản phải có'}</span>
+                        <span className="text-[10px] text-slate-500 font-normal">Tham chiếu tài liệu sẵn có (Không sinh mới)</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {t.documentConditions.map((dc) => (
+                          <span
+                            key={dc.id}
+                            className={`px-2 py-0.5 rounded-md text-[10.5px] font-medium border flex items-center gap-1 ${
+                              dc.status === 'available'
+                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                : 'bg-amber-50 text-amber-800 border-amber-200'
+                            }`}
+                          >
+                            <span>{dc.documentName}</span>
+                            {dc.required && <strong className="text-rose-600 text-[10px]">*</strong>}
+                            <span className="text-[9.5px] font-bold">
+                              ({dc.status === 'available' ? 'Đã có' : 'Chưa có'})
+                            </span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {t.docCheckType === 'require_on_transition' && t.requiredDocuments && t.requiredDocuments.length > 0 && (
+                    <div className="p-2.5 bg-indigo-50/50 border border-indigo-200/80 rounded-xl space-y-1.5 mb-2">
+                      <span className="text-[11px] text-indigo-900 font-semibold block">
+                        Văn bản yêu cầu nộp khi bấm &quot;Đẩy bước&quot;:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {t.requiredDocuments.map((rd) => (
+                          <span
+                            key={rd.id}
+                            className="px-2 py-0.5 rounded-md text-[10.5px] font-medium bg-white text-indigo-900 border border-indigo-200 flex items-center gap-1 shadow-2xs"
+                          >
+                            <span className="material-symbols-outlined text-[13px] text-indigo-600">upload_file</span>
+                            <span>{rd.documentName}</span>
+                            <span className="text-slate-400 font-mono text-[9.5px]">({rd.providerRole})</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {(!t.docCheckType || t.docCheckType === 'none') && (
+                    <div className="text-xs text-slate-400 italic p-2 rounded-xl bg-slate-50 border border-slate-100 mb-2">
+                      Không yêu cầu tài liệu đính kèm. Chỉ xét các điều kiện logic dữ liệu nếu có.
+                    </div>
+                  )}
+                </div>
+
                 {/* Conditions Block */}
                 <div className="pt-2 border-t border-slate-100">
                   <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
-                    Điều kiện dữ liệu ràng buộc:
+                    Điều kiện dữ liệu logic ({t.conditions?.length || 0}):
                   </span>
 
                   {hasConditions ? (
@@ -225,7 +300,7 @@ export default function WorkflowDataConditionsTab({
                             <span className="text-slate-500">{opLabel}</span>
                             {cond.operator !== 'co_gia_tri' && cond.operator !== 'khong_co_gia_tri' && (
                               <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-900 font-bold border border-emerald-200">
-                                "{cond.value || '...'}"
+                                &quot;{cond.value || '...'}&quot;
                               </span>
                             )}
                           </div>
@@ -234,7 +309,7 @@ export default function WorkflowDataConditionsTab({
                     </div>
                   ) : (
                     <div className="text-xs text-slate-400 italic p-2 rounded-xl bg-slate-50 border border-slate-100">
-                      Không có điều kiện ràng buộc. Cán bộ có quyền có thể chuyển bước trực tiếp khi hoàn thành.
+                      Không có điều kiện logic ràng buộc. Cán bộ có quyền có thể chuyển bước trực tiếp khi hoàn thành.
                     </div>
                   )}
                 </div>

@@ -130,9 +130,8 @@ export default function CreateWorkflowScreen({
         updatedAt: dateStr,
         updatedBy: 'Nguyễn Minh Anh (Cán bộ thụ lý)',
         lanes: [
-          { id: 'lane-vt', name: 'Tiếp nhận / Văn thư', code: 'VT', order: 1, description: 'Tiếp nhận, vào sổ ban đầu' },
-          { id: 'lane-cm', name: 'Cán bộ Chuyên môn', code: 'CM', order: 2, description: 'Thụ lý và xử lý nghiệp vụ' },
-          { id: 'lane-ld', name: 'Lãnh đạo phê duyệt', code: 'LD', order: 3, description: 'Ký số và ban hành kết quả' },
+          { id: 'lane-cm', name: 'Cán bộ Chuyên môn', code: 'CM', order: 1, description: 'Thụ lý và xử lý nghiệp vụ' },
+          { id: 'lane-ld', name: 'Lãnh đạo phê duyệt', code: 'LD', order: 2, description: 'Ký số và ban hành kết quả' },
         ],
         stages: [
           { id: 'stg-1', name: 'Tiếp nhận', order: 1 },
@@ -145,7 +144,7 @@ export default function CreateWorkflowScreen({
             code: 'STEP-01',
             name: 'Tiếp nhận hồ sơ',
             nodeType: 'START',
-            laneId: 'lane-vt',
+            laneId: 'lane-cm',
             stageId: 'stg-1',
             description: 'Tiếp nhận và khởi tạo hồ sơ trên hệ thống.',
             isStart: true,

@@ -417,9 +417,6 @@ export default function App() {
             placeholder="Tìm kiếm đơn, mã hồ sơ, người liên quan... (Ctrl + K)"
             className="w-full pl-9 pr-12 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-blue-500 transition-all"
           />
-          <span className="absolute right-2.5 top-2 text-[10px] font-mono text-slate-400 bg-white px-1.5 py-0.5 rounded border border-slate-200">
-            ⌘K
-          </span>
         </div>
 
         {/* Operational & Officer Status */}

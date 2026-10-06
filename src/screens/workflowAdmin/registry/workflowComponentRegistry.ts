@@ -879,7 +879,9 @@ export function resetStepToStandard(step: ProcessStep): ProcessStep {
     stepForms: [...tpl.defaultStepForms],
     formsOverride: false,
 
+    usedDocuments: [...tpl.defaultInputDocs],
     inputDocuments: [...tpl.defaultInputDocs],
+    usedDocsOverride: false,
     inputDocsOverride: false,
 
     storedDocuments: [...tpl.defaultStoredDocs],
@@ -906,7 +908,7 @@ export function resetStepToStandard(step: ProcessStep): ProcessStep {
 
 export function resetStepSectionToStandard(
   step: ProcessStep,
-  section: 'conditions' | 'forms' | 'inputDocs' | 'outputDocs' | 'sla' | 'actions'
+  section: 'conditions' | 'forms' | 'usedDocs' | 'inputDocs' | 'outputDocs' | 'sla' | 'actions'
 ): ProcessStep {
   const tpl = getStandardStepTemplate(
     step.nodeType || 'TASK',
@@ -925,8 +927,11 @@ export function resetStepSectionToStandard(
       updated.stepForms = [...tpl.defaultStepForms];
       updated.formsOverride = false;
       break;
+    case 'usedDocs':
     case 'inputDocs':
+      updated.usedDocuments = [...tpl.defaultInputDocs];
       updated.inputDocuments = [...tpl.defaultInputDocs];
+      updated.usedDocsOverride = false;
       updated.inputDocsOverride = false;
       break;
     case 'outputDocs':
@@ -949,6 +954,7 @@ export function resetStepSectionToStandard(
   const hasRemainingOverrides = Boolean(
     updated.conditionsOverride ||
     updated.formsOverride ||
+    updated.usedDocsOverride ||
     updated.inputDocsOverride ||
     updated.outputDocsOverride ||
     updated.slaOverride ||
@@ -1006,9 +1012,11 @@ export function createDefaultStepFromRegistry(
     stepForms: customConfig?.stepForms || [...standardTpl.defaultStepForms],
     formsOverride: customConfig?.formsOverride ?? false,
 
-    // Văn bản đầu vào (mặc định kế thừa từ thư viện)
-    inputDocuments: customConfig?.inputDocuments || [...standardTpl.defaultInputDocs],
-    inputDocsOverride: customConfig?.inputDocsOverride ?? false,
+    // Tài liệu sử dụng tại bước (tham chiếu xem/nghiên cứu, KHÔNG là điều kiện chuyển bước)
+    usedDocuments: customConfig?.usedDocuments || customConfig?.inputDocuments || [...standardTpl.defaultInputDocs],
+    inputDocuments: customConfig?.usedDocuments || customConfig?.inputDocuments || [...standardTpl.defaultInputDocs],
+    usedDocsOverride: customConfig?.usedDocsOverride ?? customConfig?.inputDocsOverride ?? false,
+    inputDocsOverride: customConfig?.usedDocsOverride ?? customConfig?.inputDocsOverride ?? false,
 
     // Văn bản lưu / đầu ra (mặc định kế thừa từ thư viện)
     storedDocuments: customConfig?.storedDocuments || [...standardTpl.defaultStoredDocs],

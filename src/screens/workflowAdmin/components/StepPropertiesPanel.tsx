@@ -7,12 +7,14 @@ import {
   WorkflowAction,
   WorkflowActionType,
   AICapability,
+  RealDocumentEntity,
 } from '../../../types/workflowConfig';
 import {
   getStandardStepTemplate,
   resetStepToStandard,
   resetStepSectionToStandard,
 } from '../registry/workflowComponentRegistry';
+import { INITIAL_RECORD_DOCUMENTS } from '../../../constants/processWorkflows';
 
 interface StepPropertiesPanelProps {
   step: ProcessStep;
@@ -85,6 +87,8 @@ export default function StepPropertiesPanel({
   const [newDocText, setNewDocText] = useState('');
   const [newInDocText, setNewInDocText] = useState('');
   const [newFormText, setNewFormText] = useState('');
+  const [isSelectRecordDocModalOpen, setIsSelectRecordDocModalOpen] = useState(false);
+  const [recordDocSearch, setRecordDocSearch] = useState('');
 
   // Action creation inline form
   const [isAddingAction, setIsAddingAction] = useState(false);
@@ -108,6 +112,7 @@ export default function StepPropertiesPanel({
     step.isCustomized ||
     step.conditionsOverride ||
     step.formsOverride ||
+    step.usedDocsOverride ||
     step.inputDocsOverride ||
     step.outputDocsOverride ||
     step.slaOverride ||
@@ -194,21 +199,47 @@ export default function StepPropertiesPanel({
     });
   };
 
-  const handleAddInputDoc = () => {
-    if (!newInDocText.trim()) return;
+  // Tài liệu sử dụng tại bước (tham chiếu xem/nghiên cứu nghiệp vụ, KHÔNG là điều kiện chuyển bước)
+  const currentUsedDocs = step.usedDocuments || step.inputDocuments || [];
+
+  const handleAddUsedDocFromRecord = (docEntity: RealDocumentEntity) => {
+    if (currentUsedDocs.includes(docEntity.name)) return;
+    const updated = [...currentUsedDocs, docEntity.name];
     onUpdateStep({
       ...step,
-      inputDocuments: [...(step.inputDocuments || []), newInDocText.trim()],
+      usedDocuments: updated,
+      inputDocuments: updated,
+      usedDocsOverride: true,
       inputDocsOverride: true,
       isCustomized: true,
     });
+    setIsSelectRecordDocModalOpen(false);
+  };
+
+  const handleAddUsedDocCustom = () => {
+    if (!newInDocText.trim()) return;
+    const docName = newInDocText.trim();
+    if (!currentUsedDocs.includes(docName)) {
+      const updated = [...currentUsedDocs, docName];
+      onUpdateStep({
+        ...step,
+        usedDocuments: updated,
+        inputDocuments: updated,
+        usedDocsOverride: true,
+        inputDocsOverride: true,
+        isCustomized: true,
+      });
+    }
     setNewInDocText('');
   };
 
-  const handleRemoveInputDoc = (idx: number) => {
+  const handleRemoveUsedDoc = (idx: number) => {
+    const updated = currentUsedDocs.filter((_, i) => i !== idx);
     onUpdateStep({
       ...step,
-      inputDocuments: (step.inputDocuments || []).filter((_, i) => i !== idx),
+      usedDocuments: updated,
+      inputDocuments: updated,
+      usedDocsOverride: true,
       inputDocsOverride: true,
       isCustomized: true,
     });
@@ -660,25 +691,26 @@ export default function StepPropertiesPanel({
         </div>
 
         {/* ============================================================== */}
-        {/* SECTION D: DỮ LIỆU & TÀI LIỆU (REQUIREMENT 3)                  */}
+        {/* SECTION: BIỂU MẪU ĐIỆN TỬ & KẾT QUẢ ĐẦU RA                      */}
         {/* ============================================================== */}
         <div className="space-y-4">
           <div className="flex items-center gap-1.5 pb-1 border-b border-slate-100">
             <span className="w-2 h-2 rounded-full bg-teal-600"></span>
             <span className="text-[11px] font-bold text-slate-800 uppercase tracking-wide">
-              Dữ liệu & Tài liệu
+              Biểu mẫu điện tử &amp; Kết quả đầu ra
             </span>
           </div>
 
-          {/* Sub-section A: Biểu mẫu điện tử */}
-          <div className="p-3 bg-slate-50/70 border border-slate-200/90 rounded-2xl space-y-2.5">
+          {/* Sub-section B: Biểu mẫu điện tử */}
+          <div className="p-3.5 bg-slate-50/70 border border-slate-200/90 rounded-2xl space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <span className="font-bold text-slate-800 text-xs block">
-                  A. Biểu mẫu điện tử ({step.stepForms.length})
+                <span className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-blue-600 text-[16px]">dynamic_form</span>
+                  <span>B. Biểu mẫu điện tử ({step.stepForms.length})</span>
                 </span>
-                <span className="text-[10px] text-slate-500 block leading-tight">
-                  Form / cấu trúc dữ liệu để người dùng nhập thông tin nghiệp vụ
+                <span className="text-[10px] text-slate-500 block leading-tight mt-0.5">
+                  Form để người dùng nhập dữ liệu có cấu trúc tại bước (không coi là văn bản)
                 </span>
               </div>
               <div className="flex items-center gap-1.5">
@@ -707,13 +739,16 @@ export default function StepPropertiesPanel({
               {step.stepForms.map((form, i) => (
                 <div
                   key={i}
-                  className="p-2 bg-white rounded-xl border border-slate-200 flex items-center justify-between text-xs shadow-2xs"
+                  className="p-2.5 bg-white rounded-xl border border-slate-200 flex items-center justify-between text-xs shadow-2xs"
                 >
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="material-symbols-outlined text-blue-600 text-[16px]">
-                      dynamic_form
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="material-symbols-outlined text-blue-600 text-[17px]">
+                      description
                     </span>
-                    <span className="font-semibold text-slate-800 truncate">{form}</span>
+                    <div className="min-w-0">
+                      <span className="font-semibold text-slate-800 block truncate">{form}</span>
+                      <span className="text-[9.5px] text-slate-400 font-mono">Form dữ liệu có cấu trúc</span>
+                    </div>
                   </div>
                   <button
                     type="button"
@@ -721,14 +756,14 @@ export default function StepPropertiesPanel({
                     className="text-slate-400 hover:text-rose-600 p-1 rounded"
                     title="Xóa biểu mẫu"
                   >
-                    <span className="material-symbols-outlined text-[14px]">close</span>
+                    <span className="material-symbols-outlined text-[15px]">close</span>
                   </button>
                 </div>
               ))}
 
               {step.stepForms.length === 0 && (
-                <p className="text-[11px] text-slate-400 italic">
-                  Không áp dụng biểu mẫu điện tử nào.
+                <p className="text-[11px] text-slate-400 italic py-1">
+                  Không áp dụng biểu mẫu điện tử nào cho bước này.
                 </p>
               )}
             </div>
@@ -744,45 +779,46 @@ export default function StepPropertiesPanel({
                     handleAddForm();
                   }
                 }}
-                placeholder="Tên / mã biểu mẫu điện tử..."
-                className="flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs focus:border-blue-500 focus:outline-none"
+                placeholder="Tên / mã biểu mẫu điện tử (VD: BM-01/TT)..."
+                className="flex-1 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs focus:border-blue-500 focus:outline-none"
               />
               <button
                 type="button"
                 onClick={handleAddForm}
                 disabled={!newFormText.trim()}
-                className="px-2.5 py-1.5 bg-slate-200 hover:bg-slate-300 disabled:opacity-50 text-slate-800 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 text-white disabled:text-slate-400 rounded-xl text-xs font-bold transition-colors cursor-pointer"
               >
-                + Thêm
+                + Thêm form
               </button>
             </div>
           </div>
 
-          {/* Sub-section B: Văn bản đầu vào */}
-          <div className="p-3 bg-slate-50/70 border border-slate-200/90 rounded-2xl space-y-2.5">
+          {/* Sub-section C: Tài liệu sử dụng tại bước */}
+          <div className="p-3.5 bg-slate-50/70 border border-slate-200/90 rounded-2xl space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <span className="font-bold text-slate-800 text-xs block">
-                  B. Văn bản đầu vào ({step.inputDocuments?.length || 0})
+                <span className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-blue-600 text-[16px]">menu_book</span>
+                  <span>C. Tài liệu sử dụng tại bước ({currentUsedDocs.length})</span>
                 </span>
-                <span className="text-[10px] text-slate-500 block leading-tight">
-                  Tài liệu được sử dụng để đọc / kiểm tra trong bước
+                <span className="text-[10px] text-slate-500 block leading-tight mt-0.5">
+                  Tài liệu cán bộ cần xem/đọc/xử lý tại bước (tham chiếu nghiệp vụ, <strong>không là điều kiện chuyển bước</strong>)
                 </span>
               </div>
               <div className="flex items-center gap-1.5">
-                <InheritBadge isOverridden={step.inputDocsOverride} />
-                {step.inputDocsOverride && (
+                <InheritBadge isOverridden={step.usedDocsOverride || step.inputDocsOverride} />
+                {(step.usedDocsOverride || step.inputDocsOverride) && (
                   <button
                     type="button"
                     onClick={() =>
                       setRevertModal({
                         isOpen: true,
-                        targetSection: 'inputDocs',
-                        targetTitle: 'Văn bản đầu vào về mặc định',
+                        targetSection: 'usedDocs',
+                        targetTitle: 'Tài liệu sử dụng tại bước về mặc định',
                       })
                     }
                     className="text-[11px] font-bold text-rose-600 hover:text-rose-800 flex items-center gap-0.5 cursor-pointer"
-                    title="Khôi phục văn bản đầu vào chuẩn"
+                    title="Khôi phục tài liệu sử dụng chuẩn"
                   >
                     <span className="material-symbols-outlined text-[13px]">restart_alt</span>
                     Khôi phục
@@ -791,70 +827,123 @@ export default function StepPropertiesPanel({
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              {(step.inputDocuments || []).map((doc, i) => (
-                <div
-                  key={i}
-                  className="p-2 bg-white rounded-xl border border-slate-200 flex items-center justify-between text-xs shadow-2xs"
-                >
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="material-symbols-outlined text-amber-600 text-[16px]">
-                      file_open
-                    </span>
-                    <span className="font-semibold text-slate-800 truncate">{doc}</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveInputDoc(i)}
-                    className="text-slate-400 hover:text-rose-600 p-1 rounded"
-                    title="Xóa văn bản"
-                  >
-                    <span className="material-symbols-outlined text-[14px]">close</span>
-                  </button>
-                </div>
-              ))}
+            {/* Thông báo nguyên tắc One Document = One Entity */}
+            <div className="p-2.5 bg-blue-50/70 rounded-xl border border-blue-200/70 text-[10.5px] text-slate-600 leading-relaxed flex items-start gap-2">
+              <span className="material-symbols-outlined text-blue-600 text-[16px] shrink-0 mt-0.5">info</span>
+              <div>
+                <span className="font-bold text-blue-900">Nguyên tắc: One Business Document = One Entity.</span> Các tài liệu tại đây tham chiếu trực tiếp đến tài liệu có trong hồ sơ (ví dụ: <code className="bg-blue-100 text-blue-800 px-1 py-0.5 rounded font-mono text-[10px]">DOC-001</code>). Việc tham chiếu này không tạo thêm bản ghi tài liệu trùng lặp và không dùng để chặn chuyển bước.
+              </div>
+            </div>
 
-              {(!step.inputDocuments || step.inputDocuments.length === 0) && (
-                <p className="text-[11px] text-slate-400 italic">
-                  Chưa có văn bản đầu vào nào được chỉ định.
+            {/* Danh sách tài liệu đang sử dụng */}
+            <div className="space-y-1.5">
+              {currentUsedDocs.map((docName, i) => {
+                const matchedEntity = INITIAL_RECORD_DOCUMENTS.find(
+                  (d) => d.name.toLowerCase() === docName.toLowerCase() || d.documentType.toLowerCase() === docName.toLowerCase()
+                );
+
+                return (
+                  <div
+                    key={i}
+                    className="p-2.5 bg-white rounded-xl border border-slate-200 flex items-center justify-between text-xs shadow-2xs hover:border-slate-300 transition-colors"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="material-symbols-outlined text-blue-600 text-[17px] shrink-0">
+                        description
+                      </span>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {matchedEntity ? (
+                            <span className="px-1.5 py-0.5 bg-blue-100 text-blue-800 rounded font-mono text-[9.5px] font-bold">
+                              {matchedEntity.id}
+                            </span>
+                          ) : (
+                            <span className="px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded font-mono text-[9.5px]">
+                              Tham chiếu
+                            </span>
+                          )}
+                          <span className="font-semibold text-slate-800 truncate">{docName}</span>
+                        </div>
+                        <span className="text-[9.5px] text-slate-400 block truncate mt-0.5">
+                          {matchedEntity
+                            ? `Loại: ${matchedEntity.documentType} • Tệp: ${matchedEntity.fileName || 'Chưa đính kèm'} • Trạng thái: ${matchedEntity.status === 'signed' ? 'Đã ký số' : 'Đã đính kèm'}`
+                            : 'Tài liệu tra cứu nghiệp vụ chung'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded text-[9.5px] font-medium border border-slate-200">
+                        Chỉ tham chiếu
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveUsedDoc(i)}
+                        className="text-slate-400 hover:text-rose-600 p-1 rounded"
+                        title="Xóa tài liệu tham chiếu"
+                      >
+                        <span className="material-symbols-outlined text-[15px]">close</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {currentUsedDocs.length === 0 && (
+                <p className="text-[11px] text-slate-400 italic py-1">
+                  Chưa cấu hình tài liệu tham chiếu. Cán bộ không yêu cầu xem trước tài liệu cố định.
                 </p>
               )}
             </div>
 
-            <div className="flex gap-1.5 pt-1">
-              <input
-                type="text"
-                value={newInDocText}
-                onChange={(e) => setNewInDocText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleAddInputDoc();
-                  }
-                }}
-                placeholder="Tên văn bản đầu vào..."
-                className="flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs focus:border-blue-500 focus:outline-none"
-              />
-              <button
-                type="button"
-                onClick={handleAddInputDoc}
-                disabled={!newInDocText.trim()}
-                className="px-2.5 py-1.5 bg-slate-200 hover:bg-slate-300 disabled:opacity-50 text-slate-800 rounded-xl text-xs font-bold transition-colors cursor-pointer"
-              >
-                + Thêm
-              </button>
+            {/* Thao tác thêm tài liệu tham chiếu */}
+            <div className="space-y-1.5 pt-1">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsSelectRecordDocModalOpen(true)}
+                  className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
+                >
+                  <span className="material-symbols-outlined text-[15px]">folder_open</span>
+                  Chọn từ hồ sơ
+                </button>
+                <span className="text-[10px] text-slate-400">hoặc nhập tên tài liệu tham chiếu:</span>
+              </div>
+              <div className="flex gap-1.5">
+                <input
+                  type="text"
+                  value={newInDocText}
+                  onChange={(e) => setNewInDocText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddUsedDocCustom();
+                    }
+                  }}
+                  placeholder="Nhập tên tài liệu cán bộ cần xem/xử lý tại bước..."
+                  className="flex-1 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs focus:border-blue-500 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddUsedDocCustom}
+                  disabled={!newInDocText.trim()}
+                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 text-white disabled:text-slate-400 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                >
+                  + Thêm
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Sub-section C: Văn bản lưu / đầu ra */}
-          <div className="p-3 bg-slate-50/70 border border-slate-200/90 rounded-2xl space-y-2.5">
+          {/* Sub-section D: Kết quả đầu ra */}
+          <div className="p-3.5 bg-slate-50/70 border border-slate-200/90 rounded-2xl space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <span className="font-bold text-slate-800 text-xs block">
-                  C. Văn bản lưu / đầu ra ({step.storedDocuments.length})
+                <span className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-teal-600 text-[16px]">task_alt</span>
+                  <span>D. Kết quả đầu ra ({step.storedDocuments.length})</span>
                 </span>
-                <span className="text-[10px] text-slate-500 block leading-tight">
-                  Tài liệu được tạo / lưu / phát hành sau bước xử lý
+                <span className="text-[10px] text-slate-500 block leading-tight mt-0.5">
+                  Kết quả tạo ra sau khi hoàn thành bước (Dữ liệu, Biểu mẫu hoặc Văn bản phát hành/lưu trữ)
                 </span>
               </div>
               <div className="flex items-center gap-1.5">
@@ -866,11 +955,11 @@ export default function StepPropertiesPanel({
                       setRevertModal({
                         isOpen: true,
                         targetSection: 'outputDocs',
-                        targetTitle: 'Văn bản lưu / đầu ra về mặc định',
+                        targetTitle: 'Kết quả đầu ra về mặc định',
                       })
                     }
                     className="text-[11px] font-bold text-rose-600 hover:text-rose-800 flex items-center gap-0.5 cursor-pointer"
-                    title="Khôi phục văn bản lưu chuẩn"
+                    title="Khôi phục kết quả đầu ra chuẩn"
                   >
                     <span className="material-symbols-outlined text-[13px]">restart_alt</span>
                     Khôi phục
@@ -879,15 +968,40 @@ export default function StepPropertiesPanel({
               </div>
             </div>
 
+            {/* Văn bản đổi trạng thái hồ sơ */}
+            <div className="p-2.5 rounded-xl bg-white border border-slate-200 space-y-1">
+              <label className="block text-[11px] font-bold text-slate-700">
+                Văn bản / Kết quả đổi trạng thái hồ sơ
+              </label>
+              <input
+                type="text"
+                value={step.statusChangeDoc || ''}
+                onChange={(e) =>
+                  onUpdateStep({
+                    ...step,
+                    statusChangeDoc: e.target.value,
+                    outputDocsOverride: true,
+                    isCustomized: true,
+                  })
+                }
+                placeholder="VD: Thông báo thụ lý, Báo cáo xác minh, Kết luận nội dung..."
+                className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:border-blue-500 focus:outline-none"
+              />
+            </div>
+
+            {/* Danh sách văn bản/tài liệu lưu trữ tạo ra */}
             <div className="space-y-1.5">
+              <label className="block text-[11px] font-bold text-slate-700">
+                Văn bản / tài liệu phát hành hoặc lưu trữ ({step.storedDocuments.length}):
+              </label>
               {step.storedDocuments.map((doc, i) => (
                 <div
                   key={i}
-                  className="p-2 bg-white rounded-xl border border-slate-200 flex items-center justify-between text-xs shadow-2xs"
+                  className="p-2.5 bg-white rounded-xl border border-slate-200 flex items-center justify-between text-xs shadow-2xs"
                 >
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="material-symbols-outlined text-teal-600 text-[16px]">
-                      task_alt
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="material-symbols-outlined text-teal-600 text-[17px]">
+                      article
                     </span>
                     <span className="font-semibold text-slate-800 truncate">{doc}</span>
                   </div>
@@ -895,16 +1009,16 @@ export default function StepPropertiesPanel({
                     type="button"
                     onClick={() => handleRemoveStoredDoc(i)}
                     className="text-slate-400 hover:text-rose-600 p-1 rounded"
-                    title="Xóa văn bản"
+                    title="Xóa tài liệu đầu ra"
                   >
-                    <span className="material-symbols-outlined text-[14px]">close</span>
+                    <span className="material-symbols-outlined text-[15px]">close</span>
                   </button>
                 </div>
               ))}
 
               {step.storedDocuments.length === 0 && (
-                <p className="text-[11px] text-slate-400 italic">
-                  Chưa có văn bản lưu / đầu ra được chỉ định.
+                <p className="text-[11px] text-slate-400 italic py-1">
+                  Chưa chỉ định văn bản / kết quả đầu ra cụ thể.
                 </p>
               )}
             </div>
@@ -920,17 +1034,49 @@ export default function StepPropertiesPanel({
                     handleAddStoredDoc();
                   }
                 }}
-                placeholder="Tên văn bản lưu / đầu ra..."
-                className="flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs focus:border-blue-500 focus:outline-none"
+                placeholder="Tên văn bản / kết quả tạo ra..."
+                className="flex-1 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs focus:border-blue-500 focus:outline-none"
               />
               <button
                 type="button"
                 onClick={handleAddStoredDoc}
                 disabled={!newDocText.trim()}
-                className="px-2.5 py-1.5 bg-slate-200 hover:bg-slate-300 disabled:opacity-50 text-slate-800 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                className="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 disabled:bg-slate-200 text-white disabled:text-slate-400 rounded-xl text-xs font-bold transition-colors cursor-pointer"
               >
                 + Thêm
               </button>
+            </div>
+          </div>
+
+          {/* BẢNG SO SÁNH & PHÂN ĐỊNH TRÁCH NHIỆM TRỰC QUAN */}
+          <div className="p-3.5 bg-gradient-to-r from-blue-50/90 via-slate-50 to-indigo-50/90 border border-blue-200/90 rounded-2xl text-xs space-y-2">
+            <div className="flex items-center gap-1.5 font-bold text-blue-900">
+              <span className="material-symbols-outlined text-[18px] text-blue-600">compare_arrows</span>
+              <span>Phân định rõ ràng giữa Tài liệu tại bước & Điều kiện chuyển bước</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+              <div className="p-2.5 bg-white/95 rounded-xl border border-blue-200/70 shadow-2xs space-y-1">
+                <div className="font-bold text-blue-900 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[15px] text-blue-600">visibility</span>
+                  <span>Tài liệu sử dụng tại bước</span>
+                </div>
+                <ul className="text-slate-600 leading-relaxed text-[10.5px] space-y-0.5 list-disc list-inside">
+                  <li>Xác định tài liệu cán bộ cần xem/đọc/xử lý tại bước.</li>
+                  <li><strong>Chỉ mang tính tham chiếu nghiệp vụ</strong>, không tự động làm điều kiện chuyển bước.</li>
+                  <li>Tham chiếu cùng Document Entity (<code className="text-blue-700 font-mono">DOC-001</code>), <strong>không tạo document mới</strong>.</li>
+                </ul>
+              </div>
+              <div className="p-2.5 bg-white/95 rounded-xl border border-indigo-200/70 shadow-2xs space-y-1">
+                <div className="font-bold text-indigo-900 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[15px] text-indigo-600">checklist_rtl</span>
+                  <span>Điều kiện chuyển bước (Connector)</span>
+                </div>
+                <ul className="text-slate-600 leading-relaxed text-[10.5px] space-y-0.5 list-disc list-inside">
+                  <li>Nơi <strong>DUY NHẤT</strong> cấu hình yêu cầu văn bản để được chuyển tiếp.</li>
+                  <li>3 lựa chọn: (1) Không yêu cầu; (2) Kiểm tra văn bản đã có; (3) Yêu cầu văn bản khi chuyển bước.</li>
+                  <li>Hệ thống chặn đẩy bước nếu văn bản bắt buộc chưa đủ.</li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
@@ -1521,6 +1667,124 @@ export default function StepPropertiesPanel({
               >
                 <span className="material-symbols-outlined text-[16px]">check</span>
                 Khôi phục
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Chọn tài liệu từ hồ sơ (Single Source of Truth) */}
+      {isSelectRecordDocModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg p-5 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-start justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-[20px]">folder_open</span>
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900">
+                    Chọn tài liệu hồ sơ để sử dụng tại bước
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Tham chiếu trực tiếp Document Entity có sẵn, không sinh bản ghi trùng lặp.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsSelectRecordDocModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+              >
+                <span className="material-symbols-outlined text-[18px]">close</span>
+              </button>
+            </div>
+
+            {/* Tìm kiếm */}
+            <div className="relative">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">
+                search
+              </span>
+              <input
+                type="text"
+                value={recordDocSearch}
+                onChange={(e) => setRecordDocSearch(e.target.value)}
+                placeholder="Tìm theo mã, tên tài liệu hoặc loại văn bản..."
+                className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:border-blue-500 focus:outline-none"
+              />
+            </div>
+
+            {/* Danh sách tài liệu */}
+            <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+              {INITIAL_RECORD_DOCUMENTS.filter(
+                (d) =>
+                  !recordDocSearch.trim() ||
+                  d.name.toLowerCase().includes(recordDocSearch.toLowerCase()) ||
+                  d.documentType.toLowerCase().includes(recordDocSearch.toLowerCase()) ||
+                  d.id.toLowerCase().includes(recordDocSearch.toLowerCase())
+              ).map((docEntity) => {
+                const isAlreadySelected = currentUsedDocs.includes(docEntity.name);
+
+                return (
+                  <div
+                    key={docEntity.id}
+                    className={`p-3 rounded-xl border text-xs flex items-center justify-between transition-all ${
+                      isAlreadySelected
+                        ? 'bg-slate-50 border-slate-200 opacity-75'
+                        : 'bg-white border-slate-200 hover:border-blue-300 hover:bg-blue-50/30'
+                    }`}
+                  >
+                    <div className="flex items-start gap-2.5 min-w-0">
+                      <span className="material-symbols-outlined text-blue-600 text-[20px] shrink-0 mt-0.5">
+                        article
+                      </span>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="px-1.5 py-0.5 bg-blue-100 text-blue-800 rounded font-mono text-[10px] font-bold">
+                            {docEntity.id}
+                          </span>
+                          <span className="font-bold text-slate-800 truncate">{docEntity.name}</span>
+                        </div>
+                        <div className="text-[10px] text-slate-500 mt-1 flex items-center gap-2">
+                          <span>Loại: <strong>{docEntity.documentType}</strong></span>
+                          <span>•</span>
+                          <span>{docEntity.fileName || 'Chưa đính kèm'}</span>
+                          <span>•</span>
+                          <span className="text-emerald-700 font-medium">
+                            {docEntity.status === 'signed' ? 'Đã ký số' : 'Đã đính kèm'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={isAlreadySelected}
+                      onClick={() => handleAddUsedDocFromRecord(docEntity)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-colors cursor-pointer ${
+                        isAlreadySelected
+                          ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                          : 'bg-blue-600 hover:bg-blue-700 text-white shadow-2xs'
+                      }`}
+                    >
+                      {isAlreadySelected ? 'Đã tham chiếu' : 'Chọn tham chiếu'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-[10.5px] text-slate-500 leading-tight">
+              💡 <strong>Lưu ý:</strong> Tài liệu được chọn ở đây chỉ nhằm phục vụ việc cán bộ xem, tra cứu khi xử lý bước. Điều kiện bắt buộc để chuyển bước được quản lý duy nhất tại đường chuyển (Connector).
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setIsSelectRecordDocModalOpen(false)}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+              >
+                Đóng
               </button>
             </div>
           </div>

@@ -193,9 +193,8 @@ export default function ReceptionExtractedFormPane({
             </span>
             <div className="w-16 h-2 rounded-full bg-slate-200 overflow-hidden">
               <div
-                className={`h-full transition-all duration-300 ${
-                  progressPercent === 100 ? 'bg-emerald-500' : 'bg-blue-600'
-                }`}
+                className={`h-full transition-all duration-300 ${progressPercent === 100 ? 'bg-emerald-500' : 'bg-blue-600'
+                  }`}
                 style={{ width: `${progressPercent}%` }}
               ></div>
             </div>
@@ -304,11 +303,10 @@ export default function ReceptionExtractedFormPane({
                 value={formValues.cccd}
                 onChange={(e) => handleChange('cccd', e.target.value)}
                 placeholder="12 chữ số căn cước công dân"
-                className={`w-full px-3 py-2 bg-white border rounded-xl text-xs font-mono font-bold focus:outline-none focus:ring-1 disabled:bg-slate-100 disabled:cursor-not-allowed ${
-                  data.cccd.status === 'needs_review' && !dirtyFields.cccd
-                    ? 'border-amber-400 bg-amber-50/30 text-amber-900 focus:border-amber-500 focus:ring-amber-500'
-                    : 'border-slate-300 text-slate-900 focus:border-[#004ac6] focus:ring-blue-600'
-                }`}
+                className={`w-full px-3 py-2 bg-white border rounded-xl text-xs font-mono font-bold focus:outline-none focus:ring-1 disabled:bg-slate-100 disabled:cursor-not-allowed ${data.cccd.status === 'needs_review' && !dirtyFields.cccd
+                  ? 'border-amber-400 bg-amber-50/30 text-amber-900 focus:border-amber-500 focus:ring-amber-500'
+                  : 'border-slate-300 text-slate-900 focus:border-[#004ac6] focus:ring-blue-600'
+                  }`}
               />
             </div>
 
@@ -506,7 +504,7 @@ export default function ReceptionExtractedFormPane({
                 </>
               ) : (
                 <>
-                  <span className="material-symbols-outlined text-[18px]">assignment_turned_in</span>
+                  {/* <span className="material-symbols-outlined text-[18px]">assignment_turned_in</span> */}
                   <span>Tiếp nhận đơn</span>
                 </>
               )}

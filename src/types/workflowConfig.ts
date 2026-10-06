@@ -31,6 +31,40 @@ export interface TransitionCondition {
   value: string;
 }
 
+// ── Chuẩn hóa kiểm tra văn bản điều kiện chuyển bước ──
+export type TransitionDocCheckType = 'none' | 'check_existing' | 'require_on_transition';
+export type TransitionDocCheckMode = 'all' | 'any';
+
+export interface DocumentCondition {
+  id: string;
+  documentType: string;
+  documentName: string;
+  required: boolean;
+  status: 'available' | 'missing'; // Trạng thái tham chiếu trong hồ sơ
+  documentId?: string; // ID tham chiếu thực tế (VD: DOC-001) nếu đã có
+}
+
+export interface RequiredDocumentOnTransition {
+  id: string;
+  documentType: string;
+  documentName: string;
+  required: boolean;
+  providerRole: string; // 'Cán bộ xử lý' | 'Lãnh đạo đơn vị' | 'Chuyên viên thụ lý' | 'Công dân'
+}
+
+export interface RealDocumentEntity {
+  id: string;
+  code: string;
+  name: string;
+  documentType: string;
+  status: 'draft' | 'attached' | 'signed' | 'archived';
+  fileName?: string;
+  fileSize?: string;
+  createdAt: string;
+  createdBy: string;
+  stepId?: string;
+}
+
 // Component library and generic node types
 export type WorkflowNodeType =
   | 'START'
@@ -136,6 +170,18 @@ export interface ProcessTransition {
   taskAssigneeRole: string;
   warningMessage?: string;
   conditions: TransitionCondition[];
+
+  // === Chuẩn hóa kiểm tra văn bản điều kiện chuyển bước ===
+  docCheckType?: TransitionDocCheckType; // 'none' | 'check_existing' | 'require_on_transition'
+  docCheckMode?: TransitionDocCheckMode; // 'all' (Tất cả) | 'any' (Chỉ cần 1)
+  documentConditions?: DocumentCondition[]; // Dùng cho check_existing (tham chiếu tài liệu đã có)
+  requiredDocuments?: RequiredDocumentOnTransition[]; // Dùng cho require_on_transition (yêu cầu khi đẩy bước)
+
+  // Kế thừa & Override cho Transition:
+  inheritedFromId?: string;
+  inheritedFromName?: string;
+  isCustomized?: boolean;
+  docConditionsOverride?: boolean;
 }
 
 export interface ProcessStep {
@@ -153,7 +199,8 @@ export interface ProcessStep {
   warningBeforeHours: number; // Cảnh báo trước (giờ)
   workSchedule: string; // Lịch làm việc (Hành chính / 24/7 / Trực chiến)
   storedDocuments: string[]; // Văn bản lưu tại bước / output documents
-  inputDocuments?: string[]; // Văn bản đầu vào
+  usedDocuments?: string[]; // Tài liệu sử dụng tại bước (tham chiếu xem/nghiên cứu/xử lý nghiệp vụ, KHÔNG là điều kiện chuyển bước)
+  inputDocuments?: string[]; // Deprecated alias của usedDocuments (giữ để tương thích ngược 100%)
   stepForms: string[]; // Biểu mẫu tại bước
   statusChangeDoc: string; // Văn bản đổi trạng thái tại bước
   customOrder?: number;
@@ -166,9 +213,10 @@ export interface ProcessStep {
   conditions?: string[]; // Danh sách tiêu chí/điều kiện nghiệp vụ của bước
   conditionsOverride?: boolean; // true = [ Tùy chỉnh riêng ], false = [ Mặc định ]
 
-  // Section Dữ liệu & Biểu mẫu:
+  // Section Dữ liệu, Biểu mẫu & Tài liệu:
   formsOverride?: boolean; // Tùy chỉnh riêng Biểu mẫu điện tử (stepForms)
-  inputDocsOverride?: boolean; // Tùy chỉnh riêng Văn bản đầu vào (inputDocuments)
+  usedDocsOverride?: boolean; // Tùy chỉnh riêng Tài liệu sử dụng tại bước (usedDocuments)
+  inputDocsOverride?: boolean; // Deprecated alias tương thích ngược của usedDocsOverride
   outputDocsOverride?: boolean; // Tùy chỉnh riêng Văn bản lưu / đầu ra (storedDocuments)
 
   // Cờ override SLA & Actions:

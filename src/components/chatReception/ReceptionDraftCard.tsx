@@ -494,7 +494,7 @@ export default function ReceptionDraftCard({
                     </>
                   ) : (
                     <>
-                      <span className="material-symbols-outlined text-[17px]">assignment_turned_in</span>
+                      {/* <span className="material-symbols-outlined text-[17px]">assignment_turned_in</span> */}
                       <span>Tiếp nhận đơn</span>
                     </>
                   )}
