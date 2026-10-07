@@ -57,7 +57,7 @@ export default function NhanDonList({
                 <h1 className="text-[20px] font-bold text-slate-900 font-headline-md tracking-tight">
                   Tiếp nhận lượt nhận
                 </h1>
-                <span className="px-2.5 py-0.5 rounded-full bg-blue-100/70 text-[#004ac6] font-semibold text-[11.5px] font-label-technical">
+                <span className="px-2.5 py-0.5 rounded-full bg-blue-100/70 text-[#004ac6] font-semibold text-[12px]">
                   {filtered.length} lượt nhận
                 </span>
               </div>
@@ -69,7 +69,7 @@ export default function NhanDonList({
           <div className="flex items-center gap-2.5">
             <button
               type="button"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-medium text-[13px] border border-slate-200 shadow-2xs transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-medium text-[13.5px] border border-slate-200 shadow-2xs transition-colors cursor-pointer"
               onClick={() => showToast('Đang xuất file Excel danh sách lượt nhận đơn thư...')}
             >
               <span className="material-symbols-outlined text-[17px] text-slate-500">file_download</span>
@@ -77,7 +77,7 @@ export default function NhanDonList({
             </button>
             <button
               type="button"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#004ac6] hover:bg-[#003ea8] active:scale-95 text-white font-semibold text-[13px] shadow-xs hover:shadow-md cursor-pointer transition-all"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#004ac6] hover:bg-[#003ea8] active:scale-95 text-white font-semibold text-[13.5px] shadow-xs hover:shadow-md cursor-pointer transition-all"
               onClick={() => onNav('nhan-don-them')}
               title="Thêm lượt nhận đơn thư mới"
             >
@@ -146,18 +146,18 @@ export default function NhanDonList({
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold font-label-technical text-slate-500 uppercase tracking-wider">
-                <th className="py-3 px-4">MÃ LƯỢT NHẬN</th>
-                <th className="py-3 px-4">NGÀY NHẬN</th>
-                <th className="py-3 px-4">NGƯỜI NỘP ĐƠN</th>
-                <th className="py-3 px-4">HÌNH THỨC</th>
-                <th className="py-3 px-4 min-w-[240px]">NỘI DUNG CHÍNH</th>
-                <th className="py-3 px-4">ĐƠN VỊ TIẾP NHẬN</th>
-                <th className="py-3 px-4">TRẠNG THÁI</th>
-                <th className="py-3 px-4 text-center">THAO TÁC</th>
+              <tr className="bg-slate-50/90 border-b border-slate-200 text-[12px] font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="py-3 px-4">Mã lượt nhận</th>
+                <th className="py-3 px-4">Ngày nhận</th>
+                <th className="py-3 px-4">Người nộp đơn</th>
+                <th className="py-3 px-4">Hình thức</th>
+                <th className="py-3 px-4 min-w-[240px]">Nội dung chính</th>
+                <th className="py-3 px-4">Đơn vị tiếp nhận</th>
+                <th className="py-3 px-4">Trạng thái</th>
+                <th className="py-3 px-4 text-center">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-[13px]">
+            <tbody className="divide-y divide-slate-100 text-[13.5px]">
               {filtered.map((ln) => {
                 const isAnalyzing = ln.aiJob > 0 && ln.aiJob < 5;
                 const isDone = ln.aiJob === 5;
@@ -191,69 +191,69 @@ export default function NhanDonList({
                     className="hover:bg-blue-50/60 hover:shadow-sm cursor-pointer transition-all group"
                     onClick={handleItemClick}
                   >
-                    <td className="py-3.5 px-4 font-label-technical font-semibold text-[#004ac6]">
+                    <td className="py-3.5 px-4 font-semibold text-[#004ac6] text-[13px]">
                       <div className="flex items-center gap-1.5">
                         <span className="material-symbols-outlined text-[16px] text-blue-600">badge</span>
                         <span>{ln.id}</span>
                       </div>
                     </td>
-                    <td className="py-3.5 px-4 font-label-technical text-slate-600 whitespace-nowrap">
+                    <td className="py-3.5 px-4 text-slate-600 whitespace-nowrap text-[13px]">
                       {ln.ngayNhan}
                     </td>
                     <td className="py-3.5 px-4">
-                      <div className="font-semibold text-slate-800">{ln.nguoiNop}</div>
-                      <div className="text-[11px] text-slate-400 font-label-technical">
-                        {ln.id.includes('17') ? 'MST: 0108923412' : '0123456789'}
+                      <div className="font-semibold text-slate-800 text-[13.5px]">{ln.nguoiNop}</div>
+                      <div className="text-[12px] text-slate-400 font-normal mt-0.5">
+                        {ln.id.includes('17') ? 'MST: 0108923412' : 'CCCD: 0123456789'}
                       </div>
                     </td>
                     <td className="py-3.5 px-4 whitespace-nowrap">
                       <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11.5px] font-medium border ${ln.hinhThuc === 'Bưu điện'
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[12px] font-medium border ${ln.hinhThuc === 'Bưu điện'
                           ? 'bg-purple-50 text-purple-700 border-purple-200'
                           : ln.hinhThuc === 'Trực tuyến'
                             ? 'bg-blue-50 text-blue-700 border-blue-200'
                             : 'bg-slate-100 text-slate-700 border-slate-200'
                           }`}
                       >
-                        <span className="material-symbols-outlined text-[13px]">
+                        <span className="material-symbols-outlined text-[14px]">
                           {ln.hinhThuc === 'Bưu điện'
                             ? 'local_post_office'
                             : ln.hinhThuc === 'Trực tuyến'
                               ? 'language'
                               : 'person'}
                         </span>
-                        {ln.hinhThuc}
+                        <span>{ln.hinhThuc}</span>
                       </span>
                     </td>
                     <td className="py-3.5 px-4">
-                      <p className="font-medium text-slate-800 leading-snug line-clamp-2" title={ln.noiDung}>
+                      <p className="font-normal text-slate-800 leading-relaxed line-clamp-2 text-[13.5px]" title={ln.noiDung}>
                         {ln.noiDung}
                       </p>
-                      <span className="text-[11px] text-slate-400 font-label-technical">
+                      <span className="text-[12px] text-slate-400 block mt-1">
                         Lĩnh vực: Đất đai • Bồi thường
                       </span>
                     </td>
-                    <td className="py-3.5 px-4 whitespace-nowrap text-slate-700">
-                      <span className="font-medium">{ln.donVi}</span>
+                    <td className="py-3.5 px-4 whitespace-nowrap text-slate-700 text-[13.5px]">
+                      <span className="font-normal">{ln.donVi}</span>
                     </td>
                     <td className="py-3.5 px-4 whitespace-nowrap">
                       {ln.status === 'da_chuyen' ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11.5px] font-semibold font-label-technical">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[12px] font-semibold">
                           <span className="material-symbols-outlined text-[14px] text-emerald-600">check_circle</span>
                           <span>Đã chuyển xử lý</span>
                         </span>
                       ) : ln.status === 'da_ban_giao' ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[11.5px] font-semibold font-label-technical">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[12px] font-semibold">
                           <span className="material-symbols-outlined text-[14px] text-amber-600">swap_horiz</span>
                           <span>Đã bàn giao</span>
                         </span>
                       ) : ln.status === 'da_tra_lai' ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 text-rose-800 border border-rose-200 text-[11.5px] font-semibold font-label-technical">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 text-rose-800 border border-rose-200 text-[12px] font-semibold">
                           <span className="material-symbols-outlined text-[14px] text-rose-600">assignment_return</span>
                           <span>Đã trả lại</span>
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-800 border border-blue-200 text-[11.5px] font-semibold font-label-technical">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-800 border border-blue-200 text-[12px] font-semibold">
                           <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
                           <span>Chờ chuyển</span>
                         </span>
@@ -262,7 +262,7 @@ export default function NhanDonList({
                     <td className="py-3.5 px-4 text-center whitespace-nowrap">
                       <button
                         type="button"
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-[#004ac6] text-[#004ac6] hover:text-white font-medium text-[12px] transition-all cursor-pointer"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-[#004ac6] text-[#004ac6] hover:text-white font-medium text-[13px] transition-all cursor-pointer"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleItemClick();
@@ -280,28 +280,28 @@ export default function NhanDonList({
         </div>
 
         {/* Table Pagination & Footer */}
-        <div className="px-5 py-3.5 bg-slate-50/70 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 text-[12.5px] text-slate-500">
+        <div className="px-5 py-3.5 bg-slate-50/70 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 text-[13px] text-slate-500">
           <div>
             Hiển thị <span className="font-semibold text-slate-800">1 - {filtered.length}</span> của{' '}
             <span className="font-semibold text-slate-800">{filtered.length}</span> lượt nhận
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             <button
               type="button"
-              className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-slate-400 cursor-not-allowed text-xs font-medium"
+              className="px-3 py-1 rounded-lg border border-slate-200 bg-white text-slate-400 cursor-not-allowed text-[12.5px] font-medium"
               disabled
             >
               Trước
             </button>
             <button
               type="button"
-              className="px-3 py-1 rounded-lg border border-blue-600 bg-[#004ac6] text-white text-xs font-semibold"
+              className="px-3.5 py-1 rounded-lg border border-blue-600 bg-[#004ac6] text-white text-[12.5px] font-semibold"
             >
               1
             </button>
             <button
               type="button"
-              className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-slate-400 cursor-not-allowed text-xs font-medium"
+              className="px-3 py-1 rounded-lg border border-slate-200 bg-white text-slate-400 cursor-not-allowed text-[12.5px] font-medium"
               disabled
             >
               Sau

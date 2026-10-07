@@ -62,6 +62,15 @@ export interface DonDetail {
   statusBadge?: string;
   currentStep?: number;
   stepName?: string;
+  canBoTiepNhan?: string;
+  chucVuCanBo?: string;
+  donViXuLy?: string;
+  donViTiepNhan?: string;
+  canBoXuLy?: string;
+  cccd?: string;
+  sdt?: string;
+  diaChi?: string;
+  noiDung?: string;
   progress?: {
     currentStep: number;
     totalSteps: number;

@@ -12,6 +12,8 @@ import XacMinhVaDeXuatModal, { HuongGiaiQuyetType, VanBanXacMinhItem } from '../
 import KhongThuLyModal from '../components/modals/KhongThuLyModal';
 import TraLaiDonModal, { TraLaiDonSubmitData } from '../components/modals/TraLaiDonModal';
 import BanGiaoDonModal, { BanGiaoDonSubmitData } from '../components/modals/BanGiaoDonModal';
+import TraLoiDonModal, { TraLoiDonSubmitData } from '../components/modals/TraLoiDonModal';
+import ChinhSuaDonModal from '../components/modals/ChinhSuaDonModal';
 
 interface DonTiepNhanProps {
   onNav: (s: Screen) => void;
@@ -33,39 +35,46 @@ export const HUONG_XU_LY_CONFIG: Record<
   }
 > = {
   thu_ly: {
-    label: 'Thụ lý giải quyết',
-    subLabel: 'Đủ điều kiện thụ lý theo Điều 29 Luật Tố cáo 2018',
+    label: 'Thụ lý',
+    subLabel: 'Đủ điều kiện thụ lý giải quyết theo quy định',
     badgeColor: 'bg-emerald-50 text-emerald-800 border-emerald-300',
-    buttonText: 'Lập Tờ trình & Thụ lý đơn',
+    buttonText: 'Thụ lý',
     icon: 'gavel',
   },
   khong_thu_ly: {
-    label: 'Không thụ lý giải quyết',
-    subLabel: 'Theo Điều 29 Luật Tố cáo / Điều 28 Luật Khiếu nại',
+    label: 'Không thụ lý',
+    subLabel: 'Không đủ điều kiện thụ lý theo quy định',
     badgeColor: 'bg-rose-50 text-rose-800 border-rose-300',
-    buttonText: 'Lập Thông báo không thụ lý (Điều 29)',
+    buttonText: 'Không thụ lý',
     icon: 'cancel',
   },
-  tra_lai: {
-    label: 'Trả lại đơn & Hướng dẫn',
-    subLabel: 'Không thuộc thẩm quyền hoặc rút đơn',
-    badgeColor: 'bg-amber-50 text-amber-900 border-amber-300',
-    buttonText: 'Lập Phiếu trả lại đơn & Hướng dẫn',
-    icon: 'assignment_return',
-  },
   yeu_cau_bo_sung: {
-    label: 'Yêu cầu bổ sung tài liệu',
-    subLabel: 'Chưa đủ chứng cứ hoặc thông tin theo luật định',
+    label: 'Yêu cầu bổ sung',
+    subLabel: 'Chưa đủ chứng cứ hoặc hồ sơ theo quy định',
     badgeColor: 'bg-blue-50 text-blue-800 border-blue-300',
-    buttonText: 'Tạo Thông báo yêu cầu bổ sung',
+    buttonText: 'Yêu cầu bổ sung',
     icon: 'note_add',
   },
+  tra_lai: {
+    label: 'Trả lại',
+    subLabel: 'Trả lại đơn và kèm phiếu hướng dẫn công dân',
+    badgeColor: 'bg-amber-50 text-amber-900 border-amber-300',
+    buttonText: 'Trả lại',
+    icon: 'assignment_return',
+  },
   ban_giao: {
-    label: 'Chuyển cơ quan có thẩm quyền',
-    subLabel: 'Chuyển vụ việc theo đúng thẩm quyền nghiệp vụ',
+    label: 'Chuyển thẩm quyền xử lý',
+    subLabel: 'Chuyển đơn đến cơ quan có thẩm quyền giải quyết',
     badgeColor: 'bg-purple-50 text-purple-800 border-purple-300',
-    buttonText: 'Lập Phiếu chuyển cơ quan khác',
+    buttonText: 'Chuyển thẩm quyền xử lý',
     icon: 'drive_file_move',
+  },
+  tra_loi_don: {
+    label: 'Trả lời đơn',
+    subLabel: 'Lập văn bản trả lời, giải thích cho công dân',
+    badgeColor: 'bg-teal-50 text-teal-800 border-teal-300',
+    buttonText: 'Trả lời đơn',
+    icon: 'reply',
   },
 };
 
@@ -81,10 +90,21 @@ export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXa
     donDetail?.statusBadge?.includes('Đã hoàn thành')
   );
 
-  const [trangThaiXacMinh, setTrangThaiXacMinh] = useState<'dang_xac_minh' | 'da_xac_minh'>(
-    isInitiallyVerified ? 'da_xac_minh' : 'dang_xac_minh'
+  const [trangThaiXacMinh, setTrangThaiXacMinh] = useState<'chua_xac_minh' | 'da_xac_minh'>(
+    isInitiallyVerified ? 'da_xac_minh' : 'chua_xac_minh'
   );
-  const [huongXuLyDaChon, setHuongXuLyDaChon] = useState<HuongGiaiQuyetType | null>(null);
+
+  // Kiểm tra xem đơn có bị thiếu tài liệu (AI phân tích đơn)
+  const isAiNeedsMissingDocs = Boolean(
+    donDetail?.title?.toLowerCase().includes('thiếu') ||
+    donDetail?.title?.toLowerCase().includes('bổ sung') ||
+    donDetail?.code?.includes('0105') ||
+    !donDetail
+  );
+
+  const initialSuggestedHuong: HuongGiaiQuyetType = isAiNeedsMissingDocs ? 'yeu_cau_bo_sung' : 'thu_ly';
+  const [huongXuLyDaChon, setHuongXuLyDaChon] = useState<HuongGiaiQuyetType>(initialSuggestedHuong);
+  const [showHuongDropdown, setShowHuongDropdown] = useState<boolean>(false);
 
   // State các Modal
   const [showXacMinhModal, setShowXacMinhModal] = useState<boolean>(false);
@@ -93,6 +113,8 @@ export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXa
   const [showKhongThuLyModal, setShowKhongThuLyModal] = useState(false);
   const [showTraLaiModal, setShowTraLaiModal] = useState(false);
   const [showBanGiaoModal, setShowBanGiaoModal] = useState(false);
+  const [showTraLoiDonModal, setShowTraLoiDonModal] = useState(false);
+  const [showChinhSuaModal, setShowChinhSuaModal] = useState(false);
   const [daHoanThanhBuoc, setDaHoanThanhBuoc] = useState(false);
   const [daGuiThongBaoBoSung, setDaGuiThongBaoBoSung] = useState(false);
 
@@ -185,7 +207,7 @@ export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXa
     }, 4000);
   };
 
-  const currentDon = donDetail || {
+  const defaultDon: DonDetail = {
     id: "Đ-2025-0105",
     code: "Đ-2025-0105",
     title: "Thẩm tra thay đổi ngành nghề HKD cá thể",
@@ -193,7 +215,22 @@ export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXa
     nguoiNop: "Vũ Thị Thanh",
     ngayNhan: "16/09/2026 09:30",
     loaiDon: "Đơn khiếu nại đất đai",
+    canBoTiepNhan: "Nguyễn Minh Anh",
+    chucVuCanBo: "Chuyên viên Tiếp nhận",
+    donViXuLy: "Phòng Tiếp công dân & Xử lý đơn",
+    cccd: "001088012345",
+    sdt: "0983 123 456",
+    diaChi: "Số 15 đường Cầu Giấy, phường Quan Hoa, quận Cầu Giấy, Hà Nội",
+    noiDung: "Thẩm tra thay đổi ngành nghề HKD cá thể",
   };
+
+  const [currentDon, setCurrentDon] = useState<DonDetail>(donDetail || defaultDon);
+
+  useEffect(() => {
+    if (donDetail) {
+      setCurrentDon(donDetail);
+    }
+  }, [donDetail]);
 
   const workflow = matchWorkflowByLoaiDon(currentDon.loaiDon || 'Đơn khiếu nại đất đai');
 
@@ -210,37 +247,59 @@ export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXa
     }
   }, [currentDon.currentStep]);
 
-  // Bước hiện tại trong danh sách bước của quy trình
-  const currentStepObj =
-    workflow.steps.find((s) => s.stepNumber === activeStepNumber) ||
-    workflow.steps.find((s) => s.stepNumber === 2) ||
-    workflow.steps[0];
+  // Thực thi hành động tương ứng với Nút chính
+  const handleExecutePrimaryAction = () => {
+    switch (huongXuLyDaChon) {
+      case 'thu_ly':
+        setShowModalBuocTiepTheo(true);
+        break;
+      case 'khong_thu_ly':
+        setShowKhongThuLyModal(true);
+        break;
+      case 'yeu_cau_bo_sung':
+        setShowModalBoSung(true);
+        break;
+      case 'tra_lai':
+        setShowTraLaiModal(true);
+        break;
+      case 'ban_giao':
+        setShowBanGiaoModal(true);
+        break;
+      case 'tra_loi_don':
+        setShowTraLoiDonModal(true);
+        break;
+      default:
+        setShowXacMinhModal(true);
+    }
+  };
 
-  const nextStepAction = {
-    stepNumber: currentStepObj.stepNumber,
-    name: currentStepObj.name,
-    title:
-      activeStepNumber === 1
-        ? 'Tiếp nhận & Vào sổ'
-        : activeStepNumber === 2
-          ? (workflow.id === 'to-giac'
-            ? 'Phân công Điều tra viên'
-            : workflow.id === 'to-cao'
-              ? 'Kích hoạt bảo mật & Thụ lý'
-              : workflow.id === 'kien-nghi'
-                ? 'Chuyển đơn vị xử lý'
-                : 'Ban hành Thông báo thụ lý')
-          : `Thực hiện: ${currentStepObj.name}`,
-    icon:
-      activeStepNumber === 1
-        ? 'assignment'
-        : activeStepNumber === 2
-          ? (workflow.id === 'to-giac' ? 'assignment_ind' : workflow.id === 'to-cao' ? 'lock' : 'mark_email_read')
-          : activeStepNumber === 3
-            ? 'policy'
-            : activeStepNumber === 4
-              ? 'find_in_page'
-              : 'task_alt',
+  // Chuyển hướng xử lý khi người dùng chọn từ Dropdown
+  const handleSelectHuong = (targetHuong: HuongGiaiQuyetType) => {
+    setHuongXuLyDaChon(targetHuong);
+    setShowHuongDropdown(false);
+    showToast(`✓ Đã chọn hướng xử lý: ${HUONG_XU_LY_CONFIG[targetHuong]?.label || targetHuong}`);
+
+    // Mở ngay modal tương ứng để người dùng thực hiện
+    switch (targetHuong) {
+      case 'thu_ly':
+        setShowModalBuocTiepTheo(true);
+        break;
+      case 'khong_thu_ly':
+        setShowKhongThuLyModal(true);
+        break;
+      case 'yeu_cau_bo_sung':
+        setShowModalBoSung(true);
+        break;
+      case 'tra_lai':
+        setShowTraLaiModal(true);
+        break;
+      case 'ban_giao':
+        setShowBanGiaoModal(true);
+        break;
+      case 'tra_loi_don':
+        setShowTraLoiDonModal(true);
+        break;
+    }
   };
 
   return (
@@ -286,157 +345,321 @@ export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXa
                 {currentDon.code}: {currentDon.title.startsWith(currentDon.code) ? currentDon.title.replace(`${currentDon.code}: `, '') : currentDon.title}
               </h1>
 
-              {/* Status Badge: Đang xác minh thông tin VS Đã xác minh */}
-              {trangThaiXacMinh === 'dang_xac_minh' ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-bold bg-amber-50 text-amber-900 border border-amber-300 shadow-2xs">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
-                  </span>
-                  <span>Đang xác minh thông tin</span>
+              {/* Status Badge: Hướng xử lý hiện tại */}
+              {/* <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-bold shadow-2xs border ${
+                huongXuLyDaChon === 'yeu_cau_bo_sung'
+                  ? 'bg-blue-50 text-blue-800 border-blue-300'
+                  : huongXuLyDaChon === 'khong_thu_ly'
+                    ? 'bg-rose-50 text-rose-800 border-rose-300'
+                    : huongXuLyDaChon === 'tra_lai'
+                      ? 'bg-amber-50 text-amber-900 border-amber-300'
+                      : huongXuLyDaChon === 'ban_giao'
+                        ? 'bg-purple-50 text-purple-800 border-purple-300'
+                        : 'bg-emerald-50 text-emerald-800 border-emerald-300'
+              }`}>
+                <span className="material-symbols-outlined text-[16px]">
+                  {HUONG_XU_LY_CONFIG[huongXuLyDaChon]?.icon || 'verified'}
                 </span>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-2xs">
-                  <span className="material-symbols-outlined text-[16px] text-emerald-600">verified</span>
-                  <span>
-                    Đã xác minh {huongXuLyDaChon ? `• ${HUONG_XU_LY_CONFIG[huongXuLyDaChon]?.label || huongXuLyDaChon}` : ''}
-                  </span>
+                <span>
+                  {huongXuLyDaChon === 'yeu_cau_bo_sung' && isAiNeedsMissingDocs
+                    ? 'AI đề xuất: Yêu cầu bổ sung tài liệu'
+                    : `Hướng xử lý: ${HUONG_XU_LY_CONFIG[huongXuLyDaChon]?.label || huongXuLyDaChon}`}
                 </span>
-              )}
+              </span> */}
             </div>
 
-            <div className="flex items-center gap-2 text-[12px] text-slate-500 font-medium mt-1.5 flex-wrap">
+            <div className="flex items-center gap-2 text-[12.5px] text-slate-500 font-medium mt-1.5 flex-wrap">
               <span>
                 Lượt tiếp nhận số{' '}
                 <span className="font-semibold text-slate-700">
                   {currentDon.luotNhanId || 'LN-45/2026-GOVEX'}
                 </span>
               </span>
-              <span>•</span>
+
+              <span className="text-slate-300">•</span>
               <span>
-                Người đứng đơn:{' '}
-                <strong className="text-slate-800 font-semibold">{currentDon.nguoiNop}</strong>
+                Cán bộ tiếp nhận:{' '}
+                <strong className="text-slate-800 font-semibold">
+                  {currentDon.canBoTiepNhan || currentDon.canBoXuLy || 'Nguyễn Minh Anh'}
+                </strong>
+                {currentDon.chucVuCanBo ? (
+                  <span className="text-slate-400 font-normal ml-1">({currentDon.chucVuCanBo})</span>
+                ) : null}
               </span>
-              <span>•</span>
+              <span className="text-slate-300">•</span>
+              <span>
+                Đơn vị xử lý:{' '}
+                <strong className="text-slate-800 font-semibold">
+                  {currentDon.donViXuLy || currentDon.donViTiepNhan || 'Phòng Tiếp công dân & Xử lý đơn'}
+                </strong>
+              </span>
+              <span className="text-slate-300">•</span>
               <span>
                 Nộp ngày:{' '}
                 <span className="font-semibold text-slate-700">
                   {currentDon.ngayNhan || '15/09/2026 09:15'}
                 </span>
               </span>
-
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-2 shrink-0 flex-wrap">
-            {trangThaiXacMinh === 'dang_xac_minh' ? (
+          {/* Action Buttons: Nút Chỉnh sửa thông tin + Split Button chính */}
+          <div className="flex items-center gap-2.5 shrink-0">
+            {/* Nút Chỉnh sửa thông tin đơn */}
+            <button
+              type="button"
+              onClick={() => setShowChinhSuaModal(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 hover:border-slate-400 active:scale-95 text-slate-700 text-[13px] font-semibold shadow-2xs transition-all cursor-pointer"
+              title="Chỉnh sửa thông tin người nộp, loại đơn, nội dung và cán bộ xử lý"
+            >
+              <span className="material-symbols-outlined text-[18px] text-slate-500">edit_note</span>
+              <span>Chỉnh sửa thông tin</span>
+            </button>
+
+            {/* Split Button chính + Dropdown chọn hướng xử lý khác */}
+            <div className="relative inline-flex items-center">
+            {/* 1. NÚT CHÍNH (PRIMARY ACTION BUTTON) */}
+            <button
+              type="button"
+              onClick={handleExecutePrimaryAction}
+              className={`inline-flex items-center gap-2 px-4.5 py-2.5 rounded-l-xl rounded-r-none border-r border-white/20 active:scale-98 text-white text-[13px] font-semibold transition-all cursor-pointer shadow-md ${huongXuLyDaChon === 'thu_ly'
+                ? 'bg-emerald-600 hover:bg-emerald-700'
+                : huongXuLyDaChon === 'khong_thu_ly'
+                  ? 'bg-rose-600 hover:bg-rose-700'
+                  : huongXuLyDaChon === 'yeu_cau_bo_sung'
+                    ? 'bg-blue-600 hover:bg-blue-700'
+                    : huongXuLyDaChon === 'tra_lai'
+                      ? 'bg-amber-600 hover:bg-amber-700'
+                      : huongXuLyDaChon === 'ban_giao'
+                        ? 'bg-purple-600 hover:bg-purple-700'
+                        : 'bg-teal-600 hover:bg-teal-700'
+                }`}
+              title="Bấm để thực hiện ngay hướng xử lý chính"
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                {HUONG_XU_LY_CONFIG[huongXuLyDaChon]?.icon || 'gavel'}
+              </span>
+              <span>{HUONG_XU_LY_CONFIG[huongXuLyDaChon]?.buttonText || 'Thụ lý'}</span>
+              {huongXuLyDaChon === 'yeu_cau_bo_sung' && isAiNeedsMissingDocs && (
+                <span className="px-1.5 py-0.2 rounded bg-white/20 text-[10px] font-bold text-white uppercase tracking-wider">
+                  AI đề xuất
+                </span>
+              )}
+            </button>
+
+            {/* 2. NÚT MŨI TÊN DROPDOWN SỔ CÁC HƯỚNG XỬ LÝ KHÁC */}
+            <button
+              type="button"
+              onClick={() => setShowHuongDropdown(!showHuongDropdown)}
+              className={`inline-flex items-center justify-center px-2.5 py-2.5 rounded-r-xl rounded-l-none text-white transition-all cursor-pointer shadow-md ${huongXuLyDaChon === 'thu_ly'
+                ? 'bg-emerald-700 hover:bg-emerald-800'
+                : huongXuLyDaChon === 'khong_thu_ly'
+                  ? 'bg-rose-700 hover:bg-rose-800'
+                  : huongXuLyDaChon === 'yeu_cau_bo_sung'
+                    ? 'bg-blue-700 hover:bg-blue-800'
+                    : huongXuLyDaChon === 'tra_lai'
+                      ? 'bg-amber-700 hover:bg-amber-800'
+                      : huongXuLyDaChon === 'ban_giao'
+                        ? 'bg-purple-700 hover:bg-purple-800'
+                        : 'bg-teal-700 hover:bg-teal-800'
+                }`}
+              title="Nhấn để chọn hướng xử lý khác"
+            >
+              <span className={`material-symbols-outlined text-[20px] transition-transform ${showHuongDropdown ? 'rotate-180' : ''}`}>
+                arrow_drop_down
+              </span>
+            </button>
+
+            {/* 3. DROPDOWN MENU CHỌN CÁC HƯỚNG XỬ LÝ KHÁC */}
+            {showHuongDropdown && (
               <>
-                {/* <button
-                  type="button"
-                  onClick={() => setShowModalBoSung(true)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold shadow-2xs transition-colors cursor-pointer ${daGuiThongBaoBoSung
-                    ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
-                    : 'border-slate-300 bg-white hover:bg-slate-50 text-slate-700'
-                    }`}
-                  title="Tạo thông báo yêu cầu bổ sung hồ sơ"
-                >
-                  <span className="material-symbols-outlined text-[16px]">
-                    {daGuiThongBaoBoSung ? 'check_circle' : 'note_add'}
-                  </span>
-                  <span>{daGuiThongBaoBoSung ? 'Đã tạo thông báo bổ sung' : 'Tạo thông báo bổ sung'}</span>
-                </button> */}
+                {/* Backdrop vô hình để đóng dropdown khi click outside */}
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowHuongDropdown(false)}
+                />
 
-                {/* NÚT CHÍNH: Xác minh và xác nhận hướng xử lý thông tin */}
-                <button
-                  type="button"
-                  onClick={() => setShowXacMinhModal(true)}
-                  className="inline-flex items-center gap-2 px-4.5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 active:scale-95 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all cursor-pointer ring-2 ring-blue-400/40"
-                  title="Nhấn để xác minh thông tin theo 4 tiêu chí luật định và chọn hướng giải quyết"
-                >
-                  <span className="material-symbols-outlined text-[18px]">fact_check</span>
-                  <span>Xác minh &amp; Xác nhận hướng xử lý</span>
-                  <span className="material-symbols-outlined text-[15px] opacity-80">arrow_forward</span>
-                </button>
-              </>
-            ) : (
-              <>
-                {/* Nút hành động tương ứng với hướng xử lý đã chọn */}
-                {(!huongXuLyDaChon || huongXuLyDaChon === 'thu_ly') && (
-                  <button
-                    type="button"
-                    onClick={() => setShowModalBuocTiepTheo(true)}
-                    className={`inline-flex items-center gap-1.5 px-4.5 py-2.5 rounded-xl active:scale-95 text-white text-xs font-bold shadow-sm transition-all cursor-pointer ${daHoanThanhBuoc ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-[#004ac6] hover:bg-[#003ea8]'
-                      }`}
-                  >
-                    <span className="material-symbols-outlined text-[16px]">
-                      {daHoanThanhBuoc ? 'check_circle' : nextStepAction.icon}
-                    </span>
-                    <span>
-                      {daHoanThanhBuoc ? `Đã hoàn tất ${nextStepAction.title.toLowerCase()}` : nextStepAction.title}
-                    </span>
-                    {!daHoanThanhBuoc && (
-                      <span className="material-symbols-outlined text-[14px] opacity-80">arrow_forward</span>
-                    )}
-                  </button>
-                )}
+                <div className="absolute right-0 top-full mt-2 w-84 bg-white rounded-2xl shadow-2xl border border-slate-200 p-2 z-50 animate-scale-up">
 
-                {huongXuLyDaChon === 'khong_thu_ly' && (
-                  <button
-                    type="button"
-                    onClick={() => setShowKhongThuLyModal(true)}
-                    className="inline-flex items-center gap-1.5 px-4.5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">cancel</span>
-                    <span>Lập Thông báo không thụ lý (Điều 29)</span>
-                    <span className="material-symbols-outlined text-[14px] opacity-80">arrow_forward</span>
-                  </button>
-                )}
+                  <div className="space-y-1">
+                    {/* 1. Thụ lý */}
+                    <button
+                      type="button"
+                      onClick={() => handleSelectHuong('thu_ly')}
+                      className={`w-full flex items-start gap-2.5 p-2.5 rounded-xl text-left transition-colors cursor-pointer ${huongXuLyDaChon === 'thu_ly'
+                        ? 'bg-emerald-50/80 text-emerald-900 ring-1 ring-emerald-300'
+                        : 'hover:bg-slate-50 text-slate-800'
+                        }`}
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+                        <span className="material-symbols-outlined text-[18px]">gavel</span>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="font-bold text-[13px] text-slate-900">Thụ lý</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
+                          Đủ điều kiện thụ lý giải quyết theo quy định
+                        </p>
+                      </div>
+                      {huongXuLyDaChon === 'thu_ly' && (
+                        <span className="material-symbols-outlined text-emerald-600 text-[18px] shrink-0 mt-1">check</span>
+                      )}
+                    </button>
 
-                {huongXuLyDaChon === 'tra_lai' && (
-                  <button
-                    type="button"
-                    onClick={() => setShowTraLaiModal(true)}
-                    className="inline-flex items-center gap-1.5 px-4.5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-95 text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">assignment_return</span>
-                    <span>Lập Phiếu trả lại đơn &amp; Hướng dẫn</span>
-                    <span className="material-symbols-outlined text-[14px] opacity-80">arrow_forward</span>
-                  </button>
-                )}
+                    {/* 2. Không thụ lý */}
+                    <button
+                      type="button"
+                      onClick={() => handleSelectHuong('khong_thu_ly')}
+                      className={`w-full flex items-start gap-2.5 p-2.5 rounded-xl text-left transition-colors cursor-pointer ${huongXuLyDaChon === 'khong_thu_ly'
+                        ? 'bg-rose-50/80 text-rose-900 ring-1 ring-rose-300'
+                        : 'hover:bg-slate-50 text-slate-800'
+                        }`}
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">
+                        <span className="material-symbols-outlined text-[18px]">cancel</span>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="font-bold text-[13px] text-slate-900">Không thụ lý</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
+                          Không đủ điều kiện thụ lý theo Điều 29
+                        </p>
+                      </div>
+                      {huongXuLyDaChon === 'khong_thu_ly' && (
+                        <span className="material-symbols-outlined text-rose-600 text-[18px] shrink-0 mt-1">check</span>
+                      )}
+                    </button>
 
-                {huongXuLyDaChon === 'yeu_cau_bo_sung' && (
-                  <button
-                    type="button"
-                    onClick={() => setShowModalBoSung(true)}
-                    className="inline-flex items-center gap-1.5 px-4.5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">note_add</span>
-                    <span>Tạo thông báo bổ sung tài liệu</span>
-                    <span className="material-symbols-outlined text-[14px] opacity-80">arrow_forward</span>
-                  </button>
-                )}
+                    {/* 3. Yêu cầu bổ sung */}
+                    <button
+                      type="button"
+                      onClick={() => handleSelectHuong('yeu_cau_bo_sung')}
+                      className={`w-full flex items-start gap-2.5 p-2.5 rounded-xl text-left transition-colors cursor-pointer ${huongXuLyDaChon === 'yeu_cau_bo_sung'
+                        ? 'bg-blue-50/80 text-blue-900 ring-1 ring-blue-300'
+                        : 'hover:bg-slate-50 text-slate-800'
+                        }`}
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0 mt-0.5">
+                        <span className="material-symbols-outlined text-[18px]">note_add</span>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="font-bold text-[13px] text-slate-900">Yêu cầu bổ sung</span>
+                          {isAiNeedsMissingDocs && (
+                            <span className="text-[10px] font-bold text-blue-700 bg-blue-100 px-1.5 py-0.2 rounded">
+                              AI đề xuất
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
+                          Chưa đủ chứng cứ hoặc hồ sơ theo quy định
+                        </p>
+                      </div>
+                      {huongXuLyDaChon === 'yeu_cau_bo_sung' && (
+                        <span className="material-symbols-outlined text-blue-600 text-[18px] shrink-0 mt-1">check</span>
+                      )}
+                    </button>
 
-                {huongXuLyDaChon === 'ban_giao' && (
-                  <button
-                    type="button"
-                    onClick={() => setShowBanGiaoModal(true)}
-                    className="inline-flex items-center gap-1.5 px-4.5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 active:scale-95 text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">drive_file_move</span>
-                    <span>Lập Phiếu chuyển cơ quan có thẩm quyền</span>
-                    <span className="material-symbols-outlined text-[14px] opacity-80">arrow_forward</span>
-                  </button>
-                )}
+                    {/* 4. Trả lại */}
+                    <button
+                      type="button"
+                      onClick={() => handleSelectHuong('tra_lai')}
+                      className={`w-full flex items-start gap-2.5 p-2.5 rounded-xl text-left transition-colors cursor-pointer ${huongXuLyDaChon === 'tra_lai'
+                        ? 'bg-amber-50/80 text-amber-900 ring-1 ring-amber-300'
+                        : 'hover:bg-slate-50 text-slate-800'
+                        }`}
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 mt-0.5">
+                        <span className="material-symbols-outlined text-[18px]">assignment_return</span>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="font-bold text-[13px] text-slate-900">Trả lại</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
+                          Trả lại đơn và kèm phiếu hướng dẫn công dân
+                        </p>
+                      </div>
+                      {huongXuLyDaChon === 'tra_lai' && (
+                        <span className="material-symbols-outlined text-amber-600 text-[18px] shrink-0 mt-1">check</span>
+                      )}
+                    </button>
+
+                    {/* 5. Chuyển thẩm quyền xử lý */}
+                    <button
+                      type="button"
+                      onClick={() => handleSelectHuong('ban_giao')}
+                      className={`w-full flex items-start gap-2.5 p-2.5 rounded-xl text-left transition-colors cursor-pointer ${huongXuLyDaChon === 'ban_giao'
+                        ? 'bg-purple-50/80 text-purple-900 ring-1 ring-purple-300'
+                        : 'hover:bg-slate-50 text-slate-800'
+                        }`}
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center shrink-0 mt-0.5">
+                        <span className="material-symbols-outlined text-[18px]">drive_file_move</span>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="font-bold text-[13px] text-slate-900">Chuyển thẩm quyền xử lý</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
+                          Chuyển đơn đến cơ quan có thẩm quyền giải quyết
+                        </p>
+                      </div>
+                      {huongXuLyDaChon === 'ban_giao' && (
+                        <span className="material-symbols-outlined text-purple-600 text-[18px] shrink-0 mt-1">check</span>
+                      )}
+                    </button>
+
+                    {/* 6. Trả lời đơn */}
+                    <button
+                      type="button"
+                      onClick={() => handleSelectHuong('tra_loi_don')}
+                      className={`w-full flex items-start gap-2.5 p-2.5 rounded-xl text-left transition-colors cursor-pointer ${huongXuLyDaChon === 'tra_loi_don'
+                        ? 'bg-teal-50/80 text-teal-900 ring-1 ring-teal-300'
+                        : 'hover:bg-slate-50 text-slate-800'
+                        }`}
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center shrink-0 mt-0.5">
+                        <span className="material-symbols-outlined text-[18px]">reply</span>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="font-bold text-[13px] text-slate-900">Trả lời đơn</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
+                          Lập văn bản trả lời, giải thích cho công dân
+                        </p>
+                      </div>
+                      {huongXuLyDaChon === 'tra_loi_don' && (
+                        <span className="material-symbols-outlined text-teal-600 text-[18px] shrink-0 mt-1">check</span>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Phân cách & Bảng xác minh chi tiết */}
+                  <div className="border-t border-slate-100 pt-1.5 mt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowHuongDropdown(false);
+                        setShowXacMinhModal(true);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:text-blue-700 hover:bg-blue-50/80 transition-colors text-[12.5px] font-semibold cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-[17px] text-blue-600">fact_check</span>
+                      <span>Mở bảng Xác minh &amp; Đề xuất (4 tiêu chí)</span>
+                    </button>
+                  </div>
+                </div>
               </>
             )}
           </div>
         </div>
+      </div>
 
-
-        {/* Navigation Tabs Bar */}
         <div className="flex items-center gap-8 text-xs font-bold border-b border-slate-200 -mb-px">
-          {/* Tab 1: Thông tin chung */}
           <button
             type="button"
             onClick={() => setActiveTab('thong-tin')}
@@ -632,8 +855,11 @@ export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXa
             showToast(`✓ Đã xác minh hoàn tất: Đơn chuyển trạng thái "ĐÃ XÁC MINH" • Hướng xử lý: Trả lại đơn & Hướng dẫn`);
             setTimeout(() => setShowTraLaiModal(true), 300);
           } else if (huong === 'ban_giao') {
-            showToast(`✓ Đã xác minh hoàn tất: Đơn chuyển trạng thái "ĐÃ XÁC MINH" • Hướng xử lý: Chuyển cơ quan có thẩm quyền`);
+            showToast(`✓ Đã xác minh hoàn tất: Đơn chuyển trạng thái "ĐÃ XÁC MINH" • Hướng xử lý: Chuyển thẩm quyền xử lý`);
             setTimeout(() => setShowBanGiaoModal(true), 300);
+          } else if (huong === 'tra_loi_don') {
+            showToast(`✓ Đã xác minh hoàn tất: Đơn chuyển trạng thái "ĐÃ XÁC MINH" • Hướng xử lý: Trả lời đơn`);
+            setTimeout(() => setShowTraLoiDonModal(true), 300);
           }
         }}
       />
@@ -689,6 +915,37 @@ export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXa
           nguoiNop: currentDon.nguoiNop,
           loaiDon: currentDon.loaiDon,
           ngayNhan: currentDon.ngayNhan,
+        }}
+      />
+
+      {/* Modal Trả lời đơn */}
+      <TraLoiDonModal
+        isOpen={showTraLoiDonModal}
+        onClose={() => setShowTraLoiDonModal(false)}
+        onSubmit={(data: TraLoiDonSubmitData) => {
+          setShowTraLoiDonModal(false);
+          showToast(`✓ Đã ban hành văn bản trả lời đơn (${data.soKyHieu}) cho công dân ${data.nguoiNhan}.`);
+          setDocCount((c) => c + 1);
+        }}
+        donInfo={{
+          code: currentDon.code,
+          luotNhanId: currentDon.luotNhanId,
+          nguoiNop: currentDon.nguoiNop,
+          loaiDon: currentDon.loaiDon,
+          ngayNhan: currentDon.ngayNhan,
+          noiDung: currentDon.title,
+        }}
+      />
+
+      {/* Modal Chỉnh sửa thông tin đơn */}
+      <ChinhSuaDonModal
+        isOpen={showChinhSuaModal}
+        onClose={() => setShowChinhSuaModal(false)}
+        donData={currentDon}
+        onSave={(updatedData) => {
+          setCurrentDon(updatedData);
+          setShowChinhSuaModal(false);
+          showToast(`✓ Đã cập nhật thành công thông tin đơn ${updatedData.code}!`);
         }}
       />
     </div>

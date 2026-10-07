@@ -491,7 +491,7 @@ export default function VanBanChoKyScreen({
             <div className="h-5 w-px bg-slate-200"></div>
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-indigo-600 text-[20px]">draw</span>
-              <h1 className="text-sm font-bold text-slate-900">Bàn ký duyệt văn bản chi tiết</h1>
+              <h1 className="text-[18px] font-bold text-slate-900 tracking-tight font-headline-md">Bàn ký duyệt văn bản chi tiết</h1>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">
                 Luồng ký tuần tự
               </span>

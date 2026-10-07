@@ -1266,7 +1266,7 @@ export default function CongViecCuaToi({
       const isDaTiepNhan =
         matchedLn?.status === 'da_chuyen' ||
         matchedLn?.status === 'da_thu_ly' ||
-        item.tags.includes('Đã tiếp nhận');
+        Boolean(item.tags?.includes('Đã tiếp nhận'));
 
       if (isDaTiepNhan) {
         const dynamicCode = item.code.startsWith('LN-') ? `Đ-${item.code.replace('LN-', '')}` : item.code;
@@ -1357,7 +1357,7 @@ export default function CongViecCuaToi({
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-base font-extrabold text-slate-900 tracking-tight font-headline-md">
+              <h1 className="text-[19px] font-bold text-slate-900 tracking-tight font-headline-md">
                 Công việc của tôi
               </h1>
             </div>

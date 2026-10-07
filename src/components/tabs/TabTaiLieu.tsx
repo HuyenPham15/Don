@@ -939,15 +939,14 @@ export default function TabTaiLieu({
                   Soạn thảo A4: <span className="text-[#004ac6]">{editSoHieu || activeEditingDoc.name}</span>
                 </span>
                 <span
-                  className={`px-2 py-0.5 rounded-full text-[10.5px] font-bold border ${
-                    editLoaiVanBan === 'giay_moi'
-                      ? 'bg-blue-50 text-blue-700 border-blue-200'
-                      : editLoaiVanBan === 'bien_ban'
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                        : editLoaiVanBan === 'cong_van'
-                          ? 'bg-purple-50 text-purple-700 border-purple-200'
-                          : 'bg-amber-50 text-amber-700 border-amber-200'
-                  }`}
+                  className={`px-2 py-0.5 rounded-full text-[10.5px] font-bold border ${editLoaiVanBan === 'giay_moi'
+                    ? 'bg-blue-50 text-blue-700 border-blue-200'
+                    : editLoaiVanBan === 'bien_ban'
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      : editLoaiVanBan === 'cong_van'
+                        ? 'bg-purple-50 text-purple-700 border-purple-200'
+                        : 'bg-amber-50 text-amber-700 border-amber-200'
+                    }`}
                 >
                   {editLoaiVanBan === 'giay_moi'
                     ? 'Giấy mời xác minh'
@@ -1106,24 +1105,22 @@ export default function TabTaiLieu({
                         handleStartEdit(doc);
                       }
                     }}
-                    className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer border ${
-                      isActive
-                        ? 'bg-[#004ac6] text-white border-[#004ac6] shadow-sm'
-                        : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200/90 shadow-2xs hover:border-slate-300'
-                    }`}
+                    className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer border ${isActive
+                      ? 'bg-[#004ac6] text-white border-[#004ac6] shadow-sm'
+                      : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200/90 shadow-2xs hover:border-slate-300'
+                      }`}
                   >
                     <span
-                      className={`material-symbols-outlined text-[16px] ${
-                        isActive
-                          ? 'text-white'
-                          : isGiayMoi
-                            ? 'text-blue-600'
-                            : isBienBan
-                              ? 'text-emerald-600'
-                              : isCongVan
-                                ? 'text-purple-600'
-                                : 'text-amber-600'
-                      }`}
+                      className={`material-symbols-outlined text-[16px] ${isActive
+                        ? 'text-white'
+                        : isGiayMoi
+                          ? 'text-blue-600'
+                          : isBienBan
+                            ? 'text-emerald-600'
+                            : isCongVan
+                              ? 'text-purple-600'
+                              : 'text-amber-600'
+                        }`}
                     >
                       {isGiayMoi ? 'mail' : isBienBan ? 'edit_note' : isCongVan ? 'send' : 'campaign'}
                     </span>
@@ -1497,150 +1494,7 @@ export default function TabTaiLieu({
         /* CHẾ ĐỘ DANH SÁCH HỒ SƠ, VĂN BẢN & TÀI LIỆU                                */
         /* ========================================================================= */
         <>
-          {/* 1. Header Overview Bar */}
-          <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-3.5">
-                <div className="w-11 h-11 rounded-2xl bg-blue-50 border border-blue-100 text-[#004ac6] flex items-center justify-center shrink-0 shadow-2xs">
-                  <span className="material-symbols-outlined text-[24px]">folder_special</span>
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="text-[14px] sm:text-base font-bold text-slate-900 tracking-tight uppercase font-headline-md">
-                      DANH MỤC HỒ SƠ, VĂN BẢN &amp; TÀI LIỆU XỬ LÝ
-                    </h2>
-                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold font-label-technical">
-                      {documents.length} tệp tin số hóa
-                    </span>
-                    <span className="px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 text-[10.5px] font-bold">
-                      {processDocsCount} văn bản / quyết định trong quá trình xử lý
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Toàn bộ văn bản quyết định và tài liệu chứng cứ đều được bóc tách nội dung bằng AI OCR, gắn mã băm SHA-256 và kiểm tra chữ ký số công vụ VGCA.
-                  </p>
-                </div>
-              </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <button
-                  type="button"
-                  onClick={() => alert(`Đang tạo gói ZIP tải xuống toàn bộ ${documents.length} tệp tin...`)}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-[16px] text-slate-500">download</span>
-                  <span>Tải trọn bộ (.ZIP)</span>
-                </button>
-
-                {/* NÚT TẠO VĂN BẢN XÁC MINH NHANH */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleStartEdit({
-                      id: `DOC-XM-${Date.now().toString().slice(-4)}`,
-                      name: 'Giay_moi_lam_viec_xac_minh_moi.pdf',
-                      category: 'Giấy mời xác minh',
-                      soHieu: `${Math.floor(20 + Math.random() * 80)}/GM-TCD`,
-                      size: '350 KB',
-                      pages: 1,
-                      uploadDate: '16/09/2026 10:30',
-                      signer: 'Nguyễn Minh Anh - Cán bộ thụ lý',
-                      coQuanBanHanh: 'Phòng Tiếp công dân & Xử lý đơn',
-                      stepBelongsTo: 'Bước 2: Xác minh thông tin & Đề xuất',
-                      ocrStatus: 'Hoàn tất',
-                      isProcessDoc: true,
-                      isEditable: true,
-                      loaiVanBan: 'giay_moi',
-                      nguoiNhan: currentDon.nguoiNop || 'Nguyễn Văn A',
-                      thoiGianHen: '09:00 ngày 18/09/2026',
-                      diaDiem: 'Phòng Tiếp công dân & Xử lý đơn (Phòng 102, Trụ sở UBND quận)',
-                      trichYeu: `V/v Mời làm việc xác minh nội dung đơn số ${currentDon.code}`,
-                      noiDungChiTiet: `Kính mời Ông/Bà ${currentDon.nguoiNop || 'Nguyễn Văn A'} có mặt tại Phòng Tiếp công dân để làm việc về nội dung đơn đề ngày 16/09/2026.\nKhi đi mang theo Căn cước công dân và toàn bộ bản chính tài liệu, chứng cứ có liên quan đến việc phản ánh/tố cáo để đối chiếu, xác minh làm rõ.`,
-                      trangThai: 'du_thao',
-                      fromXacMinh: true,
-                      previewExcerpt: `CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nĐộc lập - Tự do - Hạnh phúc\n\nGIẤY MỜI LÀM VIỆC`,
-                    });
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold shadow-2xs transition-colors cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-[17px]">edit_note</span>
-                  <span>+ Tạo văn bản xác minh</span>
-                </button>
-
-                {/* NÚT THÊM VĂN BẢN / QUYẾT ĐỊNH CHO QUÁ TRÌNH XỬ LÝ */}
-                <button
-                  type="button"
-                  onClick={handleOpenAddModal}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#004ac6] hover:bg-[#003ea8] active:scale-95 text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-[17px]">post_add</span>
-                  <span>Thêm văn bản / Quyết định xử lý</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Filter Tabs & Search Bar */}
-            <div className="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between flex-wrap gap-3">
-              <div className="flex items-center gap-1.5 p-1 bg-slate-100/90 rounded-xl border border-slate-200/80">
-                <button
-                  type="button"
-                  onClick={() => setFilterTab('all')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${filterTab === 'all'
-                    ? 'bg-white text-[#004ac6] shadow-2xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                >
-                  <span>Tất cả hồ sơ</span>
-                  <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200/80 text-slate-700">
-                    {documents.length}
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setFilterTab('process')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${filterTab === 'process'
-                    ? 'bg-white text-purple-700 shadow-2xs font-bold border border-purple-200'
-                    : 'text-slate-600 hover:text-purple-700'
-                    }`}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-purple-600"></span>
-                  <span>Văn bản &amp; Quyết định xử lý</span>
-                  <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-purple-100 text-purple-800 font-bold">
-                    {processDocsCount}
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setFilterTab('initial')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${filterTab === 'initial'
-                    ? 'bg-white text-slate-800 shadow-2xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                >
-                  <span>Hồ sơ nộp ban đầu</span>
-                  <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200/80 text-slate-700">
-                    {initialDocsCount}
-                  </span>
-                </button>
-              </div>
-
-              <div className="relative min-w-[260px]">
-                <span className="material-symbols-outlined absolute left-2.5 top-2 text-[16px] text-slate-400">
-                  search
-                </span>
-                <input
-                  type="text"
-                  value={searchKeyword}
-                  onChange={(e) => setSearchKeyword(e.target.value)}
-                  placeholder="Tìm theo tên file, số hiệu, người ký..."
-                  className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:border-[#004ac6] transition-all"
-                />
-              </div>
-            </div>
-          </div>
 
           {/* 2. Danh sách tài liệu chi tiết */}
           <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
@@ -1829,365 +1683,362 @@ export default function TabTaiLieu({
             )}
 
             {/* Footer info bar */}
-            <div className="p-4 bg-slate-50/70 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#004ac6] text-[18px]">lock</span>
-                <span>
-                  Tài liệu được lưu trữ an toàn trên kho lưu trữ điện tử chính phủ GOVEX Cloud, đáp ứng tiêu chuẩn an toàn thông tin cấp độ 3.
-                </span>
-              </div>
-              <span className="font-mono text-[11px] text-slate-400">SHA-256 Verified • RSA-2048</span>
-            </div>
+
           </div>
         </>
-      )}
+      )
+      }
 
       {/* ========================================================================= */}
       {/* 3. MODAL THÊM VĂN BẢN / QUYẾT ĐỊNH CHO QUÁ TRÌNH XỬ LÝ                     */}
       {/* ========================================================================= */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-2xl w-full max-h-[92vh] flex flex-col overflow-hidden animate-scale-up">
-            {/* Header Modal */}
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-blue-50/90 via-slate-50 to-white">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#004ac6] text-white flex items-center justify-center shadow-xs shrink-0">
-                  <span className="material-symbols-outlined text-[20px]">post_add</span>
+      {
+        showAddModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-2xl w-full max-h-[92vh] flex flex-col overflow-hidden animate-scale-up">
+              {/* Header Modal */}
+              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-blue-50/90 via-slate-50 to-white">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#004ac6] text-white flex items-center justify-center shadow-xs shrink-0">
+                    <span className="material-symbols-outlined text-[20px]">post_add</span>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-sm">
+                      Thêm văn bản / Quyết định cho quá trình xử lý
+                    </h3>
+                    <p className="text-[11px] text-slate-500 font-medium">
+                      Hồ sơ: <strong className="text-slate-800 font-mono">{currentDon.code}</strong> • Người nộp: {currentDon.nguoiNop}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-bold text-slate-900 text-sm">
-                    Thêm văn bản / Quyết định cho quá trình xử lý
-                  </h3>
-                  <p className="text-[11px] text-slate-500 font-medium">
-                    Hồ sơ: <strong className="text-slate-800 font-mono">{currentDon.code}</strong> • Người nộp: {currentDon.nguoiNop}
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowAddModal(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 transition-colors cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[18px]">close</span>
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <form onSubmit={handleSaveAddDoc} className="flex-1 overflow-y-auto p-6 space-y-4 text-xs">
-              {/* Chọn nhanh mẫu văn bản theo nghiệp vụ */}
-              <div className="p-3.5 bg-blue-50/70 rounded-xl border border-blue-200 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-[#004ac6] flex items-center gap-1.5 text-xs">
-                    <span className="material-symbols-outlined text-[15px]">auto_stories</span>
-                    <span>Chọn nhanh mẫu văn bản / quyết định nghiệp vụ:</span>
-                  </span>
-                  <span className="text-[10px] text-blue-700 bg-blue-100 px-2 py-0.2 rounded-full font-semibold">
-                    1-Click điền tự động
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {QUICK_TEMPLATES.map((tpl) => (
-                    <button
-                      key={tpl.title}
-                      type="button"
-                      onClick={() => handleApplyTemplate(tpl)}
-                      className={`px-2.5 py-1 rounded-lg border text-[11px] font-medium transition-all cursor-pointer ${addForm.soHieu === tpl.soHieu
-                        ? 'bg-[#004ac6] text-white border-[#004ac6] shadow-2xs font-bold'
-                        : 'bg-white hover:bg-blue-100 text-slate-700 border-blue-200'
-                        }`}
-                    >
-                      {tpl.title}
-                    </button>
-                  ))}
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 transition-colors cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[18px]">close</span>
+                </button>
               </div>
 
-              {/* Form Input fields */}
-              <div className="grid grid-cols-2 gap-3.5">
-                <div className="col-span-2">
-                  <label className="block font-bold text-slate-800 mb-1">
-                    Tên tệp tin văn bản / quyết định <span className="text-rose-600">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={addForm.name}
-                    onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
-                    placeholder="VD: Quyet_dinh_phan_cong_dieu_tra_vien_so_42.pdf"
-                    className="w-full px-3 py-2 text-xs font-semibold text-slate-800 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-[#004ac6]"
-                  />
+              {/* Modal Body */}
+              <form onSubmit={handleSaveAddDoc} className="flex-1 overflow-y-auto p-6 space-y-4 text-xs">
+                {/* Chọn nhanh mẫu văn bản theo nghiệp vụ */}
+                <div className="p-3.5 bg-blue-50/70 rounded-xl border border-blue-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-[#004ac6] flex items-center gap-1.5 text-xs">
+                      <span className="material-symbols-outlined text-[15px]">auto_stories</span>
+                      <span>Chọn nhanh mẫu văn bản / quyết định nghiệp vụ:</span>
+                    </span>
+                    <span className="text-[10px] text-blue-700 bg-blue-100 px-2 py-0.2 rounded-full font-semibold">
+                      1-Click điền tự động
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {QUICK_TEMPLATES.map((tpl) => (
+                      <button
+                        key={tpl.title}
+                        type="button"
+                        onClick={() => handleApplyTemplate(tpl)}
+                        className={`px-2.5 py-1 rounded-lg border text-[11px] font-medium transition-all cursor-pointer ${addForm.soHieu === tpl.soHieu
+                          ? 'bg-[#004ac6] text-white border-[#004ac6] shadow-2xs font-bold'
+                          : 'bg-white hover:bg-blue-100 text-slate-700 border-blue-200'
+                          }`}
+                      >
+                        {tpl.title}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block font-bold text-slate-800 mb-1">
-                    Số ký hiệu văn bản <span className="text-rose-600">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={addForm.soHieu}
-                    onChange={(e) => setAddForm({ ...addForm, soHieu: e.target.value })}
-                    placeholder="VD: 42/QĐ-PC03 hoặc 18/TB-UBND"
-                    className="w-full px-3 py-2 text-xs font-mono font-bold text-slate-800 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:border-[#004ac6]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-800 mb-1">
-                    Loại văn bản / Quyết định <span className="text-rose-600">*</span>
-                  </label>
-                  <select
-                    value={addForm.category}
-                    onChange={(e) => setAddForm({ ...addForm, category: e.target.value })}
-                    className="w-full px-3 py-2 text-xs font-semibold text-slate-800 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-[#004ac6] cursor-pointer"
-                  >
-                    <option value="Quyết định tố tụng">Quyết định tố tụng (CQĐT / VKSND)</option>
-                    <option value="Quyết định hành chính">Quyết định hành chính (UBND)</option>
-                    <option value="Thông báo thụ lý">Thông báo thụ lý (Khiếu nại / Tố cáo / Nguồn tin)</option>
-                    <option value="Công văn phối hợp">Công văn trao đổi / Yêu cầu tra soát</option>
-                    <option value="Biên bản làm việc">Biên bản làm việc / Ghi lời khai / Đối thoại</option>
-                    <option value="Văn bản hướng dẫn">Phiếu hướng dẫn bổ sung tài liệu</option>
-                    <option value="Báo cáo kết luận">Báo cáo kết luận xác minh</option>
-                    <option value="Tài liệu chứng cứ mới">Tài liệu chứng cứ phát sinh</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-800 mb-1">
-                    Giai đoạn trong quy trình xử lý
-                  </label>
-                  <select
-                    value={addForm.stepBelongsTo}
-                    onChange={(e) => setAddForm({ ...addForm, stepBelongsTo: e.target.value })}
-                    className="w-full px-3 py-2 text-xs font-medium text-slate-800 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-[#004ac6] cursor-pointer"
-                  >
-                    <option value="Bước 1: Tiếp nhận & Vào sổ">Bước 1: Tiếp nhận &amp; Vào sổ</option>
-                    <option value="Bước 2: Kiểm tra chứng cứ & Thụ lý">Bước 2: Kiểm tra chứng cứ &amp; Thụ lý</option>
-                    <option value="Bước 3: Phân công thụ lý & Xác minh">Bước 3: Phân công thụ lý / Lập tổ xác minh</option>
-                    <option value="Bước 4: Xác minh thực địa & Thu thập chứng cứ">Bước 4: Xác minh thực tế / Sao kê / Đối thoại</option>
-                    <option value="Bước 5: Báo cáo kết luận & Đề xuất">Bước 5: Báo cáo kết luận &amp; Đề xuất</option>
-                    <option value="Bước 6: Ban hành Quyết định giải quyết">Bước 6: Ban hành Quyết định giải quyết</option>
-                    <option value="Bước 7: Thông báo kết quả & Trả lời">Bước 7: Thông báo kết quả &amp; Trả lời</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-800 mb-1">
-                    Cơ quan ban hành <span className="text-rose-600">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={addForm.coQuanBanHanh}
-                    onChange={(e) => setAddForm({ ...addForm, coQuanBanHanh: e.target.value })}
-                    placeholder="VD: Cơ quan CSĐT Công an TP. Hà Nội"
-                    className="w-full px-3 py-2 text-xs text-slate-800 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-[#004ac6]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-800 mb-1">
-                    Người ký &amp; Chức vụ <span className="text-rose-600">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={addForm.signer}
-                    onChange={(e) => setAddForm({ ...addForm, signer: e.target.value })}
-                    placeholder="VD: Thượng tá Trần Quốc Dũng - Phó Thủ trưởng CQĐT"
-                    className="w-full px-3 py-2 text-xs text-slate-800 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-[#004ac6]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-800 mb-1">
-                    Số trang &amp; Dung lượng file
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <input
-                      type="number"
-                      min={1}
-                      value={addForm.pages}
-                      onChange={(e) => setAddForm({ ...addForm, pages: Number(e.target.value) || 1 })}
-                      className="w-full px-3 py-2 text-xs text-slate-800 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-[#004ac6]"
-                      placeholder="Số trang"
-                    />
+                {/* Form Input fields */}
+                <div className="grid grid-cols-2 gap-3.5">
+                  <div className="col-span-2">
+                    <label className="block font-bold text-slate-800 mb-1">
+                      Tên tệp tin văn bản / quyết định <span className="text-rose-600">*</span>
+                    </label>
                     <input
                       type="text"
-                      value={addForm.size}
-                      onChange={(e) => setAddForm({ ...addForm, size: e.target.value })}
+                      required
+                      value={addForm.name}
+                      onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
+                      placeholder="VD: Quyet_dinh_phan_cong_dieu_tra_vien_so_42.pdf"
+                      className="w-full px-3 py-2 text-xs font-semibold text-slate-800 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-[#004ac6]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-800 mb-1">
+                      Số ký hiệu văn bản <span className="text-rose-600">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={addForm.soHieu}
+                      onChange={(e) => setAddForm({ ...addForm, soHieu: e.target.value })}
+                      placeholder="VD: 42/QĐ-PC03 hoặc 18/TB-UBND"
+                      className="w-full px-3 py-2 text-xs font-mono font-bold text-slate-800 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:border-[#004ac6]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-800 mb-1">
+                      Loại văn bản / Quyết định <span className="text-rose-600">*</span>
+                    </label>
+                    <select
+                      value={addForm.category}
+                      onChange={(e) => setAddForm({ ...addForm, category: e.target.value })}
+                      className="w-full px-3 py-2 text-xs font-semibold text-slate-800 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-[#004ac6] cursor-pointer"
+                    >
+                      <option value="Quyết định tố tụng">Quyết định tố tụng (CQĐT / VKSND)</option>
+                      <option value="Quyết định hành chính">Quyết định hành chính (UBND)</option>
+                      <option value="Thông báo thụ lý">Thông báo thụ lý (Khiếu nại / Tố cáo / Nguồn tin)</option>
+                      <option value="Công văn phối hợp">Công văn trao đổi / Yêu cầu tra soát</option>
+                      <option value="Biên bản làm việc">Biên bản làm việc / Ghi lời khai / Đối thoại</option>
+                      <option value="Văn bản hướng dẫn">Phiếu hướng dẫn bổ sung tài liệu</option>
+                      <option value="Báo cáo kết luận">Báo cáo kết luận xác minh</option>
+                      <option value="Tài liệu chứng cứ mới">Tài liệu chứng cứ phát sinh</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-800 mb-1">
+                      Giai đoạn trong quy trình xử lý
+                    </label>
+                    <select
+                      value={addForm.stepBelongsTo}
+                      onChange={(e) => setAddForm({ ...addForm, stepBelongsTo: e.target.value })}
+                      className="w-full px-3 py-2 text-xs font-medium text-slate-800 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-[#004ac6] cursor-pointer"
+                    >
+                      <option value="Bước 1: Tiếp nhận & Vào sổ">Bước 1: Tiếp nhận &amp; Vào sổ</option>
+                      <option value="Bước 2: Kiểm tra chứng cứ & Thụ lý">Bước 2: Kiểm tra chứng cứ &amp; Thụ lý</option>
+                      <option value="Bước 3: Phân công thụ lý & Xác minh">Bước 3: Phân công thụ lý / Lập tổ xác minh</option>
+                      <option value="Bước 4: Xác minh thực địa & Thu thập chứng cứ">Bước 4: Xác minh thực tế / Sao kê / Đối thoại</option>
+                      <option value="Bước 5: Báo cáo kết luận & Đề xuất">Bước 5: Báo cáo kết luận &amp; Đề xuất</option>
+                      <option value="Bước 6: Ban hành Quyết định giải quyết">Bước 6: Ban hành Quyết định giải quyết</option>
+                      <option value="Bước 7: Thông báo kết quả & Trả lời">Bước 7: Thông báo kết quả &amp; Trả lời</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-800 mb-1">
+                      Cơ quan ban hành <span className="text-rose-600">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={addForm.coQuanBanHanh}
+                      onChange={(e) => setAddForm({ ...addForm, coQuanBanHanh: e.target.value })}
+                      placeholder="VD: Cơ quan CSĐT Công an TP. Hà Nội"
                       className="w-full px-3 py-2 text-xs text-slate-800 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-[#004ac6]"
-                      placeholder="Dung lượng"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-800 mb-1">
+                      Người ký &amp; Chức vụ <span className="text-rose-600">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={addForm.signer}
+                      onChange={(e) => setAddForm({ ...addForm, signer: e.target.value })}
+                      placeholder="VD: Thượng tá Trần Quốc Dũng - Phó Thủ trưởng CQĐT"
+                      className="w-full px-3 py-2 text-xs text-slate-800 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-[#004ac6]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-800 mb-1">
+                      Số trang &amp; Dung lượng file
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="number"
+                        min={1}
+                        value={addForm.pages}
+                        onChange={(e) => setAddForm({ ...addForm, pages: Number(e.target.value) || 1 })}
+                        className="w-full px-3 py-2 text-xs text-slate-800 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-[#004ac6]"
+                        placeholder="Số trang"
+                      />
+                      <input
+                        type="text"
+                        value={addForm.size}
+                        onChange={(e) => setAddForm({ ...addForm, size: e.target.value })}
+                        className="w-full px-3 py-2 text-xs text-slate-800 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-[#004ac6]"
+                        placeholder="Dung lượng"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="col-span-2">
+                    <label className="block font-bold text-slate-800 mb-1">
+                      Trích yếu &amp; Nội dung văn bản quyết định (Xem trước &amp; AI OCR)
+                    </label>
+                    <textarea
+                      rows={4}
+                      value={addForm.previewExcerpt}
+                      onChange={(e) => setAddForm({ ...addForm, previewExcerpt: e.target.value })}
+                      placeholder="Nhập trích yếu căn cứ và quyết định chỉ đạo..."
+                      className="w-full p-3 text-xs font-mono text-slate-800 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:bg-white focus:border-[#004ac6] leading-relaxed"
                     />
                   </div>
                 </div>
 
-                <div className="col-span-2">
-                  <label className="block font-bold text-slate-800 mb-1">
-                    Trích yếu &amp; Nội dung văn bản quyết định (Xem trước &amp; AI OCR)
+                {/* Tùy chọn ký số VGCA & OCR */}
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between flex-wrap gap-3">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={addForm.isSignedVGCA}
+                      onChange={(e) => setAddForm({ ...addForm, isSignedVGCA: e.target.checked })}
+                      className="w-4 h-4 rounded text-[#004ac6] focus:ring-0 cursor-pointer"
+                    />
+                    <span className="font-semibold text-slate-700 text-xs flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[15px] text-emerald-600">verified_user</span>
+                      <span>Xác thực chữ ký số công vụ VGCA (Ban Cơ yếu Chính phủ)</span>
+                    </span>
                   </label>
-                  <textarea
-                    rows={4}
-                    value={addForm.previewExcerpt}
-                    onChange={(e) => setAddForm({ ...addForm, previewExcerpt: e.target.value })}
-                    placeholder="Nhập trích yếu căn cứ và quyết định chỉ đạo..."
-                    className="w-full p-3 text-xs font-mono text-slate-800 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:bg-white focus:border-[#004ac6] leading-relaxed"
-                  />
+
+                  <span className="text-[11px] font-mono text-slate-400">SHA-256 Auto-Hashing</span>
                 </div>
-              </div>
 
-              {/* Tùy chọn ký số VGCA & OCR */}
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between flex-wrap gap-3">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={addForm.isSignedVGCA}
-                    onChange={(e) => setAddForm({ ...addForm, isSignedVGCA: e.target.checked })}
-                    className="w-4 h-4 rounded text-[#004ac6] focus:ring-0 cursor-pointer"
-                  />
-                  <span className="font-semibold text-slate-700 text-xs flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[15px] text-emerald-600">verified_user</span>
-                    <span>Xác thực chữ ký số công vụ VGCA (Ban Cơ yếu Chính phủ)</span>
-                  </span>
-                </label>
-
-                <span className="text-[11px] font-mono text-slate-400">SHA-256 Auto-Hashing</span>
-              </div>
-
-              {/* Modal footer */}
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 font-semibold hover:bg-slate-100 transition-colors cursor-pointer"
-                >
-                  Hủy bỏ
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#004ac6] hover:bg-[#003ea8] text-white font-bold shadow-xs transition-all cursor-pointer flex items-center gap-1.5 active:scale-95"
-                >
-                  <span className="material-symbols-outlined text-[16px]">save</span>
-                  <span>Lưu &amp; Thêm vào hồ sơ xử lý</span>
-                </button>
-              </div>
-            </form>
+                {/* Modal footer */}
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(false)}
+                    className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 font-semibold hover:bg-slate-100 transition-colors cursor-pointer"
+                  >
+                    Hủy bỏ
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 rounded-xl bg-[#004ac6] hover:bg-[#003ea8] text-white font-bold shadow-xs transition-all cursor-pointer flex items-center gap-1.5 active:scale-95"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">save</span>
+                    <span>Lưu &amp; Thêm vào hồ sơ xử lý</span>
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* ========================================================================= */}
       {/* 4. MODAL XEM TRƯỚC VĂN BẢN (PREVIEW PDF MODAL)                            */}
       {/* ========================================================================= */}
-      {showPreviewModal && selectedDoc && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-4xl w-full h-[88vh] flex flex-col overflow-hidden animate-scale-up">
-            {/* Modal Header */}
-            <div className="px-6 py-3.5 border-b flex items-center justify-between bg-slate-50">
-              <div className="flex items-center gap-2.5">
-                <span className="material-symbols-outlined text-[#004ac6] text-[22px]">description</span>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-slate-900 text-sm">{selectedDoc.name}</h3>
-                    {selectedDoc.soHieu && (
-                      <span className="font-mono text-[11px] font-bold bg-slate-200/80 px-1.5 py-0.2 rounded text-slate-800">
-                        Số: {selectedDoc.soHieu}
-                      </span>
-                    )}
+      {
+        showPreviewModal && selectedDoc && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+            <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-4xl w-full h-[88vh] flex flex-col overflow-hidden animate-scale-up">
+              {/* Modal Header */}
+              <div className="px-6 py-3.5 border-b flex items-center justify-between bg-slate-50">
+                <div className="flex items-center gap-2.5">
+                  <span className="material-symbols-outlined text-[#004ac6] text-[22px]">description</span>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-slate-900 text-sm">{selectedDoc.name}</h3>
+                      {selectedDoc.soHieu && (
+                        <span className="font-mono text-[11px] font-bold bg-slate-200/80 px-1.5 py-0.2 rounded text-slate-800">
+                          Số: {selectedDoc.soHieu}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[11px] text-slate-500">
+                      {selectedDoc.category} • {selectedDoc.pages} trang • {selectedDoc.size} • {selectedDoc.uploadDate}
+                    </span>
                   </div>
-                  <span className="text-[11px] text-slate-500">
-                    {selectedDoc.category} • {selectedDoc.pages} trang • {selectedDoc.size} • {selectedDoc.uploadDate}
-                  </span>
                 </div>
-              </div>
 
-              {/* Toolbar zoom & close */}
-              <div className="flex items-center gap-2">
-                <div className="flex items-center border border-slate-200 rounded-lg bg-white p-0.5">
+                {/* Toolbar zoom & close */}
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center border border-slate-200 rounded-lg bg-white p-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewZoom((z) => Math.max(z - 15, 70))}
+                      className="p-1 hover:bg-slate-100 rounded text-slate-600 cursor-pointer"
+                      title="Thu nhỏ"
+                    >
+                      <span className="material-symbols-outlined text-base">zoom_out</span>
+                    </button>
+                    <span className="px-2 text-xs font-mono text-slate-700">{previewZoom}%</span>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewZoom((z) => Math.min(z + 15, 160))}
+                      className="p-1 hover:bg-slate-100 rounded text-slate-600 cursor-pointer"
+                      title="Phóng to"
+                    >
+                      <span className="material-symbols-outlined text-base">zoom_in</span>
+                    </button>
+                  </div>
+
                   <button
                     type="button"
-                    onClick={() => setPreviewZoom((z) => Math.max(z - 15, 70))}
-                    className="p-1 hover:bg-slate-100 rounded text-slate-600 cursor-pointer"
-                    title="Thu nhỏ"
+                    onClick={() => setShowPreviewModal(false)}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 cursor-pointer"
                   >
-                    <span className="material-symbols-outlined text-base">zoom_out</span>
+                    <span className="material-symbols-outlined text-xl">close</span>
                   </button>
-                  <span className="px-2 text-xs font-mono text-slate-700">{previewZoom}%</span>
+                </div>
+              </div>
+
+              {/* Modal Body: Document Content Preview with Watermark */}
+              <div className="flex-1 overflow-y-auto p-8 bg-slate-200/70 flex justify-center">
+                <div
+                  className="bg-white shadow-xl rounded-lg p-10 max-w-2xl w-full border border-slate-300 relative transition-all"
+                  style={{ transform: `scale(${previewZoom / 100})`, transformOrigin: 'top center' }}
+                >
+                  {/* Watermark */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5">
+                    <span className="text-6xl font-extrabold rotate-[-30deg] text-slate-900 tracking-widest uppercase">
+                      GOVEX TECH
+                    </span>
+                  </div>
+
+                  {/* Preformatted text simulating scan/OCR preview */}
+                  <div className="font-mono text-xs leading-relaxed text-slate-800 whitespace-pre-wrap">
+                    {selectedDoc.previewExcerpt}
+                  </div>
+
+                  <div className="mt-8 pt-4 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-400">
+                    <span>Trang 1 / {selectedDoc.pages}</span>
+                    <span className="flex items-center gap-1 text-emerald-600 font-semibold">
+                      <span className="material-symbols-outlined text-[13px]">verified_user</span>
+                      <span>Đã kiểm định chữ ký số VGCA</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="px-6 py-3 border-t bg-slate-50 flex items-center justify-between">
+                <span className="text-xs text-slate-500">
+                  Người ký: <strong>{selectedDoc.signer}</strong>
+                </span>
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => setPreviewZoom((z) => Math.min(z + 15, 160))}
-                    className="p-1 hover:bg-slate-100 rounded text-slate-600 cursor-pointer"
-                    title="Phóng to"
+                    onClick={() => alert(`Tải về ${selectedDoc.name}`)}
+                    className="px-4 py-2 rounded-xl bg-[#004ac6] hover:bg-[#003ea8] text-white text-xs font-semibold cursor-pointer flex items-center gap-1.5"
                   >
-                    <span className="material-symbols-outlined text-base">zoom_in</span>
+                    <span className="material-symbols-outlined text-base">download</span>
+                    <span>Tải bản gốc</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowPreviewModal(false)}
+                    className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold cursor-pointer"
+                  >
+                    Đóng
                   </button>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => setShowPreviewModal(false)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-xl">close</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Modal Body: Document Content Preview with Watermark */}
-            <div className="flex-1 overflow-y-auto p-8 bg-slate-200/70 flex justify-center">
-              <div
-                className="bg-white shadow-xl rounded-lg p-10 max-w-2xl w-full border border-slate-300 relative transition-all"
-                style={{ transform: `scale(${previewZoom / 100})`, transformOrigin: 'top center' }}
-              >
-                {/* Watermark */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5">
-                  <span className="text-6xl font-extrabold rotate-[-30deg] text-slate-900 tracking-widest uppercase">
-                    GOVEX TECH
-                  </span>
-                </div>
-
-                {/* Preformatted text simulating scan/OCR preview */}
-                <div className="font-mono text-xs leading-relaxed text-slate-800 whitespace-pre-wrap">
-                  {selectedDoc.previewExcerpt}
-                </div>
-
-                <div className="mt-8 pt-4 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-400">
-                  <span>Trang 1 / {selectedDoc.pages}</span>
-                  <span className="flex items-center gap-1 text-emerald-600 font-semibold">
-                    <span className="material-symbols-outlined text-[13px]">verified_user</span>
-                    <span>Đã kiểm định chữ ký số VGCA</span>
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="px-6 py-3 border-t bg-slate-50 flex items-center justify-between">
-              <span className="text-xs text-slate-500">
-                Người ký: <strong>{selectedDoc.signer}</strong>
-              </span>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => alert(`Tải về ${selectedDoc.name}`)}
-                  className="px-4 py-2 rounded-xl bg-[#004ac6] hover:bg-[#003ea8] text-white text-xs font-semibold cursor-pointer flex items-center gap-1.5"
-                >
-                  <span className="material-symbols-outlined text-base">download</span>
-                  <span>Tải bản gốc</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowPreviewModal(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold cursor-pointer"
-                >
-                  Đóng
-                </button>
               </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </div >
   );
 }

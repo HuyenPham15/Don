@@ -139,7 +139,7 @@ export default function ChuyenTiepNhanModal({
               <span className="material-symbols-outlined text-[20px]">outbox</span>
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900 font-headline-md tracking-tight">
+              <h2 className="text-[18px] font-bold text-slate-900 font-headline-md tracking-tight">
                 Chuyển đơn vị xử lý - {donInfo.code}
               </h2>
 

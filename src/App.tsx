@@ -39,6 +39,9 @@ export default function App() {
     loaiDon: "Đơn khiếu nại đất đai",
     type: "ĐƠN TIẾP NHẬN",
     statusBadge: "Đang xử lý",
+    canBoTiepNhan: "Nguyễn Minh Anh",
+    chucVuCanBo: "Chuyên viên Tiếp nhận",
+    donViXuLy: "Phòng Tiếp công dân & Xử lý đơn",
   });
   const [acceptedDons, setAcceptedDons] = useState<DonDetail[]>([]);
   const [extraCard, setExtraCard] = useState<LuotNhan | null>(null);
@@ -465,7 +468,7 @@ export default function App() {
           </button>
 
           {/* Nút xem Màn hình Đăng nhập (UI/UX) */}
-          <button
+          {/* <button
             type="button"
             onClick={() => setScreen("login")}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200/80 text-xs font-semibold transition-all cursor-pointer shadow-2xs"
@@ -473,7 +476,7 @@ export default function App() {
           >
             <span className="material-symbols-outlined text-[17px]">lock_open</span>
             <span className="hidden sm:inline">Màn hình Đăng nhập</span>
-          </button>
+          </button> */}
 
           {/* Profile & Account Switcher */}
           <div className="relative pl-2 border-l border-slate-200">

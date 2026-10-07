@@ -513,7 +513,7 @@ export default function TrinhKyScreen({
 
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-[#004ac6] text-[20px]">drive_file_move</span>
-              <h1 className="text-sm font-bold text-slate-900 tracking-tight font-headline-md">
+              <h1 className="text-[18px] font-bold text-slate-900 tracking-tight font-headline-md">
                 Trình ký văn bản
               </h1>
 

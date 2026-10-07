@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Screen } from '../../types';
 
-export type HuongGiaiQuyetType = 'thu_ly' | 'yeu_cau_bo_sung' | 'khong_thu_ly' | 'ban_giao' | 'tra_lai';
+export type HuongGiaiQuyetType = 'thu_ly' | 'yeu_cau_bo_sung' | 'khong_thu_ly' | 'ban_giao' | 'tra_lai' | 'tra_loi_don';
 
 export interface VanBanXacMinhItem {
   id: string;
@@ -12,6 +12,7 @@ export interface VanBanXacMinhItem {
   nguoiNhan: string;
   trichYeu: string;
   noiDungChiTiet: string;
+  coQuanBanHanh?: string;
   diaDiem?: string;
   thoiGianHen?: string;
   trangThai: 'du_thao' | 'da_ban_hanh' | 'da_dinh_kem';
@@ -203,7 +204,7 @@ export default function XacMinhVaDeXuatModal({
       newDoc = {
         id: `vb-xm-${Date.now()}`,
         loai: 'cong_van',
-        soHieu: soHieu,
+        soKyHieu: soHieu,
         tenVanBan: countCV === 0 ? 'Công văn đề nghị cung cấp hồ sơ, tài liệu phục vụ xác minh' : `Công văn phối hợp xác minh số ${countCV + 1}`,
         ngayLap: todayStr,
         nguoiNhan: 'Chi nhánh Văn phòng Đăng ký đất đai quận Cầu Giấy',
@@ -276,8 +277,8 @@ export default function XacMinhVaDeXuatModal({
     const todayStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
 
     if (editingVanBan) {
-      setDanhSachVanBan((prev) =>
-        prev.map((item) =>
+      updateDanhSachVanBan((prev: VanBanXacMinhItem[]) =>
+        prev.map((item: VanBanXacMinhItem) =>
           item.id === editingVanBan.id
             ? {
               ...item,
@@ -426,7 +427,7 @@ export default function XacMinhVaDeXuatModal({
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[#004ac6] text-[20px]">assignment</span>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900">
+                <h3 className="text-[14px] font-bold text-slate-900 tracking-tight">
                   1. Văn bản phục vụ quá trình xác minh ({danhSachVanBan.length} văn bản):
                 </h3>
               </div>
@@ -623,7 +624,7 @@ export default function XacMinhVaDeXuatModal({
           {/* ========================================================================= */}
           <div className="space-y-2 pt-2 border-t border-slate-200">
             <div className="flex items-center justify-between">
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
+              <label className="text-[14px] font-bold text-slate-900 tracking-tight flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-emerald-600 text-[18px]">rate_review</span>
                 2. Ghi nhận kết quả xác minh thực tế &amp; Kết luận của cán bộ:
               </label>
@@ -672,7 +673,7 @@ export default function XacMinhVaDeXuatModal({
               value={ghiChuXacMinh}
               onChange={(e) => setGhiChuXacMinh(e.target.value)}
               rows={3}
-              className="w-full text-xs p-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-800 leading-relaxed bg-white shadow-2xs"
+              className="w-full text-[13.5px] p-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6] focus:outline-none text-slate-800 placeholder:text-slate-400 placeholder:text-[12.5px] leading-relaxed bg-white shadow-2xs"
               placeholder="Nhập nội dung ghi nhận kết quả xác minh thực tế của cán bộ, tình tiết làm việc và căn cứ đề xuất..."
             />
           </div>
@@ -682,7 +683,7 @@ export default function XacMinhVaDeXuatModal({
           {/* ========================================================================= */}
           <div className="space-y-2.5 pt-2 border-t border-slate-200">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
+              <h3 className="text-[14px] font-bold text-slate-900 tracking-tight flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-amber-600 text-[18px]">alt_route</span>
                 <span>3. Chọn Đề xuất hướng xử lý theo kết quả xác minh (5 hướng xử lý):</span>
               </h3>
@@ -831,6 +832,34 @@ export default function XacMinhVaDeXuatModal({
                   <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
                 </div>
               </div>
+
+              {/* Hướng 6: Trả lời đơn */}
+              <div
+                onClick={() => setSelectedHuong('tra_loi_don')}
+                className={`p-3.5 rounded-xl border-2 transition-all cursor-pointer flex flex-col justify-between ${selectedHuong === 'tra_loi_don'
+                  ? 'border-teal-600 bg-teal-50/90 ring-2 ring-teal-200 shadow-sm'
+                  : 'border-slate-200 bg-white hover:border-teal-300'
+                  }`}
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="w-6 h-6 rounded-lg bg-teal-600 text-white flex items-center justify-center font-bold text-xs shadow-2xs">
+                      6
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-100 text-teal-800 border border-teal-200">
+                      GIẢI THÍCH / PHÚC ĐÁP
+                    </span>
+                  </div>
+                  <h4 className="text-xs font-bold text-slate-900 pt-1">Trả lời đơn</h4>
+                  <p className="text-[11px] text-slate-600 leading-tight">
+                    Soạn văn bản trả lời, giải thích chính sách pháp luật hoặc thông báo kết quả rà soát cho công dân.
+                  </p>
+                </div>
+                <div className="pt-2 text-[11px] font-bold text-teal-700 flex items-center justify-between border-t border-teal-100 mt-2">
+                  <span>TRẢ LỜI ĐƠN</span>
+                  <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -940,82 +969,82 @@ export default function XacMinhVaDeXuatModal({
             {/* Body Soạn thảo & Xem trước */}
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               {/* Form nhập thông số hành chính */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Số ký hiệu <span className="text-red-500">*</span>
+                  <label className="block text-[12.5px] font-semibold text-slate-700 mb-1.5">
+                    Số ký hiệu <span className="text-rose-500 font-bold ml-0.5 text-[12px]">*</span>
                   </label>
                   <input
                     type="text"
                     value={formSoKyHieu}
                     onChange={(e) => setFormSoKyHieu(e.target.value)}
-                    className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-mono font-bold text-slate-900 focus:bg-white focus:outline-none focus:border-blue-600"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-[13.5px] font-mono font-bold text-slate-900 placeholder:text-slate-400 placeholder:text-[12.5px] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6]"
                     placeholder="VD: 18/GM-TCD, 02/BB-XM..."
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Tên văn bản <span className="text-red-500">*</span>
+                  <label className="block text-[12.5px] font-semibold text-slate-700 mb-1.5">
+                    Tên văn bản <span className="text-rose-500 font-bold ml-0.5 text-[12px]">*</span>
                   </label>
                   <input
                     type="text"
                     value={formTenVanBan}
                     onChange={(e) => setFormTenVanBan(e.target.value)}
-                    className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-900 font-semibold focus:bg-white focus:outline-none focus:border-blue-600"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-[13.5px] font-normal text-slate-900 placeholder:text-slate-400 placeholder:text-[12.5px] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6]"
                     placeholder="Tên văn bản..."
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
+                  <label className="block text-[12.5px] font-semibold text-slate-700 mb-1.5">
                     Người nhận / Đối tượng làm việc
                   </label>
                   <input
                     type="text"
                     value={formNguoiNhan}
                     onChange={(e) => setFormNguoiNhan(e.target.value)}
-                    className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-800 focus:bg-white focus:outline-none focus:border-blue-600"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-[13.5px] font-normal text-slate-800 placeholder:text-slate-400 placeholder:text-[12.5px] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6]"
                     placeholder="Tên công dân hoặc cơ quan nhận..."
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
+                  <label className="block text-[12.5px] font-semibold text-slate-700 mb-1.5">
                     Thời gian làm việc / Hạn phản hồi
                   </label>
                   <input
                     type="text"
                     value={formThoiGianHen}
                     onChange={(e) => setFormThoiGianHen(e.target.value)}
-                    className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-800 focus:bg-white focus:outline-none focus:border-blue-600"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-[13.5px] font-normal text-slate-800 placeholder:text-slate-400 placeholder:text-[12.5px] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6]"
                     placeholder="VD: 08:30 ngày 18/09/2026..."
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block font-semibold text-slate-700 mb-1">Địa điểm làm việc</label>
+                  <label className="block text-[12.5px] font-semibold text-slate-700 mb-1.5">Địa điểm làm việc</label>
                   <input
                     type="text"
                     value={formDiaDiem}
                     onChange={(e) => setFormDiaDiem(e.target.value)}
-                    className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-800 focus:bg-white focus:outline-none focus:border-blue-600"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-[13.5px] font-normal text-slate-800 placeholder:text-slate-400 placeholder:text-[12.5px] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6]"
                     placeholder="Phòng Tiếp công dân, trụ sở cơ quan..."
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block font-semibold text-slate-700 mb-1">Trích yếu nội dung</label>
+                  <label className="block text-[12.5px] font-semibold text-slate-700 mb-1.5">Trích yếu nội dung</label>
                   <input
                     type="text"
                     value={formTrichYeu}
                     onChange={(e) => setFormTrichYeu(e.target.value)}
-                    className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-800 focus:bg-white focus:outline-none focus:border-blue-600"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-[13.5px] font-normal text-slate-800 placeholder:text-slate-400 placeholder:text-[12.5px] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6]"
                     placeholder="Tóm tắt mục đích văn bản..."
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block font-semibold text-slate-700 mb-1">Nội dung chi tiết văn bản</label>
+                  <label className="block text-[12.5px] font-semibold text-slate-700 mb-1.5">Nội dung chi tiết văn bản</label>
                   <textarea
                     rows={4}
                     value={formNoiDung}
                     onChange={(e) => setFormNoiDung(e.target.value)}
-                    className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg text-xs text-slate-800 focus:bg-white focus:outline-none focus:border-blue-600 leading-relaxed resize-none"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-[13.5px] font-normal text-slate-800 placeholder:text-slate-400 placeholder:text-[12.5px] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6] leading-relaxed resize-none"
                     placeholder="Nội dung chi tiết của Giấy mời / Biên bản / Công văn..."
                   />
                 </div>
@@ -1105,7 +1134,7 @@ export default function XacMinhVaDeXuatModal({
               <button
                 type="button"
                 onClick={() => setShowEditorModal(false)}
-                className="px-4 py-2 rounded-xl bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-semibold cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 text-[13.5px] font-medium cursor-pointer"
               >
                 Hủy
               </button>
@@ -1117,7 +1146,7 @@ export default function XacMinhVaDeXuatModal({
                     showToast('Đang kết nối in văn bản...');
                     window.print();
                   }}
-                  className="px-3 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold cursor-pointer flex items-center gap-1.5"
+                  className="px-3.5 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-[13.5px] font-medium cursor-pointer flex items-center gap-1.5"
                 >
                   <span className="material-symbols-outlined text-[16px]">print</span>
                   <span>In văn bản</span>
@@ -1126,7 +1155,7 @@ export default function XacMinhVaDeXuatModal({
                 <button
                   type="button"
                   onClick={handleSaveVanBanForm}
-                  className="px-5 py-2 rounded-xl bg-[#004ac6] hover:bg-[#003da6] active:scale-95 text-white text-xs font-bold shadow-xs cursor-pointer flex items-center gap-1.5"
+                  className="px-5 py-2 rounded-xl bg-[#004ac6] hover:bg-[#003da6] active:scale-95 text-white text-[13.5px] font-semibold shadow-xs cursor-pointer flex items-center gap-1.5"
                 >
                   <span className="material-symbols-outlined text-[16px]">save</span>
                   <span>Lưu vào hồ sơ xác minh</span>

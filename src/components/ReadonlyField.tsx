@@ -2,8 +2,8 @@ import React from 'react';
 function ReadonlyField({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <div>
-      <div className="text-xs font-medium mb-1" style={{ color: "#94A3B8" }}>{label}</div>
-      <div className={`px-3 py-2 rounded-lg text-sm ${mono ? "mono" : ""}`} style={{ background: "#F8FAFC", color: "#475569", border: "1px solid #E2E8F0" }}>{value}</div>
+      <div className="text-[12.5px] font-medium text-slate-600 mb-1.5">{label}</div>
+      <div className={`px-3 py-2 rounded-lg text-[13.5px] font-normal bg-slate-50 text-slate-700 border border-slate-200 ${mono ? "mono" : ""}`}>{value}</div>
     </div>
   );
 }

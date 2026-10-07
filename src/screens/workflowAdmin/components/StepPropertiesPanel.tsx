@@ -56,7 +56,7 @@ function InheritBadge({ isOverridden }: { isOverridden?: boolean }) {
 
 interface RevertModalState {
   isOpen: boolean;
-  targetSection: 'ALL' | 'conditions' | 'forms' | 'inputDocs' | 'outputDocs' | 'sla' | 'actions';
+  targetSection: 'ALL' | 'conditions' | 'forms' | 'inputDocs' | 'usedDocs' | 'outputDocs' | 'sla' | 'actions';
   targetTitle: string;
 }
 

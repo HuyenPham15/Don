@@ -6,7 +6,7 @@ function SectionTitle({ children, badge, num }: { children: React.ReactNode; bad
         <span className="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold"
           style={{ background: "#B45309", color: "#fff" }}>{num}</span>
       )}
-      <span className="text-xs font-bold uppercase tracking-widest flex-1" style={{ color: "#64748B" }}>{children}</span>
+      <span className="text-[14px] font-semibold text-slate-800 flex-1 tracking-tight">{children}</span>
       {badge}
     </div>
   );

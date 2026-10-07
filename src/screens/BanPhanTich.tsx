@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { LuotNhan, Screen } from '../types';
+import { LuotNhan, Screen, UploadedFile } from '../types';
 import { matchWorkflowByLoaiDon } from '../constants/workflows';
 import { ActiveWorkflowState } from '../types/workflow';
 import { DON_VI_OPTIONS } from '../constants';
@@ -73,11 +73,25 @@ export default function BanPhanTich({
   );
 
 
-  // PDF Viewer Controls
+  // PDF Viewer Controls & Danh sách tài liệu tải lên thực tế
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [zoomLevel, setZoomLevel] = useState<number>(100);
-  const [selectedFileId, setSelectedFileId] = useState<'f1' | 'f2'>('f1');
+  const currentFiles: UploadedFile[] = useMemo(() => {
+    if (luotNhan?.files && luotNhan.files.length > 0) {
+      return luotNhan.files;
+    }
+    return [
+      { name: 'Đơn tố giác.pdf', size: '1.2 MB', category: 'main' },
+      { name: 'Hợp đồng góp vốn.pdf', size: '2.8 MB', category: 'attach' },
+    ];
+  }, [luotNhan?.files]);
+  const [selectedFileIndex, setSelectedFileIndex] = useState<number>(0);
+  const activeFile = currentFiles[selectedFileIndex] || currentFiles[0];
   const [activeHighlightKey, setActiveHighlightKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSelectedFileIndex(0);
+  }, [luotNhan?.id]);
 
   // Dữ liệu đơn trùng phục vụ đối soát CSDL và chọn đơn ghép
   const DON_TRUNG_LIST: DonTrungItem[] = [
@@ -285,6 +299,23 @@ export default function BanPhanTich({
   const [showAllDonTrung, setShowAllDonTrung] = useState<boolean>(false);
   const [selectedDonTrungForDrawer, setSelectedDonTrungForDrawer] = useState<DonTrungItem | null>(null);
   const [showDonTrungDrawer, setShowDonTrungDrawer] = useState<boolean>(false);
+  const [isGhepComboboxOpen, setIsGhepComboboxOpen] = useState<boolean>(false);
+  const [ghepSearchQuery, setGhepSearchQuery] = useState<string>('');
+
+  const selectedGhepItem = useMemo(() => {
+    return DON_TRUNG_LIST.find((item) => item.code === selectedGhepDonCode) || DON_TRUNG_LIST[0];
+  }, [selectedGhepDonCode]);
+
+  const filteredGhepList = useMemo(() => {
+    if (!ghepSearchQuery.trim()) return DON_TRUNG_LIST;
+    const q = ghepSearchQuery.toLowerCase();
+    return DON_TRUNG_LIST.filter(
+      (item) =>
+        item.code.toLowerCase().includes(q) ||
+        item.title.toLowerCase().includes(q) ||
+        item.nguoiNop.toLowerCase().includes(q)
+    );
+  }, [ghepSearchQuery]);
   const [officerNote, setOfficerNote] = useState<string>(
     'Gói này giống hồ sơ DS-29/2026-GOVEX đang mở – ghép vào đó không sinh đơn mới, không tốn số'
   );
@@ -758,7 +789,7 @@ export default function BanPhanTich({
       nguoiNop: extractData.nguoiGui || luotNhan?.nguoiNop || 'Công dân',
       ngayNhan: luotNhan?.ngayNhan || 'Hôm nay',
       loaiDon: extractData.loaiNoiDung || luotNhan?.loaiDon || 'Đơn phản ánh kiến nghị',
-      type: (dynamicCode.startsWith('VV') ? 'VỤ VIỆC' : 'ĐƠN TIẾP NHẬN') as const,
+      type: (dynamicCode.startsWith('VV') ? 'VỤ VIỆC' : 'ĐƠN TIẾP NHẬN') as 'VỤ VIỆC' | 'ĐƠN TIẾP NHẬN',
       statusBadge: 'Đang xác minh thông tin',
       isNew: true,
     };
@@ -824,7 +855,7 @@ export default function BanPhanTich({
       nguoiNop: extractData.nguoiGui || luotNhan?.nguoiNop || 'Chưa xác định danh tính',
       ngayNhan: luotNhan?.ngayNhan || '16/09/2026 09:15',
       loaiDon: extractData.loaiNoiDung || luotNhan?.loaiDon || 'Đơn phản ánh kiến nghị',
-      type: (dynamicCode.startsWith('VV') ? 'VỤ VIỆC' : 'ĐƠN TIẾP NHẬN') as const,
+      type: (dynamicCode.startsWith('VV') ? 'VỤ VIỆC' : 'ĐƠN TIẾP NHẬN') as 'VỤ VIỆC' | 'ĐƠN TIẾP NHẬN',
       statusBadge: 'Đang xác minh thông tin',
       isNew: true,
     };
@@ -857,7 +888,7 @@ export default function BanPhanTich({
       nguoiNop: extractData.nguoiGui || luotNhan?.nguoiNop || 'Người nộp đơn',
       ngayNhan: luotNhan?.ngayNhan || 'Hôm nay',
       loaiDon: extractData.loaiNoiDung || luotNhan?.loaiDon || 'Đơn tiếp nhận hành chính',
-      type: (dynamicCode.startsWith('VV') ? 'VỤ VIỆC' : 'ĐƠN TIẾP NHẬN') as const,
+      type: (dynamicCode.startsWith('VV') ? 'VỤ VIỆC' : 'ĐƠN TIẾP NHẬN') as 'VỤ VIỆC' | 'ĐƠN TIẾP NHẬN',
       statusBadge: 'Đang xác minh thông tin',
       isNew: true,
     };
@@ -1313,13 +1344,13 @@ Kính trình Lãnh đạo phê duyệt:
               Tiếp nhận đơn
             </button>
             <span className="text-slate-300">/</span>
-            <span className="text-slate-800 font-bold">Màn hình AI đã phân tích</span>
+            <span className="text-slate-800 font-bold">Chi tiết lượt nhận</span>
           </div>
 
           {/* Title & Badge */}
           <div className="flex items-center gap-3">
             <h1 className="text-[20px] font-bold text-slate-900 font-headline-md tracking-tight">
-              {luotNhan?.id ? (luotNhan.id.startsWith('LN') ? `Lượt nhận: ${luotNhan.id}` : `Hồ sơ: ${luotNhan.id}`) : 'Đơn số: D-2026-00125'}
+              Chi tiết lượt nhận: {luotNhan?.id ? luotNhan.id : 'LN-2025-0105'}
             </h1>
 
             {luotNhan?.id?.includes('LN-58') || extractData.dauHieu?.includes('OCR báo lỗi') ? (
@@ -1344,12 +1375,7 @@ Kính trình Lãnh đạo phê duyệt:
                 <span className="material-symbols-outlined text-[14px] text-orange-600">warning</span>
                 <span>AI cần kiểm tra (Độ tin cậy 68%)</span>
               </span>
-            ) : (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300 text-[11.5px] font-semibold font-label-technical">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>🟢 AI đã hoàn thành 6/6 bước</span>
-              </span>
-            )}
+            ) : null}
           </div>
 
           {/* Meta Attributes */}
@@ -1363,36 +1389,10 @@ Kính trình Lãnh đạo phê duyệt:
             <div>
               <span>Hình thức:</span> <strong className="text-slate-700">{luotNhan?.hinhThuc || 'Trực tiếp'}</strong>
             </div>
-            <span>•</span>
-            <div>
+            {/* <div>
               <span>Người gửi/nộp:</span> <strong className="text-slate-800 font-semibold">{extractData.nguoiGui || luotNhan?.nguoiNop}</strong>
-            </div>
-            <span>•</span>
-            <div>
-              <span>Trạng thái lượt nhận:</span>{' '}
-              <strong
-                className={`font-bold ${currentLuotNhanStatus === 'da_chuyen'
-                  ? 'text-emerald-700'
-                  : currentLuotNhanStatus === 'da_ban_giao'
-                    ? 'text-amber-700'
-                    : currentLuotNhanStatus === 'da_ghep'
-                      ? 'text-indigo-700'
-                      : currentLuotNhanStatus === 'da_tra_lai'
-                        ? 'text-rose-700'
-                        : 'text-[#C62828]'
-                  }`}
-              >
-                {currentLuotNhanStatus === 'da_chuyen'
-                  ? 'Đã chuyển tiếp nhận'
-                  : currentLuotNhanStatus === 'da_ban_giao'
-                    ? 'Đã bàn giao'
-                    : currentLuotNhanStatus === 'da_ghep'
-                      ? `Đã ghép vào ${selectedGhepDonCode}`
-                      : currentLuotNhanStatus === 'da_tra_lai'
-                        ? 'Đã trả lại người nộp'
-                        : 'Chờ chuyển tiếp nhận & xử lý'}
-              </strong>
-            </div>
+            </div> */}
+
           </div>
         </div>
 
@@ -1521,20 +1521,25 @@ Kính trình Lãnh đạo phê duyệt:
         {/* BÊN TRÁI: TÀI LIỆU / NỘI DUNG ĐƠN (46% Width)                           */}
         {/* ─────────────────────────────────────────────────────────────────────── */}
         <div className="w-[46%] flex flex-col h-full bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
-          {/* Header Khu vực Tài liệu */}
+          {/* Header Khu vực Tài liệu được tải lên */}
           <div className="px-4 py-2.5 border-b border-slate-200 flex items-center justify-between shrink-0 bg-slate-50/50">
             <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-[17px] text-slate-600">description</span>
-              <h2 className="text-xs font-bold text-slate-900 uppercase font-headline-md tracking-tight">
-                Tài liệu / Nội dung đơn
+              <span className="material-symbols-outlined text-[17px] text-[#004ac6]">description</span>
+              <h2 className="text-[14px] font-bold text-slate-900 font-headline-md tracking-tight">
+                Tài liệu được tải lên ({currentFiles.length} tệp)
               </h2>
             </div>
-            {aiState === 'reading' && (
-              <span className="text-[11px] text-amber-700 font-semibold flex items-center gap-1 animate-pulse">
-                <span className="material-symbols-outlined text-[14px] animate-spin">sync</span>
-                Đang quét OCR trang 1/3...
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11.5px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200 truncate max-w-[220px]" title={activeFile?.name}>
+                #{selectedFileIndex + 1}: {activeFile?.name}
               </span>
-            )}
+              {aiState === 'reading' && (
+                <span className="text-[11px] text-amber-700 font-semibold flex items-center gap-1 animate-pulse">
+                  <span className="material-symbols-outlined text-[14px] animate-spin">sync</span>
+                  Đang quét OCR...
+                </span>
+              )}
+            </div>
           </div>
 
           {/* PDF Viewer Dark Toolbar */}
@@ -1822,82 +1827,156 @@ Kính trình Lãnh đạo phê duyệt:
             </div>
           </div>
 
-          {/* Tài liệu kèm theo (2) */}
+          {/* Danh sách tệp tài liệu đã tải lên với số thứ tự #1, #2... */}
           <div className="p-3 bg-white border-t border-slate-200 flex flex-col gap-2 shrink-0">
             <div className="flex items-center justify-between">
-              <span className="text-[11.5px] font-bold text-slate-800">
-                Tài liệu kèm theo (2)
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[12px] font-bold text-slate-800 uppercase tracking-tight">
+                  Danh sách tài liệu đã tải lên ({currentFiles.length})
+                </span>
+                <span className="text-[11px] text-slate-400 font-normal">
+                  (Bấm tệp để xem trước)
+                </span>
+              </div>
               <button
                 type="button"
-                onClick={() => showToast('Mở hộp thoại tải lên tài liệu chứng cứ kèm theo...')}
-                className="text-[11px] text-blue-600 hover:underline font-semibold flex items-center gap-0.5 cursor-pointer"
+                onClick={() => showToast('Mở hộp thoại tải lên thêm tài liệu chứng cứ kèm theo...')}
+                className="text-[11.5px] text-blue-600 hover:underline font-semibold flex items-center gap-0.5 cursor-pointer"
               >
                 <span>+ Thêm tài liệu</span>
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <div
-                onClick={() => {
-                  setSelectedFileId('f1');
-                  showToast('Đang mở: Đơn tố giác.pdf');
-                }}
-                className={`flex items-center gap-2 p-2 rounded-xl border text-left cursor-pointer transition-all ${selectedFileId === 'f1'
-                  ? 'bg-blue-50/70 border-blue-400 ring-1 ring-blue-300'
-                  : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+              {currentFiles.map((f, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => {
+                    setSelectedFileIndex(idx);
+                    showToast(`Đang mở: ${f.name}`);
+                  }}
+                  className={`flex items-center justify-between p-2.5 rounded-xl border text-left cursor-pointer transition-all ${
+                    selectedFileIndex === idx
+                      ? 'bg-blue-50/80 border-blue-400 ring-1 ring-blue-300'
+                      : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
                   }`}
-              >
-                <span className="material-symbols-outlined text-[20px] text-rose-600 shrink-0">
-                  picture_as_pdf
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[11.5px] font-semibold text-slate-800 truncate">
-                    Đơn tố giác.pdf
-                  </p>
-                  <span className="text-[10px] text-slate-400 font-label-technical">
-                    1.2 MB • 15/09/2026 10:24
+                >
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <span className="material-symbols-outlined text-[20px] text-rose-600 shrink-0">
+                      picture_as_pdf
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[12px] font-semibold text-slate-800 truncate" title={f.name}>
+                        {f.name}
+                      </p>
+                      <span className="text-[11px] text-slate-500 font-medium">
+                        {f.size} • {f.category === 'main' ? 'Tài liệu chính' : 'Tài liệu kèm theo'}
+                      </span>
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-bold text-slate-500 bg-slate-200/80 px-1.5 py-0.5 rounded shrink-0 ml-1">
+                    #{idx + 1}
                   </span>
                 </div>
-              </div>
-
-              <div
-                onClick={() => {
-                  setSelectedFileId('f2');
-                  showToast('Đang mở: Hợp đồng góp vốn.pdf');
-                }}
-                className={`flex items-center gap-2 p-2 rounded-xl border text-left cursor-pointer transition-all ${selectedFileId === 'f2'
-                  ? 'bg-blue-50/70 border-blue-400 ring-1 ring-blue-300'
-                  : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
-                  }`}
-              >
-                <span className="material-symbols-outlined text-[20px] text-rose-600 shrink-0">
-                  picture_as_pdf
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[11.5px] font-semibold text-slate-800 truncate">
-                    Hợp đồng góp vốn.pdf
-                  </p>
-                  <span className="text-[10px] text-slate-400 font-label-technical">
-                    2.8 MB • 15/09/2026 10:24
-                  </span>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>
 
         {/* ─────────────────────────────────────────────────────────────────────── */}
-        {/* BÊN PHẢI: CÁC KHỐI ②, ③, ④, ⑤, ⑥ (54% Width)                            */}
+        {/* BÊN PHẢI: THÔNG TIN LƯỢT NHẬN & CÁC KHỐI PHÂN TÍCH (54% Width)           */}
         {/* ─────────────────────────────────────────────────────────────────────── */}
         <div className="w-[54%] flex flex-col h-full overflow-y-auto space-y-3.5 pr-1">
+          {/* =================================================================== */}
+          {/* KHỐI ①: THÔNG TIN LƯỢT NHẬN CHI TIẾT                                */}
+          {/* =================================================================== */}
+          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-4 space-y-3.5">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[19px] text-[#004ac6]">assignment</span>
+                <h3 className="text-[14px] font-bold text-slate-900 font-headline-md tracking-tight">
+                  Thông tin lượt nhận &amp; Người nộp đơn
+                </h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full text-[11.5px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                  {currentLuotNhanStatus === 'da_chuyen' ? 'Đã chuyển tiếp nhận' : 'Mới tiếp nhận'}
+                </span>
+              </div>
+            </div>
+
+            {/* Grid thông tin chi tiết */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
+              <div className="p-2.5 rounded-xl bg-slate-50/80 border border-slate-200/80">
+                <span className="text-[11px] text-slate-400 font-medium block mb-0.5">Mã lượt nhận</span>
+                <span className="font-bold text-[#004ac6] text-[13px]">{luotNhan?.id || 'LN-2025-0105'}</span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-slate-50/80 border border-slate-200/80">
+                <span className="text-[11px] text-slate-400 font-medium block mb-0.5">Thời gian tiếp nhận</span>
+                <span className="font-semibold text-slate-800 text-[12.5px]">{luotNhan?.ngayNhan || '16/09/2026 09:30'}</span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-slate-50/80 border border-slate-200/80">
+                <span className="text-[11px] text-slate-400 font-medium block mb-0.5">Hình thức nhận</span>
+                <span className="font-semibold text-slate-800 text-[12.5px] flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  {luotNhan?.hinhThuc || 'Trực tiếp'}
+                </span>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-slate-50/80 border border-slate-200/80">
+                <span className="text-[11px] text-slate-400 font-medium block mb-0.5">Người đứng đơn</span>
+                <span className="font-bold text-slate-900 text-[13px]">{luotNhan?.nguoiNop || extractData.nguoiGui || 'Vũ Thị Thanh'}</span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-slate-50/80 border border-slate-200/80">
+                <span className="text-[11px] text-slate-400 font-medium block mb-0.5">Số CCCD / Mã số</span>
+                <span className="font-semibold text-slate-800 text-[12.5px]">{luotNhan?.cccd || extractData.cccd || '001088012345'}</span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-slate-50/80 border border-slate-200/80">
+                <span className="text-[11px] text-slate-400 font-medium block mb-0.5">Số điện thoại</span>
+                <span className="font-semibold text-slate-800 text-[12.5px]">{luotNhan?.sdt || extractData.sdt || '0983 123 456'}</span>
+              </div>
+
+              <div className="col-span-2 sm:col-span-3 p-2.5 rounded-xl bg-slate-50/80 border border-slate-200/80">
+                <span className="text-[11px] text-slate-400 font-medium block mb-0.5">Địa chỉ liên hệ</span>
+                <span className="font-semibold text-slate-800 text-[12.5px]">
+                  {luotNhan?.diaChi || extractData.diaChi || 'Quận Ba Đình, TP. Hà Nội'}
+                </span>
+              </div>
+
+              <div className="col-span-2 sm:col-span-3 p-2.5 rounded-xl bg-slate-50/80 border border-slate-200/80">
+                <span className="text-[11px] text-slate-400 font-medium block mb-0.5">Đơn vị & Cán bộ tiếp nhận</span>
+                <span className="font-semibold text-slate-800 text-[12.5px]">
+                  {luotNhan?.donVi || 'Phòng Tiếp công dân & Xử lý đơn'} • Cán bộ: Nguyễn Minh Anh
+                </span>
+              </div>
+
+              <div className="col-span-2 sm:col-span-3 p-3 rounded-xl bg-blue-50/60 border border-blue-100">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[11px] text-blue-700 font-bold uppercase tracking-tight">
+                    Nội dung đơn & Ghi chú tiếp nhận
+                  </span>
+                  <span className="text-[11px] text-blue-600 font-medium">
+                    {currentFiles.length} tệp tài liệu
+                  </span>
+                </div>
+                <p className="text-[12.5px] text-slate-800 font-normal leading-relaxed">
+                  {luotNhan?.noiDung || luotNhan?.ghiChu || extractData.noiDungTomTat}
+                </p>
+                {luotNhan?.ghiChu && luotNhan.ghiChu !== luotNhan.noiDung && (
+                  <p className="text-[11.5px] text-slate-500 italic mt-1 pt-1 border-t border-blue-100">
+                    Ghi chú cán bộ: {luotNhan.ghiChu}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
           {/* =================================================================== */}
           {/* KHỐI ②: THÔNG TIN TRÍCH XUẤT TỪ ĐƠN (AI)                           */}
           {/* =================================================================== */}
           <div className={`bg-white rounded-2xl border ${isEditingExtract ? 'border-blue-300 shadow-md ring-1 ring-blue-100' : 'border-slate-200/90 shadow-2xs'} p-4 space-y-3 transition-all`}>
             <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
               <div className="flex items-center gap-2">
-                <h3 className="text-xs font-bold text-slate-900 font-headline-md tracking-tight">
+                <h3 className="text-[14px] font-bold text-slate-900 font-headline-md tracking-tight">
                   Thông tin trích xuất từ đơn (AI)
                 </h3>
               </div>
@@ -2306,7 +2385,7 @@ Kính trình Lãnh đạo phê duyệt:
             <div className="flex items-center justify-between border-b border-slate-100 pb-2.5 flex-wrap gap-2">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-slate-500 text-[18px]">description</span>
-                <h3 className="text-xs font-bold text-slate-900 font-headline-md tracking-tight">
+                <h3 className="text-[14px] font-bold text-slate-900 font-headline-md tracking-tight">
                   Kết quả tra cứu trong hệ thống
                 </h3>
                 <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
@@ -2400,7 +2479,7 @@ Kính trình Lãnh đạo phê duyệt:
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <div className="flex items-center gap-1.5">
                 <span className="text-base">💡</span>
-                <h3 className="text-xs sm:text-sm font-bold text-slate-900 tracking-tight font-headline-md">
+                <h3 className="text-[14px] font-bold text-slate-900 tracking-tight font-headline-md">
                   Gợi ý hướng xử lý
                 </h3>
               </div>
@@ -2488,7 +2567,7 @@ Kính trình Lãnh đạo phê duyệt:
 
           <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs space-y-3">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <h3 className="text-xs sm:text-sm font-bold text-slate-900 tracking-tight font-headline-md">
+              <h3 className="text-[14px] font-bold text-slate-900 tracking-tight font-headline-md">
                 6. Ý kiến của cán bộ tiếp nhận
               </h3>
               <div className="flex items-center gap-1 text-[11px] text-slate-500 font-medium">
@@ -2512,7 +2591,7 @@ Kính trình Lãnh đạo phê duyệt:
                 onChange={(e) => setOfficerNote(e.target.value)}
                 placeholder="Nhập ý kiến đề xuất xử lý của cán bộ..."
                 maxLength={500}
-                className="w-full p-3 bg-slate-50/70 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-blue-500 transition-all resize-none leading-relaxed"
+                className="w-full p-3 bg-slate-50/70 border border-slate-200 rounded-xl text-[13.5px] font-normal text-slate-800 placeholder:text-slate-400 placeholder:text-[12.5px] focus:outline-none focus:bg-white focus:border-blue-500 transition-all resize-none leading-relaxed"
               />
               <div className="flex justify-end pt-1">
                 <span className="text-[11px] text-slate-400 font-mono">
@@ -2526,7 +2605,7 @@ Kính trình Lãnh đạo phê duyệt:
               <button
                 type="button"
                 onClick={() => showToast('Đã lưu tạm ý kiến cán bộ tiếp nhận.')}
-                className="px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer"
+                className="px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-[13.5px] font-medium flex items-center gap-1.5 transition-all cursor-pointer"
               >
                 <span className="material-symbols-outlined text-[15px]">save</span>
                 <span>Lưu nháp</span>
@@ -2543,7 +2622,7 @@ Kính trình Lãnh đạo phê duyệt:
                             setHuongXuLy('tiep-nhan');
                             setOfficerNote('Hồ sơ phát sinh mới, không trùng lặp. Đề xuất tiếp nhận tạo Đơn mới để chuyển tiếp sang quy trình thụ lý giải quyết theo quy định.');
                           }}
-                          className="px-3 py-2 rounded-xl border border-slate-200 hover:border-slate-300 bg-white text-slate-700 active:scale-95 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+                          className="px-3 py-2 rounded-xl border border-slate-200 hover:border-slate-300 bg-white text-slate-700 active:scale-95 text-[13.5px] font-medium flex items-center gap-1.5 transition-all cursor-pointer"
                           title="Chuyển sang hướng Tiếp nhận (Tạo Đơn mới)"
                         >
                           <span className="material-symbols-outlined text-[15px] text-emerald-600">add_circle</span>
@@ -2553,7 +2632,7 @@ Kính trình Lãnh đạo phê duyệt:
                         <button
                           type="button"
                           onClick={() => setShowGhepModal(true)}
-                          className="px-4.5 py-2.5 rounded-xl bg-[#a61c1c] hover:bg-[#8b1414] active:scale-95 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                          className="px-4.5 py-2.5 rounded-xl bg-[#a61c1c] hover:bg-[#8b1414] active:scale-95 text-white text-[13.5px] font-semibold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
                         >
                           <span className="material-symbols-outlined text-[16px]">merge_type</span>
                           <span>Xác nhận ghép vào {selectedGhepDonCode}</span>
@@ -2567,7 +2646,7 @@ Kính trình Lãnh đạo phê duyệt:
                             setHuongXuLy('ghep');
                             setOfficerNote(`Gói này giống hồ sơ ${selectedGhepDonCode} đang mở – ghép vào đó không sinh đơn mới, không tốn số`);
                           }}
-                          className="px-3 py-2 rounded-xl border border-slate-200 hover:border-slate-300 bg-white text-slate-700 active:scale-95 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+                          className="px-3 py-2 rounded-xl border border-slate-200 hover:border-slate-300 bg-white text-slate-700 active:scale-95 text-[13.5px] font-medium flex items-center gap-1.5 transition-all cursor-pointer"
                           title="Chuyển sang hướng Ghép đơn đã có"
                         >
                           <span className="material-symbols-outlined text-[15px] text-indigo-600">merge_type</span>
@@ -2577,7 +2656,7 @@ Kính trình Lãnh đạo phê duyệt:
                         <button
                           type="button"
                           onClick={() => setShowSubmitModal(true)}
-                          className="px-4.5 py-2.5 rounded-xl bg-[#a61c1c] hover:bg-[#8b1414] active:scale-95 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                          className="px-4.5 py-2.5 rounded-xl bg-[#a61c1c] hover:bg-[#8b1414] active:scale-95 text-white text-[13.5px] font-semibold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
                         >
                           <span className="material-symbols-outlined text-[16px]">task_alt</span>
                           <span>Tiếp nhận (Tạo Đơn mới)</span>
@@ -3055,130 +3134,194 @@ Kính trình Lãnh đạo phê duyệt:
               </div>
             </div>
 
-            {/* Chọn hồ sơ đơn tiếp nhận đích */}
+            {/* Chọn hồ sơ đơn tiếp nhận đích (Dạng Combobox) */}
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="block text-xs font-semibold text-slate-700">
-                  Chọn hồ sơ đơn đích để ghép <span className="text-red-500">*</span>:
-                </label>
-                <span className="text-[11px] text-indigo-700 font-bold bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 font-mono">
-                  Đang chọn: {selectedGhepDonCode}
-                </span>
-              </div>
+              <label className="block text-[12.5px] font-semibold text-slate-700">
+                Chọn đơn ghép <span className="text-rose-500 font-bold ml-0.5 text-[12px]">*</span>:
+              </label>
 
-              {/* Danh sách các đơn gợi ý tương đồng để chọn */}
-              <div className="max-h-52 overflow-y-auto space-y-2 pr-1">
-                {DON_TRUNG_LIST.map((item) => {
-                  const isSelected = selectedGhepDonCode === item.code;
-                  return (
-                    <div
-                      key={item.id}
-                      onClick={() => {
-                        setSelectedGhepDonCode(item.code);
-                        setOfficerNote(
-                          `Gói này giống hồ sơ ${item.code} đang mở – ghép vào đó không sinh đơn mới, không tốn số`
-                        );
-                        setGhiChuGhep(
-                          `Ghép lượt nhận vào hồ sơ ${item.code} để theo dõi tập trung, không tạo mã đơn mới.`
-                        );
-                      }}
-                      className={`p-3 rounded-xl border text-xs transition-all cursor-pointer ${
-                        isSelected
-                          ? 'bg-indigo-50/70 border-indigo-500 ring-1 ring-indigo-500/30 shadow-2xs'
-                          : 'bg-slate-50/70 border-slate-200 hover:border-slate-300 hover:bg-white'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div className="pt-0.5">
-                            {isSelected ? (
-                              <span className="w-4 h-4 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold shadow-2xs">
-                                ✓
-                              </span>
-                            ) : (
-                              <span className="w-4 h-4 rounded-full border-2 border-slate-300 block" />
-                            )}
-                          </div>
-                          <span className="font-mono font-bold text-slate-900 text-xs">
-                            {item.code}
+              {/* Combobox Dropdown Container */}
+              <div className="relative">
+                {/* Trigger Combobox Button */}
+                <button
+                  type="button"
+                  onClick={() => setIsGhepComboboxOpen(!isGhepComboboxOpen)}
+                  className={`w-full flex items-center justify-between p-3 bg-white border rounded-xl text-left transition-all cursor-pointer shadow-2xs ${
+                    isGhepComboboxOpen
+                      ? 'border-indigo-600 ring-2 ring-indigo-100'
+                      : 'border-slate-300 hover:border-slate-400'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
+                    <span className="material-symbols-outlined text-[20px] text-indigo-600 shrink-0">
+                      folder_open
+                    </span>
+                    {selectedGhepItem ? (
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-slate-900 text-[13px]">
+                            {selectedGhepItem.code}
                           </span>
-                          <span className="px-1.5 py-0.2 rounded bg-blue-100 text-blue-700 text-[10px] font-semibold">
-                            {item.status}
+                          <span className="px-1.5 py-0.2 rounded bg-blue-100 text-blue-700 text-[10.5px] font-semibold">
+                            {selectedGhepItem.status}
                           </span>
-                        </div>
-
-                        <div className="flex items-center gap-1.5">
                           <span
-                            className={`px-2 py-0.5 rounded-full text-[10.5px] font-bold border shrink-0 ${
-                              item.matchPercent >= 90
-                                ? 'bg-rose-100/90 text-rose-800 border-rose-200'
-                                : item.matchPercent >= 80
-                                ? 'bg-amber-100/90 text-amber-800 border-amber-200'
-                                : 'bg-slate-100 text-slate-700 border-slate-200'
+                            className={`px-2 py-0.2 rounded-full text-[10.5px] font-bold border ${
+                              selectedGhepItem.matchPercent >= 90
+                                ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                : 'bg-amber-50 text-amber-700 border-amber-200'
                             }`}
                           >
-                            Trùng {item.matchPercent}%
+                            Trùng {selectedGhepItem.matchPercent}%
                           </span>
-
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedDonTrungForDrawer(item);
-                              setShowDonTrungDrawer(true);
-                            }}
-                            className="inline-flex items-center justify-center p-1 rounded-lg bg-white hover:bg-blue-50 text-[#004ac6] border border-slate-200 hover:border-blue-200 transition-all cursor-pointer shadow-2xs active:scale-95"
-                            title="Xem chi tiết hồ sơ đơn này trong drawer"
-                          >
-                            <span className="material-symbols-outlined text-[14px]">visibility</span>
-                          </button>
                         </div>
+                        <p className="text-[12px] text-slate-600 truncate mt-0.5">
+                          {selectedGhepItem.title}
+                        </p>
                       </div>
-
-                      <p className="mt-1 text-slate-800 font-semibold leading-snug line-clamp-1 pl-6 text-[11.5px]">
-                        {item.title}
-                      </p>
-
-                      <div className="grid grid-cols-2 gap-2 mt-1.5 pl-6 pt-1.5 border-t border-slate-200/60 text-[11px] text-slate-500">
-                        <div>
-                          <span className="text-slate-400">Người nộp: </span>
-                          <span className="font-medium text-slate-700 truncate">{item.nguoiNop}</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400">Thụ lý: </span>
-                          <span className="font-medium text-slate-700 truncate">{item.canBoThuLy}</span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Tùy chọn nhập mã đơn khác ngoài danh sách gợi ý */}
-              <div className="pt-1">
-                <details className="group text-xs">
-                  <summary className="text-[11.5px] text-slate-500 hover:text-slate-800 font-medium cursor-pointer flex items-center gap-1 select-none">
-                    <span className="material-symbols-outlined text-[14px] transition-transform group-open:rotate-90">
-                      chevron_right
-                    </span>
-                    <span>Hoặc nhập mã hồ sơ đơn khác trong hệ thống...</span>
-                  </summary>
-                  <div className="mt-2 flex items-center gap-2">
-                    <input
-                      type="text"
-                      placeholder="VD: DS-12/2026-GOVEX hoặc Đ-2026-0045"
-                      value={selectedGhepDonCode}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setSelectedGhepDonCode(val);
-                        setOfficerNote(`Gói này giống hồ sơ ${val} đang mở – ghép vào đó không sinh đơn mới, không tốn số`);
-                        setGhiChuGhep(`Ghép lượt nhận vào hồ sơ ${val} để theo dõi tập trung, không tạo mã đơn mới.`);
-                      }}
-                      className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-800 focus:outline-none focus:border-indigo-500"
-                    />
+                    ) : (
+                      <span className="text-slate-400 text-[13px]">
+                        -- Nhấp chọn hồ sơ đơn cần ghép --
+                      </span>
+                    )}
                   </div>
-                </details>
+                  <span
+                    className={`material-symbols-outlined text-[20px] text-slate-400 transition-transform ${
+                      isGhepComboboxOpen ? 'rotate-180 text-indigo-600' : ''
+                    }`}
+                  >
+                    expand_more
+                  </span>
+                </button>
+
+                {/* Dropdown Menu của Combobox */}
+                {isGhepComboboxOpen && (
+                  <div className="absolute top-full left-0 right-0 mt-1.5 z-40 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden animate-scale-up">
+                    {/* Ô tìm kiếm trong Combobox */}
+                    <div className="p-2.5 border-b border-slate-100 bg-slate-50/80 flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[18px] text-slate-400">search</span>
+                      <input
+                        type="text"
+                        placeholder="Tìm theo mã đơn, tiêu đề, người nộp..."
+                        value={ghepSearchQuery}
+                        onChange={(e) => setGhepSearchQuery(e.target.value)}
+                        className="w-full bg-transparent text-[12.5px] text-slate-800 placeholder:text-slate-400 focus:outline-none"
+                        autoFocus
+                      />
+                      {ghepSearchQuery && (
+                        <button
+                          type="button"
+                          onClick={() => setGhepSearchQuery('')}
+                          className="text-slate-400 hover:text-slate-600 cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">close</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Danh sách options */}
+                    <div className="max-h-56 overflow-y-auto divide-y divide-slate-100">
+                      {filteredGhepList.length === 0 ? (
+                        <div className="p-3 text-center text-xs text-slate-400">
+                          Không tìm thấy đơn phù hợp
+                        </div>
+                      ) : (
+                        filteredGhepList.map((item) => {
+                          const isSelected = selectedGhepDonCode === item.code;
+                          return (
+                            <div
+                              key={item.id}
+                              onClick={() => {
+                                setSelectedGhepDonCode(item.code);
+                                setOfficerNote(
+                                  `Gói này giống hồ sơ ${item.code} đang mở – ghép vào đó không sinh đơn mới, không tốn số`
+                                );
+                                setGhiChuGhep(
+                                  `Ghép lượt nhận vào hồ sơ ${item.code} để theo dõi tập trung, không tạo mã đơn mới.`
+                                );
+                                setIsGhepComboboxOpen(false);
+                              }}
+                              className={`p-2.5 hover:bg-indigo-50/60 cursor-pointer transition-colors flex items-start gap-2.5 ${
+                                isSelected ? 'bg-indigo-50/80' : ''
+                              }`}
+                            >
+                              <div className="pt-0.5">
+                                {isSelected ? (
+                                  <span className="w-4 h-4 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold shadow-2xs">
+                                    ✓
+                                  </span>
+                                ) : (
+                                  <span className="w-4 h-4 rounded-full border border-slate-300 block" />
+                                )}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center justify-between gap-1">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="font-bold text-slate-900 text-[12.5px]">
+                                      {item.code}
+                                    </span>
+                                    <span className="px-1.5 py-0.2 rounded bg-blue-100 text-blue-700 text-[10px] font-semibold">
+                                      {item.status}
+                                    </span>
+                                  </div>
+                                  <span
+                                    className={`px-2 py-0.5 rounded-full text-[10.5px] font-bold border shrink-0 ${
+                                      item.matchPercent >= 90
+                                        ? 'bg-rose-100/90 text-rose-800 border-rose-200'
+                                        : 'bg-amber-100/90 text-amber-800 border-amber-200'
+                                    }`}
+                                  >
+                                    Trùng {item.matchPercent}%
+                                  </span>
+                                </div>
+                                <p className="text-[12px] text-slate-800 font-medium leading-snug line-clamp-1 mt-0.5">
+                                  {item.title}
+                                </p>
+                                <div className="flex items-center gap-3 text-[11px] text-slate-500 mt-1">
+                                  <span>
+                                    Người nộp: <strong className="text-slate-700 font-medium">{item.nguoiNop}</strong>
+                                  </span>
+                                  <span>
+                                    Thụ lý: <strong className="text-slate-700 font-medium">{item.canBoThuLy}</strong>
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
+
+              {/* Thẻ xem tóm tắt & chi tiết đơn đã chọn */}
+              {selectedGhepItem && (
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/90 flex items-center justify-between gap-2.5">
+                  <div className="min-w-0 flex-1 text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-slate-800 text-[12.5px]">{selectedGhepItem.code}</span>
+                      <span className="text-slate-300">•</span>
+                      <span className="text-slate-600 truncate font-medium">Người nộp: {selectedGhepItem.nguoiNop}</span>
+                      <span className="text-slate-300">•</span>
+                      <span className="text-slate-600 truncate font-medium">Cán bộ: {selectedGhepItem.canBoThuLy}</span>
+                    </div>
+                    <p className="text-[11.5px] text-slate-500 truncate mt-0.5">{selectedGhepItem.title}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedDonTrungForDrawer(selectedGhepItem);
+                      setShowDonTrungDrawer(true);
+                    }}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white hover:bg-blue-50 text-[#004ac6] border border-slate-200 text-[12px] font-medium transition-all cursor-pointer shadow-2xs shrink-0 active:scale-95"
+                    title="Xem chi tiết hồ sơ đơn trong Drawer"
+                  >
+                    <span className="material-symbols-outlined text-[15px]">visibility</span>
+                    <span>Xem chi tiết</span>
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="space-y-3">

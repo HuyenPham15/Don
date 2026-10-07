@@ -29,14 +29,137 @@
   --radius: 6px;
 }
 
-* { box-sizing: border-box; }
+*, ::before, ::after { 
+  box-sizing: border-box; 
+}
+
 body {
-  font-family: 'Be Vietnam Pro', 'Inter', sans-serif;
+  font-family: 'Be Vietnam Pro', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: var(--bg);
   color: var(--text);
   margin: 0;
-  font-size: 14px;
+  font-size: 13.5px;
   line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Đảm bảo toàn bộ form control kế thừa đúng font chữ chuẩn hệ thống */
+button,
+input,
+select,
+textarea,
+optgroup {
+  font-family: 'Be Vietnam Pro', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Quy chuẩn typography form controls toàn hệ thống */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+select,
+textarea {
+  font-size: 13.5px;
+  font-weight: 400;
+  line-height: 1.45;
+  color: #1e293b;
+}
+
+input::placeholder,
+textarea::placeholder {
+  font-size: 12.5px;
+  font-weight: 400;
+  color: #94a3b8;
+}
+
+/* Quy chuẩn Label toàn hệ thống: 12-13px, Medium/Semibold */
+label {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #334155;
+  line-height: 1.4;
+}
+
+/* =========================================================================
+   TYPOGRAPHY SYSTEM UTILITIES (CHUẨN HÓA THEO YÊU CẦU DỰ ÁN)
+   - Tiêu đề màn hình: 18–20px, Bold/Semibold
+   - Tiêu đề section: 14px, Semibold/Bold
+   - Label trường: 12–13px, Medium/Semibold
+   - Nội dung input/select: 13–14px, Regular
+   - Placeholder/helper text: 12–13px, Regular
+   - Button: 13–14px, Medium/Semibold
+   ========================================================================= */
+
+.screen-title,
+.gov-screen-title {
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #0f172a;
+  letter-spacing: -0.015em;
+}
+
+.section-title,
+.gov-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+}
+
+.field-label,
+.gov-label {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #334155;
+  line-height: 1.4;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.field-label-semibold,
+.gov-label-semibold {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.4;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.required-mark,
+.gov-required {
+  color: #e11d48;
+  font-weight: 700;
+  font-size: 12px;
+  margin-left: 2px;
+}
+
+.helper-text,
+.gov-helper {
+  font-size: 12px;
+  font-weight: 400;
+  color: #64748b;
+  line-height: 1.4;
+  margin-top: 4px;
+}
+
+.btn-action,
+.gov-btn {
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  border-radius: 8px;
+  padding: 7px 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
 .font-headline-md {

@@ -890,7 +890,7 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
               <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center font-bold text-xs">
                 01
               </div>
-              <h2 className="text-[15px] font-bold text-slate-900 uppercase font-label-technical tracking-wide">
+              <h2 className="text-[14px] font-bold text-slate-900 font-headline-md tracking-tight">
                 Thông tin tiếp nhận
               </h2>
             </div>
@@ -980,7 +980,7 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
               <div className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold text-xs">
                 02
               </div>
-              <h2 className="text-[15px] font-bold text-slate-900 uppercase font-label-technical tracking-wide">
+              <h2 className="text-[14px] font-bold text-slate-900 font-headline-md tracking-tight">
                 Loại người nộp đơn &amp; Thông tin chủ thể
               </h2>
             </div>
@@ -1037,7 +1037,7 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
               {/* Thông tin cá nhân */}
               <div className="space-y-3.5">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-[13px] font-bold text-slate-800 uppercase font-label-technical">
+                  <h3 className="text-[13px] font-bold text-slate-800 font-label-technical">
                     Thông tin cá nhân
                   </h3>
                   <button
@@ -1866,7 +1866,7 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
             <div className="space-y-6 pt-1">
               {/* Thông tin tổ chức */}
               <div className="space-y-3.5">
-                <h3 className="text-[13px] font-bold text-slate-800 uppercase font-label-technical">
+                <h3 className="text-[13px] font-bold text-slate-800 font-label-technical">
                   Thông tin tổ chức
                 </h3>
 
@@ -2082,7 +2082,7 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
 
               {/* Người đại diện */}
               <div className="space-y-3.5 pt-2">
-                <h3 className="text-[13px] font-bold text-slate-800 uppercase font-label-technical">
+                <h3 className="text-[13px] font-bold text-slate-800 font-label-technical">
                   Người đại diện tổ chức
                 </h3>
 
@@ -2808,7 +2808,7 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
               <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-xs">
                 03
               </div>
-              <h2 className="text-[15px] font-bold text-slate-900 uppercase font-label-technical tracking-wide">
+              <h2 className="text-[14px] font-bold text-slate-900 font-headline-md tracking-tight">
                 Ghi chú
               </h2>
             </div>
@@ -2831,7 +2831,7 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
                 04
               </div>
               <div className="flex items-center gap-2">
-                <h2 className="text-[15px] font-bold text-slate-900 uppercase font-label-technical tracking-wide">
+                <h2 className="text-[14px] font-bold text-slate-900 font-headline-md tracking-tight">
                   Tài liệu kèm theo
                 </h2>
               </div>
@@ -2880,39 +2880,44 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
               {files.map((file, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 shadow-2xs"
+                  className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 shadow-2xs hover:bg-slate-100/60 transition-colors"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <span className="material-symbols-outlined text-[22px] text-red-600 shrink-0">
                       description
                     </span>
                     <div className="min-w-0">
-                      <p className="text-[12.5px] font-medium text-slate-800 truncate">
+                      <p className="text-[13px] font-semibold text-slate-800 truncate" title={file.name}>
                         {file.name}
                       </p>
-                      <span className="text-[10.5px] text-slate-400 font-label-technical">
+                      <span className="text-[11.5px] text-slate-500 font-medium">
                         {file.size} • {file.category === 'main' ? 'Tài liệu chính' : 'Tài liệu kèm theo'}
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => showToast(`Đang xem tài liệu: ${file.name}`)}
-                      className="p-1 text-slate-400 hover:text-blue-600 rounded-lg transition-colors cursor-pointer"
-                      title="Xem tài liệu"
-                    >
-                      <span className="material-symbols-outlined text-[18px]">visibility</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveFile(idx)}
-                      className="p-1 text-slate-400 hover:text-red-600 rounded-lg transition-colors cursor-pointer"
-                      title="Xóa tệp"
-                    >
-                      <span className="material-symbols-outlined text-[18px]">close</span>
-                    </button>
+                  <div className="flex flex-col items-end justify-between shrink-0 self-stretch pl-2 py-0.5">
+                    <span className="text-[11.5px] font-bold text-slate-500 bg-slate-200/80 px-1.5 py-0.5 rounded leading-none">
+                      #{idx + 1}
+                    </span>
+                    <div className="flex items-center gap-1 mt-1.5">
+                      <button
+                        type="button"
+                        onClick={() => showToast(`Đang xem tài liệu: ${file.name}`)}
+                        className="p-1 text-slate-400 hover:text-blue-600 rounded-lg transition-colors cursor-pointer"
+                        title="Xem tài liệu"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">visibility</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFile(idx)}
+                        className="p-1 text-slate-400 hover:text-red-600 rounded-lg transition-colors cursor-pointer"
+                        title="Xóa tệp"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">close</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
