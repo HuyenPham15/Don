@@ -154,26 +154,23 @@ export default function Sidebar({ screen, onNav, currentAccount, signingCounts }
                 }
                 setIsQuanTriOpen(!isQuanTriOpen);
               }}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer ${
-                isQuanTri
-                  ? 'bg-blue-50/80 text-[#004ac6] font-bold border border-blue-100 shadow-2xs'
-                  : 'text-slate-700 hover:bg-slate-50'
-              }`}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer ${isQuanTri
+                ? 'bg-blue-50/80 text-[#004ac6] font-bold border border-blue-100 shadow-2xs'
+                : 'text-slate-700 hover:bg-slate-50'
+                }`}
             >
               <div className="flex items-center gap-2.5">
                 <span
-                  className={`material-symbols-outlined text-[20px] ${
-                    isQuanTri ? 'text-[#004ac6]' : 'text-slate-600'
-                  }`}
+                  className={`material-symbols-outlined text-[20px] ${isQuanTri ? 'text-[#004ac6]' : 'text-slate-600'
+                    }`}
                 >
                   settings_suggest
                 </span>
                 <span className="text-[13.5px] font-bold tracking-tight">Quản trị nghiệp vụ</span>
               </div>
               <span
-                className={`material-symbols-outlined text-[17px] text-slate-400 transition-transform duration-200 ${
-                  isQuanTriOpen ? 'rotate-90' : ''
-                }`}
+                className={`material-symbols-outlined text-[17px] text-slate-400 transition-transform duration-200 ${isQuanTriOpen ? 'rotate-90' : ''
+                  }`}
               >
                 chevron_right
               </span>
@@ -186,11 +183,10 @@ export default function Sidebar({ screen, onNav, currentAccount, signingCounts }
                 <button
                   type="button"
                   onClick={() => onNav('quan-tri-quy-trinh')}
-                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-all cursor-pointer ${
-                    screen === 'quan-tri-quy-trinh'
-                      ? 'bg-blue-100/60 text-[#004ac6] font-bold'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
-                  }`}
+                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-all cursor-pointer ${screen === 'quan-tri-quy-trinh'
+                    ? 'bg-blue-100/60 text-[#004ac6] font-bold'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                    }`}
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="material-symbols-outlined text-[16px] text-blue-600">account_tree</span>
@@ -205,11 +201,10 @@ export default function Sidebar({ screen, onNav, currentAccount, signingCounts }
                 <button
                   type="button"
                   onClick={() => onNav('quan-tri-loai-don')}
-                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-all cursor-pointer ${
-                    screen === 'quan-tri-loai-don'
-                      ? 'bg-blue-100/60 text-[#004ac6] font-bold'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
-                  }`}
+                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-all cursor-pointer ${screen === 'quan-tri-loai-don'
+                    ? 'bg-blue-100/60 text-[#004ac6] font-bold'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                    }`}
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="material-symbols-outlined text-[16px] text-blue-600">category</span>
@@ -224,11 +219,10 @@ export default function Sidebar({ screen, onNav, currentAccount, signingCounts }
                 <button
                   type="button"
                   onClick={() => onNav('quan-tri-lich-lam-viec')}
-                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-all cursor-pointer ${
-                    screen === 'quan-tri-lich-lam-viec'
-                      ? 'bg-blue-100/60 text-[#004ac6] font-bold'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
-                  }`}
+                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-all cursor-pointer ${screen === 'quan-tri-lich-lam-viec'
+                    ? 'bg-blue-100/60 text-[#004ac6] font-bold'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                    }`}
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="material-symbols-outlined text-[16px] text-blue-600">calendar_month</span>
@@ -243,11 +237,10 @@ export default function Sidebar({ screen, onNav, currentAccount, signingCounts }
                 <button
                   type="button"
                   onClick={() => onNav('quan-tri-bieu-mau')}
-                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-all cursor-pointer ${
-                    screen === 'quan-tri-bieu-mau'
-                      ? 'bg-blue-100/60 text-[#004ac6] font-bold'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
-                  }`}
+                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-all cursor-pointer ${screen === 'quan-tri-bieu-mau'
+                    ? 'bg-blue-100/60 text-[#004ac6] font-bold'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                    }`}
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="material-symbols-outlined text-[16px] text-blue-600">description</span>
@@ -377,24 +370,6 @@ export default function Sidebar({ screen, onNav, currentAccount, signingCounts }
       </div>
 
       {/* Bottom Action: Màn hình Đăng nhập (UI/UX) */}
-      <div className="p-3 border-t border-slate-200/90 bg-slate-50/70">
-        <button
-          type="button"
-          onClick={() => onNav('login')}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-white hover:bg-blue-50/80 border border-slate-200 hover:border-blue-200 text-slate-700 hover:text-blue-700 transition-all cursor-pointer shadow-2xs group"
-          title="Xem thiết kế Màn hình Đăng nhập"
-        >
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[18px] text-slate-500 group-hover:text-blue-600">
-              lock_open
-            </span>
-            <span className="text-xs font-semibold">Màn hình Đăng nhập</span>
-          </div>
-          <span className="text-[10px] font-mono text-slate-400 group-hover:text-blue-600 bg-slate-100 group-hover:bg-blue-100 px-1.5 py-0.5 rounded">
-            UI/UX
-          </span>
-        </button>
-      </div>
 
     </aside>
   );
