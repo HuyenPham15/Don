@@ -222,6 +222,7 @@ export default function App() {
           type: 'ĐƠN TIẾP NHẬN',
           statusBadge: isDirect ? 'Đang xử lý' : 'Chờ tiếp nhận',
         };
+        setSelectedDon(updatedTask);
         if (existingIndex >= 0) {
           const updated = [...prev];
           updated[existingIndex] = updatedTask;
@@ -628,6 +629,7 @@ export default function App() {
               <NhanDonList
                 onNav={setScreen}
                 onSelect={setSelected}
+                onSelectDon={handleSelectDon}
                 luotNhanList={luotNhanList}
               />
             )}

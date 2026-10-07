@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { ALL_LUOT_NHAN } from "../constants";
-import { LuotNhan, AIJob, Screen } from "../types";
+import { LuotNhan, AIJob, Screen, DonDetail } from "../types";
 
 interface NhanDonListProps {
   onNav: (s: Screen) => void;
   onSelect: (ln: LuotNhan) => void;
+  onSelectDon?: (don: DonDetail) => void;
   luotNhanList?: LuotNhan[];
 }
 
 export default function NhanDonList({
   onNav,
   onSelect,
+  onSelectDon,
   luotNhanList,
 }: NhanDonListProps) {
   const [q, setQ] = useState("");
@@ -160,14 +162,34 @@ export default function NhanDonList({
                 const isAnalyzing = ln.aiJob > 0 && ln.aiJob < 5;
                 const isDone = ln.aiJob === 5;
 
+                const handleItemClick = () => {
+                  if (ln.status === 'da_chuyen') {
+                    const dynamicCode = ln.id.startsWith('LN-') ? `Đ-${ln.id.replace('LN-', '')}` : ln.id;
+                    const donObj: DonDetail = {
+                      id: dynamicCode,
+                      code: dynamicCode,
+                      title: ln.noiDung || `Hồ sơ ${dynamicCode}`,
+                      luotNhanId: ln.id,
+                      nguoiNop: ln.nguoiNop,
+                      ngayNhan: ln.ngayNhan,
+                      loaiDon: ln.loaiDon || 'Đơn phản ánh kiến nghị',
+                      type: 'ĐƠN TIẾP NHẬN',
+                      statusBadge: 'Đang xác minh thông tin',
+                    };
+                    if (onSelectDon) onSelectDon(donObj);
+                    onNav('don-tiep-nhan');
+                    showToast(`Mở màn chi tiết đơn [${dynamicCode}] (Đã tiếp nhận)`);
+                  } else {
+                    onSelect(ln);
+                    onNav('ban-phan-tich');
+                  }
+                };
+
                 return (
                   <tr
                     key={ln.id}
                     className="hover:bg-blue-50/60 hover:shadow-sm cursor-pointer transition-all group"
-                    onClick={() => {
-                      onSelect(ln);
-                      onNav('ban-phan-tich');
-                    }}
+                    onClick={handleItemClick}
                   >
                     <td className="py-3.5 px-4 font-label-technical font-semibold text-[#004ac6]">
                       <div className="flex items-center gap-1.5">
@@ -243,13 +265,11 @@ export default function NhanDonList({
                         className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-[#004ac6] text-[#004ac6] hover:text-white font-medium text-[12px] transition-all cursor-pointer"
                         onClick={(e) => {
                           e.stopPropagation();
-                          onSelect(ln);
-                          onNav('ban-phan-tich');
-                          showToast('Đang mở Chi tiết Lượt nhận & Phân tích AI đầy đủ...');
+                          handleItemClick();
                         }}
                       >
                         <span className="material-symbols-outlined text-[15px]">visibility</span>
-                        <span>Xem chi tiết</span>
+                        <span>{ln.status === 'da_chuyen' ? 'Xem đơn' : 'Xem chi tiết'}</span>
                       </button>
                     </td>
                   </tr>

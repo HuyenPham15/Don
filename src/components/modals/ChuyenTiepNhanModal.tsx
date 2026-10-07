@@ -34,120 +34,90 @@ export default function ChuyenTiepNhanModal({
   currentDepartmentId = 'tiep-dan',
   donInfo,
 }: ChuyenTiepNhanModalProps) {
-  // Lấy thông tin đơn vị hiện tại
-  const currentDept = useMemo(() => {
-    return DEPARTMENTS.find((d) => d.id === currentDepartmentId) || DEPARTMENTS[0];
-  }, [currentDepartmentId]);
-
-  // Lọc danh sách các đơn vị khác (liên đơn vị)
-  const otherDepartments = useMemo(() => {
-    return DEPARTMENTS.filter((d) => d.id !== currentDepartmentId);
-  }, [currentDepartmentId]);
-
-  const defaultOtherDeptId = useMemo(() => {
-    if (donInfo.suggestedDeptId && otherDepartments.some((d) => d.id === donInfo.suggestedDeptId)) {
+  // Đơn vị mặc định: ưu tiên đơn vị AI gợi ý, nếu không thì đơn vị chuyên môn đầu tiên
+  const defaultDeptId = useMemo(() => {
+    if (donInfo.suggestedDeptId && DEPARTMENTS.some((d) => d.id === donInfo.suggestedDeptId)) {
       return donInfo.suggestedDeptId;
     }
-    return otherDepartments[0]?.id || 'qldt';
-  }, [donInfo.suggestedDeptId, otherDepartments]);
+    const other = DEPARTMENTS.find((d) => d.id !== currentDepartmentId);
+    return other?.id || 'qldt';
+  }, [donInfo.suggestedDeptId, currentDepartmentId]);
 
-  // banGiaoType: 'don_vi_khac' (bàn giao cho 1 đơn vị khác) hoặc 'can_bo_khac' (bàn giao cho cán bộ khác trong đơn vị)
-  const [banGiaoType, setBanGiaoType] = useState<'don_vi_khac' | 'can_bo_khac'>('don_vi_khac');
-  const [donViId, setDonViId] = useState<string>(defaultOtherDeptId);
-  const [hinhThuc, setHinhThuc] = useState<'hang_cho' | 'truc_tiep'>('hang_cho');
+  const [donViId, setDonViId] = useState<string>(defaultDeptId);
   const [selectedCanBoId, setSelectedCanBoId] = useState<string>('');
-  const [officerSearch, setOfficerSearch] = useState<string>('');
+  const [expandedDeptIds, setExpandedDeptIds] = useState<string[]>([defaultDeptId]);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isTreeOpen, setIsTreeOpen] = useState<boolean>(true);
   const [ghiChu, setGhiChu] = useState<string>('');
-  const [errors, setErrors] = useState<{ donVi?: string; canBo?: string }>({});
+  const [errors, setErrors] = useState<{ donVi?: string }>({});
 
   // Reset state mỗi khi mở modal hoặc thay đổi hồ sơ
   useEffect(() => {
     if (isOpen) {
-      const initialType = donInfo.isPersonalProcessing ? 'can_bo_khac' : 'don_vi_khac';
-      setBanGiaoType(initialType);
-      if (initialType === 'can_bo_khac') {
-        setDonViId(currentDepartmentId);
-        setHinhThuc('truc_tiep');
-      } else {
-        const initialId = (donInfo.suggestedDeptId && otherDepartments.some((d) => d.id === donInfo.suggestedDeptId))
-          ? donInfo.suggestedDeptId
-          : (otherDepartments[0]?.id || 'qldt');
-        setDonViId(initialId);
-        setHinhThuc('hang_cho');
-      }
+      const initialId = (donInfo.suggestedDeptId && DEPARTMENTS.some((d) => d.id === donInfo.suggestedDeptId))
+        ? donInfo.suggestedDeptId
+        : (DEPARTMENTS.find((d) => d.id !== currentDepartmentId)?.id || 'qldt');
+      setDonViId(initialId);
       setSelectedCanBoId('');
-      setOfficerSearch('');
+      setExpandedDeptIds([initialId]);
+      setSearchQuery('');
+      setIsTreeOpen(true);
       setGhiChu('');
       setErrors({});
     }
-  }, [isOpen, donInfo.code, donInfo.isPersonalProcessing, donInfo.suggestedDeptId, otherDepartments, currentDepartmentId]);
+  }, [isOpen, donInfo.code, donInfo.suggestedDeptId, currentDepartmentId]);
 
-  // Cán bộ khả dụng:
-  // Nếu banGiaoType === 'can_bo_khac': cán bộ khác trong đơn vị hiện tại (loại trừ Tôi)
-  // Nếu banGiaoType === 'don_vi_khac': cán bộ thuộc đơn vị tiếp nhận đã chọn
-  const availableOfficers = useMemo(() => {
-    if (banGiaoType === 'can_bo_khac') {
-      return OFFICERS.filter((o) => o.departmentId === currentDepartmentId && !o.isCurrentUser);
-    }
-    return OFFICERS.filter((o) => o.departmentId === donViId);
-  }, [banGiaoType, donViId, currentDepartmentId]);
-
-  // Lọc cán bộ theo từ khóa tìm kiếm
-  const filteredOfficers = useMemo(() => {
-    if (!officerSearch.trim()) return availableOfficers;
-    const query = officerSearch.toLowerCase().trim();
-    return availableOfficers.filter(
-      (o) =>
-        o.name.toLowerCase().includes(query) ||
-        o.role.toLowerCase().includes(query) ||
-        (o.phone && o.phone.includes(query))
+  // Toggle mở rộng / thu gọn 1 nhánh đơn vị trong cây
+  const toggleExpandDept = (deptId: string) => {
+    setExpandedDeptIds((prev) =>
+      prev.includes(deptId) ? prev.filter((id) => id !== deptId) : [...prev, deptId]
     );
-  }, [availableOfficers, officerSearch]);
+  };
+
+  // Lấy danh sách cán bộ của 1 đơn vị
+  const getDeptOfficers = (deptId: string) => {
+    if (deptId === currentDepartmentId) {
+      return OFFICERS.filter((o) => o.departmentId === deptId && !o.isCurrentUser);
+    }
+    return OFFICERS.filter((o) => o.departmentId === deptId);
+  };
+
+  // Lọc cây theo từ khóa tìm kiếm
+  const treeDepartments = useMemo(() => {
+    if (!searchQuery.trim()) return DEPARTMENTS;
+    const q = searchQuery.toLowerCase().trim();
+    return DEPARTMENTS.filter((dept) => {
+      const nameMatch = dept.name.toLowerCase().includes(q) || dept.shortName.toLowerCase().includes(q);
+      const officerMatch = OFFICERS.some(
+        (o) => o.departmentId === dept.id && (o.name.toLowerCase().includes(q) || o.role.toLowerCase().includes(q))
+      );
+      return nameMatch || officerMatch;
+    });
+  }, [searchQuery]);
 
   const selectedDepartment = useMemo(() => {
-    if (banGiaoType === 'can_bo_khac') return currentDept;
-    return otherDepartments.find((d) => d.id === donViId) || DEPARTMENTS.find((d) => d.id === donViId) || otherDepartments[0] || DEPARTMENTS[0];
-  }, [banGiaoType, donViId, currentDept, otherDepartments]);
+    return DEPARTMENTS.find((d) => d.id === donViId) || DEPARTMENTS[0];
+  }, [donViId]);
 
-  // Đổi đơn vị khi bàn giao cho đơn vị khác
-  const handleDepartmentChange = (newDeptId: string) => {
-    setDonViId(newDeptId);
-    setSelectedCanBoId('');
-    setOfficerSearch('');
-    if (errors.donVi || errors.canBo) {
-      setErrors({});
-    }
-  };
+  const selectedOfficer = useMemo(() => {
+    if (!selectedCanBoId) return undefined;
+    return OFFICERS.find((o) => o.id === selectedCanBoId);
+  }, [selectedCanBoId]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const newErrors: { donVi?: string; canBo?: string } = {};
-
-    if (banGiaoType === 'don_vi_khac') {
-      if (!donViId) {
-        newErrors.donVi = 'Vui lòng chọn đơn vị tiếp nhận';
-      }
-      if (hinhThuc === 'truc_tiep' && !selectedCanBoId) {
-        newErrors.canBo = 'Vui lòng chọn cán bộ tiếp nhận của đơn vị';
-      }
-    } else {
-      // banGiaoType === 'can_bo_khac'
-      if (!selectedCanBoId) {
-        newErrors.canBo = 'Vui lòng chọn cán bộ nhận bàn giao hồ sơ';
-      }
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+    if (!donViId) {
+      setErrors({ donVi: 'Vui lòng chọn đơn vị tiếp nhận chuyển đến' });
       return;
     }
 
-    const selectedOfficer = availableOfficers.find((o) => o.id === selectedCanBoId);
+    const hinhThuc: 'hang_cho' | 'truc_tiep' = selectedOfficer ? 'truc_tiep' : 'hang_cho';
+    const banGiaoType: 'don_vi_khac' | 'can_bo_khac' = selectedDepartment.id === currentDepartmentId ? 'can_bo_khac' : 'don_vi_khac';
 
     onSubmit({
       donViTiepNhanId: selectedDepartment.id,
       donViTiepNhanName: selectedDepartment.name,
-      hinhThuc: banGiaoType === 'can_bo_khac' ? 'truc_tiep' : hinhThuc,
+      hinhThuc,
       canBoNhan: selectedOfficer,
       ghiChu,
       banGiaoType,
@@ -170,11 +140,9 @@ export default function ChuyenTiepNhanModal({
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-900 font-headline-md tracking-tight">
-                Bàn giao &amp; chuyển xử lý
+                Chuyển đơn vị xử lý - {donInfo.code}
               </h2>
-              <p className="text-xs text-slate-500">
-                Bàn giao cho đơn vị khác hoặc bàn giao cán bộ khác (chuyển sang "Đã bàn giao / theo dõi")
-              </p>
+
             </div>
           </div>
           <button
@@ -189,354 +157,318 @@ export default function ChuyenTiepNhanModal({
 
         {/* Modal Body */}
         <div className="p-6 overflow-y-auto space-y-4 text-xs text-slate-700">
-          {/* 1. Thẻ tóm tắt đơn */}
-          <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/90 space-y-2.5">
-            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider font-label-technical flex items-center justify-between">
-              <span>Thông tin đơn tiếp nhận</span>
-              {donInfo.code && (
-                <span className="text-[#C62828] font-mono font-bold">{donInfo.code}</span>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-              <div>
-                <span className="text-slate-500 block text-[11px]">Loại đơn:</span>
-                <span className="font-semibold text-slate-900">{donInfo.loaiDon}</span>
-              </div>
-              <div>
-                <span className="text-slate-500 block text-[11px]">Người nộp đơn:</span>
-                <span className="font-semibold text-slate-900">{donInfo.nguoiNop}</span>
-              </div>
-              <div>
-                <span className="text-slate-500 block text-[11px]">Ngày tiếp nhận:</span>
-                <span className="font-medium text-slate-800">{donInfo.ngayNhan}</span>
-              </div>
-              <div>
-                <span className="text-slate-500 block text-[11px]">Đơn vị hiện tại:</span>
-                <span className="font-medium text-slate-800">{donInfo.donViHienTai}</span>
-              </div>
-            </div>
-
-            {donInfo.noiDungTomTat && (
-              <div className="pt-2 border-t border-slate-200/70">
-                <span className="text-slate-500 block text-[11px] mb-0.5">Nội dung tóm tắt:</span>
-                <p className="text-slate-700 italic line-clamp-2 leading-relaxed">
-                  "{donInfo.noiDungTomTat}"
-                </p>
-              </div>
-            )}
-          </div>
-
+          {/* Thông tin vắn tắt hồ sơ */}
           <form id="chuyen-tiep-nhan-form" onSubmit={handleSubmit} className="space-y-4">
-            {/* LỰA CHỌN PHẠM VI BÀN GIAO: ĐƠN VỊ KHÁC HOẶC CÁN BỘ KHÁC */}
+            {/* SELECT DẠNG CÂY: ĐƠN VỊ TIẾP NHẬN TRƯỚC -> MỞ RỘNG CÁN BỘ BÊN DƯỚI */}
             <div className="space-y-1.5">
-              <label className="block font-semibold text-slate-800 text-xs">
-                Mục tiêu bàn giao xử lý <span className="text-[#C62828]">*</span>
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {/* Lựa chọn 1: Bàn giao cho 1 đơn vị khác */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setBanGiaoType('don_vi_khac');
-                    setDonViId(defaultOtherDeptId);
-                    setHinhThuc('hang_cho');
-                    setSelectedCanBoId('');
-                    setErrors({});
-                  }}
-                  className={`p-3 rounded-xl border text-left flex items-start gap-2.5 transition-all cursor-pointer ${
-                    banGiaoType === 'don_vi_khac'
-                      ? 'bg-rose-50/70 border-[#C62828] ring-2 ring-[#C62828]/20 shadow-xs'
-                      : 'bg-white border-slate-200 hover:bg-slate-50'
-                  }`}
-                >
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                    banGiaoType === 'don_vi_khac' ? 'bg-[#C62828] text-white' : 'bg-slate-100 text-slate-600'
-                  }`}>
-                    <span className="material-symbols-outlined text-[18px]">domain</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-bold text-xs text-slate-900 flex items-center justify-between">
-                      <span>Bàn giao cho đơn vị khác</span>
-                      {banGiaoType === 'don_vi_khac' && (
-                        <span className="material-symbols-outlined text-[16px] text-[#C62828]">check_circle</span>
-                      )}
-                    </div>
-                    <div className="text-[10.5px] text-slate-500 mt-0.5 leading-tight">
-                      Chuyển sang cơ quan / phòng ban chuyên môn khác
-                    </div>
-                  </div>
-                </button>
-
-                {/* Lựa chọn 2: Bàn giao cho cán bộ khác trong đơn vị */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setBanGiaoType('can_bo_khac');
-                    setDonViId(currentDepartmentId);
-                    setHinhThuc('truc_tiep');
-                    setSelectedCanBoId('');
-                    setErrors({});
-                  }}
-                  className={`p-3 rounded-xl border text-left flex items-start gap-2.5 transition-all cursor-pointer ${
-                    banGiaoType === 'can_bo_khac'
-                      ? 'bg-blue-50/70 border-blue-600 ring-2 ring-blue-600/20 shadow-xs'
-                      : 'bg-white border-slate-200 hover:bg-slate-50'
-                  }`}
-                >
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                    banGiaoType === 'can_bo_khac' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'
-                  }`}>
-                    <span className="material-symbols-outlined text-[18px]">person_pin</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-bold text-xs text-slate-900 flex items-center justify-between">
-                      <span>Bàn giao cho cán bộ khác</span>
-                      {banGiaoType === 'can_bo_khac' && (
-                        <span className="material-symbols-outlined text-[16px] text-blue-600">check_circle</span>
-                      )}
-                    </div>
-                    <div className="text-[10.5px] text-slate-500 mt-0.5 leading-tight">
-                      Sau khi tiếp nhận về, bàn giao cán bộ khác trong phòng
-                    </div>
-                  </div>
-                </button>
+              <div className="flex items-center justify-between">
+                <label className="block font-semibold text-slate-800 text-xs flex items-center gap-1.5">
+                  <span>Đơn vị &amp; Cán bộ tiếp nhận</span>
+                  <span className="text-[#C62828]">*</span>
+                </label>
+                <span className="text-[10.5px] text-slate-500 font-normal">
+                  Chọn đơn vị để mở rộng danh sách cán bộ
+                </span>
               </div>
-            </div>
 
-            {/* TRƯỜNG HỢP 1: BÀN GIAO CHO ĐƠN VỊ KHÁC */}
-            {banGiaoType === 'don_vi_khac' && (
-              <>
-                <div className="space-y-1.5 animate-fade-in">
-                  <div className="flex items-center justify-between">
-                    <label className="block font-semibold text-slate-800">
-                      Đơn vị tiếp nhận bàn giao <span className="text-[#C62828]">*</span>
-                    </label>
-                    <span className="text-[10.5px] font-medium text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                      Đơn vị chuyên môn khác
-                    </span>
+              {/* Ô trigger dạng select cây */}
+              <div
+                onClick={() => setIsTreeOpen(!isTreeOpen)}
+                className={`w-full px-3 py-2.5 bg-white border rounded-xl text-xs flex items-center justify-between transition-all cursor-pointer shadow-xs ${
+                  errors.donVi
+                    ? 'border-rose-400 ring-2 ring-rose-100'
+                    : isTreeOpen
+                    ? 'border-[#C62828] ring-2 ring-[#C62828]/15'
+                    : 'border-slate-300 hover:border-slate-400'
+                }`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <div className="w-6 h-6 rounded-md bg-rose-50 text-[#C62828] flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-[16px]">account_tree</span>
                   </div>
-                  <div className="relative">
-                    <select
-                      value={donViId}
-                      onChange={(e) => handleDepartmentChange(e.target.value)}
-                      className={`w-full px-3 py-2.5 bg-white border rounded-xl text-xs text-slate-800 appearance-none focus:outline-none focus:ring-2 focus:ring-[#C62828]/20 focus:border-[#C62828] transition-all cursor-pointer ${
-                        errors.donVi ? 'border-rose-400 bg-rose-50/20' : 'border-slate-300'
-                      }`}
-                    >
-                      {otherDepartments.map((dept) => (
-                        <option key={dept.id} value={dept.id}>
-                          {dept.name} ({dept.leaderName ? `Lãnh đạo: ${dept.leaderName}` : ''})
-                        </option>
-                      ))}
-                    </select>
-                    <span className="material-symbols-outlined absolute right-3 top-2.5 text-slate-400 pointer-events-none text-[18px]">
-                      arrow_drop_down
-                    </span>
+
+                  <div className="min-w-0 flex-1 flex flex-wrap items-center gap-1.5">
+                    {!selectedDepartment ? (
+                      <span className="text-slate-400">-- Nhấp chọn đơn vị và cán bộ tiếp nhận (Dạng cây) --</span>
+                    ) : (
+                      <>
+                        <span className="font-bold text-slate-900 flex items-center gap-1 truncate">
+                          <span className="material-symbols-outlined text-[15px] text-slate-500">domain</span>
+                          {selectedDepartment.name}
+                        </span>
+                        <span className="text-slate-300">/</span>
+                        {selectedOfficer ? (
+                          <span className="font-bold text-blue-700 flex items-center gap-1 truncate bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                            <span className="material-symbols-outlined text-[14px]">person</span>
+                            {selectedOfficer.name} ({selectedOfficer.role})
+                          </span>
+                        ) : (
+                          <span className="font-semibold text-amber-800 flex items-center gap-1 truncate bg-amber-50 px-2 py-0.5 rounded border border-amber-200 text-[11px]">
+                            <span className="material-symbols-outlined text-[14px] text-amber-600">hourglass_top</span>
+                            Hàng chờ đơn vị (Không chỉ định cán bộ)
+                          </span>
+                        )}
+                      </>
+                    )}
                   </div>
-                  {errors.donVi && (
-                    <p className="text-[11px] text-[#C62828] font-medium">{errors.donVi}</p>
-                  )}
                 </div>
 
-                <div className="space-y-2 animate-fade-in">
-                  <label className="block font-semibold text-slate-800">
-                    Hình thức bàn giao <span className="text-[#C62828]">*</span>
-                  </label>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <label
-                      className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
-                        hinhThuc === 'hang_cho'
-                          ? 'bg-amber-50/50 border-amber-300 ring-1 ring-amber-300'
-                          : 'bg-white border-slate-200 hover:bg-slate-50'
-                      }`}
+                <div className="flex items-center gap-1 shrink-0 ml-2">
+                  {selectedCanBoId && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedCanBoId('');
+                      }}
+                      className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-slate-600 cursor-pointer"
+                      title="Bỏ chọn cán bộ (chuyển về hàng chờ đơn vị)"
                     >
-                      <input
-                        type="radio"
-                        name="hinhThuc"
-                        value="hang_cho"
-                        checked={hinhThuc === 'hang_cho'}
-                        onChange={() => {
-                          setHinhThuc('hang_cho');
-                          setSelectedCanBoId('');
-                          setErrors({});
-                        }}
-                        className="mt-0.5 text-[#C62828] focus:ring-[#C62828] cursor-pointer"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <span className="font-bold text-slate-900 block text-xs">
-                          Chuyển về hàng chờ của đơn vị
-                        </span>
-                        <span className="text-[11px] text-slate-500 block mt-0.5">
-                          Đơn vào hàng chờ đơn vị đó. Trưởng phòng đơn vị sẽ duyệt và giao cán bộ sau.
-                        </span>
-                      </div>
-                    </label>
-
-                    <label
-                      className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
-                        hinhThuc === 'truc_tiep'
-                          ? 'bg-blue-50/50 border-blue-300 ring-1 ring-blue-300'
-                          : 'bg-white border-slate-200 hover:bg-slate-50'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="hinhThuc"
-                        value="truc_tiep"
-                        checked={hinhThuc === 'truc_tiep'}
-                        onChange={() => {
-                          setHinhThuc('truc_tiep');
-                          setErrors({});
-                        }}
-                        className="mt-0.5 text-[#C62828] focus:ring-[#C62828] cursor-pointer"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <span className="font-bold text-slate-900 block text-xs">
-                          Giao trực tiếp cho cán bộ đơn vị đó
-                        </span>
-                        <span className="text-[11px] text-slate-500 block mt-0.5">
-                          Chỉ định ngay cán bộ thuộc đơn vị đó thụ lý.
-                        </span>
-                      </div>
-                    </label>
-                  </div>
-
-                  {hinhThuc === 'hang_cho' && (
-                    <div className="p-3 bg-amber-50/70 border border-amber-200/80 rounded-xl text-amber-900 flex items-start gap-2 animate-fade-in">
-                      <span className="material-symbols-outlined text-amber-600 text-[18px] shrink-0 mt-0.5">
-                        info
-                      </span>
-                      <div className="text-[11.5px] leading-relaxed">
-                        <span className="font-bold">Quy tắc bàn giao: </span>
-                        Hồ sơ sau khi bàn giao sẽ chuyển sang hàng chờ của đơn vị được chọn, đồng thời tự động lưu vào mục <strong>"Đã bàn giao / theo dõi"</strong> để bạn giám sát tiến độ.
-                      </div>
-                    </div>
+                      <span className="material-symbols-outlined text-[15px]">close</span>
+                    </button>
                   )}
-                </div>
-              </>
-            )}
-
-            {/* TRƯỜNG HỢP 2: BÀN GIAO CHO CÁN BỘ KHÁC (HOẶC GIAO TRỰC TIẾP CÁN BỘ ĐƠN VỊ NGOÀI) */}
-            {(banGiaoType === 'can_bo_khac' || (banGiaoType === 'don_vi_khac' && hinhThuc === 'truc_tiep')) && (
-              <div className="space-y-2 p-3.5 bg-blue-50/30 rounded-xl border border-blue-200/70 animate-fade-in">
-                <div className="flex items-center justify-between">
-                  <label className="font-semibold text-slate-800">
-                    {banGiaoType === 'can_bo_khac'
-                      ? 'Chọn cán bộ nhận bàn giao trong phòng'
-                      : 'Cán bộ tiếp nhận của đơn vị'} <span className="text-[#C62828]">*</span>
-                  </label>
-                  <span className="text-[11px] text-slate-500">
-                    Thuộc {selectedDepartment.shortName} ({availableOfficers.length} cán bộ)
+                  <span className="material-symbols-outlined text-slate-400 text-[20px] transition-transform">
+                    {isTreeOpen ? 'expand_less' : 'expand_more'}
                   </span>
                 </div>
+              </div>
 
-                {banGiaoType === 'can_bo_khac' && (
-                  <p className="text-[11px] text-slate-500 italic">
-                    Sau khi tiếp nhận về, chuyển giao toàn bộ hồ sơ cho cán bộ chuyên môn khác phụ trách. Hồ sơ sẽ chuyển sang mục "Đã bàn giao / theo dõi".
-                  </p>
-                )}
+              {errors.donVi && (
+                <p className="text-[11px] text-[#C62828] font-medium">{errors.donVi}</p>
+              )}
 
-                {/* Ô tìm kiếm cán bộ */}
-                <div className="relative">
-                  <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-[17px]">
-                    search
-                  </span>
-                  <input
-                    type="text"
-                    placeholder="Tìm theo tên cán bộ, chức danh..."
-                    value={officerSearch}
-                    onChange={(e) => setOfficerSearch(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500"
-                  />
-                </div>
+              {/* KHUNG DANH SÁCH DẠNG CÂY (TREE VIEW) */}
+              {isTreeOpen && (
+                <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xs animate-fade-in mt-1.5">
+                  {/* Thanh tìm kiếm nhanh */}
+                  <div className="p-2.5 bg-slate-50/80 border-b border-slate-200 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-slate-400 text-[17px] shrink-0">
+                      search
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="Tìm kiếm nhanh đơn vị, phòng ban hoặc tên cán bộ..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full bg-transparent text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none"
+                    />
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchQuery('')}
+                        className="text-slate-400 hover:text-slate-600"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">close</span>
+                      </button>
+                    )}
+                  </div>
 
-                {/* Danh sách cán bộ để chọn */}
-                <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1 border border-slate-200 rounded-lg p-1.5 bg-white">
-                  {filteredOfficers.length === 0 ? (
-                    <div className="text-center py-4 text-slate-400 text-xs">
-                      Không tìm thấy cán bộ phù hợp
-                    </div>
-                  ) : (
-                    filteredOfficers.map((officer) => {
-                      const isSelected = selectedCanBoId === officer.id;
-                      return (
-                        <div
-                          key={officer.id}
-                          onClick={() => {
-                            setSelectedCanBoId(officer.id);
-                            if (errors.canBo) setErrors((prev) => ({ ...prev, canBo: undefined }));
-                          }}
-                          className={`p-2.5 rounded-lg border transition-all cursor-pointer flex items-center justify-between ${
-                            isSelected
-                              ? 'bg-blue-50 border-blue-400 ring-1 ring-blue-300'
-                              : 'border-slate-100 hover:bg-slate-50 hover:border-slate-200'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-700 font-bold text-[11px] flex items-center justify-center shrink-0">
-                              {officer.name
-                                .split(' ')
-                                .slice(-2)
-                                .map((n) => n[0])
-                                .join('')}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="font-bold text-slate-900 text-xs truncate">
-                                  {officer.name}
+                  {/* Danh sách các nút cây */}
+                  <div className="max-h-64 overflow-y-auto p-2 space-y-1">
+                    {treeDepartments.length === 0 ? (
+                      <div className="text-center py-6 text-slate-400 text-xs">
+                        Không tìm thấy đơn vị hoặc cán bộ phù hợp
+                      </div>
+                    ) : (
+                      treeDepartments.map((dept) => {
+                        const isExpanded = searchQuery.trim() ? true : expandedDeptIds.includes(dept.id);
+                        const isDeptActive = donViId === dept.id;
+                        const isQueueActive = isDeptActive && !selectedCanBoId;
+                        const deptOfficers = getDeptOfficers(dept.id);
+                        const filteredDeptOfficers = searchQuery.trim()
+                          ? deptOfficers.filter(
+                              (o) =>
+                                o.name.toLowerCase().includes(searchQuery.toLowerCase().trim()) ||
+                                o.role.toLowerCase().includes(searchQuery.toLowerCase().trim())
+                            )
+                          : deptOfficers;
+
+                        return (
+                          <div key={dept.id} className="rounded-lg transition-colors">
+                            {/* NÚT CẤP 1: ĐƠN VỊ TIẾP NHẬN */}
+                            <div
+                              className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-all ${
+                                isDeptActive
+                                  ? 'bg-rose-50/70 text-slate-900 font-semibold border border-rose-200'
+                                  : 'hover:bg-slate-50 text-slate-800 border border-transparent'
+                              }`}
+                              onClick={() => {
+                                setDonViId(dept.id);
+                                if (!isExpanded) {
+                                  setExpandedDeptIds((prev) => [...prev, dept.id]);
+                                }
+                                if (errors.donVi) setErrors({});
+                              }}
+                            >
+                              <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                {/* Mũi tên mở rộng / thu gọn */}
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleExpandDept(dept.id);
+                                  }}
+                                  className="w-5 h-5 rounded hover:bg-slate-200/80 text-slate-500 flex items-center justify-center shrink-0 transition-colors"
+                                  title={isExpanded ? 'Thu gọn' : 'Mở rộng cán bộ'}
+                                >
+                                  <span className="material-symbols-outlined text-[18px]">
+                                    {isExpanded ? 'arrow_drop_down' : 'arrow_right'}
+                                  </span>
+                                </button>
+
+                                <span
+                                  className={`material-symbols-outlined text-[18px] shrink-0 ${
+                                    isDeptActive ? 'text-[#C62828]' : 'text-slate-500'
+                                  }`}
+                                >
+                                  domain
                                 </span>
-                                {officer.isLeader && (
-                                  <span className="px-1.5 py-0.2 rounded bg-purple-50 text-purple-700 border border-purple-200 text-[10px] font-bold">
-                                    Lãnh đạo
+
+                                <span className="text-xs truncate font-medium">
+                                  {dept.name}
+                                </span>
+
+                                {dept.id === currentDepartmentId && (
+                                  <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 text-[10px] font-medium shrink-0">
+                                    Hiện tại
+                                  </span>
+                                )}
+
+                                {donInfo.suggestedDeptId === dept.id && (
+                                  <span className="px-1.5 py-0.2 rounded bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-medium shrink-0 flex items-center gap-0.5">
+                                    <span className="material-symbols-outlined text-[11px]">auto_awesome</span>
+                                    Gợi ý
                                   </span>
                                 )}
                               </div>
-                              <span className="text-[11px] text-slate-500 truncate block">
-                                {officer.role}
-                              </span>
-                            </div>
-                          </div>
 
-                          <div className="flex items-center gap-2 shrink-0">
-                            <span
-                              className={`px-2 py-0.5 rounded-full text-[10.5px] font-semibold font-label-technical ${
-                                officer.workloadCount > 12
-                                  ? 'bg-amber-100 text-amber-800'
-                                  : 'bg-emerald-100 text-emerald-800'
-                              }`}
-                            >
-                              {officer.workloadCount} việc đang xử lý
-                            </span>
-                            <div
-                              className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                                isSelected
-                                  ? 'border-blue-600 bg-blue-600 text-white'
-                                  : 'border-slate-300'
-                              }`}
-                            >
-                              {isSelected && (
-                                <span className="material-symbols-outlined text-[12px]">check</span>
-                              )}
+                              <div className="flex items-center gap-2 shrink-0 ml-2">
+                                <span className="text-[10.5px] text-slate-400">
+                                  {deptOfficers.length} cán bộ
+                                </span>
+                                <div
+                                  className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+                                    isDeptActive
+                                      ? 'border-[#C62828] bg-[#C62828] text-white'
+                                      : 'border-slate-300'
+                                  }`}
+                                >
+                                  {isDeptActive && (
+                                    <span className="material-symbols-outlined text-[10px]">check</span>
+                                  )}
+                                </div>
+                              </div>
                             </div>
+
+                            {/* NÚT CẤP 2: CÁN BỘ CỦA ĐƠN VỊ - CHỈ HIỂN THỊ KHI ĐƠN VỊ ĐƯỢC CHỌN / MỞ RỘNG! */}
+                            {isExpanded && (
+                              <div className="ml-5 pl-3 border-l-2 border-slate-200/90 space-y-1 my-1 animate-fade-in">
+                                {/* Lựa chọn 1: Hàng chờ đơn vị (Không chỉ định cán bộ) */}
+                                <div
+                                  onClick={() => {
+                                    setDonViId(dept.id);
+                                    setSelectedCanBoId('');
+                                    if (errors.donVi) setErrors({});
+                                  }}
+                                  className={`p-1.5 px-2 rounded-lg flex items-center justify-between cursor-pointer transition-all ${
+                                    isQueueActive
+                                      ? 'bg-amber-50/90 border border-amber-300 ring-1 ring-amber-300/60 text-amber-900 font-medium'
+                                      : 'hover:bg-slate-50 text-slate-700 border border-transparent'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <span className="material-symbols-outlined text-amber-600 text-[16px] shrink-0">
+                                      hourglass_top
+                                    </span>
+                                    <div className="min-w-0">
+                                      <span className="text-[11.5px] font-bold block truncate">
+                                        Không chỉ định (Chuyển về hàng chờ đơn vị)
+                                      </span>
+                                      <span className="text-[10px] text-slate-500 block truncate">
+                                        Lãnh đạo {dept.shortName} ({dept.leaderName || 'Trưởng phòng'}) sẽ duyệt và phân công
+                                      </span>
+                                    </div>
+                                  </div>
+                                  {isQueueActive && (
+                                    <span className="material-symbols-outlined text-amber-600 text-[16px] shrink-0">
+                                      check_circle
+                                    </span>
+                                  )}
+                                </div>
+
+                                {/* Lựa chọn 2..N: Danh sách cán bộ của đơn vị */}
+                                {filteredDeptOfficers.length === 0 ? (
+                                  <div className="py-2 text-center text-slate-400 text-[11px] italic">
+                                    {deptOfficers.length === 0 ? 'Đơn vị chưa có cán bộ tiếp nhận' : 'Không tìm thấy cán bộ phù hợp'}
+                                  </div>
+                                ) : (
+                                  filteredDeptOfficers.map((officer) => {
+                                    const isOfficerActive = isDeptActive && selectedCanBoId === officer.id;
+                                    return (
+                                      <div
+                                        key={officer.id}
+                                        onClick={() => {
+                                          setDonViId(dept.id);
+                                          setSelectedCanBoId(isOfficerActive ? '' : officer.id);
+                                          if (errors.donVi) setErrors({});
+                                        }}
+                                        className={`p-1.5 px-2 rounded-lg flex items-center justify-between cursor-pointer transition-all ${
+                                          isOfficerActive
+                                            ? 'bg-blue-50 border border-blue-400 ring-1 ring-blue-300 text-blue-900 font-medium'
+                                            : 'hover:bg-slate-50 text-slate-700 border border-transparent'
+                                        }`}
+                                      >
+                                        <div className="flex items-center gap-2 min-w-0">
+                                          <div className="w-5 h-5 rounded-full bg-slate-200 text-slate-700 font-bold text-[9.5px] flex items-center justify-center shrink-0">
+                                            {officer.name.split(' ').slice(-2).map((n) => n[0]).join('')}
+                                          </div>
+                                          <div className="min-w-0">
+                                            <div className="flex items-center gap-1.5">
+                                              <span className="text-xs font-semibold text-slate-900 truncate">
+                                                {officer.name}
+                                              </span>
+                                              {officer.isLeader && (
+                                                <span className="px-1 py-0.1 bg-purple-50 text-purple-700 border border-purple-200 text-[9px] font-bold rounded shrink-0">
+                                                  Lãnh đạo
+                                                </span>
+                                              )}
+                                            </div>
+                                            <span className="text-[10px] text-slate-500 block truncate">
+                                              {officer.role}
+                                            </span>
+                                          </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-2 shrink-0 ml-2">
+                                          <span className="text-[9.5px] px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-600 font-medium">
+                                            {officer.workloadCount} việc
+                                          </span>
+                                          {isOfficerActive && (
+                                            <span className="material-symbols-outlined text-blue-600 text-[16px]">
+                                              check_circle
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  })
+                                )}
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      );
-                    })
-                  )}
+                        );
+                      })
+                    )}
+                  </div>
                 </div>
-                {errors.canBo && (
-                  <p className="text-[11px] text-[#C62828] font-medium">{errors.canBo}</p>
-                )}
-              </div>
-            )}
+              )}
+            </div>
 
             {/* Ghi chú chuyển bàn giao */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="block font-semibold text-slate-800">
-                  Ghi chú bàn giao <span className="text-slate-400 font-normal">(Không bắt buộc)</span>
+                <label className="block font-semibold text-slate-800 text-xs">
+                  Ghi chú chuyển bàn giao <span className="text-slate-400 font-normal">(Không bắt buộc)</span>
                 </label>
                 <span className="text-[11px] text-slate-400">Tối đa 500 ký tự</span>
               </div>
@@ -544,7 +476,7 @@ export default function ChuyenTiepNhanModal({
                 rows={3}
                 value={ghiChu}
                 onChange={(e) => setGhiChu(e.target.value)}
-                placeholder="Nhập lý do bàn giao hoặc lưu ý chỉ đạo chuyển giao hồ sơ..."
+                placeholder="Nhập lý do chuyển hoặc nội dung chỉ đạo, lưu ý khi bàn giao hồ sơ..."
                 className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#C62828]/20 focus:border-[#C62828] transition-all resize-none"
               />
             </div>
@@ -567,8 +499,8 @@ export default function ChuyenTiepNhanModal({
               form="chuyen-tiep-nhan-form"
               className="px-5 py-2 rounded-xl bg-[#C62828] hover:bg-[#b71c1c] active:scale-95 text-white text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
             >
-              <span className="material-symbols-outlined text-[16px]">outbox</span>
-              <span>Bàn giao hồ sơ</span>
+              <span className="material-symbols-outlined text-[16px]">send</span>
+              <span>Xác nhận chuyển</span>
             </button>
           </div>
         </div>

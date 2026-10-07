@@ -539,6 +539,13 @@ interface SwimlaneWorkflowDiagramProps {
   donTitle?: string;
   nguoiNop?: string;
   onConfirmStep?: (step: SwimlaneStepNode) => void;
+  onViewDocument?: (docInfo: {
+    tenVanBan: string;
+    soHieu?: string;
+    loai?: string;
+    trichYeu?: string;
+    noiDungChiTiet?: string;
+  }) => void;
 }
 
 export default function SwimlaneWorkflowDiagram({
@@ -547,6 +554,7 @@ export default function SwimlaneWorkflowDiagram({
   donTitle = 'Tố giác vi phạm lừa đảo chiếm đoạt tài sản (Dự án Khu đô thị Y)',
   nguoiNop = 'Nguyễn Văn A',
   onConfirmStep,
+  onViewDocument,
 }: SwimlaneWorkflowDiagramProps) {
   // Lựa chọn loại quy trình
   const [currentWorkflowType, setCurrentWorkflowType] = useState<WorkflowType>(initialWorkflowType);
@@ -801,33 +809,14 @@ export default function SwimlaneWorkflowDiagram({
   if (currentWorkflowType === 'to-cao-govex' || currentWorkflowType === 'to-giac') {
     return (
       <div className="flex flex-col h-full bg-[#f8fafc] text-slate-800 select-none overflow-hidden font-body-md">
-        {/* Top switch selector */}
-        <div className="bg-white border-b border-slate-200 px-6 py-2.5 flex items-center justify-between gap-4 flex-wrap shrink-0 shadow-2xs">
-          {/* Quick Workflow Selector Pills */}
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-semibold">
-            {[
-              { id: 'to-cao-govex', label: '⭐ Đơn tố cáo (Tiếp nhận & Thụ lý)' },
-              { id: 'khieu-nai', label: 'Khiếu nại đất đai (Luật KN)' },
-              { id: 'khoi-kien', label: 'Khởi kiện dân sự (BLTTDS)' },
-            ].map((wf) => (
-              <button
-                key={wf.id}
-                type="button"
-                onClick={() => setCurrentWorkflowType(wf.id as WorkflowType)}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer text-xs ${currentWorkflowType === wf.id || (currentWorkflowType === 'to-giac' && wf.id === 'to-cao-govex')
-                  ? 'bg-[#004ac6] text-white shadow-2xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                  }`}
-              >
-                {wf.label}
-              </button>
-            ))}
-          </div>
-        </div>
 
-        {/* Render GovexToCaoWorkflowDiagram */}
         <div className="flex-1 overflow-hidden">
-          <GovexToCaoWorkflowDiagram donCode={donCode} donTitle={donTitle} nguoiNop={nguoiNop} />
+          <GovexToCaoWorkflowDiagram
+            donCode={donCode}
+            donTitle={donTitle}
+            nguoiNop={nguoiNop}
+            onViewDocument={onViewDocument}
+          />
         </div>
       </div>
     );

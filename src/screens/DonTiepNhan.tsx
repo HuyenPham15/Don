@@ -4,6 +4,7 @@ import TabThongTinChung from '../components/tabs/TabThongTinChung';
 import TabMoiLienHe from '../components/tabs/TabMoiLienHe';
 import TabDonKhac from '../components/tabs/TabDonKhac';
 import TabTaiLieu from '../components/tabs/TabTaiLieu';
+import TabQuyTrinh from '../components/tabs/TabQuyTrinh';
 import { matchWorkflowByLoaiDon } from '../constants/workflows';
 import ThongBaoBoSungModal from '../components/workflow/ThongBaoBoSungModal';
 import ThucHienBuocTiepTheoModal from '../components/workflow/ThucHienBuocTiepTheoModal';
@@ -69,7 +70,7 @@ export const HUONG_XU_LY_CONFIG: Record<
 };
 
 export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXacMinhOpened }: DonTiepNhanProps) {
-  const [activeTab, setActiveTab] = useState<'thong-tin' | 'lien-he' | 'don-khac' | 'tai-lieu'>('thong-tin');
+  const [activeTab, setActiveTab] = useState<'thong-tin' | 'lien-he' | 'don-khac' | 'tai-lieu' | 'quy-trinh'>('thong-tin');
   const [docCount, setDocCount] = useState<number>(6);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
@@ -137,6 +138,36 @@ export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXa
     setEditingDocInTab(docData);
     setActiveTab('tai-lieu');
     showToast(`✓ Đã chuyển sang tab "Hồ sơ & Văn bản" để chỉnh sửa trực tiếp: ${docData.soHieu || docData.tenVanBan}`);
+  };
+
+  // Chuyển sang Tab Hồ sơ & Văn bản để xem văn bản từ quy trình
+  const handleViewDocInTabTaiLieu = (docInfo?: {
+    tenVanBan: string;
+    soHieu?: string;
+    loai?: string;
+    trichYeu?: string;
+    noiDungChiTiet?: string;
+  }) => {
+    if (docInfo) {
+      const docItem = {
+        id: `DOC-WF-${Date.now()}`,
+        tenVanBan: docInfo.tenVanBan,
+        soHieu: docInfo.soHieu || '01/VB-TC',
+        loai: docInfo.loai || 'thong_bao',
+        category: 'Văn bản quy trình',
+        ngayLap: '16/09/2026',
+        nguoiNhan: currentDon.nguoiNop || 'Nguyễn Văn A',
+        coQuanBanHanh: 'UBND quận Cầu Giấy / Phòng Tiếp công dân & Xử lý đơn',
+        trichYeu: docInfo.trichYeu || docInfo.tenVanBan,
+        noiDungChiTiet: docInfo.noiDungChiTiet || `Nội dung văn bản: ${docInfo.tenVanBan}\nBan hành theo quy trình xử lý đơn số ${currentDon.code}.`,
+        signer: 'Nguyễn Minh Anh - Cán bộ thụ lý',
+        trangThai: 'da_ban_hanh',
+        fromXacMinh: true,
+      };
+      setEditingDocInTab(docItem);
+    }
+    setActiveTab('tai-lieu');
+    showToast(`✓ Đã chuyển về tab "Hồ sơ & Văn bản" để xem văn bản: ${docInfo?.tenVanBan || ''}`);
   };
 
   // Tự động mở modal nếu được yêu cầu từ props (nếu có)
@@ -301,7 +332,7 @@ export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXa
           <div className="flex items-center gap-2 shrink-0 flex-wrap">
             {trangThaiXacMinh === 'dang_xac_minh' ? (
               <>
-                <button
+                {/* <button
                   type="button"
                   onClick={() => setShowModalBoSung(true)}
                   className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold shadow-2xs transition-colors cursor-pointer ${daGuiThongBaoBoSung
@@ -314,7 +345,7 @@ export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXa
                     {daGuiThongBaoBoSung ? 'check_circle' : 'note_add'}
                   </span>
                   <span>{daGuiThongBaoBoSung ? 'Đã tạo thông báo bổ sung' : 'Tạo thông báo bổ sung'}</span>
-                </button>
+                </button> */}
 
                 {/* NÚT CHÍNH: Xác minh và xác nhận hướng xử lý thông tin */}
                 <button
@@ -465,6 +496,22 @@ export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXa
               {docCount} văn bản
             </span>
           </button>
+
+          {/* Tab 5: Quy trình */}
+          <button
+            type="button"
+            onClick={() => setActiveTab('quy-trinh')}
+            className={`pb-3 border-b-2 flex items-center gap-1.5 transition-all cursor-pointer ${activeTab === 'quy-trinh'
+              ? 'border-[#004ac6] text-[#004ac6]'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+          >
+            <span className="material-symbols-outlined text-[16px]">alt_route</span>
+            <span>Quy trình</span>
+            <span className="px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 font-semibold text-[10px] border border-indigo-200">
+              Bước {activeStepNumber}/{workflow.steps.length}
+            </span>
+          </button>
         </div>
       </div>
 
@@ -491,6 +538,22 @@ export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXa
               onReturnToXacMinh={() => setShowXacMinhModal(true)}
               sharedVanBanList={vanBanXacMinhList}
               onUpdateSharedVanBanList={setVanBanXacMinhList}
+            />
+          )}
+          {activeTab === 'quy-trinh' && (
+            <TabQuyTrinh
+              currentDon={currentDon}
+              workflow={workflow}
+              activeStepNumber={activeStepNumber}
+              onNav={onNav}
+              onOpenXacMinh={() => setShowXacMinhModal(true)}
+              onOpenBoSung={() => setShowModalBoSung(true)}
+              onOpenBuocTiepTheo={() => setShowModalBuocTiepTheo(true)}
+              onStepChange={(stepNum) => setActiveStepNumber(stepNum)}
+              onWorkflowChange={(_newLoaiDon, newWf) => {
+                showToast(`✓ Đã chuyển sang quy trình "${newWf.name}"!`);
+              }}
+              onViewDocument={handleViewDocInTabTaiLieu}
             />
           )}
         </div>

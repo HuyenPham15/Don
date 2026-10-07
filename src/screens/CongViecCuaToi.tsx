@@ -1261,6 +1261,32 @@ export default function CongViecCuaToi({
       const matchedLn =
         luotNhanList.find((l) => l.id === item.id || l.id === item.code || l.id === item.luotNhanId) ||
         ALL_LUOT_NHAN.find((l) => l.id === item.id || l.id === item.code);
+
+      // Nếu lượt nhận đã tiếp nhận xong -> mở màn chi tiết đơn chứ không mở màn phân tích AI
+      const isDaTiepNhan =
+        matchedLn?.status === 'da_chuyen' ||
+        matchedLn?.status === 'da_thu_ly' ||
+        item.tags.includes('Đã tiếp nhận');
+
+      if (isDaTiepNhan) {
+        const dynamicCode = item.code.startsWith('LN-') ? `Đ-${item.code.replace('LN-', '')}` : item.code;
+        const donObj: DonDetail = {
+          id: dynamicCode,
+          code: dynamicCode,
+          title: item.title,
+          luotNhanId: item.code,
+          nguoiNop: item.sender,
+          ngayNhan: item.timeReceived,
+          loaiDon: item.loaiDon || 'Đơn phản ánh kiến nghị',
+          type: 'ĐƠN TIẾP NHẬN',
+          statusBadge: 'Đang xác minh thông tin',
+        };
+        if (onSelectDon) onSelectDon(donObj);
+        onNav('don-tiep-nhan');
+        showToast(`Mở màn chi tiết đơn [${dynamicCode}] (Đã tiếp nhận)`);
+        return;
+      }
+
       const targetLuotNhan: LuotNhan = {
         id: item.code,
         ngayNhan: item.timeReceived,
@@ -1269,7 +1295,7 @@ export default function CongViecCuaToi({
         noiDung: item.title,
         donVi: item.holder?.department || 'Tổ Tiếp nhận hồ sơ',
         aiJob: item.aiStatus === 'none' ? 0 : item.aiStatus === 'failed' ? 1 : (item.aiStatus === 'completed' || item.aiStatus === 'needs_review' ? 5 : item.aiStatus === 'processing' ? 3 : 0),
-        status: matchedLn?.status === 'da_ban_giao' ? 'da_ban_giao' : 'da_chuyen',
+        status: matchedLn?.status || 'cho_chuyen',
       };
 
       onSelect(targetLuotNhan);

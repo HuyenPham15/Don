@@ -742,6 +742,30 @@ export default function BanPhanTich({
     setShowChuyenModal(true);
   };
 
+  // Chuyển sang màn hình chi tiết đơn (don-tiep-nhan)
+  const handleGoToChiTietDon = () => {
+    const dynamicCode = luotNhan?.id
+      ? luotNhan.id.startsWith('LN-')
+        ? `Đ-${luotNhan.id.replace('LN-', '')}`
+        : luotNhan.id
+      : 'Đ-2026-00125';
+
+    const donObj = {
+      id: dynamicCode,
+      code: dynamicCode,
+      title: extractData.noiDungTomTat || luotNhan?.noiDung || `Hồ sơ ${dynamicCode}`,
+      luotNhanId: luotNhan?.id || dynamicCode,
+      nguoiNop: extractData.nguoiGui || luotNhan?.nguoiNop || 'Công dân',
+      ngayNhan: luotNhan?.ngayNhan || 'Hôm nay',
+      loaiDon: extractData.loaiNoiDung || luotNhan?.loaiDon || 'Đơn phản ánh kiến nghị',
+      type: (dynamicCode.startsWith('VV') ? 'VỤ VIỆC' : 'ĐƠN TIẾP NHẬN') as const,
+      statusBadge: 'Đang xác minh thông tin',
+      isNew: true,
+    };
+    onAcceptAndProcess?.(donObj);
+    onNav('don-tiep-nhan');
+  };
+
   // BR-06, BR-07, BR-08, BR-09: Xử lý submit chuyển tiếp nhận
   const handleChuyenTiepNhanSubmit = (data: ChuyenTiepNhanSubmitData) => {
     setShowChuyenModal(false);
@@ -786,24 +810,28 @@ export default function BanPhanTich({
       nguonXuLy: hasFiles ? 'file_ocr' : 'ghi_chu_thu_cong',
     };
 
-    // BR-08: Nếu có file hợp lệ -> trigger OCR
-    // BR-09: Nếu không có file nhưng có ghi chú -> không chạy OCR, xử lý thủ công
-    if (hasFiles) {
-      setAiState('reading');
-      setReadingProgress(20);
-      setAiStepIndex(1);
-      setIsSimulating(true);
-      showToast('Đã chuyển tiếp nhận thành công. File tài liệu được kích hoạt quy trình OCR & AI (BR-08).');
-    } else {
-      setAiState('none');
-      showToast('Đã chuyển tiếp nhận thành công. Hồ sơ xử lý thủ công từ ghi chú đã ghi nhận (BR-09).');
-    }
-
     if (data.hinhThuc === 'hang_cho') {
       onChuyenTiepNhan?.(newItem, false);
     } else {
       onChuyenTiepNhan?.(newItem, true, data.canBoNhan?.name);
     }
+
+    const donObj = {
+      id: dynamicCode,
+      code: dynamicCode,
+      title: extractData.noiDungTomTat || luotNhan?.noiDung || `Hồ sơ ${dynamicCode}`,
+      luotNhanId: luotNhan?.id || dynamicCode,
+      nguoiNop: extractData.nguoiGui || luotNhan?.nguoiNop || 'Chưa xác định danh tính',
+      ngayNhan: luotNhan?.ngayNhan || '16/09/2026 09:15',
+      loaiDon: extractData.loaiNoiDung || luotNhan?.loaiDon || 'Đơn phản ánh kiến nghị',
+      type: (dynamicCode.startsWith('VV') ? 'VỤ VIỆC' : 'ĐƠN TIẾP NHẬN') as const,
+      statusBadge: 'Đang xác minh thông tin',
+      isNew: true,
+    };
+    onAcceptAndProcess?.(donObj);
+
+    showToast(`✓ Đã tiếp nhận đơn ${dynamicCode} thành công. Chuyển sang màn hình chi tiết đơn...`);
+    setTimeout(() => onNav('don-tiep-nhan'), 350);
   };
 
   // BR-16, BR-17, BR-18: Xác nhận Tiếp nhận (Tự xử lý vs Phân công)
@@ -821,31 +849,33 @@ export default function BanPhanTich({
 
     setShowSubmitModal(false);
 
+    const donObj = {
+      id: dynamicCode,
+      code: dynamicCode,
+      title: extractData.noiDungTomTat || luotNhan?.noiDung || `Hồ sơ ${dynamicCode}`,
+      luotNhanId: luotNhan?.id || dynamicCode,
+      nguoiNop: extractData.nguoiGui || luotNhan?.nguoiNop || 'Người nộp đơn',
+      ngayNhan: luotNhan?.ngayNhan || 'Hôm nay',
+      loaiDon: extractData.loaiNoiDung || luotNhan?.loaiDon || 'Đơn tiếp nhận hành chính',
+      type: (dynamicCode.startsWith('VV') ? 'VỤ VIỆC' : 'ĐƠN TIẾP NHẬN') as const,
+      statusBadge: 'Đang xác minh thông tin',
+      isNew: true,
+    };
+
     if (tiepNhanHuong === 'tu_xu_ly') {
       setCurrentLuotNhanStatus('da_chuyen');
       onUpdateLuotNhan?.({ ...luotNhan, status: 'da_chuyen' });
-      showToast(`✓ Đã tiếp nhận đơn ${dynamicCode}. Bước tiếp theo: Xác minh thông tin & Đề xuất hướng xử lý...`);
-      onAcceptAndProcess?.({
-        id: dynamicCode,
-        code: dynamicCode,
-        title: extractData.noiDungTomTat || luotNhan?.noiDung || `Hồ sơ ${dynamicCode}`,
-        luotNhanId: luotNhan?.id || 'LN-2025-0105',
-        nguoiNop: extractData.nguoiGui || luotNhan?.nguoiNop || 'Vũ Thị Thanh',
-        ngayNhan: luotNhan?.ngayNhan || '16/09/2026 09:30',
-        loaiDon: extractData.loaiNoiDung || 'Đơn tiếp nhận hành chính',
-        type: dynamicCode.startsWith('VV') ? 'VỤ VIỆC' : 'ĐƠN TIẾP NHẬN',
-        statusBadge: 'Đang xác minh thông tin',
-        isNew: true,
-      });
-      setTimeout(() => onNav('don-tiep-nhan'), 600);
+      showToast(`✓ Đã tiếp nhận đơn ${dynamicCode}. Đang chuyển sang màn hình chi tiết đơn...`);
+      onAcceptAndProcess?.(donObj);
+      setTimeout(() => onNav('don-tiep-nhan'), 350);
     } else {
       const assignedOfficer = OFFICERS.find((o) => o.id === selectedOfficerForPhanCong);
-      showToast(`✓ Đã tiếp nhận và phân công cho cán bộ ${assignedOfficer?.name || 'được chọn'} xử lý (BR-18).`);
+      showToast(`✓ Đã tiếp nhận và phân công cho cán bộ ${assignedOfficer?.name || 'được chọn'} xử lý (BR-18). Đang chuyển sang màn hình chi tiết đơn...`);
       const newItem: TiepNhanDonItem = {
         id: `TN-${dynamicCode.replace('Đ-', '')}`,
         code: dynamicCode,
-        luotNhanId: luotNhan?.id || 'LN-2025-0105',
-        nguoiNop: extractData.nguoiGui || luotNhan?.nguoiNop || 'Vũ Thị Thanh',
+        luotNhanId: luotNhan?.id || dynamicCode,
+        nguoiNop: extractData.nguoiGui || luotNhan?.nguoiNop || 'Người nộp đơn',
         loaiDon: extractData.loaiNoiDung || 'Đơn tiếp nhận hành chính',
         ngayNhan: luotNhan?.ngayNhan || '16/09/2026 09:30',
         ngayChuyenDen: 'Vừa xong',
@@ -873,18 +903,8 @@ export default function BanPhanTich({
         ],
       };
       onChuyenTiepNhan?.(newItem, true, assignedOfficer?.name);
-      onAcceptAndProcess?.({
-        id: dynamicCode,
-        code: dynamicCode,
-        title: extractData.noiDungTomTat || luotNhan?.noiDung || `Hồ sơ ${dynamicCode}`,
-        luotNhanId: luotNhan?.id || 'LN-2025-0105',
-        nguoiNop: extractData.nguoiGui || luotNhan?.nguoiNop || 'Vũ Thị Thanh',
-        ngayNhan: luotNhan?.ngayNhan || '16/09/2026 09:30',
-        loaiDon: extractData.loaiNoiDung || 'Đơn tiếp nhận hành chính',
-        type: dynamicCode.startsWith('VV') ? 'VỤ VIỆC' : 'ĐƠN TIẾP NHẬN',
-        statusBadge: 'Đang xác minh thông tin',
-      });
-      setTimeout(() => onNav('don-tiep-nhan'), 600);
+      onAcceptAndProcess?.(donObj);
+      setTimeout(() => onNav('don-tiep-nhan'), 350);
     }
   };
 
@@ -1239,13 +1259,14 @@ Kính trình Lãnh đạo phê duyệt:
                 type="button"
                 onClick={() => {
                   setCurrentLuotNhanStatus('da_chuyen');
-                  showToast('Chuyển sang: Đã xác định hướng xử lý (Ẩn các nút Ghép đơn & Tiếp nhận đơn).');
+                  showToast('Đã tiếp nhận tạo đơn thành công. Đang chuyển sang màn chi tiết đơn...');
+                  setTimeout(() => handleGoToChiTietDon(), 350);
                 }}
                 className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 ${hasDeterminedHuongXuLy
                   ? 'bg-emerald-600 text-white shadow-xs'
                   : 'text-slate-400 hover:text-white'
                   }`}
-                title="Hồ sơ đã xác định hướng xử lý: Ẩn các nút Ghép đơn & Tiếp nhận đơn"
+                title="Hồ sơ đã xác định hướng xử lý: Tiếp nhận và chuyển sang màn chi tiết đơn"
               >
                 <span className="material-symbols-outlined text-[13px]">task_alt</span>
                 <span>Đã xác định hướng</span>
@@ -1380,12 +1401,23 @@ Kính trình Lãnh đạo phê duyệt:
           {/* BR-03: Thao tác theo tiến trình quy trình nghiệp vụ đã cấu hình */}
           {currentLuotNhanStatus === 'da_chuyen' ? (
             <div className="flex items-center gap-2 flex-wrap">
+              {/* NÚT VỀ MÀN HÌNH CHI TIẾT ĐƠN */}
+              <button
+                type="button"
+                onClick={handleGoToChiTietDon}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-all cursor-pointer border border-slate-300 shadow-2xs"
+                title="Chuyển sang màn hình chi tiết đơn tiếp nhận"
+              >
+                <span className="material-symbols-outlined text-[17px] text-[#004ac6]">description</span>
+                <span>Màn chi tiết đơn</span>
+              </button>
+
               {/* NÚT CHÍNH: BƯỚC TIẾP THEO THEO QUY TRÌNH: XÁC MINH THÔNG TIN & ĐỀ XUẤT HƯỚNG XỬ LÝ */}
               <button
                 type="button"
-                onClick={() => setShowXacMinhModal(true)}
+                onClick={handleGoToChiTietDon}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#004ac6] hover:bg-[#003da6] active:scale-95 text-white text-xs font-bold shadow-md shadow-blue-200 transition-all cursor-pointer"
-                title="Bước tiếp theo theo quy trình: Kiểm tra ban đầu, xác minh thông tin và đề xuất hướng xử lý"
+                title="Chuyển đến màn chi tiết đơn để xác minh thông tin & đề xuất hướng xử lý"
               >
                 <span className="material-symbols-outlined text-[18px]">fact_check</span>
                 <span>Xác minh thông tin &amp; Đề xuất hướng xử lý ➔</span>
@@ -2184,21 +2216,7 @@ Kính trình Lãnh đạo phê duyệt:
                   <span className="text-[10.5px] text-slate-500 font-medium block">
                     Địa điểm, dự án, sự việc
                   </span>
-                  <div className="font-bold text-slate-900 text-[12px] flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[14px] text-rose-600 shrink-0">place</span>
-                    <span
-                      contentEditable={isEditingExtract}
-                      suppressContentEditableWarning
-                      onBlur={(e) => updateExtractField('duAn', e.currentTarget.textContent || '')}
-                      className={`outline-none transition-all ${isEditingExtract
-                        ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 py-0.5 rounded cursor-text focus:ring-1 focus:ring-blue-300'
-                        : ''
-                        }`}
-                      title={isEditingExtract ? 'Nhấp vào chữ để sửa' : undefined}
-                    >
-                      {extractData.duAn}
-                    </span>
-                  </div>
+
                   <p className="text-[11px] text-slate-600 pl-4">
                     <span
                       contentEditable={isEditingExtract}
@@ -2449,7 +2467,6 @@ Kính trình Lãnh đạo phê duyệt:
                             title="Xem chi tiết đơn trùng này trong drawer"
                           >
                             <span className="material-symbols-outlined text-[14px]">visibility</span>
-                            <span>Xem chi tiết</span>
                           </button>
                         </div>
                       </div>
@@ -2602,15 +2619,10 @@ Kính trình Lãnh đạo phê duyệt:
                     Hồ sơ đủ điều kiện tiếp nhận ban đầu theo thẩm quyền; lập mã đơn điện tử và chạy workflow theo loại đơn.
                   </p>
                 </div>
-
-
               </div>
             </div>
           </div>
 
-          {/* =================================================================== */}
-          {/* 6. Ý KIẾN CỦA CÁN BỘ TIẾP NHẬN                                       */}
-          {/* =================================================================== */}
           <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs space-y-3">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <h3 className="text-xs sm:text-sm font-bold text-slate-900 tracking-tight font-headline-md">
@@ -2711,16 +2723,19 @@ Kính trình Lãnh đạo phê duyệt:
                     )}
                   </>
                 ) : (
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border ${currentLuotNhanStatus === 'da_chuyen'
-                        ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={handleGoToChiTietDon}
+                      className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer hover:shadow-xs active:scale-95 ${currentLuotNhanStatus === 'da_chuyen'
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
                         : currentLuotNhanStatus === 'da_ghep'
-                          ? 'bg-indigo-50 text-indigo-800 border-indigo-300'
+                          ? 'bg-indigo-50 text-indigo-800 border-indigo-300 hover:bg-indigo-100'
                           : currentLuotNhanStatus === 'da_ban_giao'
-                            ? 'bg-amber-50 text-amber-800 border-amber-300'
-                            : 'bg-rose-50 text-rose-800 border-rose-300'
+                            ? 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
+                            : 'bg-rose-50 text-rose-800 border-rose-300 hover:bg-rose-100'
                         }`}
+                      title="Bấm để mở màn chi tiết đơn"
                     >
                       <span className="material-symbols-outlined text-[16px]">
                         {currentLuotNhanStatus === 'da_chuyen'
@@ -2740,7 +2755,19 @@ Kính trình Lãnh đạo phê duyệt:
                               ? 'Đã bàn giao'
                               : 'Đã trả lại'}
                       </span>
-                    </span>
+                    </button>
+
+                    {currentLuotNhanStatus === 'da_chuyen' && (
+                      <button
+                        type="button"
+                        onClick={handleGoToChiTietDon}
+                        className="px-3.5 py-2 rounded-xl bg-[#004ac6] hover:bg-[#003da6] text-white text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95 transition-all"
+                        title="Chuyển sang màn hình chi tiết đơn"
+                      >
+                        <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
+                        <span>Màn chi tiết đơn</span>
+                      </button>
+                    )}
 
                     <button
                       type="button"

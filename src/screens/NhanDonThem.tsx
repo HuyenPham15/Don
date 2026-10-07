@@ -2786,7 +2786,7 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
           )}
 
           {/* ─── TRƯỜNG HỢP: KHÔNG RÕ ─── */}
-          {loaiNguoiNop === 'khong-ro' && (
+          {/* {loaiNguoiNop === 'khong-ro' && (
             <div className="p-4 rounded-xl bg-amber-50/80 border border-amber-200 space-y-2">
               <div className="flex items-center gap-2 text-amber-900 font-bold text-[13px]">
                 <span className="material-symbols-outlined text-[20px] text-amber-600">info</span>
@@ -2798,7 +2798,7 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
                 <strong>Không bắt buộc</strong> nhập thông tin cá nhân hoặc tổ chức. Cán bộ có thể ghi nhận thông tin bổ sung tại ô <em>“Ghi chú”</em> bên dưới.
               </p>
             </div>
-          )}
+          )} */}
         </section>
 
         {/* ─── SECTION 3: GHI CHÚ ───────────────────────────────── */}
@@ -2921,23 +2921,7 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
         </section>
 
         {/* ─── BOTTOM SUBMIT BAR ──────────────────────────────── */}
-        <div className="pt-4 pb-8 flex items-center justify-end gap-3 border-t border-slate-200">
-          <button
-            type="button"
-            onClick={() => onNav('nhan-don-list')}
-            className="px-5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs transition-colors cursor-pointer"
-          >
-            Hủy
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#004ac6] hover:bg-[#003ea8] active:scale-95 text-white font-bold text-xs shadow-md transition-all cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[18px]">save</span>
-            <span>Ghi nhận lượt nhận</span>
-          </button>
-        </div>
+
       </div>
 
       {previewDoc && (
