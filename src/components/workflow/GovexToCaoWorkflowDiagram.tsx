@@ -1165,8 +1165,6 @@ export default function GovexToCaoWorkflowDiagram({
                     </div>
                   </div>
                 </div>
-
-                {/* Nút Xem văn bản để chuyển sang tab Hồ sơ & Văn bản */}
                 <button
                   type="button"
                   onClick={(e) => {
@@ -1209,7 +1207,6 @@ export default function GovexToCaoWorkflowDiagram({
                   </div>
                 </div>
 
-                {/* Thẻ 2: Lãnh đạo ký duyệt (nếu có) */}
                 {selectedNode.nguoiHanhDong.lanhDaoKyDuyet ? (
                   <div className="p-2 bg-white rounded-xl border border-amber-200 shadow-2xs flex items-center gap-2">
                     <div className="w-7 h-7 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">

@@ -3062,29 +3062,6 @@ function TaskCard({ item, onClick, onRetryAI, onTiepNhanXuLy, onBanGiao, onBanGi
       <h3 className="text-[13px] font-bold text-slate-900 leading-snug line-clamp-2 group-hover/card:text-[#C62828] transition-colors">
         {item.title}
       </h3>
-
-      {/* THÔNG BÁO LỖI OCR HOẶC HỒ SƠ KHÔNG OCR */}
-      {item.aiStatus === 'failed' && (
-        <div className="p-2 rounded-lg bg-rose-50/90 border border-rose-200 text-[11px] text-rose-900 flex items-start gap-1.5 leading-snug">
-          <span className="material-symbols-outlined text-[14px] text-rose-600 shrink-0 mt-0.5">error</span>
-          <div>
-            <span className="font-bold text-rose-700">Lỗi OCR: </span>
-            <span>{item.aiFailureReason || 'Module OCR không đọc được tài liệu scan kèm theo (mờ/nghiêng). Cần kiểm tra bản chính hoặc xử lý thủ công.'}</span>
-          </div>
-        </div>
-      )}
-
-      {/* {(item.aiStatus === 'none' || item.nguonXuLy === 'ghi_chu_thu_cong') && (
-        <div className="p-2 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-700 flex items-start gap-1.5 leading-snug">
-          <span className="material-symbols-outlined text-[14px] text-slate-500 shrink-0 mt-0.5">edit_note</span>
-          <div>
-            <span className="font-bold text-slate-800">Không OCR: </span>
-            <span>Tiếp nhận trực tiếp theo ghi chú Một cửa (không có scan file). Cần nhập liệu &amp; xử lý thủ công.</span>
-          </div>
-        </div>
-      )} */}
-
-      {/* CHI TIẾT TRÌNH KÝ TUẦN TỰ (YÊU CẦU MÀN HÌNH LÃNH ĐẠO / CÁN BỘ) */}
       {item.isSigningDoc && (
         <div className="p-2 rounded-lg bg-slate-50/90 border border-slate-200/90 text-[11px] flex flex-col gap-1 my-0.5">
           <div className="flex items-center justify-between text-slate-600">

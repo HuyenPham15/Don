@@ -708,27 +708,19 @@ export default function TabThongTinChung({
         </div>
 
         <div className="p-5 space-y-5">
-          {/* A. DỮ LIỆU TIẾP NHẬN HỒ SƠ (Thanh thông tin tinh gọn 5 cột) */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 py-1 text-xs">
-            {/* 1. Ngày nhận */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-1 text-xs">
             <div>
-              <span className="text-[11px] text-slate-400 font-medium block mb-0.5">Ngày tiếp nhận</span>
+              <span className="text-[11px] text-slate-400 font-medium block mb-0.5">Thời gian tiếp nhận</span>
               <div className="font-semibold text-slate-800 flex items-center gap-1.5 text-[12px]">
                 <span className="material-symbols-outlined text-[15px] text-slate-400">calendar_today</span>
-                <span>{info.ngayNhan}</span>
+                <span>
+                  {info.ngayNhan}
+                  {info.gioNhan && !info.ngayNhan.includes(info.gioNhan) && (
+                    <span className="text-slate-500 font-normal ml-1">({info.gioNhan})</span>
+                  )}
+                </span>
               </div>
             </div>
-
-            {/* 2. Giờ nhận */}
-            <div>
-              <span className="text-[11px] text-slate-400 font-medium block mb-0.5">Giờ tiếp nhận</span>
-              <div className="font-semibold text-slate-800 flex items-center gap-1.5 text-[12px]">
-                <span className="material-symbols-outlined text-[15px] text-slate-400">schedule</span>
-                <span>{info.gioNhan}</span>
-              </div>
-            </div>
-
-            {/* 3. Hình thức */}
             <div>
               <span className="text-[11px] text-slate-400 font-medium block mb-0.5">Hình thức nhận</span>
               <div className="font-semibold text-slate-800 flex items-center gap-1.5 text-[12px]">
@@ -736,8 +728,6 @@ export default function TabThongTinChung({
                 <span>{info.hinhThuc}</span>
               </div>
             </div>
-
-            {/* 4. Cán bộ tiếp nhận */}
             <div>
               <span className="text-[11px] text-slate-400 font-medium block mb-0.5">Cán bộ tiếp nhận</span>
               <div className="font-semibold text-slate-800 text-[12px] truncate" title={`${info.canBo} (${info.chucVu})`}>
@@ -745,8 +735,8 @@ export default function TabThongTinChung({
               </div>
             </div>
 
-            {/* 5. Đơn vị tiếp nhận */}
-            <div className="col-span-2 sm:col-span-1 lg:col-span-1">
+            {/* 4. Đơn vị tiếp nhận */}
+            <div>
               <span className="text-[11px] text-slate-400 font-medium block mb-0.5">Đơn vị tiếp nhận</span>
               <div className="font-semibold text-slate-800 text-[12px] truncate" title={info.donViTiepNhan}>
                 {info.donViTiepNhan}

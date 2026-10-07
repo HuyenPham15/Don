@@ -138,7 +138,6 @@ export const INITIAL_WORK_ITEMS: WorkItem[] = [
     loaiDon: 'Đơn phản ánh kiến nghị',
     luotNhanId: 'LN-58/2026-GOVEX',
     aiStatus: 'failed',
-    aiFailureReason: 'Tài liệu scan bị nghiêng và mờ, module OCR không đọc được nội dung chứng cứ kèm theo',
     taskReadiness: 'manual_required',
   },
 

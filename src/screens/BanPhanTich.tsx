@@ -2390,144 +2390,7 @@ Kính trình Lãnh đạo phê duyệt:
               </div>
             </div>
 
-            {/* DANH SÁCH ĐƠN TRÙNG VÀ TỈ LỆ % ĐƠN TRÙNG */}
-            <div className="pt-2 border-t border-slate-100 space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-bold text-slate-700 tracking-tight">
-                    Đơn trùng
-                  </span>
-                  <span className="px-1.5 py-0.2 rounded-full bg-rose-50 text-rose-700 text-[10px] font-bold border border-rose-200">
-                    {DON_TRUNG_LIST.length} hồ sơ tương đồng
-                  </span>
-                </div>
-                <span className="text-[11px] text-slate-400 font-medium">
-                  Nhấp chọn đơn để ghép hồ sơ
-                </span>
-              </div>
 
-              {/* Container danh sách đơn trùng */}
-              <div className="space-y-2">
-                {(showAllDonTrung ? DON_TRUNG_LIST : DON_TRUNG_LIST.slice(0, 2)).map((item) => {
-                  const isSelected = selectedGhepDonCode === item.code;
-                  return (
-                    <div
-                      key={item.id}
-                      onClick={() => {
-                        setSelectedGhepDonCode(item.code);
-                        setHuongXuLy('ghep');
-                        setOfficerNote(`Gói này giống hồ sơ ${item.code} đang mở – ghép vào đó không sinh đơn mới, không tốn số`);
-                        setGhiChuGhep(`Ghép lượt nhận vào hồ sơ ${item.code} để theo dõi tập trung, không tạo mã đơn mới.`);
-                      }}
-                      className={`p-3 rounded-xl border transition-all cursor-pointer ${isSelected
-                        ? 'bg-[#fffbfb] border-[#a61c1c] ring-1 ring-[#a61c1c]/40 shadow-2xs'
-                        : 'bg-white border-slate-200/90 hover:border-slate-300 hover:bg-slate-50/50'
-                        }`}
-                    >
-                      <div className="flex items-center justify-between gap-2 flex-wrap">
-                        <div className="flex items-center gap-2">
-                          <div className="pt-0.5">
-                            {isSelected ? (
-                              <span className="w-4 h-4 rounded-full bg-[#a61c1c] text-white flex items-center justify-center text-[10px] font-bold shadow-2xs">
-                                ✓
-                              </span>
-                            ) : (
-                              <span className="w-4 h-4 rounded-full border-2 border-slate-300 block" />
-                            )}
-                          </div>
-                          <span className="font-mono text-xs sm:text-[13px] font-bold text-slate-900">
-                            {item.code}
-                          </span>
-                          <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-[10px] font-semibold">
-                            {item.status}
-                          </span>
-                        </div>
-
-                        {/* Tỉ lệ % đơn trùng & Nút xem chi tiết */}
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span
-                            className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${item.matchPercent >= 90
-                              ? 'bg-rose-100/90 text-rose-800 border-rose-200'
-                              : item.matchPercent >= 80
-                                ? 'bg-amber-100/90 text-amber-800 border-amber-200'
-                                : 'bg-slate-100 text-slate-700 border-slate-200'
-                              }`}
-                          >
-                            Trùng {item.matchPercent}%
-                          </span>
-
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedDonTrungForDrawer(item);
-                              setShowDonTrungDrawer(true);
-                            }}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-[#004ac6] hover:text-[#003da8] text-[11px] font-bold border border-blue-200/90 transition-all shadow-2xs cursor-pointer active:scale-95"
-                            title="Xem chi tiết đơn trùng này trong drawer"
-                          >
-                            <span className="material-symbols-outlined text-[14px]">visibility</span>
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Tiêu đề đơn */}
-                      <div className="mt-1 pl-6">
-                        <h4 className="text-xs font-semibold text-slate-800 line-clamp-1">
-                          {item.title}
-                        </h4>
-                      </div>
-
-                      {/* Tags và thông tin thụ lý */}
-                      <div className="flex items-center justify-between gap-2 mt-2 pl-6 flex-wrap">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          {item.tags.map((tag, idx) => (
-                            <span
-                              key={idx}
-                              className="px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-600 text-[10.5px] font-medium shadow-2xs"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                        <div className="flex items-center gap-2.5">
-                          <span className="text-[11px] text-slate-500 font-mono">
-                            Thụ lý: <strong>{item.canBoThuLy}</strong> ({item.ngayNhan})
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Nút Xem thêm / Thu gọn danh sách đơn trùng */}
-              <div className="flex items-center justify-between pt-1">
-                <button
-                  type="button"
-                  onClick={() => setShowAllDonTrung(!showAllDonTrung)}
-                  className="text-[11.5px] text-[#004ac6] hover:text-[#003da8] font-bold flex items-center gap-1 cursor-pointer py-1 px-1.5 hover:underline"
-                >
-                  <span className="material-symbols-outlined text-[15px]">
-                    {showAllDonTrung ? 'expand_less' : 'expand_more'}
-                  </span>
-                  <span>
-                    {showAllDonTrung
-                      ? 'Thu gọn danh sách đơn trùng'
-                      : `Xem thêm (${DON_TRUNG_LIST.length - 2} đơn trùng khác)`}
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => openNguonTraCuu('don-tuong-tu')}
-                  className="text-[11px] text-slate-500 hover:text-slate-800 font-medium flex items-center gap-1 cursor-pointer hover:underline"
-                >
-                  <span className="material-symbols-outlined text-[13px]">tune</span>
-                  <span>Mở bảng đối chiếu toàn bộ CSDL</span>
-                </button>
-              </div>
-            </div>
           </div>
 
           {/* =================================================================== */}
@@ -2571,7 +2434,7 @@ Kính trình Lãnh đạo phê duyệt:
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <h4 className="text-xs sm:text-sm font-bold text-slate-900">
-                      Ghép vào đơn — {selectedGhepDonCode}
+                      Ghép vào đơn
                     </h4>
                     {hasDeterminedHuongXuLy && currentLuotNhanStatus === 'da_ghep' && (
                       <span className="px-2 py-0.5 rounded-full bg-[#a61c1c] text-white text-[10px] font-bold">
@@ -3179,7 +3042,7 @@ Kính trình Lãnh đạo phê duyệt:
       {/* ========================================================================= */}
       {showGhepModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full p-6 space-y-4 animate-scale-up">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full p-6 space-y-4 animate-scale-up max-h-[90vh] overflow-y-auto">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-200 text-indigo-600 flex items-center justify-center shrink-0 shadow-2xs">
                 <span className="material-symbols-outlined text-2xl">merge_type</span>
@@ -3192,37 +3055,129 @@ Kính trình Lãnh đạo phê duyệt:
               </div>
             </div>
 
-            <div className="p-3 bg-indigo-50/70 border border-indigo-200 rounded-xl text-xs text-indigo-950 leading-relaxed space-y-1">
-              <div className="font-bold flex items-center gap-1.5 text-indigo-900">
-                <span className="material-symbols-outlined text-[16px]">info</span>
-                <span>Quy tắc nghiệp vụ Tiếp nhận đơn (Điều 27 TT 05/2021/TT-TTCP):</span>
-              </div>
-              <p>
-                Lượt nhận này sẽ được tích hợp trực tiếp vào hồ sơ đơn <strong>{selectedGhepDonCode}</strong> dưới dạng tài liệu bổ sung / đơn gửi tiếp theo. Hệ thống sẽ <strong>không tạo mã đơn mới</strong> để tránh nhân bản trùng lặp vụ việc.
-              </p>
-            </div>
-
-            {/* Thông tin hồ sơ đơn đích */}
-            <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2 text-xs">
+            {/* Chọn hồ sơ đơn tiếp nhận đích */}
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-slate-500 font-medium">Hồ sơ tiếp nhận đích:</span>
-                <span className="font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 font-mono">{selectedGhepDonCode}</span>
+                <label className="block text-xs font-semibold text-slate-700">
+                  Chọn hồ sơ đơn đích để ghép <span className="text-red-500">*</span>:
+                </label>
+                <span className="text-[11px] text-indigo-700 font-bold bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 font-mono">
+                  Đang chọn: {selectedGhepDonCode}
+                </span>
               </div>
-              <div>
-                <span className="text-slate-500 block text-[11px]">Tiêu đề vụ việc:</span>
-                <strong className="text-slate-800 leading-snug block mt-0.5">
-                  Phản ánh cơ sở tái chế phế liệu Minh Phát gây ô nhiễm môi trường và tiếng ồn tại TDP 4
-                </strong>
+
+              {/* Danh sách các đơn gợi ý tương đồng để chọn */}
+              <div className="max-h-52 overflow-y-auto space-y-2 pr-1">
+                {DON_TRUNG_LIST.map((item) => {
+                  const isSelected = selectedGhepDonCode === item.code;
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => {
+                        setSelectedGhepDonCode(item.code);
+                        setOfficerNote(
+                          `Gói này giống hồ sơ ${item.code} đang mở – ghép vào đó không sinh đơn mới, không tốn số`
+                        );
+                        setGhiChuGhep(
+                          `Ghép lượt nhận vào hồ sơ ${item.code} để theo dõi tập trung, không tạo mã đơn mới.`
+                        );
+                      }}
+                      className={`p-3 rounded-xl border text-xs transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-indigo-50/70 border-indigo-500 ring-1 ring-indigo-500/30 shadow-2xs'
+                          : 'bg-slate-50/70 border-slate-200 hover:border-slate-300 hover:bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="pt-0.5">
+                            {isSelected ? (
+                              <span className="w-4 h-4 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold shadow-2xs">
+                                ✓
+                              </span>
+                            ) : (
+                              <span className="w-4 h-4 rounded-full border-2 border-slate-300 block" />
+                            )}
+                          </div>
+                          <span className="font-mono font-bold text-slate-900 text-xs">
+                            {item.code}
+                          </span>
+                          <span className="px-1.5 py-0.2 rounded bg-blue-100 text-blue-700 text-[10px] font-semibold">
+                            {item.status}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10.5px] font-bold border shrink-0 ${
+                              item.matchPercent >= 90
+                                ? 'bg-rose-100/90 text-rose-800 border-rose-200'
+                                : item.matchPercent >= 80
+                                ? 'bg-amber-100/90 text-amber-800 border-amber-200'
+                                : 'bg-slate-100 text-slate-700 border-slate-200'
+                            }`}
+                          >
+                            Trùng {item.matchPercent}%
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedDonTrungForDrawer(item);
+                              setShowDonTrungDrawer(true);
+                            }}
+                            className="inline-flex items-center justify-center p-1 rounded-lg bg-white hover:bg-blue-50 text-[#004ac6] border border-slate-200 hover:border-blue-200 transition-all cursor-pointer shadow-2xs active:scale-95"
+                            title="Xem chi tiết hồ sơ đơn này trong drawer"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">visibility</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <p className="mt-1 text-slate-800 font-semibold leading-snug line-clamp-1 pl-6 text-[11.5px]">
+                        {item.title}
+                      </p>
+
+                      <div className="grid grid-cols-2 gap-2 mt-1.5 pl-6 pt-1.5 border-t border-slate-200/60 text-[11px] text-slate-500">
+                        <div>
+                          <span className="text-slate-400">Người nộp: </span>
+                          <span className="font-medium text-slate-700 truncate">{item.nguoiNop}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400">Thụ lý: </span>
+                          <span className="font-medium text-slate-700 truncate">{item.canBoThuLy}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-200/80 text-[11.5px]">
-                <div>
-                  <span className="text-slate-400 block text-[10.5px]">Người đứng đơn gốc:</span>
-                  <span className="font-semibold text-slate-700">Đại diện KDC số 4</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[10.5px]">Cán bộ đang thụ lý:</span>
-                  <span className="font-semibold text-slate-700">Nguyễn Minh Anh</span>
-                </div>
+
+              {/* Tùy chọn nhập mã đơn khác ngoài danh sách gợi ý */}
+              <div className="pt-1">
+                <details className="group text-xs">
+                  <summary className="text-[11.5px] text-slate-500 hover:text-slate-800 font-medium cursor-pointer flex items-center gap-1 select-none">
+                    <span className="material-symbols-outlined text-[14px] transition-transform group-open:rotate-90">
+                      chevron_right
+                    </span>
+                    <span>Hoặc nhập mã hồ sơ đơn khác trong hệ thống...</span>
+                  </summary>
+                  <div className="mt-2 flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder="VD: DS-12/2026-GOVEX hoặc Đ-2026-0045"
+                      value={selectedGhepDonCode}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setSelectedGhepDonCode(val);
+                        setOfficerNote(`Gói này giống hồ sơ ${val} đang mở – ghép vào đó không sinh đơn mới, không tốn số`);
+                        setGhiChuGhep(`Ghép lượt nhận vào hồ sơ ${val} để theo dõi tập trung, không tạo mã đơn mới.`);
+                      }}
+                      className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-800 focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                </details>
               </div>
             </div>
 
