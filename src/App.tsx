@@ -7,6 +7,7 @@ import CongViecCuaToi from "./screens/CongViecCuaToi";
 import DonTiepNhan from "./screens/DonTiepNhan";
 import NhanDonList from "./screens/NhanDonList";
 import NhanDonThem from "./screens/NhanDonThem";
+import ChiTietLuotNhan from "./screens/ChiTietLuotNhan";
 import TroChuyenScreen from "./screens/TroChuyenScreen";
 import AITiepNhanChatScreen from "./screens/AITiepNhanChatScreen";
 import TiepNhanVaXuLyScreen from "./screens/TiepNhanVaXuLyScreen";
@@ -85,25 +86,29 @@ export default function App() {
   });
 
   const handleSubmit = useCallback((newRecord?: LuotNhan) => {
+    const timeNow = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const todayFormatted = new Date().toLocaleDateString('vi-VN');
     const record: LuotNhan =
       newRecord || {
-        id: `LN-${Date.now().toString().slice(-4)}/2026-GOVEX_HC`,
-        ngayNhan: "16/09/2026",
-        nguoiNop: "Người vừa nộp",
+        id: `LN-141/2026-CATPHN`,
+        ngayNhan: todayFormatted,
+        gioNhan: timeNow,
+        nguoiNop: "Chưa rõ",
         hinhThuc: "Trực tiếp",
-        noiDung: "Nội dung tiếp nhận mới",
-        donVi: "Phòng Tiếp công dân & Xử lý đơn",
+        noiDung: "Đơn tiếp nhận mới vào hệ thống (Chờ xử lý)",
+        donVi: "Công an thành phố Hà Nội",
         aiJob: 0,
         status: 'cho_chuyen',
-        hasFile: true,
-        sourceType: 'file',
+        ngayChuyenXuLy: 'Chưa chuyển xử lý',
+        nguoiThaoTacGanNhat: `Lê Ngọc Mai – ${todayFormatted} ${timeNow}`,
+        hasFile: false,
+        sourceType: undefined,
       };
-    // BR-01, BR-02: Lưu lượt nhận vào danh sách, không tạo Task ngay
+    // Lưu lượt nhận vào danh sách, không tạo Task ngay
     setLuotNhanList((prev) => [record, ...prev.filter((d) => d.id !== record.id)]);
-    // Không đưa vào extraCard vì lượt nhận chưa chuyển tiếp (status === 'cho_chuyen')
     setExtraCard(null);
     setSelected(record);
-    setScreen("ban-phan-tich");
+    setScreen("chi-tiet-luot-nhan");
   }, []);
 
   const handleUpdateLuotNhan = useCallback((updated: LuotNhan) => {
@@ -637,6 +642,16 @@ export default function App() {
               />
             )}
             {screen === "nhan-don-them" && <NhanDonThem onNav={setScreen} onSubmit={handleSubmit} />}
+            {screen === "chi-tiet-luot-nhan" && (
+              <ChiTietLuotNhan
+                luotNhan={selected}
+                onNav={setScreen}
+                onUpdateLuotNhan={handleUpdateLuotNhan}
+                onChuyenTiepNhan={handleChuyenTiepNhan}
+                onSelectDon={handleSelectDon}
+                isJustCreated={true}
+              />
+            )}
             {screen === "ban-phan-tich" && (
               <BanPhanTich
                 luotNhan={selected}

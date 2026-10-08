@@ -181,7 +181,7 @@ export default function NhanDonList({
                     showToast(`Mở màn chi tiết đơn [${dynamicCode}] (Đã tiếp nhận)`);
                   } else {
                     onSelect(ln);
-                    onNav('ban-phan-tich');
+                    onNav('chi-tiet-luot-nhan');
                   }
                 };
 

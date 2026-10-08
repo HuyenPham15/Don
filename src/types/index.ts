@@ -3,6 +3,7 @@ export type Screen =
   | "cong-viec" 
   | "nhan-don-list" 
   | "nhan-don-them" 
+  | "chi-tiet-luot-nhan"
   | "ban-phan-tich" 
   | "don-tiep-nhan" 
   | "quy-trinh-xu-ly" 
@@ -29,6 +30,7 @@ export interface DrawerState { type: DrawerType; field?: string; }
 export interface LuotNhan {
   id: string;
   ngayNhan: string;
+  gioNhan?: string;
   nguoiNop: string;
   hinhThuc: string;
   noiDung: string;
@@ -39,6 +41,8 @@ export interface LuotNhan {
   diaChi?: string;
   loaiDon?: string;
   status?: 'cho_chuyen' | 'da_chuyen' | 'da_ban_giao' | 'da_tra_lai' | 'da_ghep' | 'da_thu_ly' | 'khong_thu_ly' | 'cho_bo_sung';
+  ngayChuyenXuLy?: string;
+  nguoiThaoTacGanNhat?: string;
   hasFile?: boolean;
   fileCount?: number;
   files?: UploadedFile[];

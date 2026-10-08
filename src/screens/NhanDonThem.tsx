@@ -358,8 +358,8 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
   const [ngayNhan, setNgayNhan] = useState(todayStr);
   const [ngayLamDon, setNgayLamDon] = useState('');
   const [hinhThucNhan, setHinhThucNhan] = useState('Trực tiếp');
-  const [canBoNhan, setCanBoNhan] = useState('Nguyễn Thị Hải Yến');
-  const [donViNhan, setDonViNhan] = useState('Phòng Hành chính - Tổng hợp');
+  const [canBoNhan, setCanBoNhan] = useState('Lê Ngọc Mai');
+  const [donViNhan, setDonViNhan] = useState('Công an thành phố Hà Nội');
 
   // ─── 2. LOẠI NGƯỜI NỘP ĐƠN STATE ──────────────────────────────
   const [loaiNguoiNop, setLoaiNguoiNop] = useState<NguoiNopType>('ca-nhan');
@@ -738,10 +738,10 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
       return;
     }
 
-    const randomCode = Math.floor(1000 + Math.random() * 9000);
-    const generatedId = `LN-2026-${randomCode}_HC`;
+    const randomCode = Math.floor(100 + Math.random() * 900);
+    const generatedId = `LN-${randomCode}/2026-CATPHN`;
 
-    let submitterName = 'Chưa xác định danh tính (Khuyết danh)';
+    let submitterName = 'Chưa rõ';
     let submitterCccd = cnCccd;
     let submitterSdt = cnSdt;
     let submitterDiaChi = [cnDiaChiChiTiet, cnPhuongXa, cnTinhThanh].filter(Boolean).join(', ');
@@ -759,7 +759,7 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
       if (tcTen.trim()) {
         submitterName = tcTen.trim();
       } else {
-        submitterName = 'Tổ chức chưa xác định';
+        submitterName = 'Chưa rõ';
       }
       submitterCccd = tcDdCccd || tcMst;
       submitterSdt = tcSdt;
@@ -773,15 +773,22 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
     else if (hasAnyFile) srcType = 'file';
     else if (hasNote) srcType = 'ghi_chu';
 
+    const timeNow = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const fullDate = ngayNhan.split('-').reverse().join('/');
+    const fullDateTime = `${fullDate} ${timeNow}`;
+
     const newRecord: LuotNhan = {
       id: generatedId,
-      ngayNhan: ngayNhan.split('-').reverse().join('/'),
+      ngayNhan: fullDate,
+      gioNhan: timeNow,
       nguoiNop: submitterName,
       hinhThuc: hinhThucNhan,
       noiDung: ghiChu.trim() || 'Đơn tiếp nhận mới vào hệ thống (Chờ xử lý)',
       donVi: donViNhan,
       aiJob: hasAnyFile ? 1 : 0, // Kích hoạt AI phân tích khi có tệp tài liệu
       status: 'cho_chuyen', // BR-01, BR-02: Lượt nhận mới có trạng thái cho_chuyen
+      ngayChuyenXuLy: 'Chưa chuyển xử lý',
+      nguoiThaoTacGanNhat: `${canBoNhan || 'Lê Ngọc Mai'} – ${fullDateTime}`,
       hasFile: hasAnyFile,
       fileCount: files.length,
       files: files,
@@ -792,9 +799,9 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
       diaChi: submitterDiaChi,
       historyLogs: [
         {
-          time: `${new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} ${todayStr.split('-').reverse().join('/')}`,
+          time: fullDateTime,
           action: 'Ghi nhận lượt nhận',
-          actor: canBoNhan || 'Cán bộ tiếp nhận',
+          actor: canBoNhan || 'Lê Ngọc Mai',
           note: `Đã ghi nhận lượt nhận vào hệ thống (${hasAnyFile ? `${files.length} tệp tài liệu` : 'Không có tệp'}, ${hasNote ? 'Có ghi chú' : 'Không có ghi chú'})`,
         },
       ],
@@ -806,9 +813,9 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
       if (onSubmit) {
         onSubmit(newRecord);
       } else {
-        onNav('ban-phan-tich');
+        onNav('chi-tiet-luot-nhan');
       }
-    }, 600);
+    }, 500);
   };
 
   return (

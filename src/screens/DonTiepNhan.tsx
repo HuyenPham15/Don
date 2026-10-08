@@ -5,6 +5,7 @@ import TabMoiLienHe from '../components/tabs/TabMoiLienHe';
 import TabDonKhac from '../components/tabs/TabDonKhac';
 import TabTaiLieu from '../components/tabs/TabTaiLieu';
 import TabQuyTrinh from '../components/tabs/TabQuyTrinh';
+import TabLichSuXuLy, { ProcessHistoryLog } from '../components/tabs/TabLichSuXuLy';
 import { matchWorkflowByLoaiDon } from '../constants/workflows';
 import ThongBaoBoSungModal from '../components/workflow/ThongBaoBoSungModal';
 import ThucHienBuocTiepTheoModal from '../components/workflow/ThucHienBuocTiepTheoModal';
@@ -79,9 +80,115 @@ export const HUONG_XU_LY_CONFIG: Record<
 };
 
 export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXacMinhOpened }: DonTiepNhanProps) {
-  const [activeTab, setActiveTab] = useState<'thong-tin' | 'lien-he' | 'don-khac' | 'tai-lieu' | 'quy-trinh'>('thong-tin');
+  const [activeTab, setActiveTab] = useState<'thong-tin' | 'lien-he' | 'don-khac' | 'tai-lieu' | 'quy-trinh' | 'lich-su'>('thong-tin');
   const [docCount, setDocCount] = useState<number>(6);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  const [historyLogs, setHistoryLogs] = useState<ProcessHistoryLog[]>([
+    {
+      id: 'LOG-05',
+      time: '17/09/2026 15:30:00',
+      title: 'Lập Biên bản làm việc xác minh thông tin ban đầu',
+      actor: 'Nguyễn Minh Anh',
+      actorRole: 'Chuyên viên Tiếp nhận & Xử lý đơn',
+      actorDept: 'Phòng Tiếp công dân & Xử lý đơn',
+      category: 'xac_minh',
+      statusBadge: {
+        text: 'Xác minh hồ sơ',
+        bgClass: 'bg-amber-50',
+        textClass: 'text-amber-800',
+        borderClass: 'border-amber-200',
+      },
+      description: 'Tổ chức làm việc trực tiếp với người gửi đơn (ông Nguyễn Văn A). Ghi nhận ý kiến trình bày và tiếp nhận bổ sung bản sao chứng thực Hợp đồng góp vốn, phiếu thu tiền để đối chiếu tính pháp lý.',
+      note: 'Căn cứ Điều 28 Luật Khiếu nại 2011 và Quy trình tiếp nhận, xử lý đơn khiếu nại.',
+      docInfo: {
+        name: 'Biên bản làm việc xác minh thông tin ban đầu',
+        code: '02/BB-XM',
+        type: 'bien_ban',
+      },
+    },
+    {
+      id: 'LOG-04',
+      time: '16/09/2026 14:00:00',
+      title: 'Ban hành Giấy mời làm việc với người gửi đơn',
+      actor: 'Nguyễn Minh Anh',
+      actorRole: 'Chuyên viên Tiếp nhận & Xử lý đơn',
+      actorDept: 'Phòng Tiếp công dân & Xử lý đơn',
+      category: 'van_ban',
+      statusBadge: {
+        text: 'Ban hành văn bản',
+        bgClass: 'bg-purple-50',
+        textClass: 'text-purple-800',
+        borderClass: 'border-purple-200',
+      },
+      description: 'Lập và ban hành Giấy mời số 18/GM-TCD gửi công dân Nguyễn Văn A, thời gian hẹn: 08:30 ngày 18/09/2026 tại Trụ sở Tiếp công dân để làm rõ nội dung yêu cầu trong đơn.',
+      docInfo: {
+        name: 'Giấy mời làm việc với người gửi đơn',
+        code: '18/GM-TCD',
+        type: 'giay_moi',
+      },
+    },
+    {
+      id: 'LOG-03',
+      time: '16/09/2026 10:20:30',
+      title: 'Trợ lý AI phân tích tính pháp lý & Đối soát hồ sơ',
+      actor: 'Hệ thống AI Nghiệp vụ',
+      actorRole: 'Hỗ trợ xử lý thông minh',
+      actorDept: 'Trung tâm Phân tích dữ liệu',
+      category: 'xac_minh',
+      statusBadge: {
+        text: 'Phân tích AI',
+        bgClass: 'bg-blue-50',
+        textClass: 'text-blue-800',
+        borderClass: 'border-blue-200',
+      },
+      description: 'Hệ thống AI tự động OCR, trích xuất dữ liệu đối soát CCCD và cơ sở dữ liệu dân cư. Phát hiện nội dung có liên quan đến tranh chấp đất đai, gợi ý cần thu thập thêm chứng từ hợp đồng gốc.',
+    },
+    {
+      id: 'LOG-02',
+      time: '16/09/2026 10:15:00',
+      title: 'Phân công cán bộ thụ lý hồ sơ',
+      actor: 'Trần Văn Hưng',
+      actorRole: 'Trưởng phòng',
+      actorDept: 'Phòng Tiếp công dân & Xử lý đơn',
+      category: 'tiep_nhan',
+      statusBadge: {
+        text: 'Phân công',
+        bgClass: 'bg-indigo-50',
+        textClass: 'text-indigo-800',
+        borderClass: 'border-indigo-200',
+      },
+      description: 'Chuyển giao và phân công cán bộ Nguyễn Minh Anh trực tiếp thụ lý, kiểm tra điều kiện thụ lý và đề xuất phương án xử lý theo quy định.',
+      note: 'Thời hạn giải quyết bước ban đầu: 05 ngày làm việc kể từ ngày tiếp nhận.',
+    },
+    {
+      id: 'LOG-01',
+      time: '16/09/2026 09:30:15',
+      title: 'Tiếp nhận hồ sơ đơn vào hệ thống',
+      actor: 'Lê Ngọc Mai',
+      actorRole: 'Cán bộ Một cửa',
+      actorDept: 'Bộ phận Tiếp nhận hồ sơ & Trả kết quả',
+      category: 'tiep_nhan',
+      statusBadge: {
+        text: 'Tiếp nhận',
+        bgClass: 'bg-emerald-50',
+        textClass: 'text-emerald-800',
+        borderClass: 'border-emerald-200',
+      },
+      description: 'Tiếp nhận đơn trực tiếp từ công dân. Đã kiểm tra căn cước công dân, quét số hóa đơn và cấp mã hồ sơ chính thức Đ-2025-0105 (từ lượt nhận LN-2025-0105).',
+    },
+  ]);
+
+  const addHistoryLog = (newLog: Omit<ProcessHistoryLog, 'id' | 'time'>) => {
+    const now = new Date();
+    const timeStr = `${now.toLocaleDateString('vi-VN')} ${now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
+    const created: ProcessHistoryLog = {
+      id: `LOG-${Date.now()}`,
+      time: timeStr,
+      ...newLog,
+    };
+    setHistoryLogs((prev) => [created, ...prev]);
+  };
 
   // Trạng thái xác minh thông tin đơn: 'dang_xac_minh' -> 'da_xac_minh'
   const isInitiallyVerified = Boolean(
@@ -278,6 +385,22 @@ export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXa
     setHuongXuLyDaChon(targetHuong);
     setShowHuongDropdown(false);
     showToast(`✓ Đã chọn hướng xử lý: ${HUONG_XU_LY_CONFIG[targetHuong]?.label || targetHuong}`);
+
+    addHistoryLog({
+      title: `Chuyển hướng giải quyết: ${HUONG_XU_LY_CONFIG[targetHuong]?.label || targetHuong}`,
+      actor: currentDon.canBoXuLy || 'Nguyễn Minh Anh',
+      actorRole: currentDon.chucVuCanBo || 'Chuyên viên Tiếp nhận & Xử lý đơn',
+      actorDept: currentDon.donViXuLy || 'Phòng Tiếp công dân & Xử lý đơn',
+      category: 'huong_xu_ly',
+      statusBadge: {
+        text: HUONG_XU_LY_CONFIG[targetHuong]?.label || 'Đổi hướng',
+        bgClass: 'bg-emerald-50',
+        textClass: 'text-emerald-800',
+        borderClass: 'border-emerald-200',
+      },
+      description: `Cán bộ thụ lý đã xác định hướng giải quyết hồ sơ đơn là "${HUONG_XU_LY_CONFIG[targetHuong]?.label}". Hệ thống chuẩn bị văn bản và biểu mẫu tương ứng.`,
+      note: HUONG_XU_LY_CONFIG[targetHuong]?.subLabel,
+    });
 
     // Mở ngay modal tương ứng để người dùng thực hiện
     switch (targetHuong) {
@@ -735,6 +858,22 @@ export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXa
               Bước {activeStepNumber}/{workflow.steps.length}
             </span>
           </button>
+
+          {/* Tab 6: Lịch sử xử lý */}
+          <button
+            type="button"
+            onClick={() => setActiveTab('lich-su')}
+            className={`pb-3 border-b-2 flex items-center gap-1.5 transition-all cursor-pointer ${activeTab === 'lich-su'
+              ? 'border-[#004ac6] text-[#004ac6]'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+          >
+            <span className="material-symbols-outlined text-[16px]">history</span>
+            <span>Lịch sử xử lý</span>
+            <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 font-semibold text-[10px] border border-slate-200">
+              {historyLogs.length} sự kiện
+            </span>
+          </button>
         </div>
       </div>
 
@@ -779,6 +918,14 @@ export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXa
               onViewDocument={handleViewDocInTabTaiLieu}
             />
           )}
+          {activeTab === 'lich-su' && (
+            <TabLichSuXuLy
+              currentDon={currentDon}
+              historyLogs={historyLogs}
+              onAddLog={addHistoryLog}
+              onViewDoc={(docName) => handleViewDocInTabTaiLieu({ tenVanBan: docName })}
+            />
+          )}
         </div>
       </div>
 
@@ -790,6 +937,25 @@ export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXa
           showToast(`✓ Đã ban hành Thông báo bổ sung ${soHieu} (${danhSachBoSung.length} mục) gửi cho công dân ${currentDon.nguoiNop}!`);
           setDocCount((c) => c + 1);
           setDaGuiThongBaoBoSung(true);
+          addHistoryLog({
+            title: `Ban hành Thông báo yêu cầu bổ sung hồ sơ (${soHieu})`,
+            actor: currentDon.canBoXuLy || 'Nguyễn Minh Anh',
+            actorRole: currentDon.chucVuCanBo || 'Chuyên viên Tiếp nhận & Xử lý đơn',
+            actorDept: currentDon.donViXuLy || 'Phòng Tiếp công dân & Xử lý đơn',
+            category: 'van_ban',
+            statusBadge: {
+              text: 'Yêu cầu bổ sung',
+              bgClass: 'bg-amber-50',
+              textClass: 'text-amber-800',
+              borderClass: 'border-amber-200',
+            },
+            description: `Đã ban hành thông báo yêu cầu công dân ${currentDon.nguoiNop} bổ sung ${danhSachBoSung.length} tài liệu, chứng cứ còn thiếu theo quy định.`,
+            docInfo: {
+              name: `Thông báo bổ sung hồ sơ ${soHieu}`,
+              code: soHieu,
+              type: 'thong_bao',
+            },
+          });
         }}
         workflow={workflow}
         donCode={currentDon.code}
@@ -810,6 +976,24 @@ export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXa
           if (activeStepNumber < workflow.steps.length) {
             setActiveStepNumber((prev) => prev + 1);
           }
+          addHistoryLog({
+            title: `Hoàn tất bước quy trình: ${stepName}`,
+            actor: currentDon.canBoXuLy || 'Nguyễn Minh Anh',
+            actorRole: currentDon.chucVuCanBo || 'Chuyên viên Tiếp nhận & Xử lý đơn',
+            actorDept: currentDon.donViXuLy || 'Phòng Tiếp công dân & Xử lý đơn',
+            category: 'quy_trinh',
+            statusBadge: {
+              text: 'Bước hoàn tất',
+              bgClass: 'bg-indigo-50',
+              textClass: 'text-indigo-800',
+              borderClass: 'border-indigo-200',
+            },
+            description: `Đã thực hiện xong nội dung bước "${stepName}" theo quy trình xử lý đơn. Ban hành văn bản/quyết định: ${docTitle}.`,
+            docInfo: {
+              name: docTitle,
+              type: 'quyet_dinh',
+            },
+          });
         }}
         workflow={workflow}
         donCode={currentDon.code}
@@ -842,6 +1026,21 @@ export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXa
           setTrangThaiXacMinh('da_xac_minh');
           setHuongXuLyDaChon(huong);
 
+          addHistoryLog({
+            title: `Hoàn thành xác minh & Đề xuất phương án: ${HUONG_XU_LY_CONFIG[huong]?.label || huong}`,
+            actor: currentDon.canBoXuLy || 'Nguyễn Minh Anh',
+            actorRole: currentDon.chucVuCanBo || 'Chuyên viên Tiếp nhận & Xử lý đơn',
+            actorDept: currentDon.donViXuLy || 'Phòng Tiếp công dân & Xử lý đơn',
+            category: 'xac_minh',
+            statusBadge: {
+              text: 'Đã xác minh',
+              bgClass: 'bg-amber-50',
+              textClass: 'text-amber-800',
+              borderClass: 'border-amber-200',
+            },
+            description: `Hoàn tất kiểm tra điều kiện thụ lý và xác minh nội dung đơn. Đề xuất phương án giải quyết: ${HUONG_XU_LY_CONFIG[huong]?.label}.`,
+          });
+
           if (huong === 'thu_ly') {
             showToast(`✓ Đã xác minh hoàn tất: Đơn chuyển trạng thái "ĐÃ XÁC MINH" • Hướng xử lý: Thụ lý giải quyết`);
             setTimeout(() => setShowModalBuocTiepTheo(true), 300);
@@ -872,6 +1071,25 @@ export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXa
           setShowKhongThuLyModal(false);
           showToast(`✓ Đã lập Thông báo không thụ lý số ${data.soKyHieu} theo quy định.`);
           setDocCount((c) => c + 1);
+          addHistoryLog({
+            title: `Ban hành Thông báo không thụ lý số ${data.soKyHieu}`,
+            actor: currentDon.canBoXuLy || 'Nguyễn Minh Anh',
+            actorRole: currentDon.chucVuCanBo || 'Chuyên viên Tiếp nhận & Xử lý đơn',
+            actorDept: currentDon.donViXuLy || 'Phòng Tiếp công dân & Xử lý đơn',
+            category: 'van_ban',
+            statusBadge: {
+              text: 'Không thụ lý',
+              bgClass: 'bg-rose-50',
+              textClass: 'text-rose-800',
+              borderClass: 'border-rose-200',
+            },
+            description: `Lập và ban hành Thông báo số ${data.soKyHieu} không thụ lý giải quyết đơn khiếu nại/tố cáo do không đủ điều kiện theo quy định pháp luật.`,
+            docInfo: {
+              name: 'Thông báo không thụ lý giải quyết',
+              code: data.soKyHieu,
+              type: 'thong_bao',
+            },
+          });
         }}
         donInfo={{
           code: currentDon.code,
@@ -890,6 +1108,25 @@ export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXa
           setShowTraLaiModal(false);
           showToast(`✓ Đã ban hành Phiếu hướng dẫn trả đơn (${data.cauHinhVanBan.soKyHieu}) cho công dân ${data.nguoiNhan}.`);
           setDocCount((c) => c + 1);
+          addHistoryLog({
+            title: `Ban hành Phiếu hướng dẫn trả lại đơn (${data.cauHinhVanBan.soKyHieu})`,
+            actor: currentDon.canBoXuLy || 'Nguyễn Minh Anh',
+            actorRole: currentDon.chucVuCanBo || 'Chuyên viên Tiếp nhận & Xử lý đơn',
+            actorDept: currentDon.donViXuLy || 'Phòng Tiếp công dân & Xử lý đơn',
+            category: 'van_ban',
+            statusBadge: {
+              text: 'Trả lại đơn',
+              bgClass: 'bg-amber-50',
+              textClass: 'text-amber-800',
+              borderClass: 'border-amber-200',
+            },
+            description: `Ban hành Phiếu hướng dẫn số ${data.cauHinhVanBan.soKyHieu} trả lại đơn và hướng dẫn công dân ${data.nguoiNhan} gửi đến cơ quan có thẩm quyền.`,
+            docInfo: {
+              name: 'Phiếu hướng dẫn chuyển/trả đơn',
+              code: data.cauHinhVanBan.soKyHieu,
+              type: 'phieu_huong_dan',
+            },
+          });
         }}
         donInfo={{
           code: currentDon.code,
@@ -908,6 +1145,25 @@ export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXa
           setShowBanGiaoModal(false);
           showToast(`✓ Đã lập văn bản chuyển thẩm quyền (${data.cauHinhVanBan.soKyHieu}) sang "${data.donViNhanName || 'đơn vị có thẩm quyền'}".`);
           setDocCount((c) => c + 1);
+          addHistoryLog({
+            title: `Lập văn bản chuyển thẩm quyền xử lý (${data.cauHinhVanBan.soKyHieu})`,
+            actor: currentDon.canBoXuLy || 'Nguyễn Minh Anh',
+            actorRole: currentDon.chucVuCanBo || 'Chuyên viên Tiếp nhận & Xử lý đơn',
+            actorDept: currentDon.donViXuLy || 'Phòng Tiếp công dân & Xử lý đơn',
+            category: 'van_ban',
+            statusBadge: {
+              text: 'Chuyển thẩm quyền',
+              bgClass: 'bg-purple-50',
+              textClass: 'text-purple-800',
+              borderClass: 'border-purple-200',
+            },
+            description: `Lập văn bản chuyển đơn số ${data.cauHinhVanBan.soKyHieu} chuyển hồ sơ sang "${data.donViNhanName || 'đơn vị có thẩm quyền'}" giải quyết.`,
+            docInfo: {
+              name: 'Phiếu chuyển đơn xử lý',
+              code: data.cauHinhVanBan.soKyHieu,
+              type: 'phieu_chuyen',
+            },
+          });
         }}
         donInfo={{
           code: currentDon.code,
@@ -926,6 +1182,25 @@ export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXa
           setShowTraLoiDonModal(false);
           showToast(`✓ Đã ban hành văn bản trả lời đơn (${data.soKyHieu}) cho công dân ${data.nguoiNhan}.`);
           setDocCount((c) => c + 1);
+          addHistoryLog({
+            title: `Ban hành văn bản trả lời đơn (${data.soKyHieu})`,
+            actor: currentDon.canBoXuLy || 'Nguyễn Minh Anh',
+            actorRole: currentDon.chucVuCanBo || 'Chuyên viên Tiếp nhận & Xử lý đơn',
+            actorDept: currentDon.donViXuLy || 'Phòng Tiếp công dân & Xử lý đơn',
+            category: 'van_ban',
+            statusBadge: {
+              text: 'Trả lời đơn',
+              bgClass: 'bg-teal-50',
+              textClass: 'text-teal-800',
+              borderClass: 'border-teal-200',
+            },
+            description: `Ban hành văn bản trả lời, giải thích số ${data.soKyHieu} gửi cho công dân ${data.nguoiNhan}.`,
+            docInfo: {
+              name: 'Văn bản trả lời đơn thư',
+              code: data.soKyHieu,
+              type: 'tra_loi',
+            },
+          });
         }}
         donInfo={{
           code: currentDon.code,
@@ -946,6 +1221,20 @@ export default function DonTiepNhan({ onNav, donDetail, openXacMinhOnEnter, onXa
           setCurrentDon(updatedData);
           setShowChinhSuaModal(false);
           showToast(`✓ Đã cập nhật thành công thông tin đơn ${updatedData.code}!`);
+          addHistoryLog({
+            title: 'Chỉnh sửa, cập nhật thông tin hồ sơ đơn',
+            actor: currentDon.canBoXuLy || 'Nguyễn Minh Anh',
+            actorRole: currentDon.chucVuCanBo || 'Chuyên viên Tiếp nhận & Xử lý đơn',
+            actorDept: currentDon.donViXuLy || 'Phòng Tiếp công dân & Xử lý đơn',
+            category: 'ghi_chu',
+            statusBadge: {
+              text: 'Cập nhật',
+              bgClass: 'bg-slate-100',
+              textClass: 'text-slate-800',
+              borderClass: 'border-slate-200',
+            },
+            description: `Cán bộ thụ lý đã cập nhật lại các trường thông tin hành chính, thông tin người nộp đơn.`,
+          });
         }}
       />
     </div>
