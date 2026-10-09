@@ -399,9 +399,6 @@ export default function TaoBaoCaoDeXuatModal({
     if (!huongXuLyDeXuat) {
       newErrors.huongXuLyDeXuat = 'Vui lòng chọn hướng xử lý đề xuất.';
     }
-    if (!lyDoCanCuDeXuat.trim()) {
-      newErrors.lyDoCanCuDeXuat = 'Vui lòng nhập lý do và căn cứ pháp lý đề xuất.';
-    }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -495,8 +492,7 @@ export default function TaoBaoCaoDeXuatModal({
 
               <div className="bg-white p-2.5 rounded-lg border border-slate-200/80">
                 <span className="text-slate-500 block text-[11px] mb-0.5">Loại đơn:</span>
-                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11.5px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11.5px] font-bold ">
                   {loaiDon}
                 </span>
               </div>
