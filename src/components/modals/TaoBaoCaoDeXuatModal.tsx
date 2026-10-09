@@ -3,26 +3,35 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { SigningDocument, SignerItem } from '../../types/signing';
 
 export interface BaoCaoDeXuatFormData {
-  // 1. Thông tin đơn (kế thừa từ hồ sơ tiếp nhận, chỉ đọc)
+  // 1. Thông tin cơ quan & Hành chính
+  soBaoCao: string;
+  ngayLap: string;
+  coQuanCapTren: string;
+  coQuanLap: string;
+  nguoiLap: string;
+  chucVuNguoiLap: string;
+  nguoiNhan: string;
+
+  // 2. Thông tin phân công & Đơn
+  soPhanCong: string;
+  ngayPhanCong: string;
   maDon: string;
   loaiDon: string;
   nguoiGuiDon: string;
+  diaChiNguoiGui: string;
   ngayTiepNhan: string;
-  canBoPhuTrach: string;
-  donViXuLy?: string;
+  noiDungDon: string;
 
-  // 2. Nội dung biểu mẫu báo cáo
-  tomTatNoiDung: string;
-  nhanDinhCanBo: string;
-  thongTinCanLamRo: string;
-  huongXuLyDeXuat: string;
-  lyDoCanCuDeXuat: string;
-  congViecTiepTheo: string;
+  // 3. I. Kết quả xác minh
+  taiLieuThuThap: string;
+  noiDungXacMinh: string;
 
-  // 3. Thông tin người lập
-  nguoiLap: string;
-  chucVuNguoiLap: string;
-  ngayLap: string;
+  // 4. II. Nhận xét và đề xuất
+  danhGiaNhanXet: string;
+  canCuPhapLy: string;
+  phuongAnDeXuat: number; // 1 | 2 | 3 | 4
+  chiTietPhuongAn?: string;
+  vanBanKemTheo?: string;
 }
 
 export interface TaoBaoCaoDeXuatModalProps {
@@ -39,6 +48,8 @@ export interface TaoBaoCaoDeXuatModalProps {
     canBoTiepNhan?: string;
     chucVuCanBo?: string;
     donViXuLy?: string;
+    diaChi?: string;
+    cccd?: string;
   };
   currentOfficer?: {
     name: string;
@@ -46,59 +57,126 @@ export interface TaoBaoCaoDeXuatModalProps {
     phongBan?: string;
     coQuan?: string;
   };
+  initialHuongXuLy?: string;
   existingSigningDoc?: SigningDocument | null;
   onSaveDraft?: (formData: BaoCaoDeXuatFormData, updatedDoc: SigningDocument) => void;
   onSubmitToLeader?: (formData: BaoCaoDeXuatFormData, updatedDoc: SigningDocument) => void;
 }
 
-export const DANH_SACH_HUONG_XU_LY = [
+export const DANH_SACH_PHUONG_AN = [
   {
-    value: 'thu_ly',
-    label: 'Thụ lý giải quyết',
-    moTa: 'Đơn đủ điều kiện thụ lý giải quyết theo quy định pháp luật (thẩm quyền, chứng cứ ban đầu rõ ràng).',
+    id: 1,
+    title: 'Phương án 1: Thụ lý đơn',
+    desc: 'Đơn đủ điều kiện thụ lý giải quyết theo quy định của pháp luật.',
+    badgeClass: 'bg-emerald-50 text-emerald-800 border-emerald-300',
   },
   {
-    value: 'yeu_cau_bo_sung',
-    label: 'Yêu cầu bổ sung thông tin, tài liệu',
-    moTa: 'Chưa đủ chứng cứ hoặc hồ sơ theo quy định; ban hành thông báo hướng dẫn bổ sung.',
+    id: 2,
+    title: 'Phương án 2: Chuyển thẩm quyền',
+    desc: 'Chuyển đơn, hồ sơ đến cơ quan, đơn vị có đúng thẩm quyền để giải quyết.',
+    badgeClass: 'bg-purple-50 text-purple-800 border-purple-300',
   },
   {
-    value: 'chuyen_tham_quyen',
-    label: 'Chuyển đơn đến cơ quan có thẩm quyền',
-    moTa: 'Đơn không thuộc thẩm quyền giải quyết; ban hành phiếu chuyển đơn đến đúng cơ quan xử lý.',
+    id: 3,
+    title: 'Phương án 3: Trả lời đơn',
+    desc: 'Lập văn bản trả lời, hướng dẫn hoặc giải thích cho công dân/người nộp đơn.',
+    badgeClass: 'bg-teal-50 text-teal-800 border-teal-300',
   },
   {
-    value: 'tra_lai_don',
-    label: 'Trả lại đơn kèm văn bản hướng dẫn',
-    moTa: 'Đơn không đủ điều kiện xử lý; trả lại đơn kèm văn bản hướng dẫn công dân theo quy định.',
-  },
-  {
-    value: 'tra_loi_don',
-    label: 'Ban hành văn bản trả lời, giải thích đơn',
-    moTa: 'Đơn đã có quyết định/kết luận giải quyết hoặc giải thích rõ căn cứ pháp luật cho công dân.',
+    id: 4,
+    title: 'Phương án 4: Yêu cầu bổ sung',
+    desc: 'Yêu cầu người nộp bổ sung tài liệu, chứng cứ hoặc giải trình làm rõ nội dung.',
+    badgeClass: 'bg-blue-50 text-blue-800 border-blue-300',
   },
 ];
+
+/**
+ * Hàm ánh xạ toàn bộ dữ liệu người dùng nhập vào biểu mẫu chuẩn:
+ * “Báo cáo kết quả xác minh về việc giải quyết đơn (tố giác/tin báo/kiến nghị khởi tố)”
+ */
+export const buildBaoCaoXacMinhDocumentText = (data: BaoCaoDeXuatFormData): string => {
+  const parts = (data.ngayLap || '16/09/2026').split('/');
+  const ngayStr = parts[0] || '16';
+  const thangStr = parts[1] || '09';
+  const namStr = parts[2] || '2026';
+
+  const coQuanCapTren = data.coQuanCapTren || 'CÔNG AN TP. HÀ NỘI';
+  const coQuanLap = data.coQuanLap || 'CƠ QUAN CẢNH SÁT ĐIỀU TRA';
+
+  return `${coQuanCapTren}
+${coQuanLap}
+Số: ${data.soBaoCao}
+
+CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+Độc lập - Tự do - Hạnh phúc
+Hà Nội, ngày ${ngayStr} tháng ${thangStr} năm ${namStr}
+
+BÁO CÁO KẾT QUẢ XÁC MINH
+Về việc giải quyết đơn (tố giác/tin báo/kiến nghị khởi tố) của ông/bà ${data.nguoiGuiDon}
+
+Kính gửi: ${data.nguoiNhan}
+
+Thực hiện Phân công giải quyết nguồn tin về tội phạm số: ${data.soPhanCong || '24/QĐ-CQĐT'} ngày ${data.ngayPhanCong || `${ngayStr}/${thangStr}/${namStr}`} của Thủ trưởng/Phó Thủ trưởng Cơ quan Điều tra;
+Hôm nay, ngày ${ngayStr} tháng ${thangStr} năm ${namStr}, Điều tra viên / Cán bộ điều tra: ${data.nguoiLap}
+Đơn vị công tác: ${coQuanLap}
+Tiến hành báo cáo kết quả xác minh đơn của: ${data.nguoiGuiDon}
+Cư trú / Địa chỉ: ${data.diaChiNguoiGui || 'Quận Cầu Giấy, TP. Hà Nội'}
+Nội dung đơn phản ánh / tố giác: ${data.noiDungDon}
+
+I. KẾT QUẢ XÁC MINH
+1. Các tài liệu, chứng cứ đã thu thập:
+${data.taiLieuThuThap}
+
+2. Nội dung diễn biến sự việc được xác minh:
+${data.noiDungXacMinh}
+
+II. NHẬN XÉT VÀ ĐỀ XUẤT
+1. Đánh giá, nhận xét:
+${data.danhGiaNhanXet}
+- Căn cứ pháp lý: ${data.canCuPhapLy}
+
+2. Đề xuất xử lý:
+Kính đề nghị Thủ trưởng (Phó Thủ trưởng) Cơ quan Điều tra xem xét, phê duyệt các nội dung sau:
+[${data.phuongAnDeXuat === 1 ? 'X' : '  '}] Phương án 1: Thụ lý đơn (Đủ điều kiện thụ lý giải quyết theo quy định của pháp luật).
+[${data.phuongAnDeXuat === 2 ? 'X' : '  '}] Phương án 2: Chuyển thẩm quyền (Chuyển đơn, hồ sơ đến cơ quan, đơn vị có đúng thẩm quyền để giải quyết).
+[${data.phuongAnDeXuat === 3 ? 'X' : '  '}] Phương án 3: Trả lời đơn (Lập văn bản trả lời, hướng dẫn hoặc giải thích cho công dân/người nộp đơn).
+[${data.phuongAnDeXuat === 4 ? 'X' : '  '}] Phương án 4: Yêu cầu bổ sung (Yêu cầu người nộp bổ sung tài liệu, chứng cứ hoặc giải trình làm rõ nội dung).
+${data.chiTietPhuongAn ? `\n(Ghi chú phương án đề xuất: ${data.chiTietPhuongAn})` : ''}
+
+Dự thảo các văn bản tố tụng kèm theo bao gồm: ${data.vanBanKemTheo || '(Liệt kê các quyết định, thông báo, bản kết luận... kèm theo).'}
+Kính trình Đồng chí phê duyệt./.
+
+Ý KIẾN PHÊ DUYỆT CỦA THỦ TRƯỞNG
+(PHÓ THỦ TRƯỞNG)
+(Ký, ghi rõ họ tên, ngày... tháng... năm...)
+
+
+
+
+	NGƯỜI LẬP BÁO CÁO
+(Điều tra viên / Cán bộ điều tra)
+(Ký, ghi rõ họ tên)
+${data.nguoiLap}
+`;
+};
 
 export default function TaoBaoCaoDeXuatModal({
   isOpen,
   onClose,
   donInfo,
   currentOfficer,
+  initialHuongXuLy,
   existingSigningDoc,
   onSaveDraft,
   onSubmitToLeader,
 }: TaoBaoCaoDeXuatModalProps) {
-  // Thông tin đơn cơ bản (chỉ đọc)
   const maDon = donInfo?.code || 'Đ-2025-0105';
-  const loaiDon = donInfo?.loaiDon?.includes('khiếu nại') ? 'Đơn tố cáo' : (donInfo?.loaiDon || 'Đơn tố cáo');
-  const nguoiGuiDon = donInfo?.nguoiNop || 'Vũ Thị Thanh';
-  const ngayTiepNhan = donInfo?.ngayNhan || '16/09/2026 09:30';
-  const canBoPhuTrach = donInfo?.canBoTiepNhan || currentOfficer?.name || 'Nguyễn Minh Anh';
-  const donViXuLy = donInfo?.donViXuLy || currentOfficer?.phongBan || 'Phòng Tiếp công dân & Xử lý đơn';
+  const loaiDon = donInfo?.loaiDon?.includes('khiếu nại') ? 'Đơn tố cáo' : (donInfo?.loaiDon || 'Đơn tố giác tội phạm');
+  const nguoiGuiDonDefault = donInfo?.nguoiNop || 'Vũ Thị Thanh';
+  const diaChiNguoiGuiDefault = donInfo?.diaChi || 'Số 15 đường Cầu Giấy, phường Quan Hoa, quận Cầu Giấy, Hà Nội';
+  const ngayTiepNhanDefault = donInfo?.ngayNhan || '16/09/2026 09:30';
+  const noiDungDonDefault = donInfo?.title || donInfo?.noiDung || 'Tố giác hành vi vi phạm quy định pháp luật hình sự trong quản lý đất đai và trật tự xây dựng';
 
-  // Người lập và ngày lập tự động theo hệ thống
-  const nguoiLap = currentOfficer?.name || canBoPhuTrach;
-  const chucVuNguoiLap = currentOfficer?.chucVu || donInfo?.chucVuCanBo || 'Chuyên viên xử lý đơn';
   const todayFormatted = useMemo(() => {
     const now = new Date();
     const day = String(now.getDate()).padStart(2, '0');
@@ -107,97 +185,118 @@ export default function TaoBaoCaoDeXuatModal({
     return `${day}/${month}/${year}`;
   }, []);
 
-  // Form states
-  const [tomTatNoiDung, setTomTatNoiDung] = useState<string>('');
-  const [nhanDinhCanBo, setNhanDinhCanBo] = useState<string>('');
-  const [thongTinCanLamRo, setThongTinCanLamRo] = useState<string>('');
-  const [huongXuLyDeXuat, setHuongXuLyDeXuat] = useState<string>('thu_ly');
-  const [lyDoCanCuDeXuat, setLyDoCanCuDeXuat] = useState<string>('');
-  const [congViecTiepTheo, setCongViecTiepTheo] = useState<string>('');
+  // 1. Các trường thông tin lập báo cáo
+  const [soBaoCao, setSoBaoCao] = useState<string>('24/BC-CQĐT');
+  const [ngayLap, setNgayLap] = useState<string>(todayFormatted);
+  const [coQuanCapTren, setCoQuanCapTren] = useState<string>('CÔNG AN TP. HÀ NỘI');
+  const [coQuanLap, setCoQuanLap] = useState<string>('CƠ QUAN CẢNH SÁT ĐIỀU TRA');
+  const [nguoiLap, setNguoiLap] = useState<string>('Nguyễn Minh Anh');
+  const [chucVuNguoiLap, setChucVuNguoiLap] = useState<string>('Điều tra viên / Cán bộ điều tra');
+  const [nguoiNhan, setNguoiNhan] = useState<string>('Thủ trưởng (Phó Thủ trưởng) Cơ quan Điều tra');
+
+  // Phân công & Đơn
+  const [soPhanCong, setSoPhanCong] = useState<string>('24/QĐ-CQĐT');
+  const [ngayPhanCong, setNgayPhanCong] = useState<string>(todayFormatted);
+  const [nguoiGuiDon, setNguoiGuiDon] = useState<string>(nguoiGuiDonDefault);
+  const [diaChiNguoiGui, setDiaChiNguoiGui] = useState<string>(diaChiNguoiGuiDefault);
+  const [noiDungDon, setNoiDungDon] = useState<string>(noiDungDonDefault);
+
+  // I. Kết quả xác minh
+  const [taiLieuThuThap, setTaiLieuThuThap] = useState<string>(
+    `- Tài liệu, chứng cứ do người nộp đơn cung cấp: Đơn tố giác tội phạm (Bản chính); Bản sao CCCD; Bảng kê chứng từ giao dịch chuyển tiền và các tài liệu, vi bằng, tệp tin ghi âm/ghi hình liên quan đến hành vi bị tố giác.\n- Tài liệu, chứng cứ do Cơ quan Điều tra thu thập: Biên bản tiếp nhận nguồn tin về tội phạm; Biên bản ghi lời khai người tố giác; Báo cáo xác minh hiện trường, nhân thân đối tượng bị tố giác; Công văn xác minh tại cơ quan quản lý chuyên ngành và tổ chức tín dụng.`
+  );
+  const [noiDungXacMinh, setNoiDungXacMinh] = useState<string>(
+    `Tóm tắt trung thực, khách quan diễn biến sự việc: Qua công tác xác minh ban đầu, các nội dung tố giác của công dân có căn cứ thực tế. Đã làm rõ diễn biến hành vi, các giao dịch và tài liệu liên quan đến việc chiếm đoạt tài sản/dấu hiệu vi phạm pháp luật hình sự; các đối tượng liên quan đã được triệu tập, lấy lời khai bước đầu.`
+  );
+
+  // II. Nhận xét và đề xuất
+  const [danhGiaNhanXet, setDanhGiaNhanXet] = useState<string>(
+    `- Về tính chất, mức độ của sự việc: Vụ việc có tính chất nghiêm trọng, gây thiệt hại tài sản lớn, ảnh hưởng đến quyền lợi hợp pháp của công dân và tình hình an ninh trật tự trên địa bàn quản lý.\n- Về dấu hiệu tội phạm: Đã phát hiện đủ căn cứ dấu hiệu tội phạm theo quy định của Bộ luật Hình sự; vụ việc thuộc thẩm quyền thụ lý, giải quyết của Cơ quan Cảnh sát điều tra Công an quận.`
+  );
+  const [canCuPhapLy, setCanCuPhapLy] = useState<string>(
+    `Căn cứ Điều 145, 146, 147 Bộ luật Tố tụng hình sự năm 2015 (sửa đổi, bổ sung 2021); Điều 174 Bộ luật Hình sự 2015.`
+  );
+  const [phuongAnDeXuat, setPhuongAnDeXuat] = useState<number>(1);
+  const [chiTietPhuongAn, setChiTietPhuongAn] = useState<string>(
+    `Đơn đủ điều kiện giải quyết theo quy định; đề xuất thụ lý và ban hành thông báo thụ lý giải quyết đơn theo đúng trình tự.`
+  );
+  const [vanBanKemTheo, setVanBanKemTheo] = useState<string>(
+    `Dự thảo Thông báo thụ lý giải quyết đơn; Bản kết luận xác minh bước đầu; Bảng kê danh mục tài liệu hồ sơ.`
+  );
 
   // Validation errors
-  const [errors, setErrors] = useState<{
-    tomTatNoiDung?: string;
-    nhanDinhCanBo?: string;
-    huongXuLyDeXuat?: string;
-    lyDoCanCuDeXuat?: string;
-  }>({});
-
-  // Cảnh báo xác nhận khi đóng popup có dữ liệu chưa lưu
-  const [showDiscardConfirm, setShowDiscardConfirm] = useState<boolean>(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  // Snapshot ban đầu để kiểm tra dirty state
-  const initialValuesRef = useRef({
-    tomTatNoiDung: '',
-    nhanDinhCanBo: '',
-    thongTinCanLamRo: '',
-    huongXuLyDeXuat: 'thu_ly',
-    lyDoCanCuDeXuat: '',
-    congViecTiepTheo: '',
-  });
 
   // Tự động nạp dữ liệu khi modal mở hoặc thay đổi hồ sơ/văn bản đã có
   useEffect(() => {
     if (!isOpen) return;
 
-    let initTomTat = '';
-    let initNhanDinh = '';
-    let initCanLamRo = '';
-    let initHuong = 'thu_ly';
-    let initLyDo = '';
-    let initCongViec = '';
-
     if (existingSigningDoc) {
-      // Nếu đã có văn bản trình ký trước đó (nháp hoặc yêu cầu chỉnh sửa)
-      initTomTat = existingSigningDoc.noiDungDon || donInfo?.noiDung || donInfo?.title || 'Tố cáo hành vi lạm quyền, vi phạm trật tự xây dựng và quản lý đất đai';
-      initNhanDinh = 'Qua nghiên cứu hồ sơ đơn tố cáo và các tài liệu kèm theo, nhận định nội dung tố cáo có căn cứ ban đầu, thuộc thẩm quyền giải quyết của đơn vị theo Luật Tố cáo năm 2018.';
-      initCanLamRo = 'Cần đối chiếu bản gốc Giấy chứng nhận, hồ sơ địa chính và biên bản kiểm tra hiện trạng với cơ quan chuyên môn.';
-      initHuong = 'thu_ly';
-      initLyDo = 'Căn cứ Điều 12 và Điều 29 Luật Tố cáo năm 2018, Nghị định số 31/2019/NĐ-CP của Chính phủ; đơn tố cáo có đầy đủ thông tin người tố cáo và tài liệu chứng minh ban đầu.';
-      initCongViec = 'Dự thảo Quyết định thụ lý giải quyết tố cáo và Quyết định thành lập Tổ xác minh nội dung tố cáo trình Lãnh đạo phê duyệt.';
-    } else {
-      // Mặc định từ hồ sơ đơn đang mở
-      const rawNoiDung = donInfo?.noiDung || donInfo?.title || 'Tố cáo hành vi vi phạm trật tự xây dựng và quản lý đất đai';
-      initTomTat = rawNoiDung.startsWith(maDon) ? rawNoiDung.replace(`${maDon}: `, '') : rawNoiDung;
+      const savedFormData = (existingSigningDoc as any).formData as BaoCaoDeXuatFormData | undefined;
+      if (savedFormData) {
+        setSoBaoCao(savedFormData.soBaoCao || existingSigningDoc.soKyHieu || '24/BC-CQĐT');
+        setNgayLap(savedFormData.ngayLap || todayFormatted);
+        setCoQuanCapTren(savedFormData.coQuanCapTren || 'CÔNG AN TP. HÀ NỘI');
+        setCoQuanLap(savedFormData.coQuanLap || 'CƠ QUAN CẢNH SÁT ĐIỀU TRA');
+        setNguoiLap(savedFormData.nguoiLap || 'Nguyễn Minh Anh');
+        setChucVuNguoiLap(savedFormData.chucVuNguoiLap || 'Điều tra viên / Cán bộ điều tra');
+        setNguoiNhan(savedFormData.nguoiNhan || 'Thủ trưởng (Phó Thủ trưởng) Cơ quan Điều tra');
+        setSoPhanCong(savedFormData.soPhanCong || '24/QĐ-CQĐT');
+        setNgayPhanCong(savedFormData.ngayPhanCong || todayFormatted);
+        setNguoiGuiDon(savedFormData.nguoiGuiDon || nguoiGuiDonDefault);
+        setDiaChiNguoiGui(savedFormData.diaChiNguoiGui || diaChiNguoiGuiDefault);
+        setNoiDungDon(savedFormData.noiDungDon || noiDungDonDefault);
+        setTaiLieuThuThap(savedFormData.taiLieuThuThap || '');
+        setNoiDungXacMinh(savedFormData.noiDungXacMinh || '');
+        setDanhGiaNhanXet(savedFormData.danhGiaNhanXet || '');
+        setCanCuPhapLy(savedFormData.canCuPhapLy || '');
+        setPhuongAnDeXuat(savedFormData.phuongAnDeXuat || 1);
+        setChiTietPhuongAn(savedFormData.chiTietPhuongAn || '');
+        setVanBanKemTheo(savedFormData.vanBanKemTheo || '');
+      } else {
+        setSoBaoCao(existingSigningDoc.soKyHieu || '24/BC-CQĐT');
+        setNgayLap(existingSigningDoc.ngayTao ? existingSigningDoc.ngayTao.split(' ')[0] : todayFormatted);
+        setCoQuanLap(existingSigningDoc.donViNguoiLap || 'CƠ QUAN CẢNH SÁT ĐIỀU TRA');
+        setNguoiLap(existingSigningDoc.nguoiLap || currentOfficer?.name || 'Nguyễn Minh Anh');
+        if (existingSigningDoc.lanhDaoName) {
+          setNguoiNhan(`${existingSigningDoc.lanhDaoName} (${existingSigningDoc.lanhDaoChucVu || 'Thủ trưởng CQĐT'})`);
+        }
 
-      initNhanDinh = 'Qua nghiên cứu hồ sơ đơn tố cáo và các tài liệu do công dân cung cấp, bước đầu nhận định:\n1. Tư cách người tố cáo: Đơn có họ tên, chữ ký và CCCD rõ ràng, người tố cáo cam kết chịu trách nhiệm trước pháp luật.\n2. Về thẩm quyền: Nội dung tố cáo thuộc thẩm quyền tiếp nhận và thụ lý giải quyết của đơn vị theo quy định tại Điều 12 Luật Tố cáo năm 2018.\n3. Về căn cứ ban đầu: Tài liệu, hình ảnh và chứng cứ kèm theo bước đầu có cơ sở để xem xét, xác minh làm rõ.';
-      initCanLamRo = 'Cần kiểm tra đối chiếu thông tin địa chính, hồ sơ quy hoạch và biên bản kiểm tra hiện trạng của cơ quan chuyên môn.';
-      initHuong = 'thu_ly';
-      initLyDo = 'Căn cứ Điều 12 và Điều 29 Luật Tố cáo năm 2018, Nghị định số 31/2019/NĐ-CP và Thông tư số 05/2021/TT-TTCP; hồ sơ đơn tố cáo đủ điều kiện để thụ lý giải quyết và thành lập Tổ xác minh theo luật định.';
-      initCongViec = 'Dự thảo Quyết định thụ lý giải quyết tố cáo và Quyết định thành lập Tổ xác minh nội dung tố cáo trình Lãnh đạo phê duyệt; thông báo cho người tố cáo theo quy định.';
+        // Trích xuất phương án nếu có trong nội dung
+        if (existingSigningDoc.noiDungChiTiet) {
+          if (/\[X\]\s*Phương án 1|Thụ lý/i.test(existingSigningDoc.noiDungChiTiet)) setPhuongAnDeXuat(1);
+          else if (/\[X\]\s*Phương án 2|Chuyển thẩm quyền/i.test(existingSigningDoc.noiDungChiTiet)) setPhuongAnDeXuat(2);
+          else if (/\[X\]\s*Phương án 3|Trả lời đơn/i.test(existingSigningDoc.noiDungChiTiet)) setPhuongAnDeXuat(3);
+          else if (/\[X\]\s*Phương án 4|Yêu cầu bổ sung/i.test(existingSigningDoc.noiDungChiTiet)) setPhuongAnDeXuat(4);
+        }
+      }
+    } else {
+      const generatedSo = `${maDon.replace(/\D/g, '') || '24'}/BC-CQĐT`;
+      setSoBaoCao(generatedSo);
+      setNgayLap(todayFormatted);
+      setCoQuanCapTren('CÔNG AN TP. HÀ NỘI');
+      setCoQuanLap(donInfo?.donViXuLy || currentOfficer?.phongBan || 'CƠ QUAN CẢNH SÁT ĐIỀU TRA');
+      setNguoiLap(currentOfficer?.name || donInfo?.canBoTiepNhan || 'Nguyễn Minh Anh');
+      setChucVuNguoiLap(currentOfficer?.chucVu || 'Điều tra viên / Cán bộ điều tra');
+      setNguoiNhan('Thủ trưởng (Phó Thủ trưởng) Cơ quan Điều tra');
+
+      setSoPhanCong(`${maDon.replace(/\D/g, '') || '24'}/QĐ-CQĐT`);
+      setNgayPhanCong(todayFormatted);
+      setNguoiGuiDon(nguoiGuiDonDefault);
+      setDiaChiNguoiGui(diaChiNguoiGuiDefault);
+      setNoiDungDon(noiDungDonDefault);
+      
+      // Khởi tạo phương án theo hướng xử lý hiện tại nếu có
+      if (initialHuongXuLy === 'thu_ly') setPhuongAnDeXuat(1);
+      else if (initialHuongXuLy === 'ban_giao') setPhuongAnDeXuat(2);
+      else if (initialHuongXuLy === 'tra_loi_don') setPhuongAnDeXuat(3);
+      else if (initialHuongXuLy === 'yeu_cau_bo_sung') setPhuongAnDeXuat(4);
+      else setPhuongAnDeXuat(1);
     }
 
-    setTomTatNoiDung(initTomTat);
-    setNhanDinhCanBo(initNhanDinh);
-    setThongTinCanLamRo(initCanLamRo);
-    setHuongXuLyDeXuat(initHuong);
-    setLyDoCanCuDeXuat(initLyDo);
-    setCongViecTiepTheo(initCongViec);
     setErrors({});
-    setShowDiscardConfirm(false);
-
-    initialValuesRef.current = {
-      tomTatNoiDung: initTomTat,
-      nhanDinhCanBo: initNhanDinh,
-      thongTinCanLamRo: initCanLamRo,
-      huongXuLyDeXuat: initHuong,
-      lyDoCanCuDeXuat: initLyDo,
-      congViecTiepTheo: initCongViec,
-    };
-  }, [isOpen, existingSigningDoc, donInfo, maDon]);
-
-  // Kiểm tra xem dữ liệu có bị thay đổi (isDirty)
-  const isDirty = useMemo(() => {
-    return (
-      tomTatNoiDung !== initialValuesRef.current.tomTatNoiDung ||
-      nhanDinhCanBo !== initialValuesRef.current.nhanDinhCanBo ||
-      thongTinCanLamRo !== initialValuesRef.current.thongTinCanLamRo ||
-      huongXuLyDeXuat !== initialValuesRef.current.huongXuLyDeXuat ||
-      lyDoCanCuDeXuat !== initialValuesRef.current.lyDoCanCuDeXuat ||
-      congViecTiepTheo !== initialValuesRef.current.congViecTiepTheo
-    );
-  }, [tomTatNoiDung, nhanDinhCanBo, thongTinCanLamRo, huongXuLyDeXuat, lyDoCanCuDeXuat, congViecTiepTheo]);
+  }, [isOpen, existingSigningDoc, donInfo, currentOfficer, todayFormatted, maDon, initialHuongXuLy]);
 
   if (!isOpen) return null;
 
@@ -206,559 +305,580 @@ export default function TaoBaoCaoDeXuatModal({
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // Xử lý đóng modal an toàn
-  const handleRequestClose = () => {
-    if (isDirty) {
-      setShowDiscardConfirm(true);
-    } else {
-      onClose();
-    }
-  };
-
-  // Xác nhận thoát không lưu
-  const handleConfirmDiscard = () => {
-    setShowDiscardConfirm(false);
-    onClose();
-  };
-
-  // Thu thập dữ liệu form hiện tại
   const getCurrentFormData = (): BaoCaoDeXuatFormData => {
     return {
+      soBaoCao: soBaoCao.trim(),
+      ngayLap: ngayLap.trim(),
+      coQuanCapTren: coQuanCapTren.trim(),
+      coQuanLap: coQuanLap.trim(),
+      nguoiLap: nguoiLap.trim(),
+      chucVuNguoiLap: chucVuNguoiLap.trim(),
+      nguoiNhan: nguoiNhan.trim(),
+      soPhanCong: soPhanCong.trim(),
+      ngayPhanCong: ngayPhanCong.trim(),
       maDon,
       loaiDon,
-      nguoiGuiDon,
-      ngayTiepNhan,
-      canBoPhuTrach,
-      donViXuLy,
-      tomTatNoiDung: tomTatNoiDung.trim(),
-      nhanDinhCanBo: nhanDinhCanBo.trim(),
-      thongTinCanLamRo: thongTinCanLamRo.trim(),
-      huongXuLyDeXuat,
-      lyDoCanCuDeXuat: lyDoCanCuDeXuat.trim(),
-      congViecTiepTheo: congViecTiepTheo.trim(),
-      nguoiLap,
-      chucVuNguoiLap,
-      ngayLap: todayFormatted,
+      nguoiGuiDon: nguoiGuiDon.trim(),
+      diaChiNguoiGui: diaChiNguoiGui.trim(),
+      ngayTiepNhan: ngayTiepNhanDefault,
+      noiDungDon: noiDungDon.trim(),
+      taiLieuThuThap: taiLieuThuThap.trim(),
+      noiDungXacMinh: noiDungXacMinh.trim(),
+      danhGiaNhanXet: danhGiaNhanXet.trim(),
+      canCuPhapLy: canCuPhapLy.trim(),
+      phuongAnDeXuat,
+      chiTietPhuongAn: chiTietPhuongAn.trim(),
+      vanBanKemTheo: vanBanKemTheo.trim(),
     };
   };
 
-  // Tạo nội dung văn bản hành chính chi tiết
-  const buildVanBanChiTiet = (formData: BaoCaoDeXuatFormData, huongLabel: string): string => {
-    return `CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nĐộc lập - Tự do - Hạnh phúc\n-------------------------\n\nBÁO CÁO ĐỀ XUẤT HƯỚNG XỬ LÝ ĐƠN\nKính gửi: Lãnh đạo đơn vị\n\nI. THÔNG TIN HỒ SƠ ĐƠN TIẾP NHẬN\n- Mã đơn / Số đơn: ${formData.maDon}\n- Loại đơn: ${formData.loaiDon}\n- Người gửi đơn: ${formData.nguoiGuiDon}\n- Thời điểm tiếp nhận: ${formData.ngayTiepNhan}\n- Cán bộ thụ lý ban đầu: ${formData.canBoPhuTrach}\n- Đơn vị thụ lý: ${formData.donViXuLy || 'Phòng Tiếp công dân & Xử lý đơn'}\n\nII. TÓM TẮT NỘI DUNG ĐƠN\n${formData.tomTatNoiDung}\n\nIII. NHẬN ĐỊNH BAN ĐẦU CỦA CÁN BỘ THỤ LÝ\n1. Nhận định về nội dung đơn:\n${formData.nhanDinhCanBo}\n\n2. Thông tin còn thiếu hoặc nội dung cần làm rõ:\n${formData.thongTinCanLamRo || '(Không có)'}\n\nIV. NỘI DUNG ĐỀ XUẤT HƯỚNG XỬ LÝ\n1. Hướng xử lý đề xuất: ${huongLabel.toUpperCase()}\n\n2. Lý do và căn cứ đề xuất:\n${formData.lyDoCanCuDeXuat}\n\n3. Công việc tiếp theo cần thực hiện:\n${formData.congViecTiepTheo || '(Thực hiện theo chỉ đạo của Lãnh đạo đơn vị)'}\n\nKính trình Lãnh đạo đơn vị xem xét, cho ý kiến chỉ đạo.\n\nNgười lập báo cáo: ${formData.nguoiLap} (${formData.chucVuNguoiLap})\nNgày lập: ${formData.ngayLap}`;
+  // Kiểm tra tính hợp lệ của các trường bắt buộc
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (!soBaoCao.trim()) newErrors.soBaoCao = 'Vui lòng nhập Số báo cáo.';
+    if (!ngayLap.trim()) newErrors.ngayLap = 'Vui lòng nhập Ngày lập báo cáo.';
+    if (!coQuanLap.trim()) newErrors.coQuanLap = 'Vui lòng nhập Cơ quan/đơn vị lập báo cáo.';
+    if (!nguoiLap.trim()) newErrors.nguoiLap = 'Vui lòng nhập Người lập báo cáo.';
+    if (!nguoiNhan.trim()) newErrors.nguoiNhan = 'Vui lòng nhập Người nhận báo cáo (Thủ trưởng/Phó Thủ trưởng).';
+    if (!noiDungDon.trim()) newErrors.noiDungDon = 'Vui lòng nhập Nội dung phản ánh / tố giác.';
+    if (!taiLieuThuThap.trim()) newErrors.taiLieuThuThap = 'Vui lòng nhập Tài liệu, chứng cứ đã thu thập.';
+    if (!noiDungXacMinh.trim()) newErrors.noiDungXacMinh = 'Vui lòng nhập Nội dung, diễn biến sự việc được xác minh.';
+    if (!danhGiaNhanXet.trim()) newErrors.danhGiaNhanXet = 'Vui lòng nhập Đánh giá, nhận xét tính chất và dấu hiệu tội phạm.';
+    if (!canCuPhapLy.trim()) newErrors.canCuPhapLy = 'Vui lòng nhập Căn cứ pháp lý.';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  // Tạo hoặc cập nhật đối tượng SigningDocument
-  const buildSigningDocument = (
-    formData: BaoCaoDeXuatFormData,
-    status: 'nhap' | 'cho_trinh'
-  ): SigningDocument => {
-    const huongObj = DANH_SACH_HUONG_XU_LY.find((h) => h.value === formData.huongXuLyDeXuat);
-    const huongLabel = huongObj?.label || 'Đề xuất xử lý';
+  // Xử lý khi nhấn "Lưu" (Tạo báo cáo với trạng thái Bản nháp)
+  const handleSave = () => {
+    if (!validateForm()) {
+      showToast('⚠️ Vui lòng điền đầy đủ các thông tin bắt buộc được đánh dấu đỏ!');
+      return;
+    }
 
-    const docId = existingSigningDoc?.id || `VB-BCDX-${Date.now().toString().slice(-4)}`;
-    const soKyHieu = existingSigningDoc?.soKyHieu || `${docId.replace('VB-BCDX-', '')}/BC-ĐX`;
-    const isRevision = existingSigningDoc?.status === 'yeu_cau_chinh_sua';
-    const nextVersion = isRevision
-      ? `V${(parseFloat(existingSigningDoc.phienBanHienTai.replace('V', '') || '1') + 1).toFixed(0)}`
-      : existingSigningDoc?.phienBanHienTai || 'V1';
+    const formData = getCurrentFormData();
+    const docText = buildBaoCaoXacMinhDocumentText(formData);
 
-    const chiTiet = buildVanBanChiTiet(formData, huongLabel);
-
-    // Kế thừa signers hiện có hoặc thiết lập mặc định lãnh đạo nhận trình
+    const docId = existingSigningDoc?.id || `VB-BC-${Date.now().toString().slice(-4)}`;
     const defaultSigner: SignerItem = {
       id: existingSigningDoc?.lanhDaoId || 'ld-01',
       name: existingSigningDoc?.lanhDaoName || 'Đ/c Trần Văn Hùng',
-      chucVu: existingSigningDoc?.lanhDaoChucVu || 'Phó Chánh Thanh tra thành phố',
-      coQuan: 'Thanh tra Thành phố',
+      chucVu: existingSigningDoc?.lanhDaoChucVu || 'Thủ trưởng / Phó Thủ trưởng Cơ quan Điều tra',
+      coQuan: formData.coQuanLap || 'Cơ quan Cảnh sát điều tra',
       vaiTro: 'duyet',
       thuTu: 1,
-      status: status === 'cho_trinh' ? 'cho_ky' : 'chua_den_luot',
+      status: 'chua_den_luot',
     };
 
     const updatedDoc: SigningDocument = {
       id: docId,
-      soKyHieu,
-      hoSoCode: formData.maDon,
+      soKyHieu: formData.soBaoCao,
+      hoSoCode: maDon,
       luotNhanId: donInfo?.luotNhanId || 'LN-2025-0105',
       loaiDon: formData.loaiDon,
       nguoiGuiDon: formData.nguoiGuiDon,
-      noiDungDon: formData.tomTatNoiDung,
+      noiDungDon: formData.noiDungDon,
 
-      tenVanBan: `Báo cáo đề xuất hướng xử lý đơn ${formData.maDon}`,
+      tenVanBan: 'Báo cáo kết quả xác minh',
       loaiVanBan: 'bao_cao_de_xuat',
-      loaiVanBanLabel: 'Báo cáo đề xuất hướng xử lý',
-      trichYeu: `Đề xuất: ${huongLabel} - ${formData.tomTatNoiDung.slice(0, 90)}...`,
-      noiDungChiTiet: chiTiet,
+      loaiVanBanLabel: 'Báo cáo đề xuất',
+      trichYeu: `V/v Xác minh đơn của ông/bà ${formData.nguoiGuiDon}`,
+      noiDungChiTiet: docText,
 
       nguoiLap: formData.nguoiLap,
-      donViNguoiLap: formData.donViXuLy || 'Phòng Tiếp công dân & Xử lý đơn',
-      ngayTao: existingSigningDoc?.ngayTao || `${formData.ngayLap} 09:00`,
+      donViNguoiLap: formData.coQuanLap,
+      ngayTao: `${formData.ngayLap} 09:00`,
 
-      nguoiTrinh: status === 'cho_trinh' ? formData.nguoiLap : existingSigningDoc?.nguoiTrinh,
-      thoiGianTrinh: status === 'cho_trinh' ? `${formData.ngayLap} 10:15` : existingSigningDoc?.thoiGianTrinh,
-      yKienCanBo: `Kính trình Lãnh đạo xem xét phê duyệt Báo cáo đề xuất hướng xử lý đơn số ${formData.maDon} (${huongLabel}).`,
+      status: 'nhap', // Trạng thái ban đầu: Bản nháp
+      mucDoUuTien: 'thuong',
+      hanXuLy: '24 giờ',
 
       signers: existingSigningDoc?.signers?.length ? existingSigningDoc.signers : [defaultSigner],
       currentSignerIndex: 0,
-
       lanhDaoId: existingSigningDoc?.lanhDaoId || defaultSigner.id,
       lanhDaoName: existingSigningDoc?.lanhDaoName || defaultSigner.name,
       lanhDaoChucVu: existingSigningDoc?.lanhDaoChucVu || defaultSigner.chucVu,
 
-      status,
-      mucDoUuTien: 'thuong',
-      hanXuLy: '24 giờ',
-
       tepDinhKem: existingSigningDoc?.tepDinhKem || [
         {
           id: `att-bc-${Date.now()}`,
-          tenTep: `Bao_cao_de_xuat_${formData.maDon}.pdf`,
-          dungLuong: '340 KB',
+          tenTep: `Bao_cao_ket_qua_xac_minh_${maDon}.pdf`,
+          dungLuong: '380 KB',
           loai: 'du_thao',
         },
       ],
 
-      phienBanHienTai: nextVersion,
+      phienBanHienTai: existingSigningDoc?.phienBanHienTai || 'V1',
       versionHistory: [
         ...(existingSigningDoc?.versionHistory || []),
         {
-          version: nextVersion,
-          thoiGian: `${formData.ngayLap} 10:15`,
+          version: existingSigningDoc?.phienBanHienTai || 'V1',
+          thoiGian: `${formData.ngayLap} 09:00`,
           nguoiTao: formData.nguoiLap,
-          trangThaiLucDo: status === 'nhap' ? 'Bản nháp' : 'Chờ trình ký',
-          ghiChu: isRevision ? 'Cập nhật lại báo cáo theo ý kiến lãnh đạo' : 'Soạn thảo báo cáo đề xuất hướng xử lý đơn',
-          noiDungSnapshot: chiTiet,
+          trangThaiLucDo: 'Bản nháp',
+          ghiChu: 'Lập Báo cáo kết quả xác minh về việc giải quyết đơn',
+          noiDungSnapshot: docText,
         },
       ],
-
       history: [
         ...(existingSigningDoc?.history || []),
         {
           id: `hist-${Date.now()}`,
-          time: `${formData.ngayLap} 10:15`,
+          time: `${formData.ngayLap} 09:00`,
           actor: formData.nguoiLap,
-          action: status === 'nhap' ? 'Lưu nháp báo cáo đề xuất' : 'Hoàn thiện báo cáo và chuyển sang quy trình trình ký',
-          note: isRevision ? 'Đã chỉnh sửa theo yêu cầu của Lãnh đạo' : undefined,
+          action: 'Lập báo cáo kết quả xác minh (Bản nháp)',
         },
       ],
-
       auditLogs: [
         ...(existingSigningDoc?.auditLogs || []),
         {
           id: `al-${Date.now()}`,
-          time: `${formData.ngayLap} 10:15`,
+          time: `${formData.ngayLap} 09:00`,
           actor: formData.nguoiLap,
-          actorRole: formData.chucVuNguoiLap,
-          action: status === 'nhap' ? 'Lưu nháp báo cáo đề xuất' : 'Chuyển trình ký báo cáo',
+          actorRole: formData.chucVuNguoiLap || 'Điều tra viên',
+          action: 'Lập văn bản',
           statusBefore: existingSigningDoc?.status || 'chua_tao',
-          statusAfter: status,
-          version: nextVersion,
-          note: `Đề xuất hướng xử lý: ${huongLabel}`,
+          statusAfter: 'nhap',
+          version: 'V1',
+          note: `Phương án đề xuất: ${formData.phuongAnDeXuat}`,
         },
       ],
-
       stepId: 'STEP-02',
     };
 
-    return updatedDoc;
-  };
-
-  // 1. Thao tác Lưu nháp
-  const handleSaveDraft = () => {
-    const formData = getCurrentFormData();
-    const updatedDoc = buildSigningDocument(formData, 'nhap');
-
-    initialValuesRef.current = {
-      tomTatNoiDung,
-      nhanDinhCanBo,
-      thongTinCanLamRo,
-      huongXuLyDeXuat,
-      lyDoCanCuDeXuat,
-      congViecTiepTheo,
-    };
+    (updatedDoc as any).formData = formData;
 
     onSaveDraft?.(formData, updatedDoc);
-    showToast('✓ Đã lưu nháp Báo cáo đề xuất hướng xử lý đơn thành công (Trạng thái: Bản nháp)!');
-  };
-
-  // 2. Thao tác Trình lãnh đạo
-  const handleSubmitToLeader = () => {
-    const newErrors: {
-      tomTatNoiDung?: string;
-      nhanDinhCanBo?: string;
-      huongXuLyDeXuat?: string;
-      lyDoCanCuDeXuat?: string;
-    } = {};
-
-    if (!tomTatNoiDung.trim()) {
-      newErrors.tomTatNoiDung = 'Vui lòng nhập tóm tắt nội dung đơn báo cáo.';
-    }
-    if (!nhanDinhCanBo.trim()) {
-      newErrors.nhanDinhCanBo = 'Vui lòng nhập nhận định ban đầu của cán bộ.';
-    }
-    if (!huongXuLyDeXuat) {
-      newErrors.huongXuLyDeXuat = 'Vui lòng chọn hướng xử lý đề xuất.';
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-
-    setErrors({});
-    const formData = getCurrentFormData();
-    // Tạo SigningDocument với trạng thái 'cho_trinh' (Chờ trình ký để cán bộ chọn lãnh đạo nhận trình trong quy trình trình ký)
-    const updatedDoc = buildSigningDocument(formData, 'cho_trinh');
-
-    onSubmitToLeader?.(formData, updatedDoc);
     onClose();
   };
 
-  // Thông tin hướng xử lý đang chọn
-  const currentHuongInfo = DANH_SACH_HUONG_XU_LY.find((h) => h.value === huongXuLyDeXuat);
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in font-body-md select-none">
-      {/* Toast thông báo nhanh */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in font-body-md">
+      {/* Toast thông báo */}
       {toastMessage && (
         <div className="fixed top-6 right-6 z-60 flex items-center gap-2.5 px-4 py-3 bg-slate-900 text-white rounded-xl shadow-2xl border border-slate-700 text-xs font-medium animate-slide-in max-w-md">
-          <span className="material-symbols-outlined text-emerald-400 text-lg shrink-0">check_circle</span>
+          <span className="material-symbols-outlined text-amber-400 text-lg shrink-0">warning</span>
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* Container modal chính: 800 - 1000px, max-height 85vh */}
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden animate-scale-in">
-
-        {/* ================= HEADER CỐ ĐỊNH PHÍA TRÊN ================= */}
-        <div className="bg-[#004ac6] px-6 py-4 flex items-center justify-between shrink-0 border-b border-[#004ac6]">
-          <div className="flex items-center gap-3">
-
+      {/* Container modal chính */}
+      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden animate-scale-in">
+        {/* ================= HEADER ================= */}
+        <div className="bg-[#004ac6] px-6 py-3.5 flex items-center justify-between shrink-0 border-b border-[#004ac6]">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white shrink-0">
+              <span className="material-symbols-outlined text-xl">assignment_turned_in</span>
+            </div>
             <div>
-
-              <h2 className="text-base font-bold text-white tracking-tight mt-0.5">
+              <h2 className="text-base font-bold text-white tracking-tight">
                 Tạo Báo cáo đề xuất
               </h2>
+              <p className="text-[11px] text-blue-100 font-normal">
+                Báo cáo kết quả xác minh về việc giải quyết đơn (tố giác / tin báo / kiến nghị khởi tố) • Hồ sơ: <strong className="font-mono text-white">{maDon}</strong>
+              </p>
             </div>
           </div>
 
           <button
             type="button"
-            onClick={handleRequestClose}
-            className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition cursor-pointer"
+            onClick={onClose}
+            className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white flex items-center justify-center transition cursor-pointer"
             title="Đóng (Hủy)"
           >
             <span className="material-symbols-outlined text-lg">close</span>
           </button>
         </div>
 
-        {/* ================= NỘI DUNG BIỂU MẪU (CUỘN ĐỘC LẬP) ================= */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-5 bg-white">
+        {/* ================= NỘI DUNG FORM ================= */}
+        <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5 bg-white text-xs">
 
-          {/* Thông báo nếu có chỉ đạo chỉnh sửa từ Lãnh đạo */}
-          {existingSigningDoc?.status === 'yeu_cau_chinh_sua' && (
-            <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-900 flex items-start gap-3">
-              <span className="material-symbols-outlined text-rose-600 text-xl shrink-0 mt-0.5">error</span>
-              <div>
-                <strong className="font-bold block text-rose-950 mb-0.5">
-                  Lãnh đạo yêu cầu chỉnh sửa báo cáo (Phiên bản trước: {existingSigningDoc.phienBanHienTai}):
-                </strong>
-                <p className="leading-relaxed">
-                  {existingSigningDoc.lyDoTraLai ||
-                    existingSigningDoc.auditLogs?.find((a) => a.action.includes('chỉnh sửa'))?.note ||
-                    'Vui lòng làm rõ thêm căn cứ pháp lý và bổ sung nội dung xác minh hiện trạng trước khi phê duyệt.'}
-                </p>
-                <span className="text-[11px] text-rose-700 block mt-1">
-                  Cán bộ cập nhật lại các mục dưới đây và nhấn <strong>“Trình lãnh đạo”</strong> để chuyển sang quy trình ký duyệt lại.
-                </span>
-              </div>
+          {/* Cảnh báo lỗi chung nếu có */}
+          {Object.keys(errors).length > 0 && (
+            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
+              <span className="material-symbols-outlined text-rose-600 text-lg shrink-0">error</span>
+              <span>
+                Vui lòng kiểm tra lại các trường đánh dấu <strong>*</strong> bắt buộc trước khi lưu báo cáo.
+              </span>
             </div>
           )}
 
-          {/* 1. THÔNG TIN ĐƠN (CHỈ ĐỌC, KẾ THỪA TỪ HỒ SƠ ĐANG MỞ) */}
-          <div className="bg-slate-50 rounded-xl border border-slate-200 p-4">
-            <div className="flex items-center justify-between mb-2.5">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-blue-600 text-[16px]">folder_open</span>
-                Thông tin hồ sơ đơn tiếp nhận
-              </h3>
+          {/* NHÓM 1: CƠ QUAN LẬP, SỐ BÁO CÁO & NGƯỜI LẬP / NGƯỜI NHẬN */}
+          <div className="bg-slate-50/70 rounded-xl border border-slate-200 p-4 space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-200/80">
+              <span className="material-symbols-outlined text-[#004ac6] text-[17px]">account_balance</span>
+              <span>1. Thông tin cơ quan, số văn bản &amp; Người lập / Người nhận báo cáo</span>
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Số báo cáo <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={soBaoCao}
+                  onChange={(e) => {
+                    setSoBaoCao(e.target.value);
+                    if (errors.soBaoCao) setErrors((prev) => ({ ...prev, soBaoCao: '' }));
+                  }}
+                  placeholder="VD: 24/BC-CQĐT"
+                  className={`w-full px-3 py-2 font-mono font-bold text-slate-900 bg-white border rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none ${
+                    errors.soBaoCao ? 'border-rose-400 bg-rose-50/30' : 'border-slate-300'
+                  }`}
+                />
+                {errors.soBaoCao && <p className="text-[10.5px] text-rose-600 mt-1">{errors.soBaoCao}</p>}
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Ngày lập báo cáo <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={ngayLap}
+                  onChange={(e) => {
+                    setNgayLap(e.target.value);
+                    if (errors.ngayLap) setErrors((prev) => ({ ...prev, ngayLap: '' }));
+                  }}
+                  placeholder="DD/MM/YYYY"
+                  className={`w-full px-3 py-2 font-mono text-slate-800 bg-white border rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none ${
+                    errors.ngayLap ? 'border-rose-400 bg-rose-50/30' : 'border-slate-300'
+                  }`}
+                />
+                {errors.ngayLap && <p className="text-[10.5px] text-rose-600 mt-1">{errors.ngayLap}</p>}
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Cơ quan Công an cấp trên (1)
+                </label>
+                <input
+                  type="text"
+                  value={coQuanCapTren}
+                  onChange={(e) => setCoQuanCapTren(e.target.value)}
+                  className="w-full px-3 py-2 font-semibold text-slate-800 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block font-bold text-slate-700 mb-1">
+                  Cơ quan / Đơn vị lập báo cáo (1) <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={coQuanLap}
+                  onChange={(e) => {
+                    setCoQuanLap(e.target.value);
+                    if (errors.coQuanLap) setErrors((prev) => ({ ...prev, coQuanLap: '' }));
+                  }}
+                  className={`w-full px-3 py-2 font-bold text-slate-900 bg-white border rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none ${
+                    errors.coQuanLap ? 'border-rose-400 bg-rose-50/30' : 'border-slate-300'
+                  }`}
+                />
+                {errors.coQuanLap && <p className="text-[10.5px] text-rose-600 mt-1">{errors.coQuanLap}</p>}
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Người lập báo cáo (Điều tra viên) <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={nguoiLap}
+                  onChange={(e) => {
+                    setNguoiLap(e.target.value);
+                    if (errors.nguoiLap) setErrors((prev) => ({ ...prev, nguoiLap: '' }));
+                  }}
+                  className={`w-full px-3 py-2 font-semibold text-slate-800 bg-white border rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none ${
+                    errors.nguoiLap ? 'border-rose-400 bg-rose-50/30' : 'border-slate-300'
+                  }`}
+                />
+                {errors.nguoiLap && <p className="text-[10.5px] text-rose-600 mt-1">{errors.nguoiLap}</p>}
+              </div>
+
+              <div className="md:col-span-3">
+                <label className="block font-bold text-slate-700 mb-1">
+                  Người nhận báo cáo (3) (Kính gửi Thủ trưởng / Phó Thủ trưởng) <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={nguoiNhan}
+                  onChange={(e) => {
+                    setNguoiNhan(e.target.value);
+                    if (errors.nguoiNhan) setErrors((prev) => ({ ...prev, nguoiNhan: '' }));
+                  }}
+                  placeholder="VD: Thủ trưởng (Phó Thủ trưởng) Cơ quan Cảnh sát điều tra Công an quận Cầu Giấy"
+                  className={`w-full px-3 py-2 font-bold text-[#004ac6] bg-white border rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none ${
+                    errors.nguoiNhan ? 'border-rose-400 bg-rose-50/30' : 'border-slate-300'
+                  }`}
+                />
+                {errors.nguoiNhan && <p className="text-[10.5px] text-rose-600 mt-1">{errors.nguoiNhan}</p>}
+              </div>
             </div>
+          </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-              <div className="bg-white p-2.5 rounded-lg border border-slate-200/80">
-                <span className="text-slate-500 block text-[11px] mb-0.5">Mã đơn / Số đơn:</span>
-                <span className="font-bold text-slate-900 font-mono text-sm">{maDon}</span>
+          {/* NHÓM 2: THÔNG TIN PHÂN CÔNG & ĐƠN TỐ GIÁC */}
+          <div className="bg-slate-50/70 rounded-xl border border-slate-200 p-4 space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-200/80">
+              <span className="material-symbols-outlined text-blue-600 text-[17px]">folder_shared</span>
+              <span>2. Thông tin phân công giải quyết nguồn tin &amp; Đơn tiếp nhận</span>
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Số QĐ Phân công giải quyết nguồn tin
+                </label>
+                <input
+                  type="text"
+                  value={soPhanCong}
+                  onChange={(e) => setSoPhanCong(e.target.value)}
+                  className="w-full px-3 py-1.5 font-mono text-slate-800 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
               </div>
 
-              <div className="bg-white p-2.5 rounded-lg border border-slate-200/80">
-                <span className="text-slate-500 block text-[11px] mb-0.5">Loại đơn:</span>
-                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11.5px] font-bold ">
-                  {loaiDon}
-                </span>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Ngày ban hành QĐ phân công
+                </label>
+                <input
+                  type="text"
+                  value={ngayPhanCong}
+                  onChange={(e) => setNgayPhanCong(e.target.value)}
+                  className="w-full px-3 py-1.5 font-mono text-slate-800 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
               </div>
 
-              <div className="bg-white p-2.5 rounded-lg border border-slate-200/80">
-                <span className="text-slate-500 block text-[11px] mb-0.5">Người gửi đơn:</span>
-                <span className="font-semibold text-slate-800">{nguoiGuiDon}</span>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Người nộp đơn / Tố giác
+                </label>
+                <input
+                  type="text"
+                  value={nguoiGuiDon}
+                  onChange={(e) => setNguoiGuiDon(e.target.value)}
+                  className="w-full px-3 py-1.5 font-semibold text-slate-800 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
               </div>
 
-              <div className="bg-white p-2.5 rounded-lg border border-slate-200/80">
-                <span className="text-slate-500 block text-[11px] mb-0.5">Ngày tiếp nhận:</span>
-                <span className="font-semibold text-slate-800">{ngayTiepNhan}</span>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Cư trú / Địa chỉ người nộp đơn
+                </label>
+                <input
+                  type="text"
+                  value={diaChiNguoiGui}
+                  onChange={(e) => setDiaChiNguoiGui(e.target.value)}
+                  className="w-full px-3 py-1.5 text-slate-800 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block font-bold text-slate-700 mb-1">
+                  Nội dung đơn phản ánh / tố giác <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  rows={2}
+                  value={noiDungDon}
+                  onChange={(e) => {
+                    setNoiDungDon(e.target.value);
+                    if (errors.noiDungDon) setErrors((prev) => ({ ...prev, noiDungDon: '' }));
+                  }}
+                  className={`w-full p-2.5 text-slate-800 bg-white border rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none ${
+                    errors.noiDungDon ? 'border-rose-400 bg-rose-50/30' : 'border-slate-300'
+                  }`}
+                />
+                {errors.noiDungDon && <p className="text-[10.5px] text-rose-600 mt-1">{errors.noiDungDon}</p>}
               </div>
             </div>
-
-
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-slate-800 mb-1 flex items-center justify-between">
-              <span>
-                1. Tóm tắt nội dung đơn <span className="text-rose-500">*</span>
-              </span>
-
-            </label>
-            <textarea
-              rows={3}
-              value={tomTatNoiDung}
-              onChange={(e) => {
-                setTomTatNoiDung(e.target.value);
-                if (errors.tomTatNoiDung) setErrors((prev) => ({ ...prev, tomTatNoiDung: undefined }));
-              }}
-              className={`w-full text-xs border rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:outline-hidden leading-relaxed text-slate-800 transition ${errors.tomTatNoiDung ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-300'
-                }`}
-              placeholder="Nhập tóm tắt bản chất hành vi vi phạm bị tố cáo, đối tượng bị tố cáo và yêu cầu của người tố cáo..."
-            />
-            {errors.tomTatNoiDung && (
-              <p className="text-[11px] text-rose-600 font-medium mt-1 flex items-center gap-1">
-                <span className="material-symbols-outlined text-[13px]">error</span>
-                {errors.tomTatNoiDung}
-              </p>
-            )}
           </div>
 
-          {/* 3. NHẬN ĐỊNH BAN ĐẦU */}
-          <div className="space-y-3 p-4 rounded-xl border border-slate-200 bg-slate-50/50">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-indigo-600 text-[16px]">psychology</span>
-              2. Nhận định ban đầu của cán bộ thụ lý
+          {/* NHÓM 3: I. KẾT QUẢ XÁC MINH */}
+          <div className="bg-slate-50/70 rounded-xl border border-slate-200 p-4 space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-200/80">
+              <span className="material-symbols-outlined text-indigo-600 text-[17px]">fact_check</span>
+              <span>I. Kết quả xác minh</span>
             </h3>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                2.1. Nhận định về nội dung đơn (dựa trên thông tin, tài liệu hiện có) <span className="text-rose-500">*</span>
+              <label className="block font-bold text-slate-800 mb-1">
+                1. Các tài liệu, chứng cứ đã thu thập (Người nộp cung cấp &amp; CQĐT thu thập) <span className="text-rose-500">*</span>
               </label>
               <textarea
-                rows={3}
-                value={nhanDinhCanBo}
+                rows={4}
+                value={taiLieuThuThap}
                 onChange={(e) => {
-                  setNhanDinhCanBo(e.target.value);
-                  if (errors.nhanDinhCanBo) setErrors((prev) => ({ ...prev, nhanDinhCanBo: undefined }));
+                  setTaiLieuThuThap(e.target.value);
+                  if (errors.taiLieuThuThap) setErrors((prev) => ({ ...prev, taiLieuThuThap: '' }));
                 }}
-                className={`w-full text-xs border rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:outline-hidden leading-relaxed text-slate-800 bg-white transition ${errors.nhanDinhCanBo ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-300'
-                  }`}
-                placeholder="Nhận định sơ bộ về tính chất vụ việc, thẩm quyền, tính có căn cứ ban đầu của yêu cầu/phản ánh..."
+                className={`w-full p-2.5 text-slate-800 bg-white border rounded-xl leading-relaxed focus:ring-2 focus:ring-blue-500 focus:outline-none ${
+                  errors.taiLieuThuThap ? 'border-rose-400 bg-rose-50/30' : 'border-slate-300'
+                }`}
+                placeholder="Liệt kê chi tiết tài liệu do người nộp đơn cung cấp và tài liệu, lời khai, biên bản do Cơ quan Điều tra thu thập..."
               />
-              {errors.nhanDinhCanBo && (
-                <p className="text-[11px] text-rose-600 font-medium mt-1 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[13px]">error</span>
-                  {errors.nhanDinhCanBo}
-                </p>
-              )}
+              {errors.taiLieuThuThap && <p className="text-[10.5px] text-rose-600 mt-1">{errors.taiLieuThuThap}</p>}
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                2.2. Thông tin còn thiếu hoặc nội dung cần làm rõ (nếu có)
+              <label className="block font-bold text-slate-800 mb-1">
+                2. Nội dung diễn biến sự việc được xác minh <span className="text-rose-500">*</span>
+              </label>
+              <textarea
+                rows={3}
+                value={noiDungXacMinh}
+                onChange={(e) => {
+                  setNoiDungXacMinh(e.target.value);
+                  if (errors.noiDungXacMinh) setErrors((prev) => ({ ...prev, noiDungXacMinh: '' }));
+                }}
+                className={`w-full p-2.5 text-slate-800 bg-white border rounded-xl leading-relaxed focus:ring-2 focus:ring-blue-500 focus:outline-none ${
+                  errors.noiDungXacMinh ? 'border-rose-400 bg-rose-50/30' : 'border-slate-300'
+                }`}
+                placeholder="Tóm tắt trung thực, khách quan diễn biến sự việc trên cơ sở các tài liệu, chứng cứ đã thu thập và xác minh được..."
+              />
+              {errors.noiDungXacMinh && <p className="text-[10.5px] text-rose-600 mt-1">{errors.noiDungXacMinh}</p>}
+            </div>
+          </div>
+
+          {/* NHÓM 4: II. NHẬN XÉT VÀ ĐỀ XUẤT */}
+          <div className="bg-slate-50/70 rounded-xl border border-slate-200 p-4 space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-200/80">
+              <span className="material-symbols-outlined text-emerald-600 text-[17px]">gavel</span>
+              <span>II. Nhận xét và đề xuất</span>
+            </h3>
+
+            <div>
+              <label className="block font-bold text-slate-800 mb-1">
+                1. Đánh giá, nhận xét (Tính chất mức độ, dấu hiệu tội phạm) <span className="text-rose-500">*</span>
+              </label>
+              <textarea
+                rows={3}
+                value={danhGiaNhanXet}
+                onChange={(e) => {
+                  setDanhGiaNhanXet(e.target.value);
+                  if (errors.danhGiaNhanXet) setErrors((prev) => ({ ...prev, danhGiaNhanXet: '' }));
+                }}
+                className={`w-full p-2.5 text-slate-800 bg-white border rounded-xl leading-relaxed focus:ring-2 focus:ring-blue-500 focus:outline-none ${
+                  errors.danhGiaNhanXet ? 'border-rose-400 bg-rose-50/30' : 'border-slate-300'
+                }`}
+                placeholder="- Về tính chất, mức độ của sự việc: ...\n- Về dấu hiệu tội phạm: ..."
+              />
+              {errors.danhGiaNhanXet && <p className="text-[10.5px] text-rose-600 mt-1">{errors.danhGiaNhanXet}</p>}
+            </div>
+
+            <div>
+              <label className="block font-bold text-slate-800 mb-1">
+                Căn cứ pháp lý <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={canCuPhapLy}
+                onChange={(e) => {
+                  setCanCuPhapLy(e.target.value);
+                  if (errors.canCuPhapLy) setErrors((prev) => ({ ...prev, canCuPhapLy: '' }));
+                }}
+                className={`w-full px-3 py-2 text-slate-800 bg-white border rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none ${
+                  errors.canCuPhapLy ? 'border-rose-400 bg-rose-50/30' : 'border-slate-300'
+                }`}
+                placeholder="Căn cứ Điều ... BLTTHS 2015; Điều ... Bộ luật Hình sự..."
+              />
+              {errors.canCuPhapLy && <p className="text-[10.5px] text-rose-600 mt-1">{errors.canCuPhapLy}</p>}
+            </div>
+
+            {/* 2. Đề xuất xử lý: 4 phương án chuẩn */}
+            <div className="pt-2">
+              <label className="block font-bold text-slate-900 mb-1.5 flex items-center justify-between">
+                <span>2. Đề xuất xử lý (Chọn 1 trong 4 phương án chuẩn)</span>
+                <span className="text-[10.5px] font-normal text-blue-700">Tự động tích dấu [X] vào văn bản</span>
+              </label>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {DANH_SACH_PHUONG_AN.map((pa) => {
+                  const isChecked = phuongAnDeXuat === pa.id;
+                  return (
+                    <div
+                      key={pa.id}
+                      onClick={() => setPhuongAnDeXuat(pa.id)}
+                      className={`p-3 rounded-xl border transition-all cursor-pointer flex items-start gap-2.5 ${
+                        isChecked
+                          ? 'border-[#004ac6] bg-blue-50/80 shadow-xs ring-1 ring-[#004ac6]'
+                          : 'border-slate-200 bg-white hover:bg-slate-50'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="phuongAnDeXuat"
+                        checked={isChecked}
+                        onChange={() => setPhuongAnDeXuat(pa.id)}
+                        className="w-4 h-4 mt-0.5 text-[#004ac6] focus:ring-0 cursor-pointer"
+                      />
+                      <div className="flex-1">
+                        <strong className={`block text-[11.5px] font-bold ${isChecked ? 'text-[#004ac6]' : 'text-slate-800'}`}>
+                          {pa.title}
+                        </strong>
+                        <p className="text-[10.5px] text-slate-500 mt-0.5 leading-snug">
+                          {pa.desc}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">
+                Chi tiết căn cứ đề xuất phương án đã chọn
               </label>
               <textarea
                 rows={2}
-                value={thongTinCanLamRo}
-                onChange={(e) => setThongTinCanLamRo(e.target.value)}
-                className="w-full text-xs border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:outline-hidden leading-relaxed text-slate-800 bg-white"
-                placeholder="Ghi nhận các tài liệu chứng minh còn thiếu, các điểm mâu thuẫn hoặc nội dung cần xác minh làm rõ thêm..."
+                value={chiTietPhuongAn}
+                onChange={(e) => setChiTietPhuongAn(e.target.value)}
+                className="w-full p-2.5 text-slate-800 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                placeholder="Ghi rõ thêm căn cứ Điều luật, lý do cụ thể theo phương án đã chọn..."
               />
             </div>
-          </div>
 
-          {/* 4. NỘI DUNG ĐỀ XUẤT HƯỚNG XỬ LÝ */}
-          {/* <div className="space-y-3 p-4 rounded-xl border border-blue-200 bg-blue-50/30">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[#004ac6] text-[16px]">recommend</span>
-              3. Nội dung đề xuất hướng xử lý
-            </h3> */}
-
-          {/* Chọn hướng xử lý đề xuất */}
-          {/* <div>
-              <label className="block text-xs font-semibold text-slate-800 mb-1">
-                3.1. Hướng xử lý đề xuất <span className="text-rose-500">*</span>
-              </label>
-              <select
-                value={huongXuLyDeXuat}
-                onChange={(e) => {
-                  setHuongXuLyDeXuat(e.target.value);
-                  if (errors.huongXuLyDeXuat) setErrors((prev) => ({ ...prev, huongXuLyDeXuat: undefined }));
-                }}
-                className={`w-full text-xs border rounded-xl px-3 py-2.5 font-semibold text-slate-800 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-hidden ${errors.huongXuLyDeXuat ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-300'
-                  }`}
-              >
-                {DANH_SACH_HUONG_XU_LY.map((item) => (
-                  <option key={item.value} value={item.value}>
-                    {item.label}
-                  </option>
-                ))}
-              </select>
-
-              {errors.huongXuLyDeXuat && (
-                <p className="text-[11px] text-rose-600 font-medium mt-1 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[13px]">error</span>
-                  {errors.huongXuLyDeXuat}
-                </p>
-              )}
-            </div> */}
-
-          {/* Lý do và căn cứ đề xuất */}
-          {/* <div>
-              <label className="block text-xs font-semibold text-slate-800 mb-1">
-                3.2. Lý do và căn cứ pháp lý đề xuất <span className="text-rose-500">*</span>
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">
+                Dự thảo các văn bản tố tụng kèm theo (nếu có)
               </label>
               <textarea
-                rows={3}
-                value={lyDoCanCuDeXuat}
-                onChange={(e) => {
-                  setLyDoCanCuDeXuat(e.target.value);
-                  if (errors.lyDoCanCuDeXuat) setErrors((prev) => ({ ...prev, lyDoCanCuDeXuat: undefined }));
-                }}
-                className={`w-full text-xs border rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:outline-hidden leading-relaxed text-slate-800 bg-white transition ${errors.lyDoCanCuDeXuat ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-300'
-                  }`}
-                placeholder="Nêu rõ các điều khoản luật, thông tư hướng dẫn và cơ sở thực tế dẫn đến hướng xử lý đề xuất..."
+                rows={2}
+                value={vanBanKemTheo}
+                onChange={(e) => setVanBanKemTheo(e.target.value)}
+                className="w-full p-2.5 text-slate-800 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                placeholder="Liệt kê các quyết định, thông báo, bản kết luận kèm theo (VD: Dự thảo Quyết định khởi tố...)"
               />
-              {errors.lyDoCanCuDeXuat && (
-                <p className="text-[11px] text-rose-600 font-medium mt-1 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[13px]">error</span>
-                  {errors.lyDoCanCuDeXuat}
-                </p>
-              )}
-            </div> */}
-
-          {/* Công việc tiếp theo cần thực hiện */}
-          {/* <div>
-            <label className="block text-xs font-semibold text-slate-800 mb-1">
-              3.3. Công việc tiếp theo cần thực hiện
-            </label>
-            <textarea
-              rows={2}
-              value={congViecTiepTheo}
-              onChange={(e) => setCongViecTiepTheo(e.target.value)}
-              className="w-full text-xs border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:outline-hidden leading-relaxed text-slate-800 bg-white"
-              placeholder="Dự kiến các bước tiếp theo sau khi Lãnh đạo cho ý kiến hoặc ký phê duyệt (VD: soạn quyết định, lập tổ xác minh, phát hành văn bản...)"
-            />
-          </div> */}
-          {/* </div> */}
-
-          {/* 5. THÔNG TIN NGƯỜI LẬP (TỰ ĐỘNG TỪ HỆ THỐNG) */}
-          <div className="bg-slate-50 rounded-xl border border-slate-200 p-3.5">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 mb-2 flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-slate-600 text-[16px]">badge</span>
-              3. Thông tin cán bộ lập báo cáo
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-              <div>
-                <label className="block text-slate-500 text-[11px] mb-1">Họ tên cán bộ lập:</label>
-                <input
-                  type="text"
-                  readOnly
-                  value={`${nguoiLap} (${chucVuNguoiLap})`}
-                  className="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white text-slate-800 font-medium cursor-not-allowed"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-500 text-[11px] mb-1">Ngày lập báo cáo (hệ thống):</label>
-                <input
-                  type="text"
-                  readOnly
-                  value={todayFormatted}
-                  className="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white text-slate-800 font-medium cursor-not-allowed font-mono"
-                />
-              </div>
             </div>
           </div>
         </div>
 
-        {/* ================= NHÓM NÚT THAO TÁC CỐ ĐỊNH PHÍA DƯỚI ================= */}
+        {/* ================= FOOTER BUTTONS ================= */}
         <div className="bg-slate-50 border-t border-slate-200 px-6 py-3.5 flex items-center justify-between shrink-0">
-          {/* Nút Hủy */}
           <button
             type="button"
-            onClick={handleRequestClose}
+            onClick={onClose}
             className="px-4 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold cursor-pointer transition shadow-2xs"
           >
             Hủy
           </button>
 
-          <div className="flex items-center gap-2.5">
-            {/* Nút Lưu nháp */}
+          <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={handleSaveDraft}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold cursor-pointer transition shadow-2xs"
-              title="Lưu báo cáo với trạng thái Bản nháp"
+              onClick={handleSave}
+              className="inline-flex items-center gap-2 px-6 py-2 rounded-xl bg-[#004ac6] hover:bg-[#003ea8] active:scale-98 text-white text-xs font-bold shadow-md cursor-pointer transition"
+              title="Kiểm tra thông tin và Lưu báo cáo vào Hồ sơ & Văn bản (Trạng thái: Bản nháp)"
             >
-              <span className="material-symbols-outlined text-[16px] text-slate-500">save</span>
-              <span>Lưu nháp</span>
-            </button>
-
-            {/* Nút Trình lãnh đạo: kiểm tra trường bắt buộc, lưu và chuyển quy trình trình ký */}
-            <button
-              type="button"
-              onClick={handleSubmitToLeader}
-              className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-[#004ac6] hover:bg-[#003ea8] active:scale-98 text-white text-xs font-bold shadow-md cursor-pointer transition"
-              title="Kiểm tra các trường bắt buộc, lưu báo cáo và chuyển sang quy trình trình ký hiện có"
-            >
-              <span className="material-symbols-outlined text-[18px]">send</span>
-              <span>Trình lãnh đạo</span>
+              <span className="material-symbols-outlined text-[17px]">save</span>
+              <span>Lưu</span>
             </button>
           </div>
         </div>
       </div>
-
-      {/* ================= DIALOG XÁC NHẬN KHI CÓ DỮ LIỆU CHƯA LƯU ================= */}
-      {
-        showDiscardConfirm && (
-          <div className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-2xs animate-fade-in">
-            <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 p-5 w-full max-w-md space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
-                  <span className="material-symbols-outlined text-2xl">warning</span>
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-slate-900">Xác nhận đóng biểu mẫu</h4>
-                  <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                    Bạn có thay đổi chưa lưu trong <strong>Báo cáo đề xuất</strong>. Nếu đóng ngay bây giờ, các nội dung vừa nhập sẽ không được lưu lại. Bạn có chắc chắn muốn đóng không?
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2.5 pt-2 border-t border-slate-200">
-                <button
-                  type="button"
-                  onClick={() => setShowDiscardConfirm(false)}
-                  className="px-3.5 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-semibold cursor-pointer"
-                >
-                  Tiếp tục chỉnh sửa
-                </button>
-                <button
-                  type="button"
-                  onClick={handleConfirmDiscard}
-                  className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold cursor-pointer shadow-xs"
-                >
-                  Đóng không lưu
-                </button>
-              </div>
-            </div>
-          </div>
-        )
-      }
-    </div >
+    </div>
   );
 }

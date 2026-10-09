@@ -3,7 +3,7 @@ import { Screen, DonDetail } from "../types";
 import TabThongTinChung from '../components/tabs/TabThongTinChung';
 import TabMoiLienHe from '../components/tabs/TabMoiLienHe';
 import TabDonKhac from '../components/tabs/TabDonKhac';
-import TabTaiLieu from '../components/tabs/TabTaiLieu';
+import TabTaiLieu, { DocItem } from '../components/tabs/TabTaiLieu';
 import TabQuyTrinh from '../components/tabs/TabQuyTrinh';
 import TabLichSuXuLy, { ProcessHistoryLog } from '../components/tabs/TabLichSuXuLy';
 import { matchWorkflowByLoaiDon } from '../constants/workflows';
@@ -370,6 +370,191 @@ export default function DonTiepNhan({
     );
   }, [signingDocuments, currentDon.code]);
 
+  // Kiểm tra báo cáo đề xuất đã được lập và trình ký xong chưa (khác null và status !== 'nhap')
+  const isBaoCaoDaTrinhKy = Boolean(
+    existingSigningDoc && existingSigningDoc.status !== 'nhap'
+  );
+
+  // 1. Nhấn vào "Tạo báo cáo đề xuất" -> Hiển thị popup/modal "Tạo báo cáo đề xuất"
+  const handleTaoBaoCaoDeXuat = () => {
+    if (isBaoCaoDaTrinhKy) {
+      // Nếu đã trình ký, bấm "Xem báo cáo đề xuất" -> mở xem văn bản tại Tab Hồ sơ & Văn bản
+      if (existingSigningDoc) {
+        const docItem: DocItem = {
+          id: existingSigningDoc.id,
+          name: `Bao_cao_ket_qua_xac_minh_${currentDon.code}.pdf`,
+          tenVanBan: existingSigningDoc.tenVanBan || 'Báo cáo kết quả xác minh',
+          category: 'Báo cáo đề xuất',
+          soHieu: existingSigningDoc.soKyHieu,
+          size: '380 KB',
+          pages: 2,
+          uploadDate: existingSigningDoc.ngayTao,
+          signer: `${existingSigningDoc.nguoiLap} (${existingSigningDoc.donViNguoiLap || 'Điều tra viên'})`,
+          coQuanBanHanh: existingSigningDoc.donViNguoiLap || 'Cơ quan Cảnh sát điều tra',
+          stepBelongsTo: 'Bước 2: Xác minh thông tin & Đề xuất',
+          ocrStatus: 'Hoàn tất',
+          isProcessDoc: true,
+          isEditable: true,
+          loaiVanBan: 'bao_cao_de_xuat',
+          nguoiNhan: existingSigningDoc.lanhDaoName || 'Thủ trưởng Cơ quan Điều tra',
+          trichYeu: existingSigningDoc.trichYeu,
+          noiDungChiTiet: existingSigningDoc.noiDungChiTiet,
+          previewExcerpt: existingSigningDoc.noiDungChiTiet,
+          trangThai: existingSigningDoc.status === 'da_ky' ? 'da_ban_hanh' : 'du_thao',
+          fromXacMinh: true,
+          signingStatus: existingSigningDoc.status,
+        };
+        setEditingDocInTab(docItem);
+      }
+      setActiveTab('tai-lieu');
+      return;
+    }
+
+    // Mở popup/modal "Tạo báo cáo đề xuất"
+    setShowTaoBaoCaoDeXuatModal(true);
+  };
+
+  // 2. Nhận sự kiện Trình ký Báo cáo từ TabTaiLieu
+  const handleTrinhKyBaoCaoTuTab = (_docId?: string, updatedDoc?: SigningDocument) => {
+    const docToSubmit = updatedDoc || existingSigningDoc;
+    if (!docToSubmit) return;
+
+    setTrangThaiXacMinh('da_xac_minh');
+    showToast(
+      `✓ Đã trình ký Báo cáo kết quả xác minh (${docToSubmit.soKyHieu}) tới Lãnh đạo! Nút Chỉnh sửa thông tin và Thụ lý đơn đã được mở khóa.`
+    );
+
+    addHistoryLog({
+      title: `Trình Lãnh đạo Báo cáo kết quả xác minh (${docToSubmit.soKyHieu})`,
+      actor: currentAccount?.name || currentDon.canBoXuLy || 'Nguyễn Minh Anh',
+      actorRole: currentAccount?.role || currentDon.chucVuCanBo || 'Cán bộ thụ lý',
+      actorDept: currentAccount?.phongBan || currentDon.donViXuLy || 'Phòng Tiếp công dân & Xử lý đơn',
+      category: 'van_ban',
+      statusBadge: {
+        text: 'Chờ duyệt ký',
+        bgClass: 'bg-blue-50',
+        textClass: 'text-blue-800',
+        borderClass: 'border-blue-200',
+      },
+      description: `Đã hoàn tất lập Báo cáo kết quả xác minh và chuyển sang quy trình trình ký Lãnh đạo phê duyệt.`,
+      docInfo: {
+        name: docToSubmit.tenVanBan,
+        code: docToSubmit.soKyHieu,
+        type: 'bao_cao',
+      },
+    });
+  };
+
+  // 3. Xử lý lưu nháp từ popup TaoBaoCaoDeXuatModal
+  const handleSaveDraftBaoCaoModal = (
+    _formData: BaoCaoDeXuatFormData,
+    updatedDoc: SigningDocument
+  ) => {
+    if (onUpdateSigningDocuments) {
+      onUpdateSigningDocuments((prev) => {
+        const idx = prev.findIndex((d) => d.id === updatedDoc.id || d.hoSoCode === currentDon.code);
+        if (idx >= 0) {
+          const next = [...prev];
+          next[idx] = updatedDoc;
+          return next;
+        }
+        return [updatedDoc, ...prev];
+      });
+    } else if (onCreateSigningDocument) {
+      onCreateSigningDocument(updatedDoc);
+    }
+
+    if (_formData.phuongAnDeXuat) {
+      let mappedHuong: HuongGiaiQuyetType = 'thu_ly';
+      if (_formData.phuongAnDeXuat === 1) mappedHuong = 'thu_ly';
+      else if (_formData.phuongAnDeXuat === 2) mappedHuong = 'ban_giao';
+      else if (_formData.phuongAnDeXuat === 3) mappedHuong = 'tra_loi_don';
+      else if (_formData.phuongAnDeXuat === 4) mappedHuong = 'yeu_cau_bo_sung';
+      setHuongXuLyDaChon(mappedHuong);
+    }
+
+    setEditingDocInTab(null);
+    setActiveTab('tai-lieu');
+    setDocCount((c) => Math.max(c, 7));
+
+    showToast('✓ Đã lưu Báo cáo kết quả xác minh vào Hồ sơ và văn bản (Bản nháp)!');
+
+    addHistoryLog({
+      title: `Lập Báo cáo kết quả xác minh (${updatedDoc.soKyHieu})`,
+      actor: updatedDoc.nguoiLap,
+      actorRole: currentAccount?.role || currentDon.chucVuCanBo || 'Cán bộ thụ lý',
+      actorDept: updatedDoc.donViNguoiLap || currentDon.donViXuLy || 'Phòng Tiếp công dân & Xử lý đơn',
+      category: 'van_ban',
+      statusBadge: {
+        text: 'Bản nháp',
+        bgClass: 'bg-slate-100',
+        textClass: 'text-slate-800',
+        borderClass: 'border-slate-200',
+      },
+      description: `Đã lưu bản nháp Báo cáo kết quả xác minh về việc giải quyết đơn. Văn bản hiển thị tại tab "Hồ sơ và văn bản".`,
+      docInfo: {
+        name: updatedDoc.tenVanBan,
+        code: updatedDoc.soKyHieu,
+        type: 'bao_cao',
+      },
+    });
+  };
+
+  // 4. Xử lý trình lãnh đạo từ popup TaoBaoCaoDeXuatModal
+  const handleSubmitToLeaderBaoCaoModal = (
+    formData: BaoCaoDeXuatFormData,
+    updatedDoc: SigningDocument
+  ) => {
+    if (onUpdateSigningDocuments) {
+      onUpdateSigningDocuments((prev) => {
+        const idx = prev.findIndex((d) => d.id === updatedDoc.id || d.hoSoCode === currentDon.code);
+        if (idx >= 0) {
+          const next = [...prev];
+          next[idx] = updatedDoc;
+          return next;
+        }
+        return [updatedDoc, ...prev];
+      });
+    }
+
+    if (formData.phuongAnDeXuat) {
+      let mappedHuong: HuongGiaiQuyetType = 'thu_ly';
+      if (formData.phuongAnDeXuat === 1) mappedHuong = 'thu_ly';
+      else if (formData.phuongAnDeXuat === 2) mappedHuong = 'ban_giao';
+      else if (formData.phuongAnDeXuat === 3) mappedHuong = 'tra_loi_don';
+      else if (formData.phuongAnDeXuat === 4) mappedHuong = 'yeu_cau_bo_sung';
+      setHuongXuLyDaChon(mappedHuong);
+    }
+
+    setTrangThaiXacMinh('da_xac_minh');
+    setShowTaoBaoCaoDeXuatModal(false);
+    setDocCount((c) => Math.max(c, 7));
+
+    showToast(
+      `✓ Đã lập và trình ký Báo cáo kết quả xác minh (${updatedDoc.soKyHieu}) tới Lãnh đạo! Nút Chỉnh sửa thông tin và Thụ lý đã được mở khóa.`
+    );
+
+    addHistoryLog({
+      title: `Trình Lãnh đạo Báo cáo kết quả xác minh (${updatedDoc.soKyHieu})`,
+      actor: currentAccount?.name || currentDon.canBoXuLy || 'Nguyễn Minh Anh',
+      actorRole: currentAccount?.role || currentDon.chucVuCanBo || 'Cán bộ thụ lý',
+      actorDept: currentAccount?.phongBan || currentDon.donViXuLy || 'Phòng Tiếp công dân & Xử lý đơn',
+      category: 'van_ban',
+      statusBadge: {
+        text: 'Chờ duyệt ký',
+        bgClass: 'bg-blue-50',
+        textClass: 'text-blue-800',
+        borderClass: 'border-blue-200',
+      },
+      description: `Hoàn tất lập Báo cáo kết quả xác minh về việc giải quyết đơn số ${currentDon.code} và đã chuyển sang luồng trình ký Lãnh đạo.`,
+      docInfo: {
+        name: updatedDoc.tenVanBan,
+        code: updatedDoc.soKyHieu,
+        type: 'bao_cao',
+      },
+    });
+  };
+
   const workflow = matchWorkflowByLoaiDon(currentDon.loaiDon || 'Đơn khiếu nại đất đai');
 
   // Xác định bước hiện tại của quy trình (từ currentDon hoặc mặc định)
@@ -496,7 +681,7 @@ export default function DonTiepNhan({
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
               <h1 className="text-[19px] font-bold text-slate-900 tracking-tight font-headline-md leading-tight">
-                {currentDon.code}: {currentDon.title.startsWith(currentDon.code) ? currentDon.title.replace(`${currentDon.code}: `, '') : currentDon.title}
+                {currentDon.code}: {currentDon.title ? (currentDon.title.startsWith(currentDon.code) ? currentDon.title.replace(`${currentDon.code}: `, '') : currentDon.title) : (currentDon.noiDung || 'Đơn tiếp nhận & xử lý')}
               </h1>
 
               {/* Status Badge: Hướng xử lý hiện tại */}
@@ -559,277 +744,280 @@ export default function DonTiepNhan({
 
           {/* Action Buttons: Nút Chỉnh sửa thông tin + Split Button chính */}
           <div className="flex items-center gap-2.5 shrink-0">
-            {/* Nút Tạo báo cáo đề xuất (nghiệp vụ Quản lý Đơn) */}
+            {/* Nút Tạo / Xem báo cáo đề xuất (nghiệp vụ Quản lý Đơn) */}
             <button
               type="button"
-              onClick={() => setShowTaoBaoCaoDeXuatModal(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-blue-300 bg-blue-50/90 hover:bg-blue-100 active:scale-95 text-[#004ac6] text-[13px] font-bold shadow-2xs transition-all cursor-pointer"
-              title="Mở popup biểu mẫu Tạo Báo cáo đề xuất hướng xử lý Đơn và chuyển sang quy trình trình ký"
+              onClick={handleTaoBaoCaoDeXuat}
+              className={`inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border transition-all cursor-pointer shadow-2xs active:scale-95 text-[13px] font-bold ${isBaoCaoDaTrinhKy
+                ? 'border-blue-300 bg-blue-50/90 hover:bg-blue-100 text-[#004ac6]'
+                : 'border-blue-600 bg-[#004ac6] hover:bg-[#003ea8] text-white shadow-md ring-2 ring-blue-300/40'
+                }`}
+              title={
+                isBaoCaoDaTrinhKy
+                  ? 'Xem văn bản Báo cáo đề xuất tại tab Hồ sơ & Văn bản'
+                  : 'Khởi tạo văn bản Báo cáo đề xuất chi tiết tại tab Hồ sơ & Văn bản để chỉnh sửa và trình ký'
+              }
             >
               <span className="material-symbols-outlined text-[18px]">rate_review</span>
-              <span>Tạo báo cáo đề xuất</span>
-              {existingSigningDoc?.status === 'yeu_cau_chinh_sua' ? (
-                <span className="px-1.5 py-0.2 rounded text-[10px] bg-rose-600 text-white font-bold animate-pulse">
-                  Cần sửa
-                </span>
-              ) : existingSigningDoc?.status === 'nhap' ? (
-                <span className="px-1.5 py-0.2 rounded text-[10px] bg-slate-600 text-white font-medium">
-                  Bản nháp
-                </span>
-              ) : null}
+              <span>{isBaoCaoDaTrinhKy ? 'Xem báo cáo đề xuất' : 'Tạo báo cáo đề xuất'}</span>
+
             </button>
+            {/* Sau khi lập và trình ký văn bản báo cáo xong mới hiển thị nút Chỉnh sửa và Thụ lý */}
+            {isBaoCaoDaTrinhKy && (
+              <>
+                {/* Nút Chỉnh sửa thông tin đơn */}
+                <button
+                  type="button"
+                  onClick={() => setShowChinhSuaModal(true)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 hover:border-slate-400 active:scale-95 text-slate-700 text-[13px] font-semibold shadow-2xs transition-all cursor-pointer"
+                  title="Chỉnh sửa thông tin người nộp, loại đơn, nội dung và cán bộ xử lý"
+                >
+                  <span className="material-symbols-outlined text-[18px] text-slate-500">edit_note</span>
+                  <span>Chỉnh sửa thông tin</span>
+                </button>
 
-            {/* Nút Chỉnh sửa thông tin đơn */}
-            <button
-              type="button"
-              onClick={() => setShowChinhSuaModal(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 hover:border-slate-400 active:scale-95 text-slate-700 text-[13px] font-semibold shadow-2xs transition-all cursor-pointer"
-              title="Chỉnh sửa thông tin người nộp, loại đơn, nội dung và cán bộ xử lý"
-            >
-              <span className="material-symbols-outlined text-[18px] text-slate-500">edit_note</span>
-              <span>Chỉnh sửa thông tin</span>
-            </button>
+                {/* Split Button chính + Dropdown chọn hướng xử lý khác */}
+                <div className="relative inline-flex items-center">
+                  {/* 1. NÚT CHÍNH (PRIMARY ACTION BUTTON) */}
+                  <button
+                    type="button"
+                    onClick={handleExecutePrimaryAction}
+                    className={`inline-flex items-center gap-2 px-4.5 py-2.5 rounded-l-xl rounded-r-none border-r border-white/20 active:scale-98 text-white text-[13px] font-semibold transition-all cursor-pointer shadow-md ${huongXuLyDaChon === 'thu_ly'
+                      ? 'bg-emerald-600 hover:bg-emerald-700'
+                      : huongXuLyDaChon === 'khong_thu_ly'
+                        ? 'bg-rose-600 hover:bg-rose-700'
+                        : huongXuLyDaChon === 'yeu_cau_bo_sung'
+                          ? 'bg-blue-600 hover:bg-blue-700'
+                          : huongXuLyDaChon === 'tra_lai'
+                            ? 'bg-amber-600 hover:bg-amber-700'
+                            : huongXuLyDaChon === 'ban_giao'
+                              ? 'bg-purple-600 hover:bg-purple-700'
+                              : 'bg-teal-600 hover:bg-teal-700'
+                      }`}
+                    title="Bấm để thực hiện ngay hướng xử lý chính"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">
+                      {HUONG_XU_LY_CONFIG[huongXuLyDaChon]?.icon || 'gavel'}
+                    </span>
+                    <span>{HUONG_XU_LY_CONFIG[huongXuLyDaChon]?.buttonText || 'Thụ lý'}</span>
+                    {huongXuLyDaChon === 'yeu_cau_bo_sung' && isAiNeedsMissingDocs && (
+                      <span className="px-1.5 py-0.2 rounded bg-white/20 text-[10px] font-bold text-white uppercase tracking-wider">
+                        AI đề xuất
+                      </span>
+                    )}
+                  </button>
 
-            {/* Split Button chính + Dropdown chọn hướng xử lý khác */}
-            <div className="relative inline-flex items-center">
-              {/* 1. NÚT CHÍNH (PRIMARY ACTION BUTTON) */}
-              <button
-                type="button"
-                onClick={handleExecutePrimaryAction}
-                className={`inline-flex items-center gap-2 px-4.5 py-2.5 rounded-l-xl rounded-r-none border-r border-white/20 active:scale-98 text-white text-[13px] font-semibold transition-all cursor-pointer shadow-md ${huongXuLyDaChon === 'thu_ly'
-                  ? 'bg-emerald-600 hover:bg-emerald-700'
-                  : huongXuLyDaChon === 'khong_thu_ly'
-                    ? 'bg-rose-600 hover:bg-rose-700'
-                    : huongXuLyDaChon === 'yeu_cau_bo_sung'
-                      ? 'bg-blue-600 hover:bg-blue-700'
-                      : huongXuLyDaChon === 'tra_lai'
-                        ? 'bg-amber-600 hover:bg-amber-700'
-                        : huongXuLyDaChon === 'ban_giao'
-                          ? 'bg-purple-600 hover:bg-purple-700'
-                          : 'bg-teal-600 hover:bg-teal-700'
-                  }`}
-                title="Bấm để thực hiện ngay hướng xử lý chính"
-              >
-                <span className="material-symbols-outlined text-[18px]">
-                  {HUONG_XU_LY_CONFIG[huongXuLyDaChon]?.icon || 'gavel'}
-                </span>
-                <span>{HUONG_XU_LY_CONFIG[huongXuLyDaChon]?.buttonText || 'Thụ lý'}</span>
-                {huongXuLyDaChon === 'yeu_cau_bo_sung' && isAiNeedsMissingDocs && (
-                  <span className="px-1.5 py-0.2 rounded bg-white/20 text-[10px] font-bold text-white uppercase tracking-wider">
-                    AI đề xuất
-                  </span>
-                )}
-              </button>
+                  {/* 2. NÚT MŨI TÊN DROPDOWN SỔ CÁC HƯỚNG XỬ LÝ KHÁC */}
+                  <button
+                    type="button"
+                    onClick={() => setShowHuongDropdown(!showHuongDropdown)}
+                    className={`inline-flex items-center justify-center px-2.5 py-2.5 rounded-r-xl rounded-l-none text-white transition-all cursor-pointer shadow-md ${huongXuLyDaChon === 'thu_ly'
+                      ? 'bg-emerald-700 hover:bg-emerald-800'
+                      : huongXuLyDaChon === 'khong_thu_ly'
+                        ? 'bg-rose-700 hover:bg-rose-800'
+                        : huongXuLyDaChon === 'yeu_cau_bo_sung'
+                          ? 'bg-blue-700 hover:bg-blue-800'
+                          : huongXuLyDaChon === 'tra_lai'
+                            ? 'bg-amber-700 hover:bg-amber-800'
+                            : huongXuLyDaChon === 'ban_giao'
+                              ? 'bg-purple-700 hover:bg-purple-800'
+                              : 'bg-teal-700 hover:bg-teal-800'
+                      }`}
+                    title="Nhấn để chọn hướng xử lý khác"
+                  >
+                    <span className={`material-symbols-outlined text-[20px] transition-transform ${showHuongDropdown ? 'rotate-180' : ''}`}>
+                      arrow_drop_down
+                    </span>
+                  </button>
 
-              {/* 2. NÚT MŨI TÊN DROPDOWN SỔ CÁC HƯỚNG XỬ LÝ KHÁC */}
-              <button
-                type="button"
-                onClick={() => setShowHuongDropdown(!showHuongDropdown)}
-                className={`inline-flex items-center justify-center px-2.5 py-2.5 rounded-r-xl rounded-l-none text-white transition-all cursor-pointer shadow-md ${huongXuLyDaChon === 'thu_ly'
-                  ? 'bg-emerald-700 hover:bg-emerald-800'
-                  : huongXuLyDaChon === 'khong_thu_ly'
-                    ? 'bg-rose-700 hover:bg-rose-800'
-                    : huongXuLyDaChon === 'yeu_cau_bo_sung'
-                      ? 'bg-blue-700 hover:bg-blue-800'
-                      : huongXuLyDaChon === 'tra_lai'
-                        ? 'bg-amber-700 hover:bg-amber-800'
-                        : huongXuLyDaChon === 'ban_giao'
-                          ? 'bg-purple-700 hover:bg-purple-800'
-                          : 'bg-teal-700 hover:bg-teal-800'
-                  }`}
-                title="Nhấn để chọn hướng xử lý khác"
-              >
-                <span className={`material-symbols-outlined text-[20px] transition-transform ${showHuongDropdown ? 'rotate-180' : ''}`}>
-                  arrow_drop_down
-                </span>
-              </button>
+                  {/* 3. DROPDOWN MENU CHỌN CÁC HƯỚNG XỬ LÝ KHÁC */}
+                  {showHuongDropdown && (
+                    <>
+                      {/* Backdrop vô hình để đóng dropdown khi click outside */}
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setShowHuongDropdown(false)}
+                      />
 
-              {/* 3. DROPDOWN MENU CHỌN CÁC HƯỚNG XỬ LÝ KHÁC */}
-              {showHuongDropdown && (
-                <>
-                  {/* Backdrop vô hình để đóng dropdown khi click outside */}
-                  <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setShowHuongDropdown(false)}
-                  />
+                      <div className="absolute right-0 top-full mt-2 w-84 bg-white rounded-2xl shadow-2xl border border-slate-200 p-2 z-50 animate-scale-up">
 
-                  <div className="absolute right-0 top-full mt-2 w-84 bg-white rounded-2xl shadow-2xl border border-slate-200 p-2 z-50 animate-scale-up">
-
-                    <div className="space-y-1">
-                      {/* 1. Thụ lý */}
-                      <button
-                        type="button"
-                        onClick={() => handleSelectHuong('thu_ly')}
-                        className={`w-full flex items-start gap-2.5 p-2.5 rounded-xl text-left transition-colors cursor-pointer ${huongXuLyDaChon === 'thu_ly'
-                          ? 'bg-emerald-50/80 text-emerald-900 ring-1 ring-emerald-300'
-                          : 'hover:bg-slate-50 text-slate-800'
-                          }`}
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
-                          <span className="material-symbols-outlined text-[18px]">gavel</span>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center justify-between gap-1">
-                            <span className="font-bold text-[13px] text-slate-900">Thụ lý</span>
-                          </div>
-                          <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
-                            Đủ điều kiện thụ lý giải quyết theo quy định
-                          </p>
-                        </div>
-                        {huongXuLyDaChon === 'thu_ly' && (
-                          <span className="material-symbols-outlined text-emerald-600 text-[18px] shrink-0 mt-1">check</span>
-                        )}
-                      </button>
-
-                      {/* 2. Không thụ lý */}
-                      <button
-                        type="button"
-                        onClick={() => handleSelectHuong('khong_thu_ly')}
-                        className={`w-full flex items-start gap-2.5 p-2.5 rounded-xl text-left transition-colors cursor-pointer ${huongXuLyDaChon === 'khong_thu_ly'
-                          ? 'bg-rose-50/80 text-rose-900 ring-1 ring-rose-300'
-                          : 'hover:bg-slate-50 text-slate-800'
-                          }`}
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">
-                          <span className="material-symbols-outlined text-[18px]">cancel</span>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center justify-between gap-1">
-                            <span className="font-bold text-[13px] text-slate-900">Không thụ lý</span>
-                          </div>
-                          <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
-                            Không đủ điều kiện thụ lý theo Điều 29
-                          </p>
-                        </div>
-                        {huongXuLyDaChon === 'khong_thu_ly' && (
-                          <span className="material-symbols-outlined text-rose-600 text-[18px] shrink-0 mt-1">check</span>
-                        )}
-                      </button>
-
-                      {/* 3. Yêu cầu bổ sung */}
-                      <button
-                        type="button"
-                        onClick={() => handleSelectHuong('yeu_cau_bo_sung')}
-                        className={`w-full flex items-start gap-2.5 p-2.5 rounded-xl text-left transition-colors cursor-pointer ${huongXuLyDaChon === 'yeu_cau_bo_sung'
-                          ? 'bg-blue-50/80 text-blue-900 ring-1 ring-blue-300'
-                          : 'hover:bg-slate-50 text-slate-800'
-                          }`}
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0 mt-0.5">
-                          <span className="material-symbols-outlined text-[18px]">note_add</span>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center justify-between gap-1">
-                            <span className="font-bold text-[13px] text-slate-900">Yêu cầu bổ sung</span>
-                            {isAiNeedsMissingDocs && (
-                              <span className="text-[10px] font-bold text-blue-700 bg-blue-100 px-1.5 py-0.2 rounded">
-                                AI đề xuất
-                              </span>
+                        <div className="space-y-1">
+                          {/* 1. Thụ lý */}
+                          <button
+                            type="button"
+                            onClick={() => handleSelectHuong('thu_ly')}
+                            className={`w-full flex items-start gap-2.5 p-2.5 rounded-xl text-left transition-colors cursor-pointer ${huongXuLyDaChon === 'thu_ly'
+                              ? 'bg-emerald-50/80 text-emerald-900 ring-1 ring-emerald-300'
+                              : 'hover:bg-slate-50 text-slate-800'
+                              }`}
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+                              <span className="material-symbols-outlined text-[18px]">gavel</span>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-1">
+                                <span className="font-bold text-[13px] text-slate-900">Thụ lý</span>
+                              </div>
+                              <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
+                                Đủ điều kiện thụ lý giải quyết theo quy định
+                              </p>
+                            </div>
+                            {huongXuLyDaChon === 'thu_ly' && (
+                              <span className="material-symbols-outlined text-emerald-600 text-[18px] shrink-0 mt-1">check</span>
                             )}
-                          </div>
-                          <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
-                            Chưa đủ chứng cứ hoặc hồ sơ theo quy định
-                          </p>
-                        </div>
-                        {huongXuLyDaChon === 'yeu_cau_bo_sung' && (
-                          <span className="material-symbols-outlined text-blue-600 text-[18px] shrink-0 mt-1">check</span>
-                        )}
-                      </button>
+                          </button>
 
-                      {/* 4. Trả lại */}
-                      <button
-                        type="button"
-                        onClick={() => handleSelectHuong('tra_lai')}
-                        className={`w-full flex items-start gap-2.5 p-2.5 rounded-xl text-left transition-colors cursor-pointer ${huongXuLyDaChon === 'tra_lai'
-                          ? 'bg-amber-50/80 text-amber-900 ring-1 ring-amber-300'
-                          : 'hover:bg-slate-50 text-slate-800'
-                          }`}
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 mt-0.5">
-                          <span className="material-symbols-outlined text-[18px]">assignment_return</span>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center justify-between gap-1">
-                            <span className="font-bold text-[13px] text-slate-900">Trả lại</span>
-                          </div>
-                          <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
-                            Trả lại đơn và kèm phiếu hướng dẫn công dân
-                          </p>
-                        </div>
-                        {huongXuLyDaChon === 'tra_lai' && (
-                          <span className="material-symbols-outlined text-amber-600 text-[18px] shrink-0 mt-1">check</span>
-                        )}
-                      </button>
+                          {/* 2. Không thụ lý */}
+                          <button
+                            type="button"
+                            onClick={() => handleSelectHuong('khong_thu_ly')}
+                            className={`w-full flex items-start gap-2.5 p-2.5 rounded-xl text-left transition-colors cursor-pointer ${huongXuLyDaChon === 'khong_thu_ly'
+                              ? 'bg-rose-50/80 text-rose-900 ring-1 ring-rose-300'
+                              : 'hover:bg-slate-50 text-slate-800'
+                              }`}
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">
+                              <span className="material-symbols-outlined text-[18px]">cancel</span>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-1">
+                                <span className="font-bold text-[13px] text-slate-900">Không thụ lý</span>
+                              </div>
+                              <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
+                                Không đủ điều kiện thụ lý theo Điều 29
+                              </p>
+                            </div>
+                            {huongXuLyDaChon === 'khong_thu_ly' && (
+                              <span className="material-symbols-outlined text-rose-600 text-[18px] shrink-0 mt-1">check</span>
+                            )}
+                          </button>
 
-                      {/* 5. Chuyển thẩm quyền xử lý */}
-                      <button
-                        type="button"
-                        onClick={() => handleSelectHuong('ban_giao')}
-                        className={`w-full flex items-start gap-2.5 p-2.5 rounded-xl text-left transition-colors cursor-pointer ${huongXuLyDaChon === 'ban_giao'
-                          ? 'bg-purple-50/80 text-purple-900 ring-1 ring-purple-300'
-                          : 'hover:bg-slate-50 text-slate-800'
-                          }`}
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center shrink-0 mt-0.5">
-                          <span className="material-symbols-outlined text-[18px]">drive_file_move</span>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center justify-between gap-1">
-                            <span className="font-bold text-[13px] text-slate-900">Chuyển thẩm quyền xử lý</span>
-                          </div>
-                          <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
-                            Chuyển đơn đến cơ quan có thẩm quyền giải quyết
-                          </p>
-                        </div>
-                        {huongXuLyDaChon === 'ban_giao' && (
-                          <span className="material-symbols-outlined text-purple-600 text-[18px] shrink-0 mt-1">check</span>
-                        )}
-                      </button>
+                          {/* 3. Yêu cầu bổ sung */}
+                          <button
+                            type="button"
+                            onClick={() => handleSelectHuong('yeu_cau_bo_sung')}
+                            className={`w-full flex items-start gap-2.5 p-2.5 rounded-xl text-left transition-colors cursor-pointer ${huongXuLyDaChon === 'yeu_cau_bo_sung'
+                              ? 'bg-blue-50/80 text-blue-900 ring-1 ring-blue-300'
+                              : 'hover:bg-slate-50 text-slate-800'
+                              }`}
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0 mt-0.5">
+                              <span className="material-symbols-outlined text-[18px]">note_add</span>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-1">
+                                <span className="font-bold text-[13px] text-slate-900">Yêu cầu bổ sung</span>
+                                {isAiNeedsMissingDocs && (
+                                  <span className="text-[10px] font-bold text-blue-700 bg-blue-100 px-1.5 py-0.2 rounded">
+                                    AI đề xuất
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
+                                Chưa đủ chứng cứ hoặc hồ sơ theo quy định
+                              </p>
+                            </div>
+                            {huongXuLyDaChon === 'yeu_cau_bo_sung' && (
+                              <span className="material-symbols-outlined text-blue-600 text-[18px] shrink-0 mt-1">check</span>
+                            )}
+                          </button>
 
-                      {/* 6. Trả lời đơn */}
-                      <button
-                        type="button"
-                        onClick={() => handleSelectHuong('tra_loi_don')}
-                        className={`w-full flex items-start gap-2.5 p-2.5 rounded-xl text-left transition-colors cursor-pointer ${huongXuLyDaChon === 'tra_loi_don'
-                          ? 'bg-teal-50/80 text-teal-900 ring-1 ring-teal-300'
-                          : 'hover:bg-slate-50 text-slate-800'
-                          }`}
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center shrink-0 mt-0.5">
-                          <span className="material-symbols-outlined text-[18px]">reply</span>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center justify-between gap-1">
-                            <span className="font-bold text-[13px] text-slate-900">Trả lời đơn</span>
-                          </div>
-                          <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
-                            Lập văn bản trả lời, giải thích cho công dân
-                          </p>
-                        </div>
-                        {huongXuLyDaChon === 'tra_loi_don' && (
-                          <span className="material-symbols-outlined text-teal-600 text-[18px] shrink-0 mt-1">check</span>
-                        )}
-                      </button>
-                    </div>
+                          {/* 4. Trả lại */}
+                          <button
+                            type="button"
+                            onClick={() => handleSelectHuong('tra_lai')}
+                            className={`w-full flex items-start gap-2.5 p-2.5 rounded-xl text-left transition-colors cursor-pointer ${huongXuLyDaChon === 'tra_lai'
+                              ? 'bg-amber-50/80 text-amber-900 ring-1 ring-amber-300'
+                              : 'hover:bg-slate-50 text-slate-800'
+                              }`}
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 mt-0.5">
+                              <span className="material-symbols-outlined text-[18px]">assignment_return</span>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-1">
+                                <span className="font-bold text-[13px] text-slate-900">Trả lại</span>
+                              </div>
+                              <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
+                                Trả lại đơn và kèm phiếu hướng dẫn công dân
+                              </p>
+                            </div>
+                            {huongXuLyDaChon === 'tra_lai' && (
+                              <span className="material-symbols-outlined text-amber-600 text-[18px] shrink-0 mt-1">check</span>
+                            )}
+                          </button>
 
-                    {/* Phân cách & Bảng xác minh chi tiết */}
-                    <div className="border-t border-slate-100 pt-1.5 mt-1">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowHuongDropdown(false);
-                          setShowXacMinhModal(true);
-                        }}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:text-blue-700 hover:bg-blue-50/80 transition-colors text-[12.5px] font-semibold cursor-pointer"
-                      >
-                        <span className="material-symbols-outlined text-[17px] text-blue-600">fact_check</span>
-                        <span>Mở bảng Xác minh &amp; Đề xuất (4 tiêu chí)</span>
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
+                          {/* 5. Chuyển thẩm quyền xử lý */}
+                          <button
+                            type="button"
+                            onClick={() => handleSelectHuong('ban_giao')}
+                            className={`w-full flex items-start gap-2.5 p-2.5 rounded-xl text-left transition-colors cursor-pointer ${huongXuLyDaChon === 'ban_giao'
+                              ? 'bg-purple-50/80 text-purple-900 ring-1 ring-purple-300'
+                              : 'hover:bg-slate-50 text-slate-800'
+                              }`}
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center shrink-0 mt-0.5">
+                              <span className="material-symbols-outlined text-[18px]">drive_file_move</span>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-1">
+                                <span className="font-bold text-[13px] text-slate-900">Chuyển thẩm quyền xử lý</span>
+                              </div>
+                              <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
+                                Chuyển đơn đến cơ quan có thẩm quyền giải quyết
+                              </p>
+                            </div>
+                            {huongXuLyDaChon === 'ban_giao' && (
+                              <span className="material-symbols-outlined text-purple-600 text-[18px] shrink-0 mt-1">check</span>
+                            )}
+                          </button>
+
+                          {/* 6. Trả lời đơn */}
+                          <button
+                            type="button"
+                            onClick={() => handleSelectHuong('tra_loi_don')}
+                            className={`w-full flex items-start gap-2.5 p-2.5 rounded-xl text-left transition-colors cursor-pointer ${huongXuLyDaChon === 'tra_loi_don'
+                              ? 'bg-teal-50/80 text-teal-900 ring-1 ring-teal-300'
+                              : 'hover:bg-slate-50 text-slate-800'
+                              }`}
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center shrink-0 mt-0.5">
+                              <span className="material-symbols-outlined text-[18px]">reply</span>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-1">
+                                <span className="font-bold text-[13px] text-slate-900">Trả lời đơn</span>
+                              </div>
+                              <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
+                                Lập văn bản trả lời, giải thích cho công dân
+                              </p>
+                            </div>
+                            {huongXuLyDaChon === 'tra_loi_don' && (
+                              <span className="material-symbols-outlined text-teal-600 text-[18px] shrink-0 mt-1">check</span>
+                            )}
+                          </button>
+                        </div>
+
+                        {/* Phân cách & Bảng xác minh chi tiết */}
+                        <div className="border-t border-slate-100 pt-1.5 mt-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowHuongDropdown(false);
+                              setShowXacMinhModal(true);
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:text-blue-700 hover:bg-blue-50/80 transition-colors text-[12.5px] font-semibold cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined text-[17px] text-blue-600">fact_check</span>
+                            <span>Mở bảng Xác minh &amp; Đề xuất (4 tiêu chí)</span>
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -953,6 +1141,8 @@ export default function DonTiepNhan({
               onUpdateSharedVanBanList={setVanBanXacMinhList}
               signingDocuments={signingDocuments}
               onOpenBaoCaoDeXuat={() => setShowTaoBaoCaoDeXuatModal(true)}
+              onUpdateSigningDocuments={onUpdateSigningDocuments}
+              onTrinhKyBaoCao={handleTrinhKyBaoCaoTuTab}
             />
           )}
           {activeTab === 'quy-trinh' && (
@@ -1290,6 +1480,30 @@ export default function DonTiepNhan({
             description: `Cán bộ thụ lý đã cập nhật lại các trường thông tin hành chính, thông tin người nộp đơn.`,
           });
         }}
+      />
+
+      {/* Modal Tạo Báo cáo đề xuất hướng xử lý */}
+      <TaoBaoCaoDeXuatModal
+        isOpen={showTaoBaoCaoDeXuatModal}
+        onClose={() => setShowTaoBaoCaoDeXuatModal(false)}
+        donInfo={{
+          code: currentDon.code,
+          luotNhanId: currentDon.luotNhanId,
+          nguoiNop: currentDon.nguoiNop,
+          loaiDon: currentDon.loaiDon,
+          ngayNhan: currentDon.ngayNhan,
+          noiDung: currentDon.title,
+        }}
+        currentOfficer={{
+          name: currentAccount?.name || currentDon.canBoXuLy || 'Nguyễn Minh Anh',
+          chucVu: currentAccount?.role || currentDon.chucVuCanBo || 'Cán bộ thụ lý',
+          phongBan: currentAccount?.phongBan || currentDon.donViXuLy || 'Phòng Tiếp công dân & Xử lý đơn',
+          coQuan: 'UBND quận',
+        }}
+        initialHuongXuLy={huongXuLyDaChon}
+        existingSigningDoc={existingSigningDoc}
+        onSaveDraft={handleSaveDraftBaoCaoModal}
+        onSubmitToLeader={handleSubmitToLeaderBaoCaoModal}
       />
     </div>
   );

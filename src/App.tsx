@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import Placeholder from "./components/Placeholder";
 import Sidebar from "./components/Sidebar";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -55,7 +55,27 @@ export default function App() {
   const [openXacMinhOnDonTiepNhan, setOpenXacMinhOnDonTiepNhan] = useState<boolean>(false);
 
   // Danh sách văn bản Trình ký & Ký số (Dành cho Cán bộ và Lãnh đạo)
-  const [signingDocuments, setSigningDocuments] = useState<SigningDocument[]>(INITIAL_SIGNING_DOCUMENTS);
+  const [signingDocuments, setSigningDocuments] = useState<SigningDocument[]>(() => {
+    try {
+      const saved = localStorage.getItem('app_signing_documents');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.error('Lỗi khi đọc signingDocuments từ localStorage:', e);
+    }
+    return INITIAL_SIGNING_DOCUMENTS;
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('app_signing_documents', JSON.stringify(signingDocuments));
+    } catch (e) {
+      console.error('Lỗi khi lưu signingDocuments vào localStorage:', e);
+    }
+  }, [signingDocuments]);
+
   const [selectedSigningDocId, setSelectedSigningDocId] = useState<string | undefined>();
 
   // Tài khoản người dùng đang đăng nhập (Cán bộ thụ lý hoặc Lãnh đạo ký duyệt)
