@@ -286,7 +286,7 @@ export default function TaoBaoCaoDeXuatModal({
       setNguoiGuiDon(nguoiGuiDonDefault);
       setDiaChiNguoiGui(diaChiNguoiGuiDefault);
       setNoiDungDon(noiDungDonDefault);
-      
+
       // Khởi tạo phương án theo hướng xử lý hiện tại nếu có
       if (initialHuongXuLy === 'thu_ly') setPhuongAnDeXuat(1);
       else if (initialHuongXuLy === 'ban_giao') setPhuongAnDeXuat(2);
@@ -505,243 +505,6 @@ export default function TaoBaoCaoDeXuatModal({
             </div>
           )}
 
-          {/* NHÓM 1: CƠ QUAN LẬP, SỐ BÁO CÁO & NGƯỜI LẬP / NGƯỜI NHẬN */}
-          <div className="bg-slate-50/70 rounded-xl border border-slate-200 p-4 space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-200/80">
-              <span className="material-symbols-outlined text-[#004ac6] text-[17px]">account_balance</span>
-              <span>1. Thông tin cơ quan, số văn bản &amp; Người lập / Người nhận báo cáo</span>
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Số báo cáo <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={soBaoCao}
-                  onChange={(e) => {
-                    setSoBaoCao(e.target.value);
-                    if (errors.soBaoCao) setErrors((prev) => ({ ...prev, soBaoCao: '' }));
-                  }}
-                  placeholder="VD: 24/BC-CQĐT"
-                  className={`w-full px-3 py-2 font-mono font-bold text-slate-900 bg-white border rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none ${
-                    errors.soBaoCao ? 'border-rose-400 bg-rose-50/30' : 'border-slate-300'
-                  }`}
-                />
-                {errors.soBaoCao && <p className="text-[10.5px] text-rose-600 mt-1">{errors.soBaoCao}</p>}
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Ngày lập báo cáo <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={ngayLap}
-                  onChange={(e) => {
-                    setNgayLap(e.target.value);
-                    if (errors.ngayLap) setErrors((prev) => ({ ...prev, ngayLap: '' }));
-                  }}
-                  placeholder="DD/MM/YYYY"
-                  className={`w-full px-3 py-2 font-mono text-slate-800 bg-white border rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none ${
-                    errors.ngayLap ? 'border-rose-400 bg-rose-50/30' : 'border-slate-300'
-                  }`}
-                />
-                {errors.ngayLap && <p className="text-[10.5px] text-rose-600 mt-1">{errors.ngayLap}</p>}
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Cơ quan Công an cấp trên (1)
-                </label>
-                <input
-                  type="text"
-                  value={coQuanCapTren}
-                  onChange={(e) => setCoQuanCapTren(e.target.value)}
-                  className="w-full px-3 py-2 font-semibold text-slate-800 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block font-bold text-slate-700 mb-1">
-                  Cơ quan / Đơn vị lập báo cáo (1) <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={coQuanLap}
-                  onChange={(e) => {
-                    setCoQuanLap(e.target.value);
-                    if (errors.coQuanLap) setErrors((prev) => ({ ...prev, coQuanLap: '' }));
-                  }}
-                  className={`w-full px-3 py-2 font-bold text-slate-900 bg-white border rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none ${
-                    errors.coQuanLap ? 'border-rose-400 bg-rose-50/30' : 'border-slate-300'
-                  }`}
-                />
-                {errors.coQuanLap && <p className="text-[10.5px] text-rose-600 mt-1">{errors.coQuanLap}</p>}
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Người lập báo cáo (Điều tra viên) <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={nguoiLap}
-                  onChange={(e) => {
-                    setNguoiLap(e.target.value);
-                    if (errors.nguoiLap) setErrors((prev) => ({ ...prev, nguoiLap: '' }));
-                  }}
-                  className={`w-full px-3 py-2 font-semibold text-slate-800 bg-white border rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none ${
-                    errors.nguoiLap ? 'border-rose-400 bg-rose-50/30' : 'border-slate-300'
-                  }`}
-                />
-                {errors.nguoiLap && <p className="text-[10.5px] text-rose-600 mt-1">{errors.nguoiLap}</p>}
-              </div>
-
-              <div className="md:col-span-3">
-                <label className="block font-bold text-slate-700 mb-1">
-                  Người nhận báo cáo (3) (Kính gửi Thủ trưởng / Phó Thủ trưởng) <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={nguoiNhan}
-                  onChange={(e) => {
-                    setNguoiNhan(e.target.value);
-                    if (errors.nguoiNhan) setErrors((prev) => ({ ...prev, nguoiNhan: '' }));
-                  }}
-                  placeholder="VD: Thủ trưởng (Phó Thủ trưởng) Cơ quan Cảnh sát điều tra Công an quận Cầu Giấy"
-                  className={`w-full px-3 py-2 font-bold text-[#004ac6] bg-white border rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none ${
-                    errors.nguoiNhan ? 'border-rose-400 bg-rose-50/30' : 'border-slate-300'
-                  }`}
-                />
-                {errors.nguoiNhan && <p className="text-[10.5px] text-rose-600 mt-1">{errors.nguoiNhan}</p>}
-              </div>
-            </div>
-          </div>
-
-          {/* NHÓM 2: THÔNG TIN PHÂN CÔNG & ĐƠN TỐ GIÁC */}
-          <div className="bg-slate-50/70 rounded-xl border border-slate-200 p-4 space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-200/80">
-              <span className="material-symbols-outlined text-blue-600 text-[17px]">folder_shared</span>
-              <span>2. Thông tin phân công giải quyết nguồn tin &amp; Đơn tiếp nhận</span>
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Số QĐ Phân công giải quyết nguồn tin
-                </label>
-                <input
-                  type="text"
-                  value={soPhanCong}
-                  onChange={(e) => setSoPhanCong(e.target.value)}
-                  className="w-full px-3 py-1.5 font-mono text-slate-800 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Ngày ban hành QĐ phân công
-                </label>
-                <input
-                  type="text"
-                  value={ngayPhanCong}
-                  onChange={(e) => setNgayPhanCong(e.target.value)}
-                  className="w-full px-3 py-1.5 font-mono text-slate-800 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Người nộp đơn / Tố giác
-                </label>
-                <input
-                  type="text"
-                  value={nguoiGuiDon}
-                  onChange={(e) => setNguoiGuiDon(e.target.value)}
-                  className="w-full px-3 py-1.5 font-semibold text-slate-800 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Cư trú / Địa chỉ người nộp đơn
-                </label>
-                <input
-                  type="text"
-                  value={diaChiNguoiGui}
-                  onChange={(e) => setDiaChiNguoiGui(e.target.value)}
-                  className="w-full px-3 py-1.5 text-slate-800 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block font-bold text-slate-700 mb-1">
-                  Nội dung đơn phản ánh / tố giác <span className="text-rose-500">*</span>
-                </label>
-                <textarea
-                  rows={2}
-                  value={noiDungDon}
-                  onChange={(e) => {
-                    setNoiDungDon(e.target.value);
-                    if (errors.noiDungDon) setErrors((prev) => ({ ...prev, noiDungDon: '' }));
-                  }}
-                  className={`w-full p-2.5 text-slate-800 bg-white border rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none ${
-                    errors.noiDungDon ? 'border-rose-400 bg-rose-50/30' : 'border-slate-300'
-                  }`}
-                />
-                {errors.noiDungDon && <p className="text-[10.5px] text-rose-600 mt-1">{errors.noiDungDon}</p>}
-              </div>
-            </div>
-          </div>
-
-          {/* NHÓM 3: I. KẾT QUẢ XÁC MINH */}
-          <div className="bg-slate-50/70 rounded-xl border border-slate-200 p-4 space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-200/80">
-              <span className="material-symbols-outlined text-indigo-600 text-[17px]">fact_check</span>
-              <span>I. Kết quả xác minh</span>
-            </h3>
-
-            <div>
-              <label className="block font-bold text-slate-800 mb-1">
-                1. Các tài liệu, chứng cứ đã thu thập (Người nộp cung cấp &amp; CQĐT thu thập) <span className="text-rose-500">*</span>
-              </label>
-              <textarea
-                rows={4}
-                value={taiLieuThuThap}
-                onChange={(e) => {
-                  setTaiLieuThuThap(e.target.value);
-                  if (errors.taiLieuThuThap) setErrors((prev) => ({ ...prev, taiLieuThuThap: '' }));
-                }}
-                className={`w-full p-2.5 text-slate-800 bg-white border rounded-xl leading-relaxed focus:ring-2 focus:ring-blue-500 focus:outline-none ${
-                  errors.taiLieuThuThap ? 'border-rose-400 bg-rose-50/30' : 'border-slate-300'
-                }`}
-                placeholder="Liệt kê chi tiết tài liệu do người nộp đơn cung cấp và tài liệu, lời khai, biên bản do Cơ quan Điều tra thu thập..."
-              />
-              {errors.taiLieuThuThap && <p className="text-[10.5px] text-rose-600 mt-1">{errors.taiLieuThuThap}</p>}
-            </div>
-
-            <div>
-              <label className="block font-bold text-slate-800 mb-1">
-                2. Nội dung diễn biến sự việc được xác minh <span className="text-rose-500">*</span>
-              </label>
-              <textarea
-                rows={3}
-                value={noiDungXacMinh}
-                onChange={(e) => {
-                  setNoiDungXacMinh(e.target.value);
-                  if (errors.noiDungXacMinh) setErrors((prev) => ({ ...prev, noiDungXacMinh: '' }));
-                }}
-                className={`w-full p-2.5 text-slate-800 bg-white border rounded-xl leading-relaxed focus:ring-2 focus:ring-blue-500 focus:outline-none ${
-                  errors.noiDungXacMinh ? 'border-rose-400 bg-rose-50/30' : 'border-slate-300'
-                }`}
-                placeholder="Tóm tắt trung thực, khách quan diễn biến sự việc trên cơ sở các tài liệu, chứng cứ đã thu thập và xác minh được..."
-              />
-              {errors.noiDungXacMinh && <p className="text-[10.5px] text-rose-600 mt-1">{errors.noiDungXacMinh}</p>}
-            </div>
-          </div>
-
           {/* NHÓM 4: II. NHẬN XÉT VÀ ĐỀ XUẤT */}
           <div className="bg-slate-50/70 rounded-xl border border-slate-200 p-4 space-y-3">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-200/80">
@@ -760,31 +523,11 @@ export default function TaoBaoCaoDeXuatModal({
                   setDanhGiaNhanXet(e.target.value);
                   if (errors.danhGiaNhanXet) setErrors((prev) => ({ ...prev, danhGiaNhanXet: '' }));
                 }}
-                className={`w-full p-2.5 text-slate-800 bg-white border rounded-xl leading-relaxed focus:ring-2 focus:ring-blue-500 focus:outline-none ${
-                  errors.danhGiaNhanXet ? 'border-rose-400 bg-rose-50/30' : 'border-slate-300'
-                }`}
+                className={`w-full p-2.5 text-slate-800 bg-white border rounded-xl leading-relaxed focus:ring-2 focus:ring-blue-500 focus:outline-none ${errors.danhGiaNhanXet ? 'border-rose-400 bg-rose-50/30' : 'border-slate-300'
+                  }`}
                 placeholder="- Về tính chất, mức độ của sự việc: ...\n- Về dấu hiệu tội phạm: ..."
               />
               {errors.danhGiaNhanXet && <p className="text-[10.5px] text-rose-600 mt-1">{errors.danhGiaNhanXet}</p>}
-            </div>
-
-            <div>
-              <label className="block font-bold text-slate-800 mb-1">
-                Căn cứ pháp lý <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={canCuPhapLy}
-                onChange={(e) => {
-                  setCanCuPhapLy(e.target.value);
-                  if (errors.canCuPhapLy) setErrors((prev) => ({ ...prev, canCuPhapLy: '' }));
-                }}
-                className={`w-full px-3 py-2 text-slate-800 bg-white border rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none ${
-                  errors.canCuPhapLy ? 'border-rose-400 bg-rose-50/30' : 'border-slate-300'
-                }`}
-                placeholder="Căn cứ Điều ... BLTTHS 2015; Điều ... Bộ luật Hình sự..."
-              />
-              {errors.canCuPhapLy && <p className="text-[10.5px] text-rose-600 mt-1">{errors.canCuPhapLy}</p>}
             </div>
 
             {/* 2. Đề xuất xử lý: 4 phương án chuẩn */}
@@ -801,11 +544,10 @@ export default function TaoBaoCaoDeXuatModal({
                     <div
                       key={pa.id}
                       onClick={() => setPhuongAnDeXuat(pa.id)}
-                      className={`p-3 rounded-xl border transition-all cursor-pointer flex items-start gap-2.5 ${
-                        isChecked
-                          ? 'border-[#004ac6] bg-blue-50/80 shadow-xs ring-1 ring-[#004ac6]'
-                          : 'border-slate-200 bg-white hover:bg-slate-50'
-                      }`}
+                      className={`p-3 rounded-xl border transition-all cursor-pointer flex items-start gap-2.5 ${isChecked
+                        ? 'border-[#004ac6] bg-blue-50/80 shadow-xs ring-1 ring-[#004ac6]'
+                        : 'border-slate-200 bg-white hover:bg-slate-50'
+                        }`}
                     >
                       <input
                         type="radio"
@@ -828,31 +570,6 @@ export default function TaoBaoCaoDeXuatModal({
               </div>
             </div>
 
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">
-                Chi tiết căn cứ đề xuất phương án đã chọn
-              </label>
-              <textarea
-                rows={2}
-                value={chiTietPhuongAn}
-                onChange={(e) => setChiTietPhuongAn(e.target.value)}
-                className="w-full p-2.5 text-slate-800 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                placeholder="Ghi rõ thêm căn cứ Điều luật, lý do cụ thể theo phương án đã chọn..."
-              />
-            </div>
-
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">
-                Dự thảo các văn bản tố tụng kèm theo (nếu có)
-              </label>
-              <textarea
-                rows={2}
-                value={vanBanKemTheo}
-                onChange={(e) => setVanBanKemTheo(e.target.value)}
-                className="w-full p-2.5 text-slate-800 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                placeholder="Liệt kê các quyết định, thông báo, bản kết luận kèm theo (VD: Dự thảo Quyết định khởi tố...)"
-              />
-            </div>
           </div>
         </div>
 

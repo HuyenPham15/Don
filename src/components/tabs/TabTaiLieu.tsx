@@ -60,7 +60,261 @@ export interface DocItem {
   fromXacMinh?: boolean;
   signingStatus?: SigningStatus;
   formData?: any;
+  canCuPhapLy?: string;
+  lyDoChinh?: string;
+  lyDoChiTiet?: string;
 }
+
+export interface StepDocTemplate {
+  id: string;
+  stepNumber: number;
+  stepTitle: string;
+  docTitle: string;
+  docCode: string;
+  loaiVanBan: 'giay_moi' | 'bien_ban' | 'cong_van' | 'quyet_dinh' | 'thong_bao' | 'bao_cao_de_xuat' | 'khac';
+  category: string;
+  isBaoCao?: boolean;
+  trichYeu: string;
+  nguoiNhan?: string;
+  thoiGian?: string;
+  diaDiem?: string;
+  noiDung: string;
+}
+
+export const WORKFLOW_STEPS_DOCS: StepDocTemplate[] = [
+  // BƯỚC 1: Tiếp nhận & Phân loại
+  {
+    id: 'step1-01',
+    stepNumber: 1,
+    stepTitle: 'Tiếp nhận & Phân loại',
+    docTitle: 'Phiếu đề xuất phân loại & xử lý đơn',
+    docCode: '01/PĐX-TCD',
+    loaiVanBan: 'quyet_dinh',
+    category: 'Phiếu đề xuất',
+    trichYeu: 'Đề xuất phân loại thẩm quyền và hình thức xử lý đơn ban đầu',
+    nguoiNhan: 'Lãnh đạo đơn vị tiếp công dân / xử lý đơn',
+    thoiGian: 'Ngày tiếp nhận đơn',
+    noiDung: `CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nĐộc lập - Tự do - Hạnh phúc\n\nPHIẾU ĐỀ XUẤT XỬ LÝ ĐƠN\nSố: 01/PĐX-TCD\n\nKính gửi: Lãnh đạo đơn vị\nCán bộ tiếp nhận báo cáo kết quả kiểm tra sơ bộ hồ sơ đơn:\n1. Người nộp đơn: Cung cấp đầy đủ thông tin định danh cá nhân.\n2. Nội dung đơn: Phản ánh, khiếu nại, tố giác vụ việc trên địa bàn.\n3. Đề xuất: Phân loại đơn thuộc thẩm quyền thụ lý xác minh làm rõ theo quy định.`,
+  },
+  {
+    id: 'step1-02',
+    stepNumber: 1,
+    stepTitle: 'Tiếp nhận & Phân loại',
+    docTitle: 'Giấy biên nhận tiếp nhận hồ sơ, tài liệu',
+    docCode: '12/BN-TCD',
+    loaiVanBan: 'bien_ban',
+    category: 'Biên nhận hồ sơ',
+    trichYeu: 'Biên nhận tiếp nhận đơn và các chứng cứ gốc của người gửi',
+    nguoiNhan: 'Công dân nộp đơn',
+    thoiGian: 'Giờ hành chính tiếp nhận',
+    diaDiem: 'Bộ phận Tiếp công dân & Xử lý đơn',
+    noiDung: `GIẤY BIÊN NHẬN HỒ SƠ TÀI LIỆU\nSố: 12/BN-TCD\n\nBộ phận Tiếp công dân đã tiếp nhận từ công dân các tài liệu gồm:\n1. Đơn chính (01 bản gốc có ký tên);\n2. Bản sao Căn cước công dân;\n3. Tài liệu chứng cứ, hình ảnh kèm theo.\nBiên nhận được lập thành 02 bản, giao người nộp đơn giữ 01 bản để đối chiếu.`,
+  },
+
+  // BƯỚC 2: Xác minh thông tin & Đề xuất
+  {
+    id: 'step2-01',
+    stepNumber: 2,
+    stepTitle: 'Xác minh thông tin & Đề xuất',
+    docTitle: 'Báo cáo kết quả xác minh (Báo cáo đề xuất)',
+    docCode: 'BC-CQĐT',
+    loaiVanBan: 'bao_cao_de_xuat',
+    category: 'Báo cáo đề xuất',
+    isBaoCao: true,
+    trichYeu: 'Báo cáo kết quả xác minh và đề xuất hướng xử lý giải quyết đơn',
+    nguoiNhan: 'Thủ trưởng / Phó Thủ trưởng Cơ quan có thẩm quyền',
+    thoiGian: 'Theo thời hạn phân công',
+    noiDung: `BÁO CÁO KẾT QUẢ XÁC MINH\nVề việc giải quyết đơn theo quy định của pháp luật.\nTiến hành báo cáo kết quả xác minh, đánh giá nhận xét và đề xuất hướng xử lý: Thụ lý đơn / Chuyển thẩm quyền / Trả lời đơn / Yêu cầu bổ sung.`,
+  },
+  {
+    id: 'step2-02',
+    stepNumber: 2,
+    stepTitle: 'Xác minh thông tin & Đề xuất',
+    docTitle: 'Giấy mời làm việc, cung cấp chứng cứ',
+    docCode: '18/GM-TCD',
+    loaiVanBan: 'giay_moi',
+    category: 'Giấy mời xác minh',
+    trichYeu: 'Mời công dân có mặt làm việc, làm rõ nội dung đơn và bổ sung tài liệu',
+    nguoiNhan: 'Người đứng tên trong đơn',
+    thoiGian: '08:30 ngày làm việc tiếp theo',
+    diaDiem: 'Phòng Tiếp công dân & Xử lý đơn',
+    noiDung: `GIẤY MỜI LÀM VIỆC\nSố: 18/GM-TCD\n\nKính mời Ông/Bà có mặt tại Phòng Tiếp công dân để làm việc về nội dung đơn.\nKhi đi mang theo Căn cước công dân và toàn bộ bản chính tài liệu, chứng cứ có liên quan để đối chiếu, xác minh làm rõ theo quy định pháp luật.`,
+  },
+  {
+    id: 'step2-03',
+    stepNumber: 2,
+    stepTitle: 'Xác minh thông tin & Đề xuất',
+    docTitle: 'Biên bản làm việc xác minh ban đầu',
+    docCode: '02/BB-XM',
+    loaiVanBan: 'bien_ban',
+    category: 'Biên bản làm việc',
+    trichYeu: 'Ghi nhận ý kiến giải trình và giao nộp tài liệu chứng minh của đương sự',
+    nguoiNhan: 'Công dân đứng đơn',
+    thoiGian: 'Tại thời điểm làm việc',
+    diaDiem: 'Phòng Tiếp công dân & Xử lý đơn',
+    noiDung: `BIÊN BẢN LÀM VIỆC XÁC MINH\nSố: 02/BB-XM\n\nCán bộ đã tiến hành làm rõ các mốc thời gian, đối tượng có hành vi sai phạm được nêu trong đơn. Công dân khẳng định nội dung đơn gửi là hoàn toàn chính xác, cam kết chịu trách nhiệm trước pháp luật.\nBiên bản đọc lại cho các bên cùng nghe và ký tên xác nhận.`,
+  },
+  {
+    id: 'step2-04',
+    stepNumber: 2,
+    stepTitle: 'Xác minh thông tin & Đề xuất',
+    docTitle: 'Thông báo yêu cầu bổ sung thông tin, chứng cứ',
+    docCode: '19/TB-TCD',
+    loaiVanBan: 'thong_bao',
+    category: 'Thông báo bổ sung',
+    trichYeu: 'Yêu cầu người nộp bổ sung tài liệu, chứng cứ gốc trong thời hạn 10 ngày',
+    nguoiNhan: 'Người làm đơn',
+    thoiGian: 'Thời hạn 10 ngày làm việc',
+    diaDiem: 'Bộ phận Tiếp nhận & Trả kết quả một cửa',
+    noiDung: `THÔNG BÁO\nVề việc yêu cầu bổ sung thông tin, tài liệu chứng cứ\n\nĐể có cơ sở xem xét thụ lý giải quyết đơn, yêu cầu Ông/Bà bổ sung tài liệu chứng cứ chứng minh nội dung đơn trong thời hạn 10 ngày làm việc.`,
+  },
+  {
+    id: 'step2-05',
+    stepNumber: 2,
+    stepTitle: 'Xác minh thông tin & Đề xuất',
+    docTitle: 'Thông báo không thụ lý giải quyết đơn',
+    docCode: 'TB-KTL/UBND',
+    loaiVanBan: 'thong_bao',
+    category: 'Thông báo không thụ lý',
+    trichYeu: 'Thông báo không thụ lý giải quyết đơn theo Điều 29 Luật Tố cáo 2018',
+    nguoiNhan: 'Người nộp đơn',
+    thoiGian: 'Theo thời hạn luật định',
+    diaDiem: 'UBND quận Cầu Giấy',
+    noiDung: `CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nĐộc lập - Tự do - Hạnh phúc\n\nỦY BAN NHÂN DÂN QUẬN CẦU GIẤY\nSố: TB-KTL/2026/TB-UBND\n\nTHÔNG BÁO\nVề việc không thụ lý giải quyết tố cáo\n\nCăn cứ Điều 29 Luật Tố cáo 2018, Ủy ban nhân dân quận thông báo không thụ lý giải quyết nội dung đơn do không đủ điều kiện theo quy định của pháp luật.`,
+  },
+
+  // BƯỚC 3: Thụ lý & Phân công
+  {
+    id: 'step3-01',
+    stepNumber: 3,
+    stepTitle: 'Thụ lý & Phân công',
+    docTitle: 'Thông báo thụ lý giải quyết đơn',
+    docCode: '22/TB-TL',
+    loaiVanBan: 'thong_bao',
+    category: 'Thông báo thụ lý',
+    trichYeu: 'Thông báo thụ lý chính thức và thời hạn giải quyết đơn theo luật định',
+    nguoiNhan: 'Người làm đơn và các bên liên quan',
+    thoiGian: 'Theo thời hạn luật định',
+    diaDiem: 'Cơ quan có thẩm quyền',
+    noiDung: `THÔNG BÁO THỤ LÝ GIẢI QUYẾT ĐƠN\nSố: 22/TB-TL\n\nCăn cứ quy định pháp luật; xét hồ sơ đơn;\nCơ quan thông báo chính thức thụ lý giải quyết nội dung đơn kể từ ngày ký thông báo này.\nThời hạn giải quyết theo đúng quy định của pháp luật.`,
+  },
+  {
+    id: 'step3-02',
+    stepNumber: 3,
+    stepTitle: 'Thụ lý & Phân công',
+    docTitle: 'Quyết định phân công Điều tra viên thụ lý',
+    docCode: '42/QĐ-PC03',
+    loaiVanBan: 'quyet_dinh',
+    category: 'Quyết định tố tụng',
+    trichYeu: 'Phân công Điều tra viên / Cán bộ chủ trì xác minh giải quyết',
+    nguoiNhan: 'Điều tra viên được phân công, Viện Kiểm sát',
+    thoiGian: 'Ngay khi ban hành',
+    diaDiem: 'Cơ quan Cảnh sát điều tra',
+    noiDung: `QUYẾT ĐỊNH\nPhân công Phó Thủ trưởng CQĐT và Điều tra viên giải quyết nguồn tin\n\nCăn cứ Điều 36, Điều 145 và Điều 146 Bộ luật Tố tụng hình sự 2015;\nPhân công Điều tra viên chính thụ lý xác minh làm rõ các dấu hiệu vi phạm và báo cáo đúng thời hạn.`,
+  },
+  {
+    id: 'step3-03',
+    stepNumber: 3,
+    stepTitle: 'Thụ lý & Phân công',
+    docTitle: 'Quyết định thành lập Tổ / Đoàn xác minh',
+    docCode: '108/QĐ-UBND',
+    loaiVanBan: 'quyet_dinh',
+    category: 'Quyết định hành chính',
+    trichYeu: 'Thành lập Tổ công tác kiểm tra, xác minh làm rõ vụ việc',
+    nguoiNhan: 'Các thành viên Tổ xác minh, người bị tố cáo',
+    thoiGian: 'Thời hạn xác minh 15 - 30 ngày',
+    diaDiem: 'UBND quận/huyện',
+    noiDung: `QUYẾT ĐỊNH\nVề việc thành lập Tổ xác minh nội dung đơn\n\nThành lập Tổ xác minh gồm các cán bộ chuyên môn chịu trách nhiệm xác minh, thu thập chứng cứ và báo cáo Thủ trưởng cơ quan.`,
+  },
+
+  // BƯỚC 4: Xác minh thực địa & Thu thập chứng cứ
+  {
+    id: 'step4-01',
+    stepNumber: 4,
+    stepTitle: 'Xác minh thực địa & Thu thập chứng cứ',
+    docTitle: 'Công văn đề nghị phối hợp xác minh / cung cấp thông tin',
+    docCode: '105/CV-CQĐT',
+    loaiVanBan: 'cong_van',
+    category: 'Công văn phối hợp',
+    trichYeu: 'Đề nghị Văn phòng Đăng ký đất đai / Ngân hàng / Cơ quan liên quan cung cấp tài liệu',
+    nguoiNhan: 'Cơ quan, tổ chức, ngân hàng liên quan',
+    thoiGian: 'Thời hạn 05 ngày làm việc',
+    diaDiem: 'Gửi qua Trục liên thông văn bản quốc gia',
+    noiDung: `CÔNG VĂN ĐỀ NGHỊ PHỐI HỢP CUNG CẤP TÀI LIỆU\nSố: 105/CV-CQĐT\n\nĐể phục vụ công tác xác minh đơn đúng pháp luật, Cơ quan đề nghị Quý đơn vị tra soát và cung cấp toàn bộ hồ sơ, tài liệu liên quan theo danh sách gửi kèm.`,
+  },
+  {
+    id: 'step4-02',
+    stepNumber: 4,
+    stepTitle: 'Xác minh thực địa & Thu thập chứng cứ',
+    docTitle: 'Biên bản xác minh thực địa / hiện trường',
+    docCode: '05/BB-TD',
+    loaiVanBan: 'bien_ban',
+    category: 'Biên bản hiện trường',
+    trichYeu: 'Biên bản kiểm tra hiện trạng đất đai, công trình thực tế có sự chứng kiến',
+    nguoiNhan: 'Chính quyền địa phương và các bên liên quan',
+    thoiGian: 'Thời điểm kiểm tra hiện trường',
+    diaDiem: 'Vị trí khu đất / công trình bị phản ánh',
+    noiDung: `BIÊN BẢN XÁC MINH THỰC ĐỊA\nSố: 05/BB-TD\n\nTổ công tác đã có mặt tại hiện trường cùng đại diện chính quyền địa phương và các bên liên quan. Ghi nhận hiện trạng thực tế, đo đạc kích thước và lập sơ đồ hiện trạng đính kèm.`,
+  },
+  {
+    id: 'step4-03',
+    stepNumber: 4,
+    stepTitle: 'Xác minh thực địa & Thu thập chứng cứ',
+    docTitle: 'Biên bản ghi lời khai người có quyền & nghĩa vụ liên quan',
+    docCode: '06/BB-LK',
+    loaiVanBan: 'bien_ban',
+    category: 'Biên bản ghi lời khai',
+    trichYeu: 'Lấy lời khai của người có quyền, nghĩa vụ liên quan hoặc người làm chứng',
+    nguoiNhan: 'Người làm chứng / Đương sự',
+    thoiGian: 'Tại buổi làm việc',
+    diaDiem: 'Trụ sở cơ quan thụ lý',
+    noiDung: `BIÊN BẢN GHI LỜI KHAI\nSố: 06/BB-LK\n\nĐiều tra viên / Cán bộ đã tiến hành lấy lời khai đối với người có nghĩa vụ và quyền lợi liên quan. Lời khai đã được ghi nhận trung thực, đầy đủ và các bên ký xác nhận.`,
+  },
+
+  // BƯỚC 5: Kết luận & Ban hành
+  {
+    id: 'step5-01',
+    stepNumber: 5,
+    stepTitle: 'Kết luận & Ban hành',
+    docTitle: 'Báo cáo kết luận nội dung xác minh',
+    docCode: '25/KL-XM',
+    loaiVanBan: 'quyet_dinh',
+    category: 'Báo cáo kết luận',
+    trichYeu: 'Báo cáo tổng hợp toàn diện kết quả xác minh làm căn cứ ra quyết định',
+    nguoiNhan: 'Thủ trưởng cơ quan có thẩm quyền',
+    thoiGian: 'Kết thúc thời hạn xác minh',
+    diaDiem: 'Cơ quan thụ lý',
+    noiDung: `BÁO CÁO KẾT LUẬN XÁC MINH\nSố: 25/KL-XM\n\nTổng hợp toàn bộ tài liệu, chứng cứ thu thập được trong quá trình xác minh; khẳng định nội dung đơn là đúng, đúng một phần hay sai toàn bộ; kiến nghị biện pháp xử lý theo quy định.`,
+  },
+  {
+    id: 'step5-02',
+    stepNumber: 5,
+    stepTitle: 'Kết luận & Ban hành',
+    docTitle: 'Quyết định giải quyết khiếu nại / tố cáo chính thức',
+    docCode: '145/QĐ-GQ',
+    loaiVanBan: 'quyet_dinh',
+    category: 'Quyết định giải quyết',
+    trichYeu: 'Quyết định giải quyết vụ việc có hiệu lực thi hành của Thủ trưởng cơ quan',
+    nguoiNhan: 'Người nộp đơn, người bị khiếu nại/tố cáo, các cơ quan hữu quan',
+    thoiGian: 'Ngày ban hành quyết định',
+    diaDiem: 'Cơ quan có thẩm quyền ban hành',
+    noiDung: `QUYẾT ĐỊNH GIẢI QUYẾT\nSố: 145/QĐ-GQ\n\nBan hành Quyết định giải quyết chính thức theo đúng trình tự pháp luật; giao các đơn vị liên quan tổ chức thực hiện và công khai kết quả.`,
+  },
+  {
+    id: 'step5-03',
+    stepNumber: 5,
+    stepTitle: 'Kết luận & Ban hành',
+    docTitle: 'Thông báo kết quả giải quyết đơn đến công dân',
+    docCode: '30/TB-KQ',
+    loaiVanBan: 'thong_bao',
+    category: 'Thông báo kết quả',
+    trichYeu: 'Thông báo kết quả xử lý giải quyết đến người nộp đơn',
+    nguoiNhan: 'Người đứng tên nộp đơn',
+    thoiGian: 'Cùng ngày ban hành quyết định',
+    diaDiem: 'Gửi qua bưu điện bảo đảm / Cổng DVC',
+    noiDung: `THÔNG BÁO KẾT QUẢ GIẢI QUYẾT ĐƠN\nSố: 30/TB-KQ\n\nCơ quan xin thông báo đến Ông/Bà kết quả giải quyết nội dung đơn kèm theo Quyết định giải quyết chính thức.`,
+  },
+];
 
 export default function TabTaiLieu({
   currentDon,
@@ -336,37 +590,106 @@ export default function TabTaiLieu({
   const [editIsSignedVGCA, setEditIsSignedVGCA] = useState<boolean>(true);
   const [editFromXacMinh, setEditFromXacMinh] = useState<boolean>(false);
   const [editorZoom, setEditorZoom] = useState<number>(100);
+  const [showStepMenu, setShowStepMenu] = useState<boolean>(false);
+  const [isFullscreenViewer, setIsFullscreenViewer] = useState<boolean>(false);
+
+  // Tạo văn bản tự động theo bước quy trình
+  const handleCreateDocFromStep = (tpl: StepDocTemplate) => {
+    setShowStepMenu(false);
+    if (tpl.isBaoCao && onOpenBaoCaoDeXuat) {
+      onOpenBaoCaoDeXuat();
+      return;
+    }
+
+    const now = new Date();
+    const todayStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+    const timeStr = `${todayStr} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+    const cleanFileName = tpl.docTitle
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]/g, '_')
+      .replace(/_+/g, '_');
+
+    const soHieu = `${Math.floor(10 + Math.random() * 89)}/${tpl.docCode.split('/')[1] || 'VB-CQĐT'}`;
+
+    const newDoc: DocItem = {
+      id: `DOC-STEP-${Date.now().toString().slice(-4)}`,
+      name: `${cleanFileName}_so_${soHieu.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
+      category: tpl.category,
+      soHieu: soHieu,
+      size: `${Math.floor(Math.random() * 200 + 400)} KB`,
+      pages: Math.floor(Math.random() * 2 + 1),
+      uploadDate: timeStr,
+      signer: `${editSigner || 'Nguyễn Minh Anh'} - Cán bộ thụ lý`,
+      coQuanBanHanh: editCoQuanBanHanh || (isToGiac ? 'Cơ quan CSĐT Công an TP. Hà Nội' : 'UBND quận'),
+      stepBelongsTo: `Bước ${tpl.stepNumber}: ${tpl.stepTitle}`,
+      ocrStatus: 'Hoàn tất',
+      isProcessDoc: true,
+      isEditable: true,
+      loaiVanBan: tpl.loaiVanBan,
+      tenVanBan: tpl.docTitle,
+      nguoiNhan: tpl.nguoiNhan || currentDon.nguoiNop || 'Nguyễn Văn A',
+      thoiGianHen: tpl.thoiGian,
+      diaDiem: tpl.diaDiem,
+      trichYeu: tpl.trichYeu,
+      noiDungChiTiet: tpl.noiDung,
+      previewExcerpt: tpl.noiDung,
+      trangThai: 'du_thao',
+      fromXacMinh: true,
+      signingStatus: 'nhap',
+    };
+
+    setDocuments((prev) => [newDoc, ...prev]);
+    handleStartEdit(newDoc);
+    showToast(`✓ Đã tạo thành công "${tpl.docTitle}" thuộc Bước ${tpl.stepNumber}!`);
+  };
 
   // Mở bản xem trước văn bản trực tiếp
   const handleStartEdit = (doc: DocItem) => {
     setActiveEditingDoc(doc);
     setEditSoHieu(doc.soHieu || `${Math.floor(10 + Math.random() * 89)}/VB`);
     const isBc = doc.loaiVanBan === 'bao_cao_de_xuat' || doc.loaiVanBan === 'bao_cao_xac_minh';
+    const isKtl =
+      doc.category?.includes('không thụ lý') ||
+      doc.tenVanBan?.toLowerCase().includes('không thụ lý') ||
+      Boolean(doc.lyDoChinh) ||
+      Boolean(doc.soHieu?.includes('TB-KTL')) ||
+      Boolean(doc.name?.toLowerCase().includes('khong_thu_ly'));
     const rawName = doc.tenVanBan || doc.name || 'Van_ban';
-    setEditTenVanBan(isBc ? (doc.tenVanBan || 'Báo cáo kết quả xác minh') : rawName.replace(/\.[^/.]+$/, '').replace(/_/g, ' '));
+    setEditTenVanBan(
+      isBc
+        ? (doc.tenVanBan || 'Báo cáo kết quả xác minh')
+        : isKtl
+          ? (doc.tenVanBan || 'Thông báo không thụ lý giải quyết đơn')
+          : rawName.replace(/\.[^/.]+$/, '').replace(/_/g, ' ')
+    );
     setEditLoaiVanBan(
       doc.loaiVanBan ||
-      (rawName.toLowerCase().includes('giay_moi')
-        ? 'giay_moi'
-        : rawName.toLowerCase().includes('bien_ban')
-          ? 'bien_ban'
-          : rawName.toLowerCase().includes('cong_van')
-            ? 'cong_van'
-            : isBc || rawName.toLowerCase().includes('bao_cao')
-              ? 'bao_cao_de_xuat'
-              : 'quyet_dinh')
+      (isKtl
+        ? 'thong_bao'
+        : rawName.toLowerCase().includes('giay_moi')
+          ? 'giay_moi'
+          : rawName.toLowerCase().includes('bien_ban')
+            ? 'bien_ban'
+            : rawName.toLowerCase().includes('cong_van')
+              ? 'cong_van'
+              : isBc || rawName.toLowerCase().includes('bao_cao')
+                ? 'bao_cao_de_xuat'
+                : 'quyet_dinh')
     );
-    setEditCategory(isBc ? 'Báo cáo đề xuất' : (doc.category || 'Văn bản nghiệp vụ'));
+    setEditCategory(isBc ? 'Báo cáo đề xuất' : isKtl ? 'Thông báo không thụ lý' : (doc.category || 'Văn bản nghiệp vụ'));
     setEditNgayLap(doc.uploadDate ? doc.uploadDate.split(' ')[0] : '16/09/2026');
-    setEditCoQuanBanHanh(doc.coQuanBanHanh || (isBc ? 'CƠ QUAN CẢNH SÁT ĐIỀU TRA' : 'Phòng Tiếp công dân & Xử lý đơn'));
+    setEditCoQuanBanHanh(doc.coQuanBanHanh || (isKtl ? 'UBND quận Cầu Giấy' : isBc ? 'CƠ QUAN CẢNH SÁT ĐIỀU TRA' : 'Phòng Tiếp công dân & Xử lý đơn'));
     setEditCoQuanCapTren(isBc ? 'CÔNG AN TP. HÀ NỘI' : 'ỦY BAN NHÂN DÂN QUẬN CẦU GIẤY');
     setEditNguoiNhan(doc.nguoiNhan || (isBc ? 'Thủ trưởng (Phó Thủ trưởng) Cơ quan Điều tra' : (currentDon.nguoiNop || 'Nguyễn Văn A')));
     setEditThoiGianHen(doc.thoiGianHen || '08:30 ngày 18/09/2026');
-    setEditDiaDiem(doc.diaDiem || 'Phòng Tiếp công dân & Xử lý đơn (Phòng 102, Trụ sở UBND quận)');
-    setEditTrichYeu(doc.trichYeu || `V/v Xác minh đơn của ông/bà ${currentDon.nguoiNop}`);
+    setEditDiaDiem(doc.diaDiem || (isKtl ? 'Trụ sở UBND quận Cầu Giấy' : 'Phòng Tiếp công dân & Xử lý đơn (Phòng 102, Trụ sở UBND quận)'));
+    setEditTrichYeu(doc.trichYeu || (isKtl ? `V/v Không thụ lý giải quyết đơn của ông/bà ${currentDon.nguoiNop}` : `V/v Xác minh đơn của ông/bà ${currentDon.nguoiNop}`));
     setEditNoiDungChiTiet(doc.noiDungChiTiet || doc.previewExcerpt || '');
-    setEditSigner(doc.signer ? doc.signer.replace(/\s*\(.*\)/, '') : 'Nguyễn Minh Anh');
-    setEditChucVuSigner(isBc ? 'ĐIỀU TRA VIÊN / CÁN BỘ ĐIỀU TRA' : 'CÁN BỘ THỤ LÝ XÁC MINH');
+    setEditSigner(doc.signer ? doc.signer.replace(/\s*\(.*\)/, '') : (isKtl ? 'Trần Văn Cường' : 'Nguyễn Minh Anh'));
+    setEditChucVuSigner(isBc ? 'ĐIỀU TRA VIÊN / CÁN BỘ ĐIỀU TRA' : isKtl ? 'PHÓ CHỦ TỊCH UBND QUẬN' : 'CÁN BỘ THỤ LÝ XÁC MINH');
     setEditTrangThai(doc.trangThai === 'da_ban_hanh' ? 'da_ban_hanh' : 'du_thao');
     setEditFromXacMinh(Boolean(doc.fromXacMinh));
   };
@@ -375,17 +698,25 @@ export default function TabTaiLieu({
   const handleTrinhKyFromRow = (doc: DocItem) => {
     // 1. Kiểm tra thông tin bắt buộc và nội dung văn bản trước khi trình ký
     if (!doc.soHieu || !doc.soHieu.trim()) {
-      showToast('⚠️ Báo cáo chưa có Số ký hiệu văn bản. Vui lòng bấm "Chỉnh sửa" để bổ sung trước khi trình ký!');
+      showToast('⚠️ Văn bản chưa có Số ký hiệu văn bản. Vui lòng bấm "Chỉnh sửa" để bổ sung trước khi trình ký!');
       return;
     }
 
     if (!doc.noiDungChiTiet || !doc.noiDungChiTiet.trim()) {
-      showToast('⚠️ Nội dung văn bản báo cáo chưa hoàn thiện. Vui lòng kiểm tra lại trước khi trình ký!');
+      showToast('⚠️ Nội dung văn bản chưa hoàn thiện. Vui lòng kiểm tra lại trước khi trình ký!');
       return;
     }
 
+    const isKtl =
+      doc.category?.includes('không thụ lý') ||
+      doc.tenVanBan?.toLowerCase().includes('không thụ lý') ||
+      Boolean(doc.lyDoChinh) ||
+      Boolean(doc.soHieu?.includes('TB-KTL')) ||
+      Boolean(doc.name?.toLowerCase().includes('khong_thu_ly'));
+    const docLabel = isKtl ? 'Thông báo không thụ lý giải quyết đơn' : 'Báo cáo kết quả xác minh';
+
     // 2. Xác nhận chuyển trình ký
-    const confirmMsg = `Xác nhận chuyển Báo cáo kết quả xác minh (Số: ${doc.soHieu}) sang luồng trình ký Lãnh đạo phê duyệt?`;
+    const confirmMsg = `Xác nhận chuyển ${docLabel} (Số: ${doc.soHieu}) sang luồng trình ký Lãnh đạo phê duyệt?`;
     if (!window.confirm(confirmMsg)) {
       return;
     }
@@ -398,10 +729,10 @@ export default function TabTaiLieu({
       prev.map((d) =>
         d.id === doc.id || (d.soHieu && d.soHieu === doc.soHieu)
           ? {
-              ...d,
-              signingStatus: 'cho_trinh',
-              trangThai: 'du_thao',
-            }
+            ...d,
+            signingStatus: 'cho_trinh',
+            trangThai: 'du_thao',
+          }
           : d
       )
     );
@@ -410,94 +741,94 @@ export default function TabTaiLieu({
     const matchingSigningDoc = signingDocuments?.find(
       (sd) =>
         sd.id === doc.id ||
-        sd.hoSoCode === currentDon.code ||
-        (sd.loaiVanBan === 'bao_cao_de_xuat' || sd.loaiVanBan === 'to_trinh_thu_ly')
+        (isKtl && (sd.id === doc.id || (sd.hoSoCode === currentDon.code && (sd.loaiVanBan === 'thong_bao' || sd.tenVanBan?.includes('không thụ lý'))))) ||
+        (!isKtl && (sd.id === doc.id || (sd.hoSoCode === currentDon.code && (sd.loaiVanBan === 'bao_cao_de_xuat' || sd.loaiVanBan === 'to_trinh_thu_ly'))))
     );
 
     const updatedSigningDoc: SigningDocument = matchingSigningDoc
       ? {
-          ...matchingSigningDoc,
-          status: 'cho_trinh',
-          thoiGianTrinh: `${todayStr} 10:15`,
-          nguoiTrinh: doc.signer ? doc.signer.replace(/\s*\(.*\)/, '') : 'Nguyễn Minh Anh',
-        }
+        ...matchingSigningDoc,
+        status: 'cho_trinh',
+        thoiGianTrinh: `${todayStr} 10:15`,
+        nguoiTrinh: doc.signer ? doc.signer.replace(/\s*\(.*\)/, '') : 'Nguyễn Minh Anh',
+      }
       : {
-          id: doc.id,
-          soKyHieu: doc.soHieu,
-          hoSoCode: currentDon.code,
-          luotNhanId: currentDon.luotNhanId,
-          loaiDon: currentDon.loaiDon || 'Đơn tố cáo',
-          nguoiGuiDon: currentDon.nguoiNop,
-          noiDungDon: currentDon.title,
-          tenVanBan: doc.tenVanBan || 'Báo cáo kết quả xác minh',
-          loaiVanBan: 'bao_cao_de_xuat',
-          loaiVanBanLabel: 'Báo cáo đề xuất',
-          trichYeu: doc.trichYeu || `V/v Xác minh đơn của ông/bà ${currentDon.nguoiNop}`,
-          noiDungChiTiet: doc.noiDungChiTiet,
-          nguoiLap: doc.signer ? doc.signer.replace(/\s*\(.*\)/, '') : 'Nguyễn Minh Anh',
-          donViNguoiLap: doc.coQuanBanHanh || 'Cơ quan Cảnh sát điều tra',
-          ngayTao: doc.uploadDate || `${todayStr} 09:00`,
-          status: 'cho_trinh',
-          thoiGianTrinh: `${todayStr} 10:15`,
-          nguoiTrinh: doc.signer ? doc.signer.replace(/\s*\(.*\)/, '') : 'Nguyễn Minh Anh',
-          mucDoUuTien: 'thuong',
-          hanXuLy: '24 giờ',
-          signers: [
-            {
-              id: 'ld-01',
-              name: 'Đ/c Trần Văn Hùng',
-              chucVu: 'Thủ trưởng / Phó Thủ trưởng Cơ quan Điều tra',
-              coQuan: doc.coQuanBanHanh || 'Cơ quan Cảnh sát điều tra',
-              vaiTro: 'duyet',
-              thuTu: 1,
-              status: 'cho_ky',
-            },
-          ],
-          currentSignerIndex: 0,
-          lanhDaoId: 'ld-01',
-          lanhDaoName: 'Đ/c Trần Văn Hùng',
-          lanhDaoChucVu: 'Thủ trưởng / Phó Thủ trưởng Cơ quan Điều tra',
-          tepDinhKem: [
-            {
-              id: `att-bc-${Date.now()}`,
-              tenTep: `Bao_cao_ket_qua_xac_minh_${currentDon.code}.pdf`,
-              dungLuong: '380 KB',
-              loai: 'du_thao',
-            },
-          ],
-          phienBanHienTai: 'V1',
-          versionHistory: [
-            {
-              version: 'V1',
-              thoiGian: `${todayStr} 10:15`,
-              nguoiTao: doc.signer || 'Nguyễn Minh Anh',
-              trangThaiLucDo: 'Chờ trình ký',
-              ghiChu: 'Trình Lãnh đạo Báo cáo kết quả xác minh',
-              noiDungSnapshot: doc.noiDungChiTiet || '',
-            },
-          ],
-          history: [
-            {
-              id: `hist-${Date.now()}`,
-              time: `${todayStr} 10:15`,
-              actor: doc.signer || 'Nguyễn Minh Anh',
-              action: 'Chuyển trình Lãnh đạo phê duyệt',
-            },
-          ],
-          auditLogs: [
-            {
-              id: `al-${Date.now()}`,
-              time: `${todayStr} 10:15`,
-              actor: doc.signer || 'Nguyễn Minh Anh',
-              actorRole: 'Cán bộ thụ lý',
-              action: 'Trình văn bản',
-              statusBefore: 'nhap',
-              statusAfter: 'cho_trinh',
-              version: 'V1',
-              note: doc.trichYeu,
-            },
-          ],
-        };
+        id: doc.id,
+        soKyHieu: doc.soHieu,
+        hoSoCode: currentDon.code,
+        luotNhanId: currentDon.luotNhanId,
+        loaiDon: currentDon.loaiDon || 'Đơn tố cáo',
+        nguoiGuiDon: currentDon.nguoiNop,
+        noiDungDon: currentDon.title,
+        tenVanBan: doc.tenVanBan || docLabel,
+        loaiVanBan: isKtl ? 'thong_bao' : 'bao_cao_de_xuat',
+        loaiVanBanLabel: isKtl ? 'Thông báo không thụ lý' : 'Báo cáo đề xuất',
+        trichYeu: doc.trichYeu || (isKtl ? `V/v Không thụ lý giải quyết đơn của ông/bà ${currentDon.nguoiNop}` : `V/v Xác minh đơn của ông/bà ${currentDon.nguoiNop}`),
+        noiDungChiTiet: doc.noiDungChiTiet,
+        nguoiLap: doc.signer ? doc.signer.replace(/\s*\(.*\)/, '') : 'Nguyễn Minh Anh',
+        donViNguoiLap: doc.coQuanBanHanh || (isKtl ? 'UBND quận Cầu Giấy' : 'Cơ quan Cảnh sát điều tra'),
+        ngayTao: doc.uploadDate || `${todayStr} 09:00`,
+        status: 'cho_trinh',
+        thoiGianTrinh: `${todayStr} 10:15`,
+        nguoiTrinh: doc.signer ? doc.signer.replace(/\s*\(.*\)/, '') : 'Nguyễn Minh Anh',
+        mucDoUuTien: 'thuong',
+        hanXuLy: '24 giờ',
+        signers: [
+          {
+            id: 'ld-01',
+            name: isKtl ? (doc.signer?.replace(/\s*\(.*\)/, '') || 'Đ/c Trần Văn Cường') : 'Đ/c Trần Văn Hùng',
+            chucVu: isKtl ? 'Phó Chủ tịch UBND quận' : 'Thủ trưởng / Phó Thủ trưởng Cơ quan Điều tra',
+            coQuan: doc.coQuanBanHanh || (isKtl ? 'UBND quận Cầu Giấy' : 'Cơ quan Cảnh sát điều tra'),
+            vaiTro: 'duyet',
+            thuTu: 1,
+            status: 'cho_ky',
+          },
+        ],
+        currentSignerIndex: 0,
+        lanhDaoId: 'ld-01',
+        lanhDaoName: isKtl ? (doc.signer?.replace(/\s*\(.*\)/, '') || 'Đ/c Trần Văn Cường') : 'Đ/c Trần Văn Hùng',
+        lanhDaoChucVu: isKtl ? 'Phó Chủ tịch UBND quận' : 'Thủ trưởng / Phó Thủ trưởng Cơ quan Điều tra',
+        tepDinhKem: [
+          {
+            id: `att-${isKtl ? 'ktl' : 'bc'}-${Date.now()}`,
+            tenTep: isKtl ? `Thong_bao_khong_thu_ly_${currentDon.code}.pdf` : `Bao_cao_ket_qua_xac_minh_${currentDon.code}.pdf`,
+            dungLuong: '380 KB',
+            loai: 'du_thao',
+          },
+        ],
+        phienBanHienTai: 'V1',
+        versionHistory: [
+          {
+            version: 'V1',
+            thoiGian: `${todayStr} 10:15`,
+            nguoiTao: doc.signer || 'Nguyễn Minh Anh',
+            trangThaiLucDo: 'Chờ trình ký',
+            ghiChu: `Trình Lãnh đạo ${docLabel}`,
+            noiDungSnapshot: doc.noiDungChiTiet || '',
+          },
+        ],
+        history: [
+          {
+            id: `hist-${Date.now()}`,
+            time: `${todayStr} 10:15`,
+            actor: doc.signer || 'Nguyễn Minh Anh',
+            action: 'Chuyển trình Lãnh đạo phê duyệt',
+          },
+        ],
+        auditLogs: [
+          {
+            id: `al-${Date.now()}`,
+            time: `${todayStr} 10:15`,
+            actor: doc.signer || 'Nguyễn Minh Anh',
+            actorRole: 'Cán bộ thụ lý',
+            action: 'Trình văn bản',
+            statusBefore: 'nhap',
+            statusAfter: 'cho_trinh',
+            version: 'V1',
+            note: doc.trichYeu,
+          },
+        ],
+      };
 
     if (onUpdateSigningDocuments) {
       onUpdateSigningDocuments((prevDocs) => {
@@ -516,7 +847,7 @@ export default function TabTaiLieu({
     }
 
     showToast(
-      `✓ Đã chuyển Báo cáo kết quả xác minh (${doc.soHieu}) sang luồng trình ký Lãnh đạo thành công!`
+      `✓ Đã chuyển ${docLabel} (${doc.soHieu}) sang luồng trình ký Lãnh đạo thành công!`
     );
   };
 
@@ -804,6 +1135,170 @@ export default function TabTaiLieu({
     );
   };
 
+  // Trình ký Lãnh đạo cho Thông báo không thụ lý giải quyết đơn trực tiếp từ A4
+  const handleTrinhKyKhongThuLyDirect = () => {
+    if (!editSoHieu.trim()) {
+      showToast('⚠️ Văn bản chưa có Số ký hiệu. Vui lòng bổ sung trước khi trình ký!');
+      return;
+    }
+
+    const confirmMsg = `Xác nhận chuyển Thông báo không thụ lý giải quyết đơn (Số: ${editSoHieu}) sang luồng trình ký Lãnh đạo phê duyệt?`;
+    if (!window.confirm(confirmMsg)) {
+      return;
+    }
+
+    // 1. Lưu nội dung văn bản hiện tại
+    handleSaveDirectEdit();
+
+    // 2. Cập nhật DocItem trong danh sách documents
+    setDocuments((prev) =>
+      prev.map((d) =>
+        d.id === activeEditingDoc?.id || (d.soHieu && d.soHieu === editSoHieu)
+          ? {
+            ...d,
+            signingStatus: 'cho_trinh',
+            trangThai: 'du_thao',
+            noiDungChiTiet: editNoiDungChiTiet,
+            trichYeu: editTrichYeu,
+            soHieu: editSoHieu,
+          }
+          : d
+      )
+    );
+
+    if (activeEditingDoc) {
+      setActiveEditingDoc((prev) =>
+        prev
+          ? {
+            ...prev,
+            signingStatus: 'cho_trinh',
+            noiDungChiTiet: editNoiDungChiTiet,
+            trichYeu: editTrichYeu,
+            soHieu: editSoHieu,
+          }
+          : null
+      );
+    }
+
+    // 3. Cập nhật hoặc tạo SigningDocument tương ứng với status 'cho_trinh'
+    const matchingSigningDoc = signingDocuments?.find(
+      (sd) =>
+        sd.id === activeEditingDoc?.id ||
+        (sd.hoSoCode === currentDon.code && (sd.loaiVanBan === 'thong_bao' || sd.tenVanBan?.includes('không thụ lý')))
+    );
+
+    const now = new Date();
+    const todayStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+
+    const updatedSigningDoc: SigningDocument = matchingSigningDoc
+      ? {
+        ...matchingSigningDoc,
+        status: 'cho_trinh',
+        soKyHieu: editSoHieu,
+        trichYeu: editTrichYeu,
+        noiDungChiTiet: editNoiDungChiTiet,
+        thoiGianTrinh: `${todayStr} 10:15`,
+        nguoiTrinh: currentDon.canBoXuLy || 'Nguyễn Minh Anh',
+      }
+      : {
+        id: activeEditingDoc?.id || `DOC-KTL-${Date.now().toString().slice(-4)}`,
+        soKyHieu: editSoHieu,
+        hoSoCode: currentDon.code,
+        luotNhanId: currentDon.luotNhanId,
+        loaiDon: currentDon.loaiDon || 'Đơn tố cáo',
+        nguoiGuiDon: currentDon.nguoiNop,
+        noiDungDon: currentDon.title,
+        tenVanBan: editTenVanBan || 'Thông báo không thụ lý giải quyết đơn',
+        loaiVanBan: 'thong_bao',
+        loaiVanBanLabel: 'Thông báo không thụ lý',
+        trichYeu: editTrichYeu || `V/v Không thụ lý giải quyết đơn của ông/bà ${currentDon.nguoiNop}`,
+        noiDungChiTiet: editNoiDungChiTiet,
+        nguoiLap: currentDon.canBoXuLy || 'Nguyễn Minh Anh',
+        donViNguoiLap: editCoQuanBanHanh || 'UBND quận Cầu Giấy',
+        ngayTao: `${todayStr} 09:30`,
+        status: 'cho_trinh',
+        thoiGianTrinh: `${todayStr} 10:15`,
+        nguoiTrinh: currentDon.canBoXuLy || 'Nguyễn Minh Anh',
+        mucDoUuTien: 'thuong',
+        hanXuLy: '24 giờ',
+        signers: [
+          {
+            id: 'ld-01',
+            name: editSigner?.replace(/\s*\(.*\)/, '') || 'Đ/c Trần Văn Cường',
+            chucVu: editChucVuSigner || 'Phó Chủ tịch UBND quận',
+            coQuan: editCoQuanBanHanh || 'UBND quận Cầu Giấy',
+            vaiTro: 'duyet',
+            thuTu: 1,
+            status: 'cho_ky',
+          },
+        ],
+        currentSignerIndex: 0,
+        lanhDaoId: 'ld-01',
+        lanhDaoName: editSigner?.replace(/\s*\(.*\)/, '') || 'Đ/c Trần Văn Cường',
+        lanhDaoChucVu: editChucVuSigner || 'Phó Chủ tịch UBND quận',
+        tepDinhKem: [
+          {
+            id: `att-ktl-${Date.now()}`,
+            tenTep: `Thong_bao_khong_thu_ly_${currentDon.code}.pdf`,
+            dungLuong: '420 KB',
+            loai: 'du_thao',
+          },
+        ],
+        phienBanHienTai: 'V1',
+        versionHistory: [
+          {
+            version: 'V1',
+            thoiGian: `${todayStr} 10:15`,
+            nguoiTao: currentDon.canBoXuLy || 'Nguyễn Minh Anh',
+            trangThaiLucDo: 'Chờ trình ký',
+            ghiChu: 'Trình Lãnh đạo phê duyệt Thông báo không thụ lý giải quyết đơn',
+            noiDungSnapshot: editNoiDungChiTiet,
+          },
+        ],
+        history: [
+          {
+            id: `hist-${Date.now()}`,
+            time: `${todayStr} 10:15`,
+            actor: currentDon.canBoXuLy || 'Nguyễn Minh Anh',
+            action: 'Trình Lãnh đạo ký duyệt Thông báo không thụ lý giải quyết đơn',
+          },
+        ],
+        auditLogs: [
+          {
+            id: `al-${Date.now()}`,
+            time: `${todayStr} 10:15`,
+            actor: currentDon.canBoXuLy || 'Nguyễn Minh Anh',
+            actorRole: 'Cán bộ thụ lý',
+            action: 'Trình văn bản',
+            statusBefore: 'nhap',
+            statusAfter: 'cho_trinh',
+            version: 'V1',
+            note: editTrichYeu,
+          },
+        ],
+      };
+
+    if (onUpdateSigningDocuments) {
+      onUpdateSigningDocuments((prevDocs) => {
+        const idx = prevDocs.findIndex((d) => d.id === updatedSigningDoc.id || (d.hoSoCode === currentDon.code && (d.loaiVanBan === 'thong_bao' || d.tenVanBan?.includes('không thụ lý'))));
+        if (idx >= 0) {
+          const next = [...prevDocs];
+          next[idx] = updatedSigningDoc;
+          return next;
+        }
+        return [updatedSigningDoc, ...prevDocs];
+      });
+    }
+
+    if (onTrinhKyBaoCao) {
+      onTrinhKyBaoCao(updatedSigningDoc.id, updatedSigningDoc);
+    }
+
+    showToast(
+      `✓ Đã trình ký Thông báo không thụ lý (${editSoHieu}) tới Lãnh đạo UBND quận phê duyệt!`
+    );
+  };
+
   // Tạo văn bản xác minh mới trực tiếp ngay trong tab Hồ sơ & Văn bản (không cần quay lại popup)
   const handleCreateNewXacMinhDoc = (type: 'giay_moi' | 'bien_ban' | 'cong_van' | 'thong_bao') => {
     // Tự động lưu văn bản hiện hành nếu đang mở
@@ -1067,18 +1562,25 @@ export default function TabTaiLieu({
     });
   }, [signingDocuments, currentDon.code, currentDon.luotNhanId, currentDon.id]);
 
-  // Tự động nhận prop initialEditingDoc từ Modal Xác minh
+  // Tự động nhận prop initialEditingDoc từ Modal Xác minh / Không thụ lý
   useEffect(() => {
     if (initialEditingDoc) {
       const match = documents.find(
         (d) => d.id === initialEditingDoc.id || (d.soHieu && d.soHieu === initialEditingDoc.soHieu)
       );
       if (match) {
-        handleStartEdit({
+        const mergedDoc: DocItem = {
           ...match,
           ...initialEditingDoc,
-          name: match.name,
-        } as DocItem);
+          name: (initialEditingDoc as any).name || match.name,
+          tenVanBan: initialEditingDoc.tenVanBan || match.tenVanBan,
+          signingStatus: (initialEditingDoc as any).signingStatus || match.signingStatus || 'nhap',
+          canCuPhapLy: (initialEditingDoc as any).canCuPhapLy || match.canCuPhapLy,
+          lyDoChinh: (initialEditingDoc as any).lyDoChinh || match.lyDoChinh,
+          lyDoChiTiet: (initialEditingDoc as any).lyDoChiTiet || match.lyDoChiTiet,
+        };
+        setDocuments((prev) => prev.map((d) => d.id === mergedDoc.id ? mergedDoc : d));
+        handleStartEdit(mergedDoc);
       } else {
         const newDoc: DocItem = {
           id: initialEditingDoc.id || `DOC-XM-${Date.now().toString().slice(-4)}`,
@@ -1096,15 +1598,20 @@ export default function TabTaiLieu({
           ocrStatus: 'Hoàn tất',
           isProcessDoc: true,
           isEditable: true,
-          loaiVanBan: (initialEditingDoc.loai as any) || 'giay_moi',
+          loaiVanBan: (initialEditingDoc.loai as any) || (initialEditingDoc as any).loaiVanBan || 'giay_moi',
+          tenVanBan: initialEditingDoc.tenVanBan,
           nguoiNhan: initialEditingDoc.nguoiNhan || currentDon.nguoiNop || 'Nguyễn Văn A',
           diaDiem: initialEditingDoc.diaDiem,
           thoiGianHen: initialEditingDoc.thoiGianHen,
           trichYeu: initialEditingDoc.trichYeu,
           noiDungChiTiet: initialEditingDoc.noiDungChiTiet || '',
-          previewExcerpt: initialEditingDoc.noiDungChiTiet || '',
+          previewExcerpt: (initialEditingDoc as any).previewExcerpt || initialEditingDoc.noiDungChiTiet || '',
           trangThai: (initialEditingDoc.trangThai as any) || 'du_thao',
           fromXacMinh: initialEditingDoc.fromXacMinh ?? true,
+          signingStatus: (initialEditingDoc as any).signingStatus || 'nhap',
+          canCuPhapLy: (initialEditingDoc as any).canCuPhapLy,
+          lyDoChinh: (initialEditingDoc as any).lyDoChinh,
+          lyDoChiTiet: (initialEditingDoc as any).lyDoChiTiet,
         };
         setDocuments((prev) => [newDoc, ...prev.filter((d) => d.id !== newDoc.id)]);
         handleStartEdit(newDoc);
@@ -1124,6 +1631,17 @@ export default function TabTaiLieu({
       diaDiem: 'Công an cấp xã / Cơ quan thụ lý',
       nguoiNhan: 'Lãnh đạo đơn vị có thẩm quyền giải quyết',
       noiDung: `Kính gửi: Lãnh đạo Công an cấp xã\n\nCăn cứ Luật Tố cáo năm 2018;\nCăn cứ Thông tư số 05/2021/TT-TTCP ngày 01/10/2021 của Thanh tra Chính phủ quy định quy trình xử lý đơn khiếu nại, đơn tố cáo, đơn kiến nghị, phản ánh;\nCăn cứ Thông tư số 129/2020/TT-BCA ngày 08/12/2020 của Bộ trưởng Bộ Công an;\n\nCán bộ thụ lý báo cáo kết quả kiểm tra ban đầu đối với hồ sơ đơn số: ${currentDon.code} của người làm đơn ${currentDon.nguoiNop}:\n\n1. THÔNG TIN NGƯỜI LÀM ĐƠN VÀ ĐỐI TƯỢNG BỊ TỐ CÁO\n- Người làm đơn: ${currentDon.nguoiNop}, CCCD: ${currentDon.cccd || '001088012345'}.\n- Người làm đơn có đủ năng lực hành vi dân sự, đơn ghi rõ ngày tháng và có chữ ký trực tiếp.\n- Đối tượng bị tố cáo: Hành vi sai phạm quy định pháp luật trong quản lý đất đai và trật tự xây dựng.\n\n2. TÓM TẮT NỘI DUNG ĐƠN VÀ TÀI LIỆU KÈM THEO\n- Nội dung đơn: ${currentDon.title || 'Tố cáo hành vi vi phạm trật tự xây dựng và quản lý đất đai'}.\n- Tài liệu gửi kèm: Bản sao Giấy chứng nhận quyền sử dụng đất, tài liệu hình ảnh sai phạm.\n\n3. KẾT QUẢ KIỂM TRA ĐIỀU KIỆN THỤ LÝ\n- Đơn thuộc thẩm quyền giải quyết của cơ quan.\n- Nội dung tố cáo có căn cứ pháp lý rõ ràng, không thuộc các trường hợp không được thụ lý quy định tại Điều 29 Luật Tố cáo 2018.\n\n4. ĐỀ XUẤT HƯỚNG XỬ LÝ\nKính trình Lãnh đạo phê duyệt:\n- Đồng ý THỤ LÝ GIẢI QUYẾT nội dung đơn theo quy định của pháp luật.\n- Ban hành Quyết định thụ lý giải quyết và phân công Cán bộ/Tổ xác minh tiến hành các bước tiếp theo.`,
+    },
+    {
+      title: 'Thông báo không thụ lý giải quyết đơn (TB-KTL)',
+      type: 'thong_bao' as const,
+      ten: 'Thông báo không thụ lý giải quyết đơn',
+      soHieu: 'TB-KTL/UBND',
+      trichYeu: `V/v Không thụ lý giải quyết đơn số ${currentDon.code} theo quy định pháp luật`,
+      thoiGian: 'Theo quy định pháp luật',
+      diaDiem: 'UBND quận Cầu Giấy',
+      nguoiNhan: currentDon.nguoiNop || 'Nguyễn Văn A',
+      noiDung: `Căn cứ Luật Tố cáo năm 2018;\nCăn cứ Điều 29 Luật Tố cáo năm 2018 quy định các trường hợp không thụ lý giải quyết tố cáo;\nSau khi kiểm tra điều kiện thụ lý đơn số ${currentDon.code} của Ông/Bà ${currentDon.nguoiNop || 'Nguyễn Văn A'}, Ủy ban nhân dân quận nhận thấy:\nNội dung đơn không đủ điều kiện thụ lý giải quyết theo quy định của pháp luật.\nỦy ban nhân dân quận thông báo: Không thụ lý giải quyết nội dung đơn nêu trên để Ông/Bà được biết và thực hiện theo đúng quy định./.`,
     },
     {
       title: 'Giấy mời làm việc xác minh (Mẫu 18/GM)',
@@ -1299,15 +1817,34 @@ export default function TabTaiLieu({
 
     setDocuments((prev) => [newDoc, ...prev]);
     setShowAddModal(false);
+    handleStartEdit(newDoc);
     showToast(`✓ Đã thêm văn bản / quyết định "${newDoc.name}" vào hồ sơ xử lý thành công!`);
   };
 
   const handleDeleteDoc = (docId: string, docName: string) => {
     if (window.confirm(`Bạn có chắc chắn muốn xóa văn bản "${docName}" khỏi hồ sơ vụ việc?`)) {
-      setDocuments((prev) => prev.filter((d) => d.id !== docId));
+      setDocuments((prev) => {
+        const next = prev.filter((d) => d.id !== docId);
+        if (activeEditingDoc?.id === docId) {
+          if (next.length > 0) {
+            handleStartEdit(next[0]);
+          } else {
+            setActiveEditingDoc(null);
+          }
+        }
+        return next;
+      });
       showToast(`✓ Đã xóa văn bản "${docName}".`);
     }
   };
+
+  // Tự động chọn tài liệu xem ban đầu nếu chưa có tài liệu nào được chọn
+  useEffect(() => {
+    if (!activeEditingDoc && documents.length > 0) {
+      const bc = documents.find((d) => d.loaiVanBan === 'bao_cao_de_xuat' || d.loaiVanBan === 'bao_cao_xac_minh');
+      handleStartEdit(bc || documents[0]);
+    }
+  }, [documents, activeEditingDoc]);
 
   const handleOpenPreview = (doc: DocItem) => {
     setSelectedDoc(doc);
@@ -1347,10 +1884,18 @@ export default function TabTaiLieu({
 
   const isEditingBaoCao = Boolean(
     activeEditingDoc &&
-      (activeEditingDoc.loaiVanBan === 'bao_cao_de_xuat' ||
-        activeEditingDoc.loaiVanBan === 'bao_cao_xac_minh' ||
-        activeEditingDoc.tenVanBan?.includes('Báo cáo') ||
-        activeEditingDoc.name.toLowerCase().includes('bao_cao'))
+    (activeEditingDoc.loaiVanBan === 'bao_cao_de_xuat' ||
+      activeEditingDoc.loaiVanBan === 'bao_cao_xac_minh' ||
+      activeEditingDoc.tenVanBan?.includes('Báo cáo') ||
+      activeEditingDoc.name.toLowerCase().includes('bao_cao'))
+  );
+  const isThongBaoKhongThuLy = Boolean(
+    activeEditingDoc &&
+    (activeEditingDoc.category?.includes('không thụ lý') ||
+      activeEditingDoc.tenVanBan?.toLowerCase().includes('không thụ lý') ||
+      activeEditingDoc.soHieu?.includes('TB-KTL') ||
+      Boolean(activeEditingDoc.lyDoChinh) ||
+      activeEditingDoc.name?.toLowerCase().includes('khong_thu_ly'))
   );
   const activeBaoCaoFormData = (activeEditingDoc?.formData || {}) as Partial<BaoCaoDeXuatFormData>;
 
@@ -1364,891 +1909,1160 @@ export default function TabTaiLieu({
         </div>
       )}
 
-      {activeEditingDoc ? (
-        /* ========================================================================= */
-        /* TRÌNH XEM TRƯỚC VĂN BẢN THEO BIỂU MẪU CHUẨN & SOẠN THẢO TRỰC TIẾP A4     */
-        /* ========================================================================= */
-        <div className="space-y-4 animate-fade-in">
-          {/* 1. TOP HEADER & ACTION CONTROLS */}
-          <div className="bg-white rounded-2xl border border-slate-200/90 p-3 sm:p-4 shadow-2xs flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <button
-                type="button"
-                onClick={handleExitDirectEdit}
-                className="px-3.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer hover:border-slate-300 active:scale-95"
-                title="Quay lại danh sách văn bản trong hồ sơ"
-              >
-                <span className="material-symbols-outlined text-[17px] text-slate-500">arrow_back</span>
-                <span>Quay lại danh mục</span>
-              </button>
+      {/* ========================================================================= */}
+      {/* BỐ CỤC 2 BÊN: SPLIT VIEW (DANH SÁCH VĂN BẢN & XEM TRƯỚC TÀI LIỆU A4)      */}
+      {/* ========================================================================= */}
+      <div className={`grid grid-cols-1 ${isFullscreenViewer ? 'xl:grid-cols-1' : 'xl:grid-cols-12'} gap-5 items-start`}>
+        {/* ========================================================================= */}
+        {/* CỘT 1 (BÊN TRÁI): DANH SÁCH CÁC VĂN BẢN (xl:col-span-5)                  */}
+        {/* ========================================================================= */}
+        {!isFullscreenViewer && (
+          <div className="xl:col-span-5 space-y-3.5 flex flex-col">
+            {/* 1. Header Cột: Tiêu đề + Nút Tạo theo bước + Nút + Tạo văn bản */}
+            <div className="bg-white rounded-2xl border border-slate-200/90 p-3.5 shadow-2xs space-y-3">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-[#004ac6] shrink-0">
+                    <span className="material-symbols-outlined text-[19px]">folder_open</span>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-xs sm:text-sm flex items-center gap-1.5">
+                      <span>Danh mục văn bản & hồ sơ</span>
+                      <span className="px-2 py-0.2 rounded-full text-[10.5px] font-extrabold bg-blue-100 text-[#004ac6]">
+                        {filteredDocs.length}
+                      </span>
+                    </h3>
+                    <p className="text-[11px] text-slate-500 font-medium truncate max-w-[240px]">
+                      Hồ sơ: <span className="font-mono font-bold text-slate-700">{currentDon.code}</span>
+                    </p>
+                  </div>
+                </div>
 
-              <div className="hidden sm:flex items-center gap-2 pl-2 border-l border-slate-200">
-                <span className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse"></span>
-                <span className="text-xs font-bold text-slate-900">
-                  {isEditingBaoCao ? 'Bản xem trước văn bản:' : 'Soạn thảo A4:'}{' '}
-                  <span className="text-[#004ac6]">{activeBaoCaoFormData.soBaoCao || editSoHieu || activeEditingDoc.soHieu || activeEditingDoc.name}</span>
-                </span>
-                <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold border bg-blue-50 text-[#004ac6] border-blue-200">
-                  {isEditingBaoCao ? 'Báo cáo đề xuất' : (activeEditingDoc.category || 'Văn bản nghiệp vụ')}
-                </span>
+                {/* Các nút hành động: Tạo theo bước & + Tạo văn bản */}
+                <div className="flex items-center gap-1.5 relative">
+                  {/* Dropdown Menu Tạo theo bước */}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setShowStepMenu(!showStepMenu)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-[#004ac6] hover:from-blue-700 hover:to-blue-800 text-white text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
+                      title="Tạo văn bản theo các bước quy trình nghiệp vụ xử lý đơn"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">account_tree</span>
+                      <span>Tạo theo bước</span>
+                      <span className="material-symbols-outlined text-[15px] transition-transform duration-200">
+                        {showStepMenu ? 'expand_less' : 'expand_more'}
+                      </span>
+                    </button>
 
-                {activeEditingDoc.signingStatus && (
-                  <span
-                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                      activeEditingDoc.signingStatus === 'nhap'
-                        ? 'bg-slate-100 text-slate-700 border-slate-300'
-                        : activeEditingDoc.signingStatus === 'da_ky' || activeEditingDoc.signingStatus === 'hoan_tat'
-                        ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
-                        : activeEditingDoc.signingStatus === 'yeu_cau_chinh_sua'
-                        ? 'bg-rose-100 text-rose-800 border-rose-300'
-                        : 'bg-blue-100 text-blue-800 border-blue-300'
-                    }`}
-                  >
-                    <span className="material-symbols-outlined text-[12px]">
-                      {activeEditingDoc.signingStatus === 'nhap'
-                        ? 'edit_note'
-                        : activeEditingDoc.signingStatus === 'da_ky' || activeEditingDoc.signingStatus === 'hoan_tat'
-                        ? 'verified'
-                        : activeEditingDoc.signingStatus === 'yeu_cau_chinh_sua'
-                        ? 'replay'
-                        : 'pending_actions'}
-                    </span>
-                    <span>
-                      {activeEditingDoc.signingStatus === 'nhap'
-                        ? 'Bản nháp'
-                        : activeEditingDoc.signingStatus === 'da_ky' || activeEditingDoc.signingStatus === 'hoan_tat'
-                        ? 'Đã ký duyệt'
-                        : activeEditingDoc.signingStatus === 'yeu_cau_chinh_sua'
-                        ? 'Cần chỉnh sửa'
-                        : 'Chờ ký duyệt'}
-                    </span>
-                  </span>
-                )}
-              </div>
-            </div>
+                    {/* Popover / Dropdown 5 bước quy trình */}
+                    {showStepMenu && (
+                      <>
+                        <div
+                          className="fixed inset-0 z-40"
+                          onClick={() => setShowStepMenu(false)}
+                        />
+                        <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white rounded-2xl border border-slate-200 shadow-2xl z-50 p-2.5 space-y-2 max-h-[80vh] overflow-y-auto animate-scale-up">
+                          <div className="p-2 border-b border-slate-100 flex items-center justify-between">
+                            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900">
+                              <span className="material-symbols-outlined text-[18px] text-[#004ac6]">alt_route</span>
+                              <span>Chọn biểu mẫu văn bản theo bước quy trình</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setShowStepMenu(false)}
+                              className="text-slate-400 hover:text-slate-700 p-1 rounded-lg cursor-pointer"
+                            >
+                              <span className="material-symbols-outlined text-[16px]">close</span>
+                            </button>
+                          </div>
 
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
-                <button
-                  type="button"
-                  onClick={() => setEditorZoom((z) => Math.max(70, z - 10))}
-                  className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-600 hover:bg-white hover:text-slate-900 text-xs font-bold cursor-pointer"
-                  title="Thu nhỏ"
-                >
-                  -
-                </button>
-                <span className="text-[11px] font-bold text-slate-700 px-1">{editorZoom}%</span>
-                <button
-                  type="button"
-                  onClick={() => setEditorZoom((z) => Math.min(130, z + 10))}
-                  className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-600 hover:bg-white hover:text-slate-900 text-xs font-bold cursor-pointer"
-                  title="Phóng to"
-                >
-                  +
-                </button>
-              </div>
+                          {/* 5 Nhóm bước */}
+                          {[1, 2, 3, 4, 5].map((stepNum) => {
+                            const stepItems = WORKFLOW_STEPS_DOCS.filter((s) => s.stepNumber === stepNum);
+                            const stepTitle = stepItems[0]?.stepTitle || `Bước ${stepNum}`;
+                            const stepColors = [
+                              { bg: 'bg-indigo-50/80', border: 'border-indigo-200', text: 'text-indigo-800', dot: 'bg-indigo-600' },
+                              { bg: 'bg-blue-50/80', border: 'border-blue-200', text: 'text-blue-800', dot: 'bg-blue-600' },
+                              { bg: 'bg-purple-50/80', border: 'border-purple-200', text: 'text-purple-800', dot: 'bg-purple-600' },
+                              { bg: 'bg-amber-50/80', border: 'border-amber-200', text: 'text-amber-800', dot: 'bg-amber-600' },
+                              { bg: 'bg-emerald-50/80', border: 'border-emerald-200', text: 'text-emerald-800', dot: 'bg-emerald-600' },
+                            ][stepNum - 1];
 
-              <button
-                type="button"
-                onClick={() => window.print()}
-                className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
-                title="In trang A4"
-              >
-                <span className="material-symbols-outlined text-[16px] text-slate-500">print</span>
-                <span className="hidden md:inline">In A4</span>
-              </button>
+                            return (
+                              <div key={stepNum} className={`p-2 rounded-xl border ${stepColors.border} ${stepColors.bg} space-y-1.5`}>
+                                <div className="flex items-center gap-1.5 text-[11px] font-extrabold text-slate-800">
+                                  <span className={`w-2 h-2 rounded-full ${stepColors.dot}`}></span>
+                                  <span>Bước {stepNum}: {stepTitle}</span>
+                                </div>
+                                <div className="space-y-1 pl-1">
+                                  {stepItems.map((tpl) => (
+                                    <button
+                                      key={tpl.id}
+                                      type="button"
+                                      onClick={() => handleCreateDocFromStep(tpl)}
+                                      className="w-full text-left p-1.5 rounded-lg bg-white/90 hover:bg-white hover:shadow-xs border border-slate-200/80 transition-all flex items-start gap-2 group cursor-pointer"
+                                    >
+                                      <span className="px-1.5 py-0.5 rounded text-[9.5px] font-mono font-bold bg-slate-100 text-slate-700 border border-slate-200 shrink-0 group-hover:bg-blue-50 group-hover:text-blue-700 group-hover:border-blue-200 transition-colors">
+                                        {tpl.docCode}
+                                      </span>
+                                      <div className="min-w-0 flex-1">
+                                        <p className="text-[11px] font-bold text-slate-800 group-hover:text-[#004ac6] truncate transition-colors">
+                                          {tpl.docTitle}
+                                        </p>
+                                        <p className="text-[10px] text-slate-500 line-clamp-1">
+                                          {tpl.trichYeu}
+                                        </p>
+                                      </div>
+                                      <span className="material-symbols-outlined text-[15px] text-slate-400 group-hover:text-[#004ac6] group-hover:translate-x-0.5 transition-all shrink-0">
+                                        add_circle
+                                      </span>
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
+                  </div>
 
-              <button
-                type="button"
-                onClick={() =>
-                  showToast(
-                    `✓ Đang xuất tệp "${(activeBaoCaoFormData.soBaoCao || editSoHieu || 'Bao_cao').replace(/[^a-zA-Z0-9]/g, '_')}.docx" chuẩn thể thức!`
-                  )
-                }
-                className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
-                title="Tải tệp tin Word .docx"
-              >
-                <span className="material-symbols-outlined text-[16px] text-blue-600">description</span>
-                <span className="hidden md:inline">Tải .DOCX</span>
-              </button>
-
-              {/* Nút Chỉnh sửa thông tin Báo cáo (Mở popup form) */}
-              {isEditingBaoCao && onOpenBaoCaoDeXuat && (
-                <button
-                  type="button"
-                  onClick={() => onOpenBaoCaoDeXuat(activeEditingDoc)}
-                  className="px-3.5 py-1.5 rounded-xl border border-blue-300 bg-blue-50/90 hover:bg-blue-100 text-[#004ac6] text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
-                  title="Mở popup để chỉnh sửa các trường thông tin Báo cáo đề xuất"
-                >
-                  <span className="material-symbols-outlined text-[17px]">edit_note</span>
-                  <span>Chỉnh sửa thông tin</span>
-                </button>
-              )}
-
-              {/* Nút Đi trình ký (Nếu là báo cáo) hoặc Lưu văn bản (Nếu là văn bản khác) */}
-              {isEditingBaoCao ? (
-                activeEditingDoc.signingStatus === 'nhap' ? (
+                  {/* Nút + Tạo văn bản (Mở Modal Thêm mới) */}
                   <button
                     type="button"
-                    onClick={handleTrinhKyBaoCaoDirect}
-                    className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
-                    title="Chuyển Báo cáo kết quả xác minh sang luồng trình ký Lãnh đạo"
+                    onClick={handleOpenAddModal}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-2xs"
+                    title="Mở form tạo văn bản mới tùy chỉnh"
                   >
-                    <span className="material-symbols-outlined text-[17px]">send</span>
-                    <span>Đi trình ký</span>
+                    <span className="material-symbols-outlined text-[16px] text-slate-600">post_add</span>
+                    <span className="hidden sm:inline">Tạo văn bản</span>
                   </button>
-                ) : (
-                  <span className="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 text-xs font-bold flex items-center gap-1.5 shadow-2xs">
-                    <span className="material-symbols-outlined text-[16px]">check_circle</span>
-                    <span>Đã trình ký</span>
+                </div>
+              </div>
+
+              {/* Ô tìm kiếm & Bộ lọc */}
+              <div className="space-y-2 pt-1 border-t border-slate-100">
+                <div className="relative">
+                  <span className="material-symbols-outlined absolute left-2.5 top-2.5 text-[17px] text-slate-400 pointer-events-none">
+                    search
                   </span>
-                )
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleSaveDirectEdit}
-                  className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-900 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
-                  title="Lưu lại các chỉnh sửa trên văn bản"
-                >
-                  <span className="material-symbols-outlined text-[16px]">save</span>
-                  <span>Lưu văn bản</span>
-                </button>
-              )}
-            </div>
-          </div>
+                  <input
+                    type="text"
+                    value={searchKeyword}
+                    onChange={(e) => setSearchKeyword(e.target.value)}
+                    placeholder="Tìm theo tên tệp, số hiệu, người ký..."
+                    className="w-full pl-8 pr-7 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:border-[#004ac6] focus:ring-1 focus:ring-blue-200 outline-none transition-all placeholder:text-slate-400"
+                  />
+                  {searchKeyword && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchKeyword('')}
+                      className="absolute right-2 top-2 text-slate-400 hover:text-slate-600 text-[14px]"
+                    >
+                      close
+                    </button>
+                  )}
+                </div>
 
-          {/* 2. BODY TRÌNH DIỄN VĂN BẢN A4 */}
-          <div className="w-full flex flex-col items-center">
-            <div className="w-full bg-slate-200/80 rounded-2xl p-4 sm:p-8 flex justify-center border border-slate-300 overflow-x-auto shadow-inner">
-              <div
-                className="bg-white shadow-2xl rounded-sm border border-slate-300 w-full max-w-[840px] min-h-[1100px] p-8 sm:p-14 text-slate-900 font-serif relative transition-transform origin-top flex flex-col justify-between"
-                style={{ transform: `scale(${editorZoom / 100})` }}
-              >
-                {isEditingBaoCao ? (
-                  /* ========================================================================= */
-                  /* BIỂU MẪU CHUẨN: BÁO CÁO KẾT QUẢ XÁC MINH VỀ VIỆC GIẢI QUYẾT ĐƠN          */
-                  /* ========================================================================= */
-                  <div className="space-y-4 text-xs leading-relaxed font-serif text-slate-900">
-                    {/* Header: Cơ quan ban hành & Quốc hiệu tiêu ngữ */}
-                    <div className="grid grid-cols-2 gap-4 text-center pb-4 border-b border-slate-300">
-                      <div className="space-y-0.5 text-center">
-                        <p className="uppercase font-medium text-slate-700 text-[11px]">
-                          {activeBaoCaoFormData.coQuanCapTren || editCoQuanCapTren || 'CÔNG AN TP. HÀ NỘI'}
-                        </p>
-                        <p className="uppercase font-bold text-slate-900 text-xs tracking-tight">
-                          {activeBaoCaoFormData.coQuanLap || editCoQuanBanHanh || 'CƠ QUAN CẢNH SÁT ĐIỀU TRA'}
-                        </p>
-                        <div className="w-20 h-px bg-slate-800 mx-auto my-1"></div>
-                        <p className="font-mono text-[11px] text-slate-800">
-                          Số: <strong>{activeBaoCaoFormData.soBaoCao || editSoHieu}</strong>
-                        </p>
-                      </div>
-                      <div className="space-y-0.5 text-center">
-                        <p className="font-bold uppercase text-slate-900 text-xs tracking-wider">
-                          CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
-                        </p>
-                        <p className="font-bold text-slate-900 text-xs">
-                          Độc lập - Tự do - Hạnh phúc
-                        </p>
-                        <div className="w-28 h-px bg-slate-800 mx-auto my-1"></div>
-                        <p className="italic text-[11px] text-slate-700 pt-0.5">
-                          Hà Nội, ngày {(activeBaoCaoFormData.ngayLap || editNgayLap || '16/09/2026').split('/')[0] || '16'} tháng{' '}
-                          {(activeBaoCaoFormData.ngayLap || editNgayLap || '16/09/2026').split('/')[1] || '09'} năm{' '}
-                          {(activeBaoCaoFormData.ngayLap || editNgayLap || '16/09/2026').split('/')[2] || '2026'}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Tiêu đề văn bản */}
-                    <div className="text-center pt-4 pb-2">
-                      <h1 className="text-center uppercase font-bold text-base sm:text-lg text-slate-900 tracking-wide">
-                        BÁO CÁO KẾT QUẢ XÁC MINH
-                      </h1>
-                      <p className="text-center italic text-xs text-slate-700 mt-1">
-                        Về việc giải quyết đơn (tố giác/tin báo/kiến nghị khởi tố) của ông/bà{' '}
-                        <strong>{activeBaoCaoFormData.nguoiGuiDon || currentDon.nguoiNop}</strong>
-                      </p>
-                    </div>
-
-                    {/* Kính gửi */}
-                    <div className="py-1">
-                      <p className="text-xs">
-                        <strong>Kính gửi:</strong>{' '}
-                        {activeBaoCaoFormData.nguoiNhan || editNguoiNhan || 'Thủ trưởng (Phó Thủ trưởng) Cơ quan Điều tra'}
-                      </p>
-                    </div>
-
-                    {/* Phân công & Cán bộ */}
-                    <div className="py-2 space-y-1.5 text-justify text-xs leading-relaxed">
-                      <p>
-                        Thực hiện Phân công giải quyết nguồn tin về tội phạm số:{' '}
-                        <strong>{activeBaoCaoFormData.soPhanCong || `${editSoHieu.replace(/\D/g, '') || '24'}/QĐ-CQĐT`}</strong>{' '}
-                        ngày{' '}
-                        <strong>{activeBaoCaoFormData.ngayPhanCong || activeBaoCaoFormData.ngayLap || editNgayLap || '16/09/2026'}</strong>{' '}
-                        của Thủ trưởng/Phó Thủ trưởng Cơ quan Điều tra;
-                      </p>
-                      <p>
-                        Hôm nay, ngày {(activeBaoCaoFormData.ngayLap || editNgayLap || '16/09/2026').split('/')[0] || '16'} tháng{' '}
-                        {(activeBaoCaoFormData.ngayLap || editNgayLap || '16/09/2026').split('/')[1] || '09'} năm{' '}
-                        {(activeBaoCaoFormData.ngayLap || editNgayLap || '16/09/2026').split('/')[2] || '2026'}, Điều tra viên / Cán bộ điều tra:{' '}
-                        <strong>{activeBaoCaoFormData.nguoiLap || editSigner || 'Nguyễn Minh Anh'}</strong>
-                      </p>
-                      <p>
-                        Đơn vị công tác:{' '}
-                        <strong>{activeBaoCaoFormData.coQuanLap || editCoQuanBanHanh || 'CƠ QUAN CẢNH SÁT ĐIỀU TRA'}</strong>
-                      </p>
-                      <p>
-                        Tiến hành báo cáo kết quả xác minh đơn của:{' '}
-                        <strong>{activeBaoCaoFormData.nguoiGuiDon || currentDon.nguoiNop}</strong>
-                      </p>
-                      <p>
-                        Cư trú / Địa chỉ:{' '}
-                        <strong>{activeBaoCaoFormData.diaChiNguoiGui || currentDon.diaChi || 'Quận Cầu Giấy, TP. Hà Nội'}</strong>
-                      </p>
-                      <p>
-                        Nội dung đơn phản ánh / tố giác:{' '}
-                        <em>{activeBaoCaoFormData.noiDungDon || currentDon.title || 'Tố giác hành vi vi phạm quy định pháp luật'}</em>
-                      </p>
-                    </div>
-
-                    {/* I. KẾT QUẢ XÁC MINH */}
-                    <div className="pt-2 pb-1 space-y-2 text-justify">
-                      <h2 className="font-bold text-xs uppercase text-slate-900 tracking-wide border-b border-slate-200 pb-1">
-                        I. KẾT QUẢ XÁC MINH
-                      </h2>
-                      <div>
-                        <h3 className="font-bold text-slate-900 text-xs">1. Các tài liệu, chứng cứ đã thu thập:</h3>
-                        <div className="pl-4 pt-1 whitespace-pre-line text-slate-800 leading-relaxed text-[11.5px]">
-                          {activeBaoCaoFormData.taiLieuThuThap ||
-                            '- Tài liệu, chứng cứ do người nộp đơn cung cấp: Đơn tố giác tội phạm (Bản chính); Bản sao CCCD; Bảng kê chứng từ giao dịch chuyển tiền và các tài liệu liên quan.\n- Tài liệu, chứng cứ do Cơ quan Điều tra thu thập: Biên bản tiếp nhận nguồn tin về tội phạm; Biên bản ghi lời khai người tố giác; Báo cáo xác minh hiện trường, nhân thân đối tượng.'}
-                        </div>
-                      </div>
-                      <div className="pt-1.5">
-                        <h3 className="font-bold text-slate-900 text-xs">2. Nội dung diễn biến sự việc được xác minh:</h3>
-                        <div className="pl-4 pt-1 whitespace-pre-line text-slate-800 leading-relaxed text-[11.5px]">
-                          {activeBaoCaoFormData.noiDungXacMinh ||
-                            (editNoiDungChiTiet
-                              ? editNoiDungChiTiet
-                              : 'Qua công tác xác minh ban đầu, các nội dung tố giác của công dân có căn cứ thực tế. Đã làm rõ diễn biến hành vi, các giao dịch và tài liệu liên quan đến dấu hiệu vi phạm pháp luật hình sự; các đối tượng liên quan đã được triệu tập, lấy lời khai bước đầu.')}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* II. NHẬN XÉT VÀ ĐỀ XUẤT */}
-                    <div className="pt-2 pb-1 space-y-2 text-justify">
-                      <h2 className="font-bold text-xs uppercase text-slate-900 tracking-wide border-b border-slate-200 pb-1">
-                        II. NHẬN XÉT VÀ ĐỀ XUẤT
-                      </h2>
-                      <div>
-                        <h3 className="font-bold text-slate-900 text-xs">1. Đánh giá, nhận xét:</h3>
-                        <div className="pl-4 pt-1 whitespace-pre-line text-slate-800 leading-relaxed text-[11.5px]">
-                          {activeBaoCaoFormData.danhGiaNhanXet ||
-                            '- Về tính chất, mức độ của sự việc: Vụ việc có tính chất nghiêm trọng, ảnh hưởng đến quyền lợi hợp pháp của công dân và tình hình an ninh trật tự trên địa bàn.\n- Về dấu hiệu tội phạm: Đã phát hiện đủ căn cứ dấu hiệu tội phạm theo quy định của Bộ luật Hình sự; vụ việc thuộc thẩm quyền thụ lý, giải quyết của Cơ quan Điều tra.'}
-                        </div>
-                        <div className="pl-4 pt-1.5 text-slate-800 text-[11.5px]">
-                          <strong>- Căn cứ pháp lý:</strong>{' '}
-                          {activeBaoCaoFormData.canCuPhapLy || 'Căn cứ Điều 145, 146, 147 Bộ luật Tố tụng hình sự năm 2015; Điều 174 Bộ luật Hình sự 2015.'}
-                        </div>
-                      </div>
-
-                      <div className="pt-1.5">
-                        <h3 className="font-bold text-slate-900 text-xs">2. Đề xuất xử lý:</h3>
-                        <p className="pl-4 pt-1 italic text-slate-800 text-[11.5px]">
-                          Kính đề nghị Thủ trưởng (Phó Thủ trưởng) Cơ quan Điều tra xem xét, phê duyệt các nội dung sau:
-                        </p>
-                        <div className="pl-4 pt-1.5 space-y-1 font-mono text-[11px]">
-                          <div
-                            className={`p-1.5 rounded transition-all ${
-                              activeBaoCaoFormData.phuongAnDeXuat === 1 || !activeBaoCaoFormData.phuongAnDeXuat
-                                ? 'bg-blue-50/80 font-bold text-blue-950 border border-blue-200'
-                                : 'text-slate-600'
-                            }`}
-                          >
-                            [{activeBaoCaoFormData.phuongAnDeXuat === 1 || !activeBaoCaoFormData.phuongAnDeXuat ? 'X' : '  '}] Phương án 1: Thụ lý đơn (Đủ điều kiện thụ lý giải quyết theo quy định của pháp luật).
-                          </div>
-                          <div
-                            className={`p-1.5 rounded transition-all ${
-                              activeBaoCaoFormData.phuongAnDeXuat === 2
-                                ? 'bg-blue-50/80 font-bold text-blue-950 border border-blue-200'
-                                : 'text-slate-600'
-                            }`}
-                          >
-                            [{activeBaoCaoFormData.phuongAnDeXuat === 2 ? 'X' : '  '}] Phương án 2: Chuyển thẩm quyền (Chuyển đơn, hồ sơ đến cơ quan, đơn vị có đúng thẩm quyền để giải quyết).
-                          </div>
-                          <div
-                            className={`p-1.5 rounded transition-all ${
-                              activeBaoCaoFormData.phuongAnDeXuat === 3
-                                ? 'bg-blue-50/80 font-bold text-blue-950 border border-blue-200'
-                                : 'text-slate-600'
-                            }`}
-                          >
-                            [{activeBaoCaoFormData.phuongAnDeXuat === 3 ? 'X' : '  '}] Phương án 3: Trả lời đơn (Lập văn bản trả lời, hướng dẫn hoặc giải thích cho công dân/người nộp đơn).
-                          </div>
-                          <div
-                            className={`p-1.5 rounded transition-all ${
-                              activeBaoCaoFormData.phuongAnDeXuat === 4
-                                ? 'bg-blue-50/80 font-bold text-blue-950 border border-blue-200'
-                                : 'text-slate-600'
-                            }`}
-                          >
-                            [{activeBaoCaoFormData.phuongAnDeXuat === 4 ? 'X' : '  '}] Phương án 4: Yêu cầu bổ sung (Yêu cầu người nộp bổ sung tài liệu, chứng cứ hoặc giải trình làm rõ nội dung).
-                          </div>
-                        </div>
-
-                        {activeBaoCaoFormData.chiTietPhuongAn && (
-                          <p className="pl-4 pt-1 text-[11px] italic text-slate-700">
-                            (Ghi chú phương án đề xuất: {activeBaoCaoFormData.chiTietPhuongAn})
-                          </p>
-                        )}
-
-                        <div className="pl-4 pt-2 text-slate-800 text-[11.5px] leading-relaxed">
-                          <p>
-                            Dự thảo các văn bản tố tụng kèm theo bao gồm:{' '}
-                            <em>
-                              {activeBaoCaoFormData.vanBanKemTheo ||
-                                'Dự thảo Quyết định khởi tố vụ án; Bản kết luận xác minh nguồn tin về tội phạm; Bảng kê danh mục tài liệu, chứng cứ trong hồ sơ.'}
-                            </em>
-                          </p>
-                          <p className="pt-1 italic">Kính trình Đồng chí phê duyệt./.</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Phần chữ ký: 2 cột theo đúng thể thức */}
-                    <div className="pt-8 border-t border-slate-300 grid grid-cols-2 gap-6 text-xs text-center font-sans">
-                      <div className="space-y-1">
-                        <p className="font-bold uppercase text-slate-900 text-xs">
-                          Ý KIẾN PHÊ DUYỆT CỦA THỦ TRƯỞNG
-                        </p>
-                        <p className="font-bold text-slate-800 text-[11px]">(PHÓ THỦ TRƯỞNG)</p>
-                        <p className="italic text-[10.5px] text-slate-500 pt-1">
-                          (Ký, ghi rõ họ tên, ngày... tháng... năm...)
-                        </p>
-                        <div className="h-16"></div>
-                      </div>
-
-                      <div className="space-y-1">
-                        <p className="font-bold uppercase text-slate-900 text-xs">
-                          NGƯỜI LẬP BÁO CÁO
-                        </p>
-                        <p className="font-bold text-slate-800 text-[11px]">(Điều tra viên / Cán bộ điều tra)</p>
-                        <p className="italic text-[10.5px] text-slate-500 pt-1">(Ký, ghi rõ họ tên)</p>
-
-                        {activeEditingDoc.signingStatus === 'da_ky' ? (
-                          <div className="my-2 p-2 rounded-lg border-2 border-red-500 bg-red-50/30 text-red-700 text-[10px] inline-block max-w-[200px] text-left shadow-2xs">
-                            <div className="flex items-center gap-1 font-bold text-red-800 border-b border-red-300 pb-0.5">
-                              <span className="material-symbols-outlined text-[13px]">verified</span>
-                              <span>KÝ BỞI: {activeBaoCaoFormData.nguoiLap || editSigner || 'Nguyễn Minh Anh'}</span>
-                            </div>
-                            <p className="pt-0.5 font-mono text-[9px]">
-                              CƠ QUAN: {activeBaoCaoFormData.coQuanLap || editCoQuanBanHanh || 'CƠ QUAN CẢNH SÁT ĐIỀU TRA'}
-                            </p>
-                            <p className="font-mono text-[9px]">
-                              NGÀY KÝ: {activeBaoCaoFormData.ngayLap || editNgayLap || '16/09/2026'}
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="h-16"></div>
-                        )}
-
-                        <p className="font-bold text-slate-900 text-sm pt-1">
-                          {activeBaoCaoFormData.nguoiLap || editSigner || 'Nguyễn Minh Anh'}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Banner CTA Trình ký Lãnh đạo */}
-                    <div className="mt-8 pt-4 border-t border-slate-200">
-                      {activeEditingDoc.signingStatus === 'cho_trinh' ||
-                      activeEditingDoc.signingStatus === 'da_trinh' ||
-                      activeEditingDoc.signingStatus === 'cho_ky' ? (
-                        <div className="p-3.5 rounded-xl border border-blue-200 bg-blue-50/80 flex items-center justify-between gap-3 font-sans">
-                          <div className="flex items-center gap-2.5 text-xs text-blue-900 font-medium">
-                            <span className="material-symbols-outlined text-blue-600 text-[20px]">verified</span>
-                            <span>
-                              Báo cáo kết quả xác minh này <strong>đã được chuyển trình ký</strong> tới Lãnh đạo phê duyệt. Các chức năng <strong>Chỉnh sửa thông tin</strong> và <strong>Thụ lý đơn</strong> đã sẵn sàng trên thanh tác vụ.
-                            </span>
-                          </div>
-                          <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-600 text-white shrink-0">
-                            Đã trình ký
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="p-4 rounded-xl border-2 border-dashed border-emerald-400 bg-emerald-50/70 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 font-sans">
-                          <div>
-                            <p className="font-bold text-sm text-emerald-950 flex items-center gap-1.5">
-                              <span className="material-symbols-outlined text-emerald-700 text-[19px]">approval</span>
-                              <span>Hoàn tất xem trước &amp; Chuyển trình Lãnh đạo phê duyệt</span>
-                            </p>
-                            <p className="text-xs text-emerald-800 mt-0.5">
-                              Sau khi nhấn "Đi trình ký", văn bản sẽ chuyển sang quy trình ký duyệt và hệ thống sẽ mở khóa nút <strong>Chỉnh sửa thông tin</strong> và <strong>Thụ lý đơn</strong>.
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={handleTrinhKyBaoCaoDirect}
-                            className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs flex items-center gap-2 shadow-md cursor-pointer shrink-0 transition-all"
-                          >
-                            <span className="material-symbols-outlined text-[18px]">send</span>
-                            <span>Đi trình ký ngay</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  /* ========================================================================= */
-                  /* SOẠN THẢO VĂN BẢN THÔNG THƯỜNG (GIẤY MỜI, BIÊN BẢN, CÔNG VĂN, THÔNG BÁO) */
-                  /* ========================================================================= */
-                  <div>
-                    {/* Phần 1: Quốc hiệu & Tiêu ngữ */}
-                    <div className="grid grid-cols-2 gap-4 text-center text-xs pb-4 border-b border-slate-200/80">
-                      <div className="space-y-1 text-left">
-                        <input
-                          type="text"
-                          value={editCoQuanCapTren}
-                          onChange={(e) => setEditCoQuanCapTren(e.target.value)}
-                          className="w-full text-center uppercase font-medium text-slate-600 text-[11px] bg-transparent hover:bg-slate-50 focus:bg-blue-50/50 focus:ring-1 focus:ring-blue-300 rounded px-1 outline-none"
-                        />
-                        <input
-                          type="text"
-                          value={editCoQuanBanHanh}
-                          onChange={(e) => setEditCoQuanBanHanh(e.target.value)}
-                          className="w-full text-center uppercase font-bold text-slate-900 text-xs bg-transparent hover:bg-slate-50 focus:bg-blue-50/50 focus:ring-1 focus:ring-blue-300 rounded px-1 outline-none"
-                        />
-                        <div className="w-24 h-px bg-slate-800 mx-auto my-1"></div>
-                        <div className="flex items-center justify-center gap-1 font-mono text-[11px] text-slate-700">
-                          <span>Số:</span>
-                          <input
-                            type="text"
-                            value={editSoHieu}
-                            onChange={(e) => setEditSoHieu(e.target.value)}
-                            className="w-36 font-bold font-mono text-center text-slate-900 bg-transparent hover:bg-slate-50 focus:bg-blue-50/50 focus:ring-1 focus:ring-blue-300 rounded px-1 outline-none"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-1">
-                        <p className="font-bold uppercase text-slate-900 text-xs tracking-wider">
-                          CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
-                        </p>
-                        <p className="font-bold text-slate-900 text-xs">
-                          Độc lập - Tự do - Hạnh phúc
-                        </p>
-                        <div className="w-36 h-px bg-slate-800 mx-auto my-1"></div>
-                        <p className="italic text-[11px] text-slate-600 pt-0.5">
-                          Hà Nội, ngày {editNgayLap ? editNgayLap.split('/')[0] : '16'} tháng{' '}
-                          {editNgayLap ? editNgayLap.split('/')[1] : '09'} năm 2026
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Phần 2: Tiêu đề văn bản */}
-                    <div className="text-center pt-6 pb-4">
-                      <input
-                        type="text"
-                        value={editTenVanBan}
-                        onChange={(e) => setEditTenVanBan(e.target.value)}
-                        className="w-full text-center uppercase font-bold text-base sm:text-lg text-slate-900 bg-transparent hover:bg-slate-50 focus:bg-blue-50/50 focus:ring-1 focus:ring-blue-300 rounded px-2 outline-none tracking-wide"
-                      />
-                      <div className="flex items-center justify-center gap-1 mt-1 text-xs italic text-slate-600">
-                        <span>(V/v:</span>
-                        <input
-                          type="text"
-                          value={editTrichYeu}
-                          onChange={(e) => setEditTrichYeu(e.target.value)}
-                          className="w-4/5 text-center italic text-xs text-slate-700 bg-transparent hover:bg-slate-50 focus:bg-blue-50/50 focus:ring-1 focus:ring-blue-300 rounded px-1 outline-none"
-                        />
-                        <span>)</span>
-                      </div>
-                    </div>
-
-                    {/* Phần 3: Kính gửi */}
-                    <div className="pt-2 pb-3 text-xs leading-relaxed space-y-2">
-                      <div className="flex items-baseline gap-2">
-                        <strong className="text-slate-900 shrink-0">Kính gửi:</strong>
-                        <input
-                          type="text"
-                          value={editNguoiNhan}
-                          onChange={(e) => setEditNguoiNhan(e.target.value)}
-                          className="flex-1 font-semibold text-slate-900 bg-transparent hover:bg-slate-50 focus:bg-blue-50/50 focus:ring-1 focus:ring-blue-300 rounded px-1 outline-none text-xs"
-                        />
-                      </div>
-
-                      {editThoiGianHen && (
-                        <div className="flex items-baseline gap-2">
-                          <strong className="text-slate-900 shrink-0">Thời gian:</strong>
-                          <input
-                            type="text"
-                            value={editThoiGianHen}
-                            onChange={(e) => setEditThoiGianHen(e.target.value)}
-                            className="flex-1 text-slate-800 bg-transparent hover:bg-slate-50 focus:bg-blue-50/50 focus:ring-1 focus:ring-blue-300 rounded px-1 outline-none text-xs"
-                          />
-                        </div>
-                      )}
-
-                      {editDiaDiem && (
-                        <div className="flex items-baseline gap-2">
-                          <strong className="text-slate-900 shrink-0">Địa điểm:</strong>
-                          <input
-                            type="text"
-                            value={editDiaDiem}
-                            onChange={(e) => setEditDiaDiem(e.target.value)}
-                            className="flex-1 text-slate-800 bg-transparent hover:bg-slate-50 focus:bg-blue-50/50 focus:ring-1 focus:ring-blue-300 rounded px-1 outline-none text-xs"
-                          />
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Phần 4: NỘI DUNG VĂN BẢN CHÍNH */}
-                    <div className="pt-2 pb-6">
-                      <div className="relative">
-                        <textarea
-                          rows={14}
-                          value={editNoiDungChiTiet}
-                          onChange={(e) => setEditNoiDungChiTiet(e.target.value)}
-                          placeholder="Nhập nội dung văn bản chi tiết..."
-                          className="w-full p-3 font-serif text-sm leading-relaxed text-slate-900 bg-transparent border border-dashed border-slate-300 hover:border-blue-400 focus:border-[#004ac6] focus:bg-blue-50/20 rounded-lg outline-none transition-all resize-y"
-                        />
-                      </div>
-                      <p className="text-[10.5px] text-slate-400 italic text-right mt-1">
-                        * Khung soạn thảo trực tiếp chuẩn trang A4
-                      </p>
-                    </div>
-
-                    {/* Phần 5: Nơi nhận & Ký tên */}
-                    <div className="pt-6 border-t border-slate-200 grid grid-cols-2 gap-4 text-xs">
-                      <div className="text-left text-[11px] text-slate-600 font-sans space-y-0.5">
-                        <p className="font-bold text-slate-800">Nơi nhận:</p>
-                        <p>- Như kính gửi;</p>
-                        <p>- Lưu: VT, Hồ sơ xác minh đơn {currentDon.code}.</p>
-                      </div>
-
-                      <div className="text-center space-y-1">
-                        <input
-                          type="text"
-                          value={editChucVuSigner}
-                          onChange={(e) => setEditChucVuSigner(e.target.value)}
-                          className="w-full text-center uppercase font-bold text-slate-900 text-xs bg-transparent hover:bg-slate-50 focus:bg-blue-50/50 focus:ring-1 focus:ring-blue-300 rounded px-1 outline-none"
-                        />
-
-                        {/* Dấu ký số điện tử VGCA */}
-                        {editIsSignedVGCA && (
-                          <div className="my-2 p-2 rounded-lg border-2 border-red-500 bg-red-50/30 text-red-700 text-[10px] font-sans inline-block max-w-[200px] text-left shadow-2xs">
-                            <div className="flex items-center gap-1 font-bold text-red-800 border-b border-red-300 pb-0.5">
-                              <span className="material-symbols-outlined text-[13px]">verified</span>
-                              <span>KÝ BỞI: {editSigner}</span>
-                            </div>
-                            <p className="pt-0.5 font-mono text-[9px]">CƠ QUAN: {editCoQuanBanHanh}</p>
-                            <p className="font-mono text-[9px]">NGÀY KÝ: {editNgayLap || '16/09/2026'}</p>
-                            <p className="font-mono text-[8.5px] text-red-500 truncate">SHA-256: 7F8E...3A21</p>
-                          </div>
-                        )}
-
-                        <div className="pt-1">
-                          <input
-                            type="text"
-                            value={editSigner}
-                            onChange={(e) => setEditSigner(e.target.value)}
-                            className="w-full text-center font-bold text-slate-900 text-sm bg-transparent hover:bg-slate-50 focus:bg-blue-50/50 focus:ring-1 focus:ring-blue-300 rounded px-1 outline-none"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                {/* Tabs lọc */}
+                <div className="flex items-center gap-1 bg-slate-100/90 p-1 rounded-xl border border-slate-200/80 text-[11px] font-bold">
+                  <button
+                    type="button"
+                    onClick={() => setFilterTab('all')}
+                    className={`flex-1 py-1 rounded-lg transition-all cursor-pointer text-center ${filterTab === 'all'
+                      ? 'bg-white text-[#004ac6] shadow-2xs font-extrabold'
+                      : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                  >
+                    Tất cả ({documents.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFilterTab('process')}
+                    className={`flex-1 py-1 rounded-lg transition-all cursor-pointer text-center ${filterTab === 'process'
+                      ? 'bg-white text-purple-700 shadow-2xs font-extrabold'
+                      : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                  >
+                    Quy trình ({processDocsCount})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFilterTab('initial')}
+                    className={`flex-1 py-1 rounded-lg transition-all cursor-pointer text-center ${filterTab === 'initial'
+                      ? 'bg-white text-rose-700 shadow-2xs font-extrabold'
+                      : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                  >
+                    Tiếp nhận ({initialDocsCount})
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      ) : (
-        /* ========================================================================= */
-        /* CHẾ ĐỘ DANH SÁCH HỒ SƠ, VĂN BẢN & TÀI LIỆU                                */
-        /* ========================================================================= */
-        <>
 
-
-          {/* 2. Danh sách tài liệu chi tiết */}
-          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-slate-50/90 border-b border-slate-200 text-slate-600 font-semibold text-[11px]">
-                    <th className="py-3.5 px-4 w-12 text-center">STT</th>
-                    <th className="py-3.5 px-4">Tên tệp tin &amp; Số hiệu văn bản</th>
-                    <th className="py-3.5 px-4">Giai đoạn quy trình</th>
-                    <th className="py-3.5 px-4">Dung lượng / Trang</th>
-                    <th className="py-3.5 px-4">Thời gian số hóa</th>
-                    <th className="py-3.5 px-4">Đơn vị / Người ký xác thực</th>
-                    <th className="py-3.5 px-4 text-center">Trạng thái AI OCR</th>
-                    <th className="py-3.5 px-4 text-right">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-800 text-[11.5px]">
-                  {filteredDocs.map((doc, idx) => {
-                    const isBaoCao = doc.loaiVanBan === 'bao_cao_de_xuat' || doc.loaiVanBan === 'bao_cao_xac_minh';
-                    return (
-                    <tr
+            {/* 2. Danh sách các Cards văn bản */}
+            <div className="space-y-2.5 max-h-[calc(100vh-270px)] min-h-[460px] overflow-y-auto pr-1">
+              {filteredDocs.length === 0 ? (
+                <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center">
+                  <span className="material-symbols-outlined text-[36px] text-slate-300 block mb-2">folder_off</span>
+                  <p className="text-xs font-bold text-slate-700">Không tìm thấy văn bản phù hợp</p>
+                  <button
+                    type="button"
+                    onClick={() => { setFilterTab('all'); setSearchKeyword(''); }}
+                    className="mt-2 text-xs font-bold text-[#004ac6] hover:underline"
+                  >
+                    Xem tất cả danh mục
+                  </button>
+                </div>
+              ) : (
+                filteredDocs.map((doc, idx) => {
+                  const isSelected = activeEditingDoc?.id === doc.id;
+                  const isBaoCao = doc.loaiVanBan === 'bao_cao_de_xuat' || doc.loaiVanBan === 'bao_cao_xac_minh';
+                  return (
+                    <div
                       key={doc.id}
-                      className={`hover:bg-blue-50/40 transition-colors ${doc.isProcessDoc ? 'bg-purple-50/15' : ''
+                      onClick={() => handleStartEdit(doc)}
+                      className={`p-3 rounded-2xl border transition-all cursor-pointer relative group ${isSelected
+                        ? 'border-[#004ac6] bg-blue-50/70 shadow-sm ring-1 ring-blue-300'
+                        : 'border-slate-200/90 bg-white hover:border-blue-200 hover:bg-slate-50/70 hover:shadow-2xs'
                         }`}
                     >
-                      <td className="py-3.5 px-4 text-center font-bold text-slate-400 font-mono">
-                        {idx + 1}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-2.5">
-                          <div
-                            className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 shadow-2xs ${isBaoCao
-                              ? 'bg-blue-50 border-blue-200 text-[#004ac6]'
-                              : doc.isProcessDoc
-                                ? 'bg-purple-50 border-purple-200 text-purple-700'
-                                : 'bg-rose-50 border-rose-200 text-rose-600'
-                              }`}
-                          >
-                            <span className="material-symbols-outlined text-[20px]">
-                              {isBaoCao ? 'rate_review' : doc.isProcessDoc ? 'gavel' : 'picture_as_pdf'}
+                      {/* Highlight bar bên trái khi selected */}
+                      {isSelected && (
+                        <div className="absolute left-0 top-3 bottom-3 w-1.5 bg-[#004ac6] rounded-r-full" />
+                      )}
+
+                      <div className="flex items-start gap-2.5">
+                        {/* Icon loại văn bản */}
+                        <div
+                          className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 shadow-2xs mt-0.5 ${isBaoCao
+                            ? 'bg-blue-50 border-blue-200 text-[#004ac6]'
+                            : doc.isProcessDoc
+                              ? 'bg-purple-50 border-purple-200 text-purple-700'
+                              : 'bg-rose-50 border-rose-200 text-rose-600'
+                            }`}
+                        >
+                          <span className="material-symbols-outlined text-[20px]">
+                            {isBaoCao ? 'rate_review' : doc.isProcessDoc ? 'gavel' : 'picture_as_pdf'}
+                          </span>
+                        </div>
+
+                        {/* Thông tin chính */}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span
+                              className={`font-bold text-xs truncate max-w-[220px] ${isSelected ? 'text-[#004ac6]' : 'text-slate-900 group-hover:text-[#004ac6]'
+                                }`}
+                            >
+                              {isBaoCao ? (doc.tenVanBan || 'Báo cáo kết quả xác minh') : doc.name}
                             </span>
-                          </div>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span
-                                className="font-bold text-slate-900 hover:text-[#004ac6] cursor-pointer leading-tight truncate max-w-[340px]"
-                                onClick={() => handleStartEdit(doc)}
-                                title={`Nhấp để mở xem chi tiết văn bản: ${doc.tenVanBan || doc.name}`}
-                              >
-                                {isBaoCao ? (doc.tenVanBan || 'Báo cáo kết quả xác minh') : doc.name}
+                            {isSelected && (
+                              <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-[#004ac6] text-white">
+                                Đang xem
                               </span>
+                            )}
+                          </div>
+
+                          {/* Số hiệu + Loại + Bước */}
+                          <div className="flex items-center gap-1.5 mt-1 flex-wrap text-[10px]">
+                            {doc.soHieu && (
+                              <span className="font-mono font-bold text-slate-700 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200">
+                                {doc.soHieu}
+                              </span>
+                            )}
+                            {doc.stepBelongsTo && (
+                              <span className="font-semibold text-blue-700 bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200 truncate max-w-[150px]">
+                                {doc.stepBelongsTo}
+                              </span>
+                            )}
+                            {doc.signingStatus && (
+                              <span
+                                className={`px-1.5 py-0.2 rounded font-bold border ${doc.signingStatus === 'nhap'
+                                  ? 'bg-slate-100 text-slate-700 border-slate-200'
+                                  : doc.signingStatus === 'da_ky' || doc.signingStatus === 'hoan_tat'
+                                    ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                                    : doc.signingStatus === 'yeu_cau_chinh_sua'
+                                      ? 'bg-rose-100 text-rose-800 border-rose-200'
+                                      : 'bg-blue-100 text-blue-800 border-blue-200'
+                                  }`}
+                              >
+                                {doc.signingStatus === 'nhap'
+                                  ? 'Bản nháp'
+                                  : doc.signingStatus === 'da_ky' || doc.signingStatus === 'hoan_tat'
+                                    ? 'Đã ký'
+                                    : doc.signingStatus === 'yeu_cau_chinh_sua'
+                                      ? 'Cần sửa'
+                                      : 'Chờ ký'}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Trích yếu tóm tắt */}
+                          {(doc.trichYeu || doc.previewExcerpt) && (
+                            <p className="text-[10.5px] text-slate-500 italic line-clamp-1 mt-1">
+                              {doc.trichYeu || doc.previewExcerpt}
+                            </p>
+                          )}
+
+                          {/* Footer của card: Người ký, ngày lập, thao tác nhanh */}
+                          <div className="flex items-center justify-between gap-2 mt-2 pt-1.5 border-t border-slate-100/90 text-[10px] text-slate-500">
+                            <div className="flex items-center gap-2 truncate">
+                              <span className="truncate max-w-[130px] font-medium" title={doc.signer}>
+                                {doc.signer}
+                              </span>
+                              <span>•</span>
+                              <span className="font-mono">{doc.pages} tr</span>
+                              <span>•</span>
+                              <span>{doc.uploadDate?.split(' ')[0]}</span>
+                            </div>
+
+                            {/* Nút thao tác nhanh */}
+                            <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                               {isBaoCao ? (
-                                <span className="px-1.5 py-0.2 rounded text-[9.5px] font-extrabold bg-blue-100 text-[#004ac6] border border-blue-200">
-                                  Báo cáo đề xuất
-                                </span>
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => onOpenBaoCaoDeXuat?.(doc)}
+                                    className="p-1 rounded text-slate-500 hover:text-blue-700 hover:bg-blue-50 cursor-pointer"
+                                    title="Chỉnh sửa thông tin báo cáo"
+                                  >
+                                    <span className="material-symbols-outlined text-[15px]">edit_note</span>
+                                  </button>
+                                  {doc.signingStatus === 'nhap' && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleTrinhKyFromRow(doc)}
+                                      className="px-2 py-0.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] cursor-pointer"
+                                      title="Chuyển trình ký"
+                                    >
+                                      Trình ký
+                                    </button>
+                                  )}
+                                </>
                               ) : (
                                 <>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleStartEdit(doc)}
+                                    className="p-1 rounded text-slate-500 hover:text-blue-700 hover:bg-blue-50 cursor-pointer"
+                                    title="Mở xem văn bản này"
+                                  >
+                                    <span className="material-symbols-outlined text-[15px]">visibility</span>
+                                  </button>
                                   {doc.isProcessDoc && (
-                                    <span className="px-1.5 py-0.2 rounded text-[9.5px] font-extrabold bg-purple-100 text-purple-800 border border-purple-200">
-                                      Quy trình xử lý
-                                    </span>
-                                  )}
-                                  {doc.fromXacMinh && (
-                                    <span className="px-1.5 py-0.2 rounded text-[9.5px] font-extrabold bg-blue-100 text-blue-800 border border-blue-200">
-                                      Xác minh
-                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteDoc(doc.id, doc.name)}
+                                      className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
+                                      title="Xóa văn bản này"
+                                    >
+                                      <span className="material-symbols-outlined text-[15px]">delete</span>
+                                    </button>
                                   )}
                                 </>
                               )}
-                              {doc.signingStatus && (
-                                <span
-                                  className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9.5px] font-bold border ${doc.signingStatus === 'nhap'
-                                    ? 'bg-slate-100 text-slate-700 border-slate-300'
-                                    : doc.signingStatus === 'yeu_cau_chinh_sua'
-                                      ? 'bg-rose-100 text-rose-800 border-rose-300'
-                                      : doc.signingStatus === 'da_ky' || doc.signingStatus === 'hoan_tat'
-                                        ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
-                                        : 'bg-blue-100 text-blue-800 border-blue-300'
-                                    }`}
-                                >
-                                  <span className="material-symbols-outlined text-[11px]">
-                                    {doc.signingStatus === 'nhap'
-                                      ? 'edit_note'
-                                      : doc.signingStatus === 'yeu_cau_chinh_sua'
-                                        ? 'replay'
-                                        : doc.signingStatus === 'da_ky' || doc.signingStatus === 'hoan_tat'
-                                          ? 'verified'
-                                          : 'pending_actions'}
-                                  </span>
-                                  <span>
-                                    {doc.signingStatus === 'nhap'
-                                      ? 'Bản nháp'
-                                      : doc.signingStatus === 'yeu_cau_chinh_sua'
-                                        ? 'Cần sửa đổi'
-                                        : doc.signingStatus === 'da_ky' || doc.signingStatus === 'hoan_tat'
-                                          ? 'Đã ký duyệt'
-                                          : 'Chờ ký duyệt'}
-                                  </span>
-                                </span>
-                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className={`${isFullscreenViewer ? 'col-span-1' : 'xl:col-span-7'} space-y-3.5`}>
+          {activeEditingDoc ? (
+            <div className="space-y-4 animate-fade-in">
+              <div className="flex items-center gap-2 flex-wrap">
+
+
+                {/* Nút Chỉnh sửa thông tin Báo cáo (Mở popup form) */}
+                {isEditingBaoCao && onOpenBaoCaoDeXuat && (
+                  <button
+                    type="button"
+                    onClick={() => onOpenBaoCaoDeXuat(activeEditingDoc)}
+                    className="px-3.5 py-1.5 rounded-xl border border-blue-300 bg-blue-50/90 hover:bg-blue-100 text-[#004ac6] text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+                    title="Mở popup để chỉnh sửa các trường thông tin Báo cáo đề xuất"
+                  >
+                    <span className="material-symbols-outlined text-[17px]">edit_note</span>
+                    <span>Chỉnh sửa thông tin</span>
+                  </button>
+                )}
+
+                {/* Nút Đi trình ký (Nếu là báo cáo / thông báo không thụ lý) hoặc Lưu văn bản (Nếu là văn bản khác) */}
+                {isEditingBaoCao ? (
+                  activeEditingDoc.signingStatus === 'nhap' ? (
+                    <button
+                      type="button"
+                      onClick={handleTrinhKyBaoCaoDirect}
+                      className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+                      title="Chuyển Báo cáo kết quả xác minh sang luồng trình ký Lãnh đạo"
+                    >
+                      <span className="material-symbols-outlined text-[17px]">send</span>
+                      <span>Đi trình ký</span>
+                    </button>
+                  ) : (
+                    <span className="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 text-xs font-bold flex items-center gap-1.5 shadow-2xs">
+                      <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                      <span>Đã trình ký</span>
+                    </span>
+                  )
+                ) : isThongBaoKhongThuLy ? (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleSaveDirectEdit}
+                      className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-900 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                      title="Lưu lại các chỉnh sửa trên văn bản"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">save</span>
+                      <span>Lưu văn bản</span>
+                    </button>
+                    {activeEditingDoc.signingStatus === 'nhap' ? (
+                      <button
+                        type="button"
+                        onClick={handleTrinhKyKhongThuLyDirect}
+                        className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+                        title="Chuyển Thông báo không thụ lý giải quyết đơn sang luồng trình ký Lãnh đạo UBND quận"
+                      >
+                        <span className="material-symbols-outlined text-[17px]">send</span>
+                        <span>Trình ký Lãnh đạo</span>
+                      </button>
+                    ) : (
+                      <span className="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 text-xs font-bold flex items-center gap-1.5 shadow-2xs">
+                        <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                        <span>Đã trình ký Lãnh đạo</span>
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleSaveDirectEdit}
+                      className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-900 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                      title="Lưu lại các chỉnh sửa trên văn bản"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">save</span>
+                      <span>Lưu văn bản</span>
+                    </button>
+                    {activeEditingDoc.signingStatus === 'nhap' && (
+                      <button
+                        type="button"
+                        onClick={() => handleTrinhKyFromRow(activeEditingDoc)}
+                        className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+                        title="Trình ký Lãnh đạo"
+                      >
+                        <span className="material-symbols-outlined text-[17px]">send</span>
+                        <span>Trình ký</span>
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="w-full flex flex-col items-center">
+                <div className="w-full bg-slate-200/80 rounded-2xl p-4 sm:p-8 flex justify-center border border-slate-300 overflow-x-auto shadow-inner">
+                  <div
+                    className="bg-white shadow-2xl rounded-sm border border-slate-300 w-full max-w-[840px] min-h-[1100px] p-8 sm:p-14 text-slate-900 font-serif relative transition-transform origin-top flex flex-col justify-between"
+                    style={{ transform: `scale(${editorZoom / 100})` }}
+                  >
+                    {isEditingBaoCao ? (
+                      /* ========================================================================= */
+                      /* BIỂU MẪU CHUẨN: BÁO CÁO KẾT QUẢ XÁC MINH VỀ VIỆC GIẢI QUYẾT ĐƠN          */
+                      /* ========================================================================= */
+                      <div className="space-y-4 text-xs leading-relaxed font-serif text-slate-900">
+                        {/* Header: Cơ quan ban hành & Quốc hiệu tiêu ngữ */}
+                        <div className="grid grid-cols-2 gap-4 text-center pb-4 border-b border-slate-300">
+                          <div className="space-y-0.5 text-center">
+                            <p className="uppercase font-medium text-slate-700 text-[11px]">
+                              {activeBaoCaoFormData.coQuanCapTren || editCoQuanCapTren || 'CÔNG AN TP. HÀ NỘI'}
+                            </p>
+                            <p className="uppercase font-bold text-slate-900 text-xs tracking-tight">
+                              {activeBaoCaoFormData.coQuanLap || editCoQuanBanHanh || 'CƠ QUAN CẢNH SÁT ĐIỀU TRA'}
+                            </p>
+                            <div className="w-20 h-px bg-slate-800 mx-auto my-1"></div>
+                            <p className="font-mono text-[11px] text-slate-800">
+                              Số: <strong>{activeBaoCaoFormData.soBaoCao || editSoHieu}</strong>
+                            </p>
+                          </div>
+                          <div className="space-y-0.5 text-center">
+                            <p className="font-bold uppercase text-slate-900 text-xs tracking-wider">
+                              CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+                            </p>
+                            <p className="font-bold text-slate-900 text-xs">
+                              Độc lập - Tự do - Hạnh phúc
+                            </p>
+                            <div className="w-28 h-px bg-slate-800 mx-auto my-1"></div>
+                            <p className="italic text-[11px] text-slate-700 pt-0.5">
+                              Hà Nội, ngày {(activeBaoCaoFormData.ngayLap || editNgayLap || '16/09/2026').split('/')[0] || '16'} tháng{' '}
+                              {(activeBaoCaoFormData.ngayLap || editNgayLap || '16/09/2026').split('/')[1] || '09'} năm{' '}
+                              {(activeBaoCaoFormData.ngayLap || editNgayLap || '16/09/2026').split('/')[2] || '2026'}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Tiêu đề văn bản */}
+                        <div className="text-center pt-4 pb-2">
+                          <h1 className="text-center uppercase font-bold text-base sm:text-lg text-slate-900 tracking-wide">
+                            BÁO CÁO KẾT QUẢ XÁC MINH
+                          </h1>
+                          <p className="text-center italic text-xs text-slate-700 mt-1">
+                            Về việc giải quyết đơn (tố giác/tin báo/kiến nghị khởi tố) của ông/bà{' '}
+                            <strong>{activeBaoCaoFormData.nguoiGuiDon || currentDon.nguoiNop}</strong>
+                          </p>
+                        </div>
+
+                        {/* Kính gửi */}
+                        <div className="py-1">
+                          <p className="text-xs">
+                            <strong>Kính gửi:</strong>{' '}
+                            {activeBaoCaoFormData.nguoiNhan || editNguoiNhan || 'Thủ trưởng (Phó Thủ trưởng) Cơ quan Điều tra'}
+                          </p>
+                        </div>
+
+                        {/* Phân công & Cán bộ */}
+                        <div className="py-2 space-y-1.5 text-justify text-xs leading-relaxed">
+                          <p>
+                            Thực hiện Phân công giải quyết nguồn tin về tội phạm số:{' '}
+                            <strong>{activeBaoCaoFormData.soPhanCong || `${editSoHieu.replace(/\D/g, '') || '24'}/QĐ-CQĐT`}</strong>{' '}
+                            ngày{' '}
+                            <strong>{activeBaoCaoFormData.ngayPhanCong || activeBaoCaoFormData.ngayLap || editNgayLap || '16/09/2026'}</strong>{' '}
+                            của Thủ trưởng/Phó Thủ trưởng Cơ quan Điều tra;
+                          </p>
+                          <p>
+                            Hôm nay, ngày {(activeBaoCaoFormData.ngayLap || editNgayLap || '16/09/2026').split('/')[0] || '16'} tháng{' '}
+                            {(activeBaoCaoFormData.ngayLap || editNgayLap || '16/09/2026').split('/')[1] || '09'} năm{' '}
+                            {(activeBaoCaoFormData.ngayLap || editNgayLap || '16/09/2026').split('/')[2] || '2026'}, Điều tra viên / Cán bộ điều tra:{' '}
+                            <strong>{activeBaoCaoFormData.nguoiLap || editSigner || 'Nguyễn Minh Anh'}</strong>
+                          </p>
+                          <p>
+                            Đơn vị công tác:{' '}
+                            <strong>{activeBaoCaoFormData.coQuanLap || editCoQuanBanHanh || 'CƠ QUAN CẢNH SÁT ĐIỀU TRA'}</strong>
+                          </p>
+                          <p>
+                            Tiến hành báo cáo kết quả xác minh đơn của:{' '}
+                            <strong>{activeBaoCaoFormData.nguoiGuiDon || currentDon.nguoiNop}</strong>
+                          </p>
+                          <p>
+                            Cư trú / Địa chỉ:{' '}
+                            <strong>{activeBaoCaoFormData.diaChiNguoiGui || currentDon.diaChi || 'Quận Cầu Giấy, TP. Hà Nội'}</strong>
+                          </p>
+                          <p>
+                            Nội dung đơn phản ánh / tố giác:{' '}
+                            <em>{activeBaoCaoFormData.noiDungDon || currentDon.title || 'Tố giác hành vi vi phạm quy định pháp luật'}</em>
+                          </p>
+                        </div>
+
+                        {/* I. KẾT QUẢ XÁC MINH */}
+                        <div className="pt-2 pb-1 space-y-2 text-justify">
+                          <h2 className="font-bold text-xs uppercase text-slate-900 tracking-wide border-b border-slate-200 pb-1">
+                            I. KẾT QUẢ XÁC MINH
+                          </h2>
+                          <div>
+                            <h3 className="font-bold text-slate-900 text-xs">1. Các tài liệu, chứng cứ đã thu thập:</h3>
+                            <div className="pl-4 pt-1 whitespace-pre-line text-slate-800 leading-relaxed text-[11.5px]">
+                              {activeBaoCaoFormData.taiLieuThuThap ||
+                                '- Tài liệu, chứng cứ do người nộp đơn cung cấp: Đơn tố giác tội phạm (Bản chính); Bản sao CCCD; Bảng kê chứng từ giao dịch chuyển tiền và các tài liệu liên quan.\n- Tài liệu, chứng cứ do Cơ quan Điều tra thu thập: Biên bản tiếp nhận nguồn tin về tội phạm; Biên bản ghi lời khai người tố giác; Báo cáo xác minh hiện trường, nhân thân đối tượng.'}
+                            </div>
+                          </div>
+                          <div className="pt-1.5">
+                            <h3 className="font-bold text-slate-900 text-xs">2. Nội dung diễn biến sự việc được xác minh:</h3>
+                            <div className="pl-4 pt-1 whitespace-pre-line text-slate-800 leading-relaxed text-[11.5px]">
+                              {activeBaoCaoFormData.noiDungXacMinh ||
+                                (editNoiDungChiTiet
+                                  ? editNoiDungChiTiet
+                                  : 'Qua công tác xác minh ban đầu, các nội dung tố giác của công dân có căn cứ thực tế. Đã làm rõ diễn biến hành vi, các giao dịch và tài liệu liên quan đến dấu hiệu vi phạm pháp luật hình sự; các đối tượng liên quan đã được triệu tập, lấy lời khai bước đầu.')}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* II. NHẬN XÉT VÀ ĐỀ XUẤT */}
+                        <div className="pt-2 pb-1 space-y-2 text-justify">
+                          <h2 className="font-bold text-xs uppercase text-slate-900 tracking-wide border-b border-slate-200 pb-1">
+                            II. NHẬN XÉT VÀ ĐỀ XUẤT
+                          </h2>
+                          <div>
+                            <h3 className="font-bold text-slate-900 text-xs">1. Đánh giá, nhận xét:</h3>
+                            <div className="pl-4 pt-1 whitespace-pre-line text-slate-800 leading-relaxed text-[11.5px]">
+                              {activeBaoCaoFormData.danhGiaNhanXet ||
+                                '- Về tính chất, mức độ của sự việc: Vụ việc có tính chất nghiêm trọng, ảnh hưởng đến quyền lợi hợp pháp của công dân và tình hình an ninh trật tự trên địa bàn.\n- Về dấu hiệu tội phạm: Đã phát hiện đủ căn cứ dấu hiệu tội phạm theo quy định của Bộ luật Hình sự; vụ việc thuộc thẩm quyền thụ lý, giải quyết của Cơ quan Điều tra.'}
+                            </div>
+                            <div className="pl-4 pt-1.5 text-slate-800 text-[11.5px]">
+                              <strong>- Căn cứ pháp lý:</strong>{' '}
+                              {activeBaoCaoFormData.canCuPhapLy || 'Căn cứ Điều 145, 146, 147 Bộ luật Tố tụng hình sự năm 2015; Điều 174 Bộ luật Hình sự 2015.'}
+                            </div>
+                          </div>
+
+                          <div className="pt-1.5">
+                            <h3 className="font-bold text-slate-900 text-xs">2. Đề xuất xử lý:</h3>
+                            <p className="pl-4 pt-1 italic text-slate-800 text-[11.5px]">
+                              Kính đề nghị Thủ trưởng (Phó Thủ trưởng) Cơ quan Điều tra xem xét, phê duyệt các nội dung sau:
+                            </p>
+                            <div className="pl-4 pt-1.5 space-y-1 font-mono text-[11px]">
+                              <div
+                                className={`p-1.5 rounded transition-all ${activeBaoCaoFormData.phuongAnDeXuat === 1 || !activeBaoCaoFormData.phuongAnDeXuat
+                                  ? 'bg-blue-50/80 font-bold text-blue-950 border border-blue-200'
+                                  : 'text-slate-600'
+                                  }`}
+                              >
+                                [{activeBaoCaoFormData.phuongAnDeXuat === 1 || !activeBaoCaoFormData.phuongAnDeXuat ? 'X' : '  '}] Phương án 1: Thụ lý đơn (Đủ điều kiện thụ lý giải quyết theo quy định của pháp luật).
+                              </div>
+                              <div
+                                className={`p-1.5 rounded transition-all ${activeBaoCaoFormData.phuongAnDeXuat === 2
+                                  ? 'bg-blue-50/80 font-bold text-blue-950 border border-blue-200'
+                                  : 'text-slate-600'
+                                  }`}
+                              >
+                                [{activeBaoCaoFormData.phuongAnDeXuat === 2 ? 'X' : '  '}] Phương án 2: Chuyển thẩm quyền (Chuyển đơn, hồ sơ đến cơ quan, đơn vị có đúng thẩm quyền để giải quyết).
+                              </div>
+                              <div
+                                className={`p-1.5 rounded transition-all ${activeBaoCaoFormData.phuongAnDeXuat === 3
+                                  ? 'bg-blue-50/80 font-bold text-blue-950 border border-blue-200'
+                                  : 'text-slate-600'
+                                  }`}
+                              >
+                                [{activeBaoCaoFormData.phuongAnDeXuat === 3 ? 'X' : '  '}] Phương án 3: Trả lời đơn (Lập văn bản trả lời, hướng dẫn hoặc giải thích cho công dân/người nộp đơn).
+                              </div>
+                              <div
+                                className={`p-1.5 rounded transition-all ${activeBaoCaoFormData.phuongAnDeXuat === 4
+                                  ? 'bg-blue-50/80 font-bold text-blue-950 border border-blue-200'
+                                  : 'text-slate-600'
+                                  }`}
+                              >
+                                [{activeBaoCaoFormData.phuongAnDeXuat === 4 ? 'X' : '  '}] Phương án 4: Yêu cầu bổ sung (Yêu cầu người nộp bổ sung tài liệu, chứng cứ hoặc giải trình làm rõ nội dung).
+                              </div>
                             </div>
 
-                            <div className="flex items-center gap-2 mt-0.5 flex-wrap text-[10.5px]">
-                              {doc.soHieu && (
-                                <span className="font-mono font-bold text-slate-700 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200">
-                                  Số: {doc.soHieu}
+                            {activeBaoCaoFormData.chiTietPhuongAn && (
+                              <p className="pl-4 pt-1 text-[11px] italic text-slate-700">
+                                (Ghi chú phương án đề xuất: {activeBaoCaoFormData.chiTietPhuongAn})
+                              </p>
+                            )}
+
+                            <div className="pl-4 pt-2 text-slate-800 text-[11.5px] leading-relaxed">
+                              <p>
+                                Dự thảo các văn bản tố tụng kèm theo bao gồm:{' '}
+                                <em>
+                                  {activeBaoCaoFormData.vanBanKemTheo ||
+                                    'Dự thảo Quyết định khởi tố vụ án; Bản kết luận xác minh nguồn tin về tội phạm; Bảng kê danh mục tài liệu, chứng cứ trong hồ sơ.'}
+                                </em>
+                              </p>
+                              <p className="pt-1 italic">Kính trình Đồng chí phê duyệt./.</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Phần chữ ký: 2 cột theo đúng thể thức */}
+                        <div className="pt-8 border-t border-slate-300 grid grid-cols-2 gap-6 text-xs text-center font-sans">
+                          <div className="space-y-1">
+                            <p className="font-bold uppercase text-slate-900 text-xs">
+                              Ý KIẾN PHÊ DUYỆT CỦA THỦ TRƯỞNG
+                            </p>
+                            <p className="font-bold text-slate-800 text-[11px]">(PHÓ THỦ TRƯỞNG)</p>
+                            <p className="italic text-[10.5px] text-slate-500 pt-1">
+                              (Ký, ghi rõ họ tên, ngày... tháng... năm...)
+                            </p>
+                            <div className="h-16"></div>
+                          </div>
+
+                          <div className="space-y-1">
+                            <p className="font-bold uppercase text-slate-900 text-xs">
+                              NGƯỜI LẬP BÁO CÁO
+                            </p>
+                            <p className="font-bold text-slate-800 text-[11px]">(Điều tra viên / Cán bộ điều tra)</p>
+                            <p className="italic text-[10.5px] text-slate-500 pt-1">(Ký, ghi rõ họ tên)</p>
+
+                            {activeEditingDoc.signingStatus === 'da_ky' ? (
+                              <div className="my-2 p-2 rounded-lg border-2 border-red-500 bg-red-50/30 text-red-700 text-[10px] inline-block max-w-[200px] text-left shadow-2xs">
+                                <div className="flex items-center gap-1 font-bold text-red-800 border-b border-red-300 pb-0.5">
+                                  <span className="material-symbols-outlined text-[13px]">verified</span>
+                                  <span>KÝ BỞI: {activeBaoCaoFormData.nguoiLap || editSigner || 'Nguyễn Minh Anh'}</span>
+                                </div>
+                                <p className="pt-0.5 font-mono text-[9px]">
+                                  CƠ QUAN: {activeBaoCaoFormData.coQuanLap || editCoQuanBanHanh || 'CƠ QUAN CẢNH SÁT ĐIỀU TRA'}
+                                </p>
+                                <p className="font-mono text-[9px]">
+                                  NGÀY KÝ: {activeBaoCaoFormData.ngayLap || editNgayLap || '16/09/2026'}
+                                </p>
+                              </div>
+                            ) : (
+                              <div className="h-16"></div>
+                            )}
+
+                            <p className="font-bold text-slate-900 text-sm pt-1">
+                              {activeBaoCaoFormData.nguoiLap || editSigner || 'Nguyễn Minh Anh'}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Banner CTA Trình ký Lãnh đạo */}
+                        <div className="mt-8 pt-4 border-t border-slate-200">
+                          {activeEditingDoc.signingStatus === 'cho_trinh' ||
+                            activeEditingDoc.signingStatus === 'da_trinh' ||
+                            activeEditingDoc.signingStatus === 'cho_ky' ? (
+                            <div className="p-3.5 rounded-xl border border-blue-200 bg-blue-50/80 flex items-center justify-between gap-3 font-sans">
+                              <div className="flex items-center gap-2.5 text-xs text-blue-900 font-medium">
+                                <span className="material-symbols-outlined text-blue-600 text-[20px]">verified</span>
+                                <span>
+                                  Báo cáo kết quả xác minh này <strong>đã được chuyển trình ký</strong> tới Lãnh đạo phê duyệt. Các chức năng <strong>Chỉnh sửa thông tin</strong> và <strong>Thụ lý đơn</strong> đã sẵn sàng trên thanh tác vụ.
                                 </span>
-                              )}
-                              <span className="px-1.5 py-0.2 rounded bg-slate-50 text-slate-600 font-medium border border-slate-200">
-                                {isBaoCao ? 'Báo cáo đề xuất' : doc.category}
+                              </div>
+                              <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-600 text-white shrink-0">
+                                Đã trình ký
                               </span>
                             </div>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td className="py-3.5 px-4">
-                        {doc.stepBelongsTo ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-200">
-                            <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
-                            <span>{doc.stepBelongsTo}</span>
-                          </span>
-                        ) : (
-                          <span className="text-[11px] text-slate-400 italic">Hồ sơ tiếp nhận ban đầu</span>
-                        )}
-                      </td>
-
-                      <td className="py-3.5 px-4 font-mono text-slate-600">
-                        <div>{doc.size}</div>
-                        <span className="text-[10.5px] text-slate-400 font-sans">{doc.pages} trang</span>
-                      </td>
-
-                      <td className="py-3.5 px-4 text-slate-600">
-                        <div>{doc.uploadDate}</div>
-                        <span className="text-[10px] text-slate-400 font-mono">SHA-256 Verified</span>
-                      </td>
-
-                      <td className="py-3.5 px-4">
-                        <div className="font-semibold text-slate-800 max-w-[200px] truncate" title={doc.signer}>
-                          {doc.signer}
-                        </div>
-                        {doc.coQuanBanHanh && (
-                          <div className="text-[10.5px] text-slate-500 truncate max-w-[200px]">
-                            {doc.coQuanBanHanh}
-                          </div>
-                        )}
-                        <div className="flex items-center gap-1 text-[10.5px] text-emerald-700 font-medium mt-0.5">
-                          <span className="material-symbols-outlined text-[13px] text-emerald-600">verified_user</span>
-                          <span>Chứng thư số VGCA</span>
-                        </div>
-                      </td>
-
-                      <td className="py-3.5 px-4 text-center">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
-                          Đã bóc tách 100%
-                        </span>
-                      </td>
-
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {isBaoCao ? (
-                            <>
-                              {/* 1. Xem chi tiết -> mở bản xem trước văn bản A4 theo đúng biểu mẫu đã tạo, không mở lại popup nhập thông tin */}
-                              <button
-                                type="button"
-                                onClick={() => handleStartEdit(doc)}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-[#004ac6] border border-blue-200 text-[11.5px] font-bold transition-all cursor-pointer shadow-2xs"
-                                title="Xem trước văn bản theo đúng biểu mẫu Báo cáo kết quả xác minh"
-                              >
-                                <span className="material-symbols-outlined text-[15px]">visibility</span>
-                                <span>Xem chi tiết</span>
-                              </button>
-
-                              {/* 2. Chỉnh sửa -> mở popup nhập thông tin để cập nhật */}
-                              <button
-                                type="button"
-                                onClick={() => onOpenBaoCaoDeXuat?.(doc)}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-300 text-[11.5px] font-bold transition-all cursor-pointer shadow-2xs"
-                                title="Chỉnh sửa thông tin Báo cáo đề xuất"
-                              >
-                                <span className="material-symbols-outlined text-[15px] text-slate-500">edit_note</span>
-                                <span>Chỉnh sửa</span>
-                              </button>
-
-                              {/* 3. Đi trình ký -> chuyển sang luồng trình ký Lãnh đạo */}
-                              {doc.signingStatus === 'nhap' ? (
-                                <button
-                                  type="button"
-                                  onClick={() => handleTrinhKyFromRow(doc)}
-                                  className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-[11.5px] font-bold transition-all cursor-pointer shadow-xs"
-                                  title="Chuyển Báo cáo kết quả xác minh sang luồng trình ký Lãnh đạo"
-                                >
-                                  <span className="material-symbols-outlined text-[15px]">send</span>
-                                  <span>Đi trình ký</span>
-                                </button>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 text-[11px] font-bold">
-                                  <span className="material-symbols-outlined text-[14px]">check_circle</span>
-                                  <span>Đã trình ký</span>
-                                </span>
-                              )}
-                            </>
                           ) : (
-                            <>
+                            <div className="p-4 rounded-xl border-2 border-dashed border-emerald-400 bg-emerald-50/70 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 font-sans">
+                              <div>
+                                <p className="font-bold text-sm text-emerald-950 flex items-center gap-1.5">
+                                  <span className="material-symbols-outlined text-emerald-700 text-[19px]">approval</span>
+                                  <span>Hoàn tất xem trước &amp; Chuyển trình Lãnh đạo phê duyệt</span>
+                                </p>
+                                <p className="text-xs text-emerald-800 mt-0.5">
+                                  Sau khi nhấn "Đi trình ký", văn bản sẽ chuyển sang quy trình ký duyệt và hệ thống sẽ mở khóa nút <strong>Chỉnh sửa thông tin</strong> và <strong>Thụ lý đơn</strong>.
+                                </p>
+                              </div>
                               <button
                                 type="button"
-                                onClick={() => handleStartEdit(doc)}
-                                className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-[#004ac6] border border-blue-200 text-[11px] font-bold transition-all cursor-pointer shadow-2xs"
-                                title="Mở trình soạn thảo và chỉnh sửa trực tiếp văn bản này trên trang A4"
+                                onClick={handleTrinhKyBaoCaoDirect}
+                                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs flex items-center gap-2 shadow-md cursor-pointer shrink-0 transition-all"
                               >
-                                <span className="material-symbols-outlined text-[14px]">edit_document</span>
-                                <span>Sửa trực tiếp</span>
+                                <span className="material-symbols-outlined text-[18px]">send</span>
+                                <span>Đi trình ký ngay</span>
                               </button>
-
-                              <button
-                                type="button"
-                                onClick={() => handleOpenPreview(doc)}
-                                className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
-                                title="Xem trước văn bản"
-                              >
-                                <span className="material-symbols-outlined text-[17px]">visibility</span>
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => alert(`Đang tải tệp: ${doc.name}`)}
-                                className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                                title="Tải tệp xuống"
-                              >
-                                <span className="material-symbols-outlined text-[17px]">download</span>
-                              </button>
-
-                              {doc.isProcessDoc && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteDoc(doc.id, doc.name)}
-                                  className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                                  title="Xóa văn bản này"
-                                >
-                                  <span className="material-symbols-outlined text-[17px]">delete</span>
-                                </button>
-                              )}
-                            </>
+                            </div>
                           )}
                         </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-                </tbody>
-              </table>
-            </div>
+                      </div>
+                    ) : isThongBaoKhongThuLy ? (
+                      /* ========================================================================= */
+                      /* BIỂU MẪU CHUẨN: THÔNG BÁO VỀ VIỆC KHÔNG THỤ LÝ GIẢI QUYẾT ĐƠN / TỐ CÁO   */
+                      /* ========================================================================= */
+                      <div className="space-y-4 text-xs leading-relaxed font-serif text-slate-900 flex-1 flex flex-col justify-between">
+                        <div>
+                          {/* Header: Cơ quan ban hành & Quốc hiệu tiêu ngữ */}
+                          <div className="grid grid-cols-2 gap-4 text-center pb-4 border-b border-slate-300">
+                            <div className="space-y-0.5 text-center">
+                              <p className="uppercase font-medium text-slate-700 text-[11px]">
+                                {editCoQuanCapTren || 'ỦY BAN NHÂN DÂN THÀNH PHỐ HÀ NỘI'}
+                              </p>
+                              <p className="uppercase font-bold text-slate-900 text-xs tracking-tight">
+                                {editCoQuanBanHanh || 'ỦY BAN NHÂN DÂN QUẬN CẦU GIẤY'}
+                              </p>
+                              <div className="w-24 h-px bg-slate-800 mx-auto my-1"></div>
+                              <div className="flex items-center justify-center gap-1 font-mono text-[11px] text-slate-800">
+                                <span>Số:</span>
+                                <input
+                                  type="text"
+                                  value={editSoHieu}
+                                  onChange={(e) => setEditSoHieu(e.target.value)}
+                                  className="font-bold font-mono text-center text-slate-900 bg-transparent hover:bg-slate-50 focus:bg-blue-50/50 focus:ring-1 focus:ring-blue-300 rounded px-1 outline-none w-44"
+                                />
+                              </div>
+                            </div>
+                            <div className="space-y-0.5 text-center">
+                              <p className="font-bold uppercase text-slate-900 text-xs tracking-wider">
+                                CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+                              </p>
+                              <p className="font-bold text-slate-900 text-xs">
+                                Độc lập - Tự do - Hạnh phúc
+                              </p>
+                              <div className="w-32 h-px bg-slate-800 mx-auto my-1"></div>
+                              <p className="italic text-[11px] text-slate-700 pt-0.5">
+                                Hà Nội, ngày {editNgayLap ? editNgayLap.split('/')[0] : '16'} tháng{' '}
+                                {editNgayLap ? editNgayLap.split('/')[1] : '09'} năm 2026
+                              </p>
+                            </div>
+                          </div>
 
-            {filteredDocs.length === 0 && (
-              <div className="text-center py-10 bg-slate-50/50">
-                <span className="material-symbols-outlined text-[36px] text-slate-300 mb-1 block">
-                  folder_off
-                </span>
-                <p className="text-xs font-semibold text-slate-600">
-                  Không tìm thấy văn bản hoặc quyết định nào theo điều kiện tìm kiếm.
-                </p>
+                          {/* Tiêu đề thông báo */}
+                          <div className="text-center pt-6 pb-4">
+                            <h2 className="uppercase font-bold text-base sm:text-lg text-slate-900 tracking-wide">
+                              THÔNG BÁO
+                            </h2>
+                            <p className="font-bold text-sm text-slate-800 mt-1 italic">
+                              Về việc không thụ lý giải quyết tố cáo/đơn
+                            </p>
+                          </div>
+
+                          {/* Kính gửi */}
+                          <div className="pt-2 pb-3 text-xs leading-relaxed">
+                            <div className="flex items-baseline gap-2">
+                              <strong className="text-slate-900 shrink-0">Kính gửi:</strong>
+                              <span className="font-semibold text-slate-900">
+                                Ông/Bà {editNguoiNhan || currentDon.nguoiNop}
+                              </span>
+                            </div>
+                            <p className="text-slate-700 mt-0.5">
+                              Địa chỉ: {currentDon.diaChi || 'Cầu Giấy, TP. Hà Nội'}
+                            </p>
+                          </div>
+
+                          {/* Thân văn bản thông báo theo thể thức hành chính */}
+                          <div className="space-y-3 pt-2 text-justify text-xs leading-relaxed">
+                            <p className="indent-6">
+                              Ngày {currentDon.ngayNhan || '16/09/2026'}, Ủy ban nhân dân quận Cầu Giấy tiếp nhận đơn của Ông/Bà mang mã số tiếp nhận hồ sơ <strong>{currentDon.code}</strong>.
+                            </p>
+                            <p className="indent-6">
+                              Nội dung đơn: <em>"{currentDon.title}"</em>.
+                            </p>
+                            <p className="indent-6">
+                              Sau khi tiến hành kiểm tra điều kiện thụ lý tố cáo/đơn theo quy định tại Điều 24 và Điều 29 Luật Tố cáo năm 2018 (hoặc Điều 27 Luật Khiếu nại), Ủy ban nhân dân quận nhận thấy:
+                            </p>
+
+                            {/* Hộp căn cứ pháp lý & lý do không thụ lý */}
+                            <div className="my-3 p-3.5 rounded-xl border border-rose-200 bg-rose-50/40 text-slate-900 space-y-2 font-sans">
+                              <div className="flex items-start gap-2">
+                                <span className="material-symbols-outlined text-rose-600 text-[18px] shrink-0 mt-0.5">gavel</span>
+                                <div className="text-xs">
+                                  <span className="font-bold text-rose-900">Căn cứ pháp lý: </span>
+                                  <span className="text-slate-800">
+                                    {activeEditingDoc.canCuPhapLy || 'Khoản 1 Điều 29 Luật Tố cáo năm 2018 (Không đủ điều kiện thụ lý giải quyết)'}
+                                  </span>
+                                </div>
+                              </div>
+                              {activeEditingDoc.lyDoChinh && (
+                                <div className="flex items-start gap-2">
+                                  <span className="material-symbols-outlined text-amber-600 text-[18px] shrink-0 mt-0.5">info</span>
+                                  <div className="text-xs">
+                                    <span className="font-bold text-amber-900">Lý do chính: </span>
+                                    <span className="text-slate-800">{activeEditingDoc.lyDoChinh}</span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Nội dung diễn giải chi tiết có thể chỉnh sửa */}
+                            <div className="space-y-1.5">
+                              <label className="block text-[11px] font-sans font-bold text-slate-700">
+                                Nội dung kiểm tra, xác minh ban đầu và căn cứ cụ thể:
+                              </label>
+                              <textarea
+                                rows={6}
+                                value={editNoiDungChiTiet}
+                                onChange={(e) => setEditNoiDungChiTiet(e.target.value)}
+                                placeholder="Nhập chi tiết lý do và kết quả kiểm tra điều kiện không thụ lý..."
+                                className="w-full p-3 font-serif text-xs leading-relaxed text-slate-900 bg-transparent border border-dashed border-slate-300 hover:border-blue-400 focus:border-[#004ac6] focus:bg-blue-50/20 rounded-lg outline-none transition-all resize-y"
+                              />
+                            </div>
+
+                            <p className="indent-6 font-bold text-slate-900">
+                              Căn cứ quy định nêu trên, Ủy ban nhân dân quận thông báo: Không thụ lý giải quyết nội dung đơn nêu trên.
+                            </p>
+                            <p className="indent-6">
+                              Ủy ban nhân dân quận thông báo để Ông/Bà {editNguoiNhan || currentDon.nguoiNop} được biết và thực hiện theo đúng quy định của pháp luật./.
+                            </p>
+                          </div>
+
+                          {/* Chân trang: Nơi nhận và Ký tên đóng dấu */}
+                          <div className="pt-6 border-t border-slate-300 grid grid-cols-2 gap-4 text-xs mt-6">
+                            <div className="text-left text-[11px] text-slate-700 font-sans space-y-0.5">
+                              <p className="font-bold text-slate-900">Nơi nhận:</p>
+                              <p>- Như kính gửi;</p>
+                              <p>- Chủ tịch, các PCT UBND quận (để b/c);</p>
+                              <p>- Thanh tra quận Cầu Giấy;</p>
+                              <p>- Ban Tiếp công dân quận;</p>
+                              <p>- Lưu: VT, HS {currentDon.code}.</p>
+                            </div>
+
+                            <div className="text-center space-y-1">
+                              <p className="uppercase font-bold text-slate-900 text-xs">
+                                TM. ỦY BAN NHÂN DÂN QUẬN
+                              </p>
+                              <p className="uppercase font-bold text-slate-800 text-[11px]">
+                                KT. CHỦ TỊCH
+                              </p>
+                              <input
+                                type="text"
+                                value={editChucVuSigner}
+                                onChange={(e) => setEditChucVuSigner(e.target.value)}
+                                className="w-full text-center uppercase font-bold text-slate-900 text-xs bg-transparent hover:bg-slate-50 focus:bg-blue-50/50 focus:ring-1 focus:ring-blue-300 rounded px-1 outline-none"
+                              />
+
+                              {/* Dấu ký số điện tử VGCA hoặc Badge Trình ký */}
+                              {activeEditingDoc.signingStatus === 'da_ky' ? (
+                                <div className="my-2 p-2 rounded-lg border-2 border-red-500 bg-red-50/30 text-red-700 text-[10px] font-sans inline-block max-w-[210px] text-left shadow-2xs">
+                                  <div className="flex items-center gap-1 font-bold text-red-800 border-b border-red-300 pb-0.5">
+                                    <span className="material-symbols-outlined text-[13px]">verified</span>
+                                    <span>ĐÃ KÝ SỐ VGCA</span>
+                                  </div>
+                                  <p className="pt-0.5 font-mono text-[9px]">KÝ BỞI: {editSigner}</p>
+                                  <p className="font-mono text-[9px]">CƠ QUAN: {editCoQuanBanHanh}</p>
+                                  <p className="font-mono text-[9px]">NGÀY KÝ: {editNgayLap || '16/09/2026'}</p>
+                                </div>
+                              ) : activeEditingDoc.signingStatus === 'cho_trinh' || activeEditingDoc.signingStatus === 'cho_ky' ? (
+                                <div className="my-3 py-2 px-3 rounded-lg border border-blue-300 bg-blue-50/60 text-blue-800 text-[11px] font-sans inline-flex items-center gap-1.5 shadow-2xs">
+                                  <span className="material-symbols-outlined text-[15px] animate-spin text-blue-600">sync</span>
+                                  <span className="font-semibold">Đang chờ Lãnh đạo ký số</span>
+                                </div>
+                              ) : (
+                                <div className="h-16 flex items-center justify-center text-slate-400 italic text-[11px] font-sans">
+                                  (Chưa ký duyệt - Bản dự thảo)
+                                </div>
+                              )}
+
+                              <div className="pt-1">
+                                <input
+                                  type="text"
+                                  value={editSigner}
+                                  onChange={(e) => setEditSigner(e.target.value)}
+                                  className="w-full text-center font-bold text-slate-900 text-sm bg-transparent hover:bg-slate-50 focus:bg-blue-50/50 focus:ring-1 focus:ring-blue-300 rounded px-1 outline-none"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Banner chân trang A4: Hướng dẫn Trình ký Lãnh đạo */}
+                        <div className="pt-6 border-t border-slate-200 mt-6">
+                          {activeEditingDoc.signingStatus === 'cho_trinh' || activeEditingDoc.signingStatus === 'cho_ky' ? (
+                            <div className="p-3.5 rounded-xl border border-blue-200 bg-blue-50/80 flex items-center justify-between gap-3 text-xs text-blue-900 font-sans">
+                              <div className="flex items-center gap-2">
+                                <span className="material-symbols-outlined text-blue-600 text-[20px]">mark_email_read</span>
+                                <span>
+                                  Thông báo không thụ lý số <strong>{editSoHieu}</strong> <strong>đã được chuyển trình Lãnh đạo UBND quận phê duyệt</strong>.
+                                </span>
+                              </div>
+                              <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-600 text-white shrink-0">
+                                Đã trình ký
+                              </span>
+                            </div>
+                          ) : activeEditingDoc.signingStatus === 'da_ky' ? (
+                            <div className="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/80 flex items-center justify-between gap-3 text-xs text-emerald-900 font-sans">
+                              <div className="flex items-center gap-2">
+                                <span className="material-symbols-outlined text-emerald-600 text-[20px]">verified</span>
+                                <span>
+                                  Thông báo không thụ lý số <strong>{editSoHieu}</strong> <strong>đã được Lãnh đạo phê duyệt và ký số thành công</strong>.
+                                </span>
+                              </div>
+                              <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-600 text-white shrink-0">
+                                Đã ký số VGCA
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="p-4 rounded-xl border-2 border-dashed border-emerald-400 bg-emerald-50/70 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 font-sans">
+                              <div>
+                                <p className="font-bold text-sm text-emerald-950 flex items-center gap-1.5">
+                                  <span className="material-symbols-outlined text-emerald-700 text-[19px]">approval</span>
+                                  <span>Hoàn tất xem trước &amp; Chuyển trình Lãnh đạo phê duyệt</span>
+                                </p>
+                                <p className="text-xs text-emerald-800 mt-0.5">
+                                  Nhấn "Trình ký Lãnh đạo ngay" để gửi Thông báo không thụ lý giải quyết đơn đến Lãnh đạo UBND quận xem xét và ký số VGCA.
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={handleTrinhKyKhongThuLyDirect}
+                                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs flex items-center gap-2 shadow-md cursor-pointer shrink-0 transition-all"
+                              >
+                                <span className="material-symbols-outlined text-[18px]">send</span>
+                                <span>Trình ký Lãnh đạo ngay</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      /* ========================================================================= */
+                      /* SOẠN THẢO VĂN BẢN THÔNG THƯỜNG (GIẤY MỜI, BIÊN BẢN, CÔNG VĂN, THÔNG BÁO) */
+                      /* ========================================================================= */
+                      <div>
+                        {/* Phần 1: Quốc hiệu & Tiêu ngữ */}
+                        <div className="grid grid-cols-2 gap-4 text-center text-xs pb-4 border-b border-slate-200/80">
+                          <div className="space-y-1 text-left">
+                            <input
+                              type="text"
+                              value={editCoQuanCapTren}
+                              onChange={(e) => setEditCoQuanCapTren(e.target.value)}
+                              className="w-full text-center uppercase font-medium text-slate-600 text-[11px] bg-transparent hover:bg-slate-50 focus:bg-blue-50/50 focus:ring-1 focus:ring-blue-300 rounded px-1 outline-none"
+                            />
+                            <input
+                              type="text"
+                              value={editCoQuanBanHanh}
+                              onChange={(e) => setEditCoQuanBanHanh(e.target.value)}
+                              className="w-full text-center uppercase font-bold text-slate-900 text-xs bg-transparent hover:bg-slate-50 focus:bg-blue-50/50 focus:ring-1 focus:ring-blue-300 rounded px-1 outline-none"
+                            />
+                            <div className="w-24 h-px bg-slate-800 mx-auto my-1"></div>
+                            <div className="flex items-center justify-center gap-1 font-mono text-[11px] text-slate-700">
+                              <span>Số:</span>
+                              <input
+                                type="text"
+                                value={editSoHieu}
+                                onChange={(e) => setEditSoHieu(e.target.value)}
+                                className="w-36 font-bold font-mono text-center text-slate-900 bg-transparent hover:bg-slate-50 focus:bg-blue-50/50 focus:ring-1 focus:ring-blue-300 rounded px-1 outline-none"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-1">
+                            <p className="font-bold uppercase text-slate-900 text-xs tracking-wider">
+                              CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+                            </p>
+                            <p className="font-bold text-slate-900 text-xs">
+                              Độc lập - Tự do - Hạnh phúc
+                            </p>
+                            <div className="w-36 h-px bg-slate-800 mx-auto my-1"></div>
+                            <p className="italic text-[11px] text-slate-600 pt-0.5">
+                              Hà Nội, ngày {editNgayLap ? editNgayLap.split('/')[0] : '16'} tháng{' '}
+                              {editNgayLap ? editNgayLap.split('/')[1] : '09'} năm 2026
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Phần 2: Tiêu đề văn bản */}
+                        <div className="text-center pt-6 pb-4">
+                          <input
+                            type="text"
+                            value={editTenVanBan}
+                            onChange={(e) => setEditTenVanBan(e.target.value)}
+                            className="w-full text-center uppercase font-bold text-base sm:text-lg text-slate-900 bg-transparent hover:bg-slate-50 focus:bg-blue-50/50 focus:ring-1 focus:ring-blue-300 rounded px-2 outline-none tracking-wide"
+                          />
+                          <div className="flex items-center justify-center gap-1 mt-1 text-xs italic text-slate-600">
+                            <span>(V/v:</span>
+                            <input
+                              type="text"
+                              value={editTrichYeu}
+                              onChange={(e) => setEditTrichYeu(e.target.value)}
+                              className="w-4/5 text-center italic text-xs text-slate-700 bg-transparent hover:bg-slate-50 focus:bg-blue-50/50 focus:ring-1 focus:ring-blue-300 rounded px-1 outline-none"
+                            />
+                            <span>)</span>
+                          </div>
+                        </div>
+
+                        {/* Phần 3: Kính gửi */}
+                        <div className="pt-2 pb-3 text-xs leading-relaxed space-y-2">
+                          <div className="flex items-baseline gap-2">
+                            <strong className="text-slate-900 shrink-0">Kính gửi:</strong>
+                            <input
+                              type="text"
+                              value={editNguoiNhan}
+                              onChange={(e) => setEditNguoiNhan(e.target.value)}
+                              className="flex-1 font-semibold text-slate-900 bg-transparent hover:bg-slate-50 focus:bg-blue-50/50 focus:ring-1 focus:ring-blue-300 rounded px-1 outline-none text-xs"
+                            />
+                          </div>
+
+                          {editThoiGianHen && (
+                            <div className="flex items-baseline gap-2">
+                              <strong className="text-slate-900 shrink-0">Thời gian:</strong>
+                              <input
+                                type="text"
+                                value={editThoiGianHen}
+                                onChange={(e) => setEditThoiGianHen(e.target.value)}
+                                className="flex-1 text-slate-800 bg-transparent hover:bg-slate-50 focus:bg-blue-50/50 focus:ring-1 focus:ring-blue-300 rounded px-1 outline-none text-xs"
+                              />
+                            </div>
+                          )}
+
+                          {editDiaDiem && (
+                            <div className="flex items-baseline gap-2">
+                              <strong className="text-slate-900 shrink-0">Địa điểm:</strong>
+                              <input
+                                type="text"
+                                value={editDiaDiem}
+                                onChange={(e) => setEditDiaDiem(e.target.value)}
+                                className="flex-1 text-slate-800 bg-transparent hover:bg-slate-50 focus:bg-blue-50/50 focus:ring-1 focus:ring-blue-300 rounded px-1 outline-none text-xs"
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Phần 4: NỘI DUNG VĂN BẢN CHÍNH */}
+                        <div className="pt-2 pb-6">
+                          <div className="relative">
+                            <textarea
+                              rows={14}
+                              value={editNoiDungChiTiet}
+                              onChange={(e) => setEditNoiDungChiTiet(e.target.value)}
+                              placeholder="Nhập nội dung văn bản chi tiết..."
+                              className="w-full p-3 font-serif text-sm leading-relaxed text-slate-900 bg-transparent border border-dashed border-slate-300 hover:border-blue-400 focus:border-[#004ac6] focus:bg-blue-50/20 rounded-lg outline-none transition-all resize-y"
+                            />
+                          </div>
+                          <p className="text-[10.5px] text-slate-400 italic text-right mt-1">
+                            * Khung soạn thảo trực tiếp chuẩn trang A4
+                          </p>
+                        </div>
+
+                        {/* Phần 5: Nơi nhận & Ký tên */}
+                        <div className="pt-6 border-t border-slate-200 grid grid-cols-2 gap-4 text-xs">
+                          <div className="text-left text-[11px] text-slate-600 font-sans space-y-0.5">
+                            <p className="font-bold text-slate-800">Nơi nhận:</p>
+                            <p>- Như kính gửi;</p>
+                            <p>- Lưu: VT, Hồ sơ xác minh đơn {currentDon.code}.</p>
+                          </div>
+
+                          <div className="text-center space-y-1">
+                            <input
+                              type="text"
+                              value={editChucVuSigner}
+                              onChange={(e) => setEditChucVuSigner(e.target.value)}
+                              className="w-full text-center uppercase font-bold text-slate-900 text-xs bg-transparent hover:bg-slate-50 focus:bg-blue-50/50 focus:ring-1 focus:ring-blue-300 rounded px-1 outline-none"
+                            />
+
+                            {/* Dấu ký số điện tử VGCA */}
+                            {editIsSignedVGCA && (
+                              <div className="my-2 p-2 rounded-lg border-2 border-red-500 bg-red-50/30 text-red-700 text-[10px] font-sans inline-block max-w-[200px] text-left shadow-2xs">
+                                <div className="flex items-center gap-1 font-bold text-red-800 border-b border-red-300 pb-0.5">
+                                  <span className="material-symbols-outlined text-[13px]">verified</span>
+                                  <span>KÝ BỞI: {editSigner}</span>
+                                </div>
+                                <p className="pt-0.5 font-mono text-[9px]">CƠ QUAN: {editCoQuanBanHanh}</p>
+                                <p className="font-mono text-[9px]">NGÀY KÝ: {editNgayLap || '16/09/2026'}</p>
+                                <p className="font-mono text-[8.5px] text-red-500 truncate">SHA-256: 7F8E...3A21</p>
+                              </div>
+                            )}
+
+                            <div className="pt-1">
+                              <input
+                                type="text"
+                                value={editSigner}
+                                onChange={(e) => setEditSigner(e.target.value)}
+                                className="w-full text-center font-bold text-slate-900 text-sm bg-transparent hover:bg-slate-50 focus:bg-blue-50/50 focus:ring-1 focus:ring-blue-300 rounded px-1 outline-none"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-slate-200/90 p-12 text-center shadow-2xs min-h-[500px] flex flex-col items-center justify-center">
+              <div className="w-16 h-16 rounded-2xl bg-blue-50 border border-blue-200 text-[#004ac6] flex items-center justify-center mb-3 shadow-inner">
+                <span className="material-symbols-outlined text-[32px]">find_in_page</span>
+              </div>
+              <h3 className="font-bold text-slate-800 text-sm">Vui lòng chọn một văn bản từ danh sách bên trái để xem</h3>
+              <p className="text-xs text-slate-500 mt-1 max-w-md">
+                Nhấp vào bất kỳ văn bản nào trong danh sách bên trái để xem trước theo thể thức A4 chuẩn, hoặc bấm <strong>"Tạo theo bước"</strong> để tạo văn bản mới theo quy trình.
+              </p>
+              <div className="flex items-center gap-2 mt-4">
                 <button
                   type="button"
-                  onClick={() => {
-                    setFilterTab('all');
-                    setSearchKeyword('');
-                  }}
-                  className="mt-1.5 text-xs font-bold text-[#004ac6] hover:underline cursor-pointer"
+                  onClick={() => setShowStepMenu(true)}
+                  className="px-3 py-1.5 rounded-xl bg-[#004ac6] text-white text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer hover:bg-blue-700"
                 >
-                  Xem tất cả danh mục hồ sơ
+                  <span className="material-symbols-outlined text-[16px]">account_tree</span>
+                  <span>Tạo theo bước</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleOpenAddModal}
+                  className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[16px]">post_add</span>
+                  <span>Tạo văn bản</span>
                 </button>
               </div>
-            )}
-
-            {/* Footer info bar */}
-
-          </div>
-        </>
-      )
-      }
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* ========================================================================= */}
       {/* 3. MODAL THÊM VĂN BẢN / QUYẾT ĐỊNH CHO QUÁ TRÌNH XỬ LÝ                     */}

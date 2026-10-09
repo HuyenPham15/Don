@@ -54,11 +54,7 @@ export default function Sidebar({ screen, onNav, currentAccount, signingCounts }
                   {signingCounts?.daTrinh} chờ ký
                 </span>
               )}
-              {currentAccount?.role === 'can_bo' && (signingCounts?.yeuCauSua || 0) > 0 && (
-                <span className="px-1.5 py-0.5 rounded-md bg-rose-500 text-white text-[10.5px] font-bold font-label-technical" title="Có văn bản bị Lãnh đạo yêu cầu sửa">
-                  {signingCounts?.yeuCauSua} sửa
-                </span>
-              )}
+
               {isCongViec && <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>}
             </div>
           </button>
@@ -82,9 +78,7 @@ export default function Sidebar({ screen, onNav, currentAccount, signingCounts }
               <span className="text-[13.5px] font-medium">Nhận đơn</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="px-1.5 py-0.5 rounded-md bg-blue-600 text-white border border-blue-600 text-[11px] font-semibold font-label-technical">
-                4
-              </span>
+
               {isNhanDon && <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>}
             </div>
           </button>

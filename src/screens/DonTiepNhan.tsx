@@ -17,6 +17,9 @@ import TraLoiDonModal, { TraLoiDonSubmitData } from '../components/modals/TraLoi
 import ChinhSuaDonModal from '../components/modals/ChinhSuaDonModal';
 import BaoCaoXacMinhModal from '../components/modals/BaoCaoXacMinhModal';
 import TaoBaoCaoDeXuatModal, { BaoCaoDeXuatFormData } from '../components/modals/TaoBaoCaoDeXuatModal';
+import PhanCongModal, { PhanCongSubmitData } from '../components/modals/PhanCongModal';
+import GhepDonModal, { GhepDonSubmitData } from '../components/modals/GhepDonModal';
+import TaiTaiLieuModal, { TaiTaiLieuSubmitData } from '../components/modals/TaiTaiLieuModal';
 import { SigningDocument, CurrentUserAccount } from '../types/signing';
 
 interface DonTiepNhanProps {
@@ -242,6 +245,10 @@ export default function DonTiepNhan({
   const [showChinhSuaModal, setShowChinhSuaModal] = useState(false);
   const [showBaoCaoXacMinhModal, setShowBaoCaoXacMinhModal] = useState(false);
   const [showTaoBaoCaoDeXuatModal, setShowTaoBaoCaoDeXuatModal] = useState(false);
+  const [showThaoTacKhacDropdown, setShowThaoTacKhacDropdown] = useState<boolean>(false);
+  const [showPhanCongModal, setShowPhanCongModal] = useState<boolean>(false);
+  const [showGhepDonModal, setShowGhepDonModal] = useState<boolean>(false);
+  const [showTaiTaiLieuModal, setShowTaiTaiLieuModal] = useState<boolean>(false);
   const [daHoanThanhBuoc, setDaHoanThanhBuoc] = useState(false);
   const [daGuiThongBaoBoSung, setDaGuiThongBaoBoSung] = useState(false);
 
@@ -765,16 +772,129 @@ export default function DonTiepNhan({
             {/* Sau khi lập và trình ký văn bản báo cáo xong mới hiển thị nút Chỉnh sửa và Thụ lý */}
             {isBaoCaoDaTrinhKy && (
               <>
-                {/* Nút Chỉnh sửa thông tin đơn */}
-                <button
-                  type="button"
-                  onClick={() => setShowChinhSuaModal(true)}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 hover:border-slate-400 active:scale-95 text-slate-700 text-[13px] font-semibold shadow-2xs transition-all cursor-pointer"
-                  title="Chỉnh sửa thông tin người nộp, loại đơn, nội dung và cán bộ xử lý"
-                >
-                  <span className="material-symbols-outlined text-[18px] text-slate-500">edit_note</span>
-                  <span>Chỉnh sửa thông tin</span>
-                </button>
+                {/* Dropdown Thao tác khác: Chỉnh sửa, Ghép đơn, Tải tài liệu, Phân công xử lý */}
+                <div className="relative inline-flex items-center">
+                  <button
+                    type="button"
+                    onClick={() => setShowThaoTacKhacDropdown(!showThaoTacKhacDropdown)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 hover:border-slate-400 active:scale-95 text-slate-700 text-[13px] font-semibold shadow-2xs transition-all cursor-pointer"
+                    title="Các thao tác nghiệp vụ: Chỉnh sửa, Ghép đơn, Tải tài liệu, Phân công xử lý"
+                  >
+                    <span className="material-symbols-outlined text-[18px] text-slate-500">tune</span>
+                    <span>Thao tác khác</span>
+                    <span className={`material-symbols-outlined text-[18px] text-slate-400 transition-transform ${showThaoTacKhacDropdown ? 'rotate-180' : ''}`}>
+                      expand_more
+                    </span>
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  {showThaoTacKhacDropdown && (
+                    <>
+                      {/* Backdrop vô hình để đóng dropdown khi click outside */}
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setShowThaoTacKhacDropdown(false)}
+                      />
+
+                      <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-slate-200 p-2 z-50 animate-scale-up">
+                        <div className="px-2.5 py-1.5 border-b border-slate-100 mb-1">
+                          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                            Thao tác nghiệp vụ
+                          </span>
+                        </div>
+                        <div className="space-y-1">
+                          {/* 1. Chỉnh sửa */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowThaoTacKhacDropdown(false);
+                              setShowChinhSuaModal(true);
+                            }}
+                            className="w-full flex items-start gap-2.5 p-2 rounded-xl text-left hover:bg-slate-50 text-slate-800 transition-colors cursor-pointer group"
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 group-hover:bg-blue-100 flex items-center justify-center shrink-0 mt-0.5 transition-colors">
+                              <span className="material-symbols-outlined text-[18px]">edit_note</span>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="font-bold text-[13px] text-slate-900 group-hover:text-blue-700 transition-colors">
+                                Chỉnh sửa
+                              </div>
+                              <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
+                                Cập nhật người nộp, loại đơn, nội dung xử lý
+                              </p>
+                            </div>
+                          </button>
+
+                          {/* 2. Ghép đơn */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowThaoTacKhacDropdown(false);
+                              setShowGhepDonModal(true);
+                            }}
+                            className="w-full flex items-start gap-2.5 p-2 rounded-xl text-left hover:bg-slate-50 text-slate-800 transition-colors cursor-pointer group"
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100 flex items-center justify-center shrink-0 mt-0.5 transition-colors">
+                              <span className="material-symbols-outlined text-[18px]">merge_type</span>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="font-bold text-[13px] text-slate-900 group-hover:text-indigo-700 transition-colors">
+                                Ghép đơn
+                              </div>
+                              <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
+                                Ghép vào hồ sơ đơn trùng hoặc vụ việc đã có
+                              </p>
+                            </div>
+                          </button>
+
+                          {/* 3. Tải tài liệu */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowThaoTacKhacDropdown(false);
+                              setShowTaiTaiLieuModal(true);
+                            }}
+                            className="w-full flex items-start gap-2.5 p-2 rounded-xl text-left hover:bg-slate-50 text-slate-800 transition-colors cursor-pointer group"
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100 flex items-center justify-center shrink-0 mt-0.5 transition-colors">
+                              <span className="material-symbols-outlined text-[18px]">upload_file</span>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="font-bold text-[13px] text-slate-900 group-hover:text-emerald-700 transition-colors">
+                                Tải tài liệu
+                              </div>
+                              <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
+                                Đính kèm thêm tài liệu, hồ sơ chứng cứ bổ sung
+                              </p>
+                            </div>
+                          </button>
+
+                          {/* 4. Phân công xử lý */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowThaoTacKhacDropdown(false);
+                              setShowPhanCongModal(true);
+                            }}
+                            className="w-full flex items-start gap-2.5 p-2 rounded-xl text-left hover:bg-slate-50 text-slate-800 transition-colors cursor-pointer group"
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 group-hover:bg-amber-100 flex items-center justify-center shrink-0 mt-0.5 transition-colors">
+                              <span className="material-symbols-outlined text-[18px]">assignment_ind</span>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="font-bold text-[13px] text-slate-900 group-hover:text-amber-700 transition-colors">
+                                Phân công xử lý
+                              </div>
+                              <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
+                                Giao cán bộ thụ lý hoặc chuyển đơn vị phụ trách
+                              </p>
+                            </div>
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
 
                 {/* Split Button chính + Dropdown chọn hướng xử lý khác */}
                 <div className="relative inline-flex items-center">
@@ -1045,9 +1165,6 @@ export default function DonTiepNhan({
           >
             <span className="material-symbols-outlined text-[16px]">hub</span>
             <span>Mối liên hệ</span>
-            <span className="px-1.5 py-0.2 rounded bg-blue-50 text-[#004ac6] font-semibold text-[10px] border border-blue-200">
-              Sơ đồ
-            </span>
           </button>
 
           {/* Tab 3: Đơn khác (Đơn & lượt nhận đã ghép) */}
@@ -1061,9 +1178,7 @@ export default function DonTiepNhan({
           >
             <span className="material-symbols-outlined text-[16px]">folder_shared</span>
             <span>Đơn khác</span>
-            <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 font-semibold text-[10px] border border-slate-200">
-              2 đã ghép
-            </span>
+
           </button>
 
           {/* Tab 4: Hồ sơ & Văn bản */}
@@ -1077,9 +1192,7 @@ export default function DonTiepNhan({
           >
             <span className="material-symbols-outlined text-[16px]">folder</span>
             <span>Hồ sơ &amp; Văn bản</span>
-            <span className="px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 font-semibold text-[10px] border border-emerald-200">
-              {docCount} văn bản
-            </span>
+
           </button>
 
           {/* Tab 5: Quy trình */}
@@ -1093,9 +1206,7 @@ export default function DonTiepNhan({
           >
             <span className="material-symbols-outlined text-[16px]">alt_route</span>
             <span>Quy trình</span>
-            <span className="px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 font-semibold text-[10px] border border-indigo-200">
-              Bước {activeStepNumber}/{workflow.steps.length}
-            </span>
+
           </button>
 
           {/* Tab 6: Lịch sử xử lý */}
@@ -1109,9 +1220,7 @@ export default function DonTiepNhan({
           >
             <span className="material-symbols-outlined text-[16px]">history</span>
             <span>Lịch sử xử lý</span>
-            <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 font-semibold text-[10px] border border-slate-200">
-              {historyLogs.length} sự kiện
-            </span>
+
           </button>
         </div>
       </div>
@@ -1119,7 +1228,7 @@ export default function DonTiepNhan({
       {/* ========================================================================= */}
       {/* 3. MAIN WORKSPACE CONTENT                                                 */}
       {/* ========================================================================= */}
-      <div className="flex-1 overflow-y-auto p-6 bg-[#f8fafc]">
+      <div className="flex-1 overflow-y-auto bg-[#f8fafc]">
         <div className="w-full max-w-[1720px] mx-auto space-y-6">
           {activeTab === 'thong-tin' && (
             <TabThongTinChung
@@ -1313,21 +1422,165 @@ export default function DonTiepNhan({
         onClose={() => setShowKhongThuLyModal(false)}
         onSubmit={(data) => {
           setShowKhongThuLyModal(false);
-          showToast(`✓ Đã lập Thông báo không thụ lý số ${data.soKyHieu} theo quy định.`);
+
+          const isTrinhKy = data.action === 'trinh_ky';
+          const fullDocText = `CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nĐộc lập - Tự do - Hạnh phúc\n\nỦY BAN NHÂN DÂN QUẬN CẦU GIẤY\nSố: ${data.soKyHieu}\nHà Nội, ngày ${data.ngayBanHanh}\n\nTHÔNG BÁO\nVề việc không thụ lý giải quyết tố cáo\n\nKính gửi: Ông/Bà ${data.nguoiNhan} (Địa chỉ: ${currentDon.diaChi || 'Cầu Giấy, Hà Nội'})\n\nNgày ${currentDon.ngayNhan}, Ủy ban nhân dân quận tiếp nhận đơn của Ông/Bà mang mã hồ sơ ${currentDon.code}.\nNội dung đơn: "${currentDon.title}".\nSau khi kiểm tra điều kiện thụ lý tố cáo theo quy định tại Điều 24 và Điều 29 Luật Tố cáo năm 2018, Ủy ban nhân dân quận nhận thấy:\n${data.lyDoChiTiet}\n\nCăn cứ ${data.canCuPhapLy}, Ủy ban nhân dân quận thông báo: Không thụ lý giải quyết nội dung tố cáo nêu trên.\nỦy ban nhân dân quận thông báo để Ông/Bà được biết và thực hiện theo đúng quy định của pháp luật./.\n\nTM. ỦY BAN NHÂN DÂN\nKT. CHỦ TỊCH - PHÓ CHỦ TỊCH\n${data.nguoiKy}`;
+
+          const newDocItem: any = {
+            id: `DOC-KTL-${Date.now().toString().slice(-4)}`,
+            name: `Thong_bao_khong_thu_ly_${data.soKyHieu.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
+            category: 'Thông báo không thụ lý',
+            soHieu: data.soKyHieu,
+            size: '420 KB',
+            pages: 1,
+            uploadDate: `${data.ngayBanHanh} 10:00`,
+            signer: data.nguoiKy,
+            coQuanBanHanh: 'UBND quận Cầu Giấy',
+            stepBelongsTo: 'Bước 2: Xác minh thông tin & Đề xuất',
+            ocrStatus: 'Hoàn tất',
+            isProcessDoc: true,
+            isEditable: true,
+            loaiVanBan: 'thong_bao',
+            tenVanBan: 'Thông báo không thụ lý giải quyết đơn',
+            nguoiNhan: data.nguoiNhan,
+            trichYeu: `V/v Không thụ lý giải quyết đơn: ${data.lyDoChinh}`,
+            noiDungChiTiet: data.lyDoChiTiet,
+            previewExcerpt: fullDocText,
+            trangThai: isTrinhKy ? 'da_ban_hanh' : 'du_thao',
+            fromXacMinh: true,
+            signingStatus: isTrinhKy ? 'cho_trinh' : 'nhap',
+            canCuPhapLy: data.canCuPhapLy,
+            lyDoChinh: data.lyDoChinh,
+            lyDoChiTiet: data.lyDoChiTiet,
+          };
+
+          // 1. Thêm vào danh sách văn bản dùng chung
+          setVanBanXacMinhList((prev) => [
+            {
+              id: newDocItem.id,
+              loai: 'cong_van',
+              tenVanBan: 'Thông báo không thụ lý giải quyết đơn',
+              soKyHieu: data.soKyHieu,
+              ngayLap: data.ngayBanHanh,
+              nguoiNhan: data.nguoiNhan,
+              trichYeu: newDocItem.trichYeu,
+              noiDungChiTiet: fullDocText,
+              coQuanBanHanh: 'UBND quận Cầu Giấy',
+              trangThai: isTrinhKy ? 'da_ban_hanh' : 'du_thao',
+            },
+            ...prev,
+          ]);
+
+          // 2. Thêm vào signingDocuments để phục vụ trình ký lãnh đạo
+          const signingDoc: SigningDocument = {
+            id: newDocItem.id,
+            soKyHieu: data.soKyHieu,
+            hoSoCode: currentDon.code,
+            luotNhanId: currentDon.luotNhanId,
+            loaiDon: currentDon.loaiDon || 'Đơn tố cáo',
+            nguoiGuiDon: data.nguoiNhan,
+            noiDungDon: currentDon.title,
+            tenVanBan: 'Thông báo không thụ lý giải quyết đơn',
+            loaiVanBan: 'thong_bao',
+            loaiVanBanLabel: 'Thông báo không thụ lý',
+            trichYeu: newDocItem.trichYeu,
+            noiDungChiTiet: fullDocText,
+            nguoiLap: currentAccount?.name || currentDon.canBoXuLy || 'Nguyễn Minh Anh',
+            donViNguoiLap: 'Phòng Tiếp công dân & Xử lý đơn',
+            ngayTao: `${data.ngayBanHanh} 09:30`,
+            status: isTrinhKy ? 'cho_trinh' : 'nhap',
+            thoiGianTrinh: isTrinhKy ? `${data.ngayBanHanh} 10:00` : undefined,
+            nguoiTrinh: isTrinhKy ? (currentAccount?.name || 'Nguyễn Minh Anh') : undefined,
+            mucDoUuTien: 'thuong',
+            hanXuLy: '24 giờ',
+            signers: [
+              {
+                id: 'ld-01',
+                name: data.nguoiKy.replace(/\s*\(.*\)/, '') || 'Đ/c Trần Văn Cường',
+                chucVu: 'Phó Chủ tịch UBND quận',
+                coQuan: 'UBND quận Cầu Giấy',
+                vaiTro: 'duyet',
+                thuTu: 1,
+                status: isTrinhKy ? 'cho_ky' : 'chua_den_luot',
+              },
+            ],
+            currentSignerIndex: 0,
+            lanhDaoId: 'ld-01',
+            lanhDaoName: data.nguoiKy.replace(/\s*\(.*\)/, '') || 'Đ/c Trần Văn Cường',
+            lanhDaoChucVu: 'Phó Chủ tịch UBND quận',
+            tepDinhKem: [
+              {
+                id: `att-ktl-${Date.now()}`,
+                tenTep: `Thong_bao_khong_thu_ly_${currentDon.code}.pdf`,
+                dungLuong: '420 KB',
+                loai: 'du_thao',
+              },
+            ],
+            phienBanHienTai: 'V1',
+            versionHistory: [
+              {
+                version: 'V1',
+                thoiGian: `${data.ngayBanHanh} 10:00`,
+                nguoiTao: currentAccount?.name || 'Nguyễn Minh Anh',
+                trangThaiLucDo: isTrinhKy ? 'Chờ trình ký' : 'Bản nháp',
+                ghiChu: 'Lập thông báo không thụ lý giải quyết đơn',
+                noiDungSnapshot: fullDocText,
+              },
+            ],
+            history: [
+              {
+                id: `hist-${Date.now()}`,
+                time: `${data.ngayBanHanh} 10:00`,
+                actor: currentAccount?.name || 'Nguyễn Minh Anh',
+                action: isTrinhKy ? 'Trình Lãnh đạo phê duyệt' : 'Lưu bản nháp văn bản',
+              },
+            ],
+            auditLogs: [
+              {
+                id: `al-${Date.now()}`,
+                time: `${data.ngayBanHanh} 10:00`,
+                actor: currentAccount?.name || 'Nguyễn Minh Anh',
+                actorRole: 'Cán bộ thụ lý',
+                action: isTrinhKy ? 'Trình văn bản' : 'Tạo mới',
+                statusBefore: 'nhap',
+                statusAfter: isTrinhKy ? 'cho_trinh' : 'nhap',
+                version: 'V1',
+                note: newDocItem.trichYeu,
+              },
+            ],
+          };
+
+          if (onUpdateSigningDocuments) {
+            onUpdateSigningDocuments((prev) => [signingDoc, ...prev]);
+          }
+
+          // 3. Cập nhật editing doc tại tab Hồ sơ & Văn bản và chuyển tab
           setDocCount((c) => c + 1);
+          setEditingDocInTab(newDocItem);
+          setActiveTab('tai-lieu');
+
+          if (isTrinhKy) {
+            showToast(`✓ Đã lưu và chuyển trình ký Lãnh đạo Thông báo không thụ lý số ${data.soKyHieu}!`);
+          } else {
+            showToast(`✓ Đã lưu Thông báo không thụ lý số ${data.soKyHieu} vào Hồ sơ & Văn bản. Đang mở biểu mẫu xem trước!`);
+          }
+
+          // 4. Ghi lịch sử xử lý
           addHistoryLog({
-            title: `Ban hành Thông báo không thụ lý số ${data.soKyHieu}`,
+            title: isTrinhKy
+              ? `Trình Lãnh đạo phê duyệt Thông báo không thụ lý số ${data.soKyHieu}`
+              : `Lập bản nháp Thông báo không thụ lý số ${data.soKyHieu}`,
             actor: currentDon.canBoXuLy || 'Nguyễn Minh Anh',
             actorRole: currentDon.chucVuCanBo || 'Chuyên viên Tiếp nhận & Xử lý đơn',
             actorDept: currentDon.donViXuLy || 'Phòng Tiếp công dân & Xử lý đơn',
             category: 'van_ban',
             statusBadge: {
-              text: 'Không thụ lý',
-              bgClass: 'bg-rose-50',
-              textClass: 'text-rose-800',
-              borderClass: 'border-rose-200',
+              text: isTrinhKy ? 'Chờ ký duyệt' : 'Bản nháp',
+              bgClass: isTrinhKy ? 'bg-blue-50' : 'bg-slate-100',
+              textClass: isTrinhKy ? 'text-blue-800' : 'text-slate-800',
+              borderClass: isTrinhKy ? 'border-blue-200' : 'border-slate-200',
             },
-            description: `Lập và ban hành Thông báo số ${data.soKyHieu} không thụ lý giải quyết đơn khiếu nại/tố cáo do không đủ điều kiện theo quy định pháp luật.`,
+            description: `Lập Thông báo số ${data.soKyHieu} không thụ lý giải quyết đơn. Căn cứ: ${data.canCuPhapLy}. Lý do: ${data.lyDoChinh}.`,
             docInfo: {
               name: 'Thông báo không thụ lý giải quyết',
               code: data.soKyHieu,
@@ -1504,6 +1757,142 @@ export default function DonTiepNhan({
         existingSigningDoc={existingSigningDoc}
         onSaveDraft={handleSaveDraftBaoCaoModal}
         onSubmitToLeader={handleSubmitToLeaderBaoCaoModal}
+      />
+
+      {/* Modal Ghép đơn */}
+      <GhepDonModal
+        isOpen={showGhepDonModal}
+        onClose={() => setShowGhepDonModal(false)}
+        donInfo={{
+          code: currentDon.code,
+          luotNhanId: currentDon.luotNhanId,
+          nguoiNop: currentDon.nguoiNop || 'Công dân nộp đơn',
+          loaiDon: currentDon.loaiDon || 'Đơn khiếu nại / tố cáo',
+          noiDung: currentDon.title || '',
+          ngayNhan: currentDon.ngayNhan,
+        }}
+        onSubmit={(data: GhepDonSubmitData) => {
+          setShowGhepDonModal(false);
+          showToast(`✓ Đã ghép thành công đơn ${currentDon.code} vào hồ sơ vụ việc ${data.targetDonCode}!`);
+          addHistoryLog({
+            title: `Ghép hồ sơ đơn vào vụ việc ${data.targetDonCode}`,
+            actor: currentAccount?.name || currentDon.canBoXuLy || 'Nguyễn Minh Anh',
+            actorRole: currentAccount?.role || currentDon.chucVuCanBo || 'Chuyên viên Tiếp nhận & Xử lý đơn',
+            actorDept: currentDon.donViXuLy || 'Phòng Tiếp công dân & Xử lý đơn',
+            category: 'tiep_nhan',
+            statusBadge: {
+              text: 'Ghép đơn',
+              bgClass: 'bg-indigo-50',
+              textClass: 'text-indigo-800',
+              borderClass: 'border-indigo-200',
+            },
+            description: `Thực hiện ghép đơn ${currentDon.code} vào hồ sơ ${data.targetDonCode} (${data.targetDonTitle}). Quyết định ghép: ${data.soQuyetDinhGhep}. Căn cứ: ${data.canCuGhep.join('; ')}. Ghi chú: ${data.ghiChuGhep}`,
+          });
+          setActiveTab('don-khac');
+        }}
+      />
+
+      {/* Modal Tải tài liệu */}
+      <TaiTaiLieuModal
+        isOpen={showTaiTaiLieuModal}
+        onClose={() => setShowTaiTaiLieuModal(false)}
+        donInfo={{
+          code: currentDon.code,
+          nguoiNop: currentDon.nguoiNop || 'Công dân nộp đơn',
+          loaiDon: currentDon.loaiDon || 'Đơn khiếu nại / tố cáo',
+        }}
+        onSubmit={(data: TaiTaiLieuSubmitData) => {
+          setShowTaiTaiLieuModal(false);
+          setDocCount((prev) => prev + 1);
+
+          const newDocItem: VanBanXacMinhItem = {
+            id: `DOC-UP-${Date.now()}`,
+            loai: (data.loaiTaiLieu === 'bien_ban' ? 'bien_ban' : 'khac') as any,
+            tenVanBan: data.tenTaiLieu,
+            soKyHieu: data.soKyHieu || `TL-${Date.now().toString().slice(-4)}`,
+            ngayLap: data.ngayBanHanh || new Date().toLocaleDateString('vi-VN'),
+            nguoiNhan: data.nguoiCungCap,
+            trichYeu: data.trichYeu,
+            noiDungChiTiet: `Tài liệu đính kèm: ${data.fileName} (${data.fileSize}). Nguồn cung cấp: ${data.nguoiCungCap}.\nTrích yếu: ${data.trichYeu}`,
+            trangThai: 'da_dinh_kem',
+          };
+          setVanBanXacMinhList((prev) => [newDocItem, ...prev]);
+
+          showToast(`✓ Đã đính kèm tài liệu "${data.tenTaiLieu}" (${data.fileName}) vào hồ sơ thành công!`);
+          addHistoryLog({
+            title: `Đính kèm tài liệu: ${data.tenTaiLieu}`,
+            actor: currentAccount?.name || currentDon.canBoXuLy || 'Nguyễn Minh Anh',
+            actorRole: currentAccount?.role || currentDon.chucVuCanBo || 'Chuyên viên Tiếp nhận & Xử lý đơn',
+            actorDept: currentDon.donViXuLy || 'Phòng Tiếp công dân & Xử lý đơn',
+            category: 'van_ban',
+            statusBadge: {
+              text: 'Tài liệu mới',
+              bgClass: 'bg-emerald-50',
+              textClass: 'text-emerald-800',
+              borderClass: 'border-emerald-200',
+            },
+            description: `Tải lên và đính kèm tệp ${data.fileName} (${data.fileSize}) phân loại "${data.category}". Nguồn: ${data.nguoiCungCap}.`,
+            docInfo: {
+              name: data.tenTaiLieu,
+              code: data.soKyHieu || `TL-${Date.now().toString().slice(-4)}`,
+              type: data.loaiTaiLieu,
+            },
+          });
+          setActiveTab('tai-lieu');
+        }}
+      />
+
+      {/* Modal Phân công xử lý */}
+      <PhanCongModal
+        isOpen={showPhanCongModal}
+        onClose={() => setShowPhanCongModal(false)}
+        onSubmit={(data: PhanCongSubmitData) => {
+          setShowPhanCongModal(false);
+          setCurrentDon((prev) => ({
+            ...prev,
+            canBoXuLy: data.canBo.name,
+            canBoTiepNhan: data.canBo.name,
+            chucVuCanBo: data.canBo.role,
+            donViXuLy: data.canBo.departmentName,
+          }));
+          showToast(`✓ Đã phân công thụ lý/xử lý đơn cho cán bộ ${data.canBo.name} (${data.canBo.role})`);
+          addHistoryLog({
+            title: 'Phân công cán bộ xử lý đơn',
+            actor: currentAccount?.name || 'Trần Trọng Giáp',
+            actorRole: 'Lãnh đạo đơn vị',
+            actorDept: data.canBo.departmentName,
+            category: 'tiep_nhan',
+            statusBadge: {
+              text: 'Phân công',
+              bgClass: 'bg-indigo-50',
+              textClass: 'text-indigo-800',
+              borderClass: 'border-indigo-200',
+            },
+            description: `Phân công hồ sơ cho cán bộ ${data.canBo.name} (${data.canBo.role}) tiếp tục xử lý. Ghi chú: ${data.ghiChu || 'Theo dõi và xử lý đúng hạn quy định.'}`,
+          });
+        }}
+        itemsToAssign={[
+          {
+            id: currentDon.id || currentDon.code,
+            code: currentDon.code,
+            luotNhanId: currentDon.luotNhanId || '',
+            nguoiNop: currentDon.nguoiNop || '',
+            loaiDon: currentDon.loaiDon || 'Đơn khiếu nại / tố cáo',
+            ngayNhan: currentDon.ngayNhan || '',
+            ngayChuyenDen: currentDon.ngayNhan || '',
+            donViHienTai: currentDon.donViXuLy || 'Phòng Tiếp công dân & Xử lý đơn',
+            donViTiepNhanId: 'tiep-dan',
+            donViTiepNhan: currentDon.donViXuLy || 'Phòng Tiếp công dân & Xử lý đơn',
+            hanXuLy: '15 ngày',
+            hanXuLyFull: '15 ngày kể từ ngày nhận',
+            trangThai: 'dang_xu_ly',
+            noiDungTomTat: currentDon.title || '',
+            canBoXuLy: currentDon.canBoXuLy || currentDon.canBoTiepNhan,
+            chucVuCanBo: currentDon.chucVuCanBo,
+          },
+        ]}
+        currentDepartmentId="tiep-dan"
+        departmentName={currentDon.donViXuLy || 'Phòng Tiếp công dân & Xử lý đơn'}
       />
     </div>
   );

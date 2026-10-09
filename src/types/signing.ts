@@ -65,6 +65,7 @@ export type DocumentType =
   | 'to_trinh_thu_ly'        // Tờ trình đề xuất thụ lý
   | 'quyet_dinh_thu_ly'      // Quyết định thụ lý tố cáo
   | 'thong_bao_khong_thu_ly' // Thông báo không thụ lý
+  | 'thong_bao'              // Thông báo hành chính
   | 'bien_ban_ban_giao'      // Biên bản bàn giao đơn
   | 'van_ban_tra_lai'        // Văn bản trả lại đơn
   | 'bao_cao_xac_minh'       // Báo cáo kết quả xác minh

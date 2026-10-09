@@ -11,6 +11,7 @@ export interface KhongThuLyModalProps {
     canCuPhapLy: string;
     nguoiNhan: string;
     nguoiKy: string;
+    action?: 'save' | 'trinh_ky';
   }) => void;
   donInfo?: {
     code?: string;
@@ -54,6 +55,12 @@ const LY_DO_KHONG_THU_LY = [
     chiTiet:
       'Hành vi bị tố cáo đã hết thời hiệu xử lý theo quy định của pháp luật hoặc người tố cáo có văn bản tự nguyện rút toàn bộ đơn tố cáo và vụ việc không có dấu hiệu gây thiệt hại đến lợi ích Nhà nước, quyền lợi hợp pháp của công dân.',
   },
+  {
+    id: 'ly_do_khac',
+    label: '5. Lý do khác (Tự nhập lý do cụ thể)',
+    canCu: 'Quy định pháp luật hiện hành',
+    chiTiet: '',
+  },
 ];
 
 export default function KhongThuLyModal({
@@ -80,21 +87,38 @@ export default function KhongThuLyModal({
   );
   const [nguoiKy, setNguoiKy] = useState<string>('Trần Văn Cường (Phó Chủ tịch UBND)');
   const [customDetail, setCustomDetail] = useState<string>('');
+  const [customLyDoKhac, setCustomLyDoKhac] = useState<string>('');
+  const [customCanCu, setCustomCanCu] = useState<string>('Quy định pháp luật hiện hành');
+  const [errorMsg, setErrorMsg] = useState<string>('');
 
   if (!isOpen) return null;
 
   const currentReason = LY_DO_KHONG_THU_LY.find((r) => r.id === selectedReasonId) || LY_DO_KHONG_THU_LY[0];
-  const finalChiTiet = customDetail || currentReason.chiTiet;
+  const isKhac = selectedReasonId === 'ly_do_khac';
+  const finalChiTiet = isKhac ? customLyDoKhac : (customDetail || currentReason.chiTiet);
+  const finalCanCu = isKhac ? (customCanCu.trim() || 'Quy định pháp luật hiện hành') : currentReason.canCu;
+  const finalLyDoChinh = isKhac
+    ? (customLyDoKhac.trim()
+        ? `Lý do khác: ${customLyDoKhac.trim().slice(0, 60)}${customLyDoKhac.trim().length > 60 ? '...' : ''}`
+        : 'Lý do khác')
+    : currentReason.label;
 
-  const handleConfirmSubmit = () => {
+  const handleConfirmSubmit = (action: 'save' | 'trinh_ky' = 'save') => {
+    if (isKhac && !customLyDoKhac.trim()) {
+      setErrorMsg('Vui lòng nhập lý do không thụ lý giải quyết đơn.');
+      setActiveTab('form');
+      return;
+    }
+
     onSubmit({
       soKyHieu,
       ngayBanHanh,
-      lyDoChinh: currentReason.label,
+      lyDoChinh: finalLyDoChinh,
       lyDoChiTiet: finalChiTiet,
-      canCuPhapLy: currentReason.canCu,
+      canCuPhapLy: finalCanCu,
       nguoiNhan: donInfo.nguoiNop || 'Công dân nộp đơn',
       nguoiKy,
+      action,
     });
   };
 
@@ -109,45 +133,55 @@ export default function KhongThuLyModal({
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-rose-100 text-rose-800 border border-rose-300">
-                  Hướng giải quyết: Không thụ lý
-                </span>
-                <span className="text-[11px] text-slate-500 font-mono">
-                  Căn cứ Điều 29 Luật Tố cáo 2018
-                </span>
+                {donInfo.code && (
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-200">
+                    {donInfo.code}
+                  </span>
+                )}
+                {donInfo.nguoiNop && (
+                  <span className="text-xs text-slate-500">
+                    Người nộp: <strong className="text-slate-800">{donInfo.nguoiNop}</strong>
+                  </span>
+                )}
               </div>
               <h2 className="text-base sm:text-lg font-bold text-slate-900 font-headline-md tracking-tight mt-0.5">
-                Ban hành Thông báo không thụ lý giải quyết đơn
+                Thông báo không thụ lý giải quyết đơn
               </h2>
             </div>
           </div>
-
-          <div className="flex items-center gap-2">
-            <div className="flex items-center p-0.5 bg-slate-100 rounded-xl border border-slate-200 text-xs font-semibold">
+          <div className="flex items-center gap-2.5">
+            {/* Tab switcher: Biểu mẫu vs Xem trước bản in */}
+            <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-xs font-semibold">
               <button
                 type="button"
                 onClick={() => setActiveTab('form')}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  activeTab === 'form' ? 'bg-white text-rose-700 shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                  activeTab === 'form'
+                    ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                1. Biểu mẫu &amp; Căn cứ
+                <span className="material-symbols-outlined text-[16px]">edit_document</span>
+                <span>Biểu mẫu</span>
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('preview')}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  activeTab === 'preview' ? 'bg-white text-rose-700 shadow-2xs font-bold' : 'text-slate-600 hover:text-slate-900'
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                  activeTab === 'preview'
+                    ? 'bg-white text-rose-900 shadow-2xs font-bold'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                2. Xem trước Thông báo
+                <span className="material-symbols-outlined text-[16px]">description</span>
+                <span>Xem trước bản in</span>
               </button>
             </div>
 
             <button
               type="button"
               onClick={onClose}
-              className="w-8 h-8 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
+              className="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer shrink-0"
               title="Đóng"
             >
               <span className="material-symbols-outlined text-[20px]">close</span>
@@ -159,110 +193,147 @@ export default function KhongThuLyModal({
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {activeTab === 'form' ? (
             <>
-              {/* TÓM TẮT HỒ SƠ ĐƠN */}
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {/* THÔNG TIN VĂN BẢN */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50/80 p-3.5 rounded-xl border border-slate-200">
                 <div>
-                  <span className="text-slate-400 block text-[10.5px]">Mã đơn / Lượt nhận:</span>
-                  <span className="font-bold text-slate-800 font-mono">{donInfo.code} ({donInfo.luotNhanId})</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[10.5px]">Người nộp đơn:</span>
-                  <span className="font-bold text-slate-800">{donInfo.nguoiNop}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[10.5px]">Loại đơn:</span>
-                  <span className="font-semibold text-rose-700">{donInfo.loaiDon || 'Đơn tố cáo'}</span>
-                </div>
-                <div className="sm:col-span-3 pt-1 border-t border-slate-200/80">
-                  <span className="text-slate-400 block text-[10.5px]">Nội dung đơn tóm tắt:</span>
-                  <span className="text-slate-700 italic">"{donInfo.noiDung}"</span>
-                </div>
-              </div>
-
-              {/* LÝ DO KHÔNG THỤ LÝ LUẬT ĐỊNH */}
-              <div className="space-y-2">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-rose-600 text-[18px]">gavel</span>
-                  <span>Chọn căn cứ &amp; Lý do không thụ lý (Theo Điều 29 Luật Tố cáo 2018):</span>
-                </label>
-
-                <div className="grid grid-cols-1 gap-2.5">
-                  {LY_DO_KHONG_THU_LY.map((item) => (
-                    <label
-                      key={item.id}
-                      className={`p-3 rounded-xl border-2 transition-all cursor-pointer flex items-start gap-3 ${
-                        selectedReasonId === item.id
-                          ? 'border-rose-500 bg-rose-50/50 shadow-xs'
-                          : 'border-slate-200 bg-white hover:border-slate-300'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="khong_thu_ly_reason"
-                        value={item.id}
-                        checked={selectedReasonId === item.id}
-                        onChange={() => {
-                          setSelectedReasonId(item.id);
-                          setCustomDetail(item.chiTiet);
-                        }}
-                        className="mt-1 text-rose-600 focus:ring-rose-500 w-4 h-4 cursor-pointer shrink-0"
-                      />
-                      <div className="space-y-1 flex-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-slate-900">{item.label}</span>
-                          <span className="text-[10.5px] font-bold px-2 py-0.5 rounded bg-rose-100 text-rose-800">
-                            {item.canCu}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-slate-600 leading-relaxed">{item.chiTiet}</p>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* CHI TIẾT NỘI DUNG VĂN BẢN THÔNG BÁO */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-2 border-t border-slate-200">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Số ký hiệu văn bản *</label>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    Số ký hiệu thông báo:
+                  </label>
                   <input
                     type="text"
                     value={soKyHieu}
                     onChange={(e) => setSoKyHieu(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-800 focus:bg-white focus:border-rose-500 focus:outline-none"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-rose-500 shadow-2xs font-medium"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Ngày ban hành *</label>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    Ngày ban hành:
+                  </label>
                   <input
                     type="text"
                     value={ngayBanHanh}
                     onChange={(e) => setNgayBanHanh(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:border-rose-500 focus:outline-none"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-rose-500 shadow-2xs font-medium"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Người ký văn bản *</label>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    Người ký / Chức vụ:
+                  </label>
                   <input
                     type="text"
                     value={nguoiKy}
                     onChange={(e) => setNguoiKy(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:border-rose-500 focus:outline-none"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-rose-500 shadow-2xs font-medium"
                   />
+                </div>
+              </div>
+
+              {/* LÝ DO KHÔNG THỤ LÝ LUẬT ĐỊNH DẠNG DROPDOWN */}
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-1.5 flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-rose-600 text-[18px]">gavel</span>
+                    <span>Chọn căn cứ &amp; Lý do không thụ lý (Theo Điều 29 Luật Tố cáo 2018):</span>
+                  </label>
+
+                  <div className="relative">
+                    <select
+                      value={selectedReasonId}
+                      onChange={(e) => {
+                        const newId = e.target.value;
+                        setSelectedReasonId(newId);
+                        setErrorMsg('');
+                        const matched = LY_DO_KHONG_THU_LY.find((item) => item.id === newId);
+                        if (matched && newId !== 'ly_do_khac') {
+                          setCustomDetail(matched.chiTiet);
+                        }
+                      }}
+                      className="w-full pl-3.5 pr-10 py-2.5 bg-white hover:bg-slate-50/80 border-2 border-slate-200 focus:border-rose-500 rounded-xl text-xs text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-rose-100 shadow-2xs cursor-pointer transition-all appearance-none"
+                    >
+                      {LY_DO_KHONG_THU_LY.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.label}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
+                      <span className="material-symbols-outlined text-[20px]">expand_more</span>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="sm:col-span-3">
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                    Nội dung giải thích lý do không thụ lý (Ghi rõ trong Thông báo gửi công dân):
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={finalChiTiet}
-                    onChange={(e) => setCustomDetail(e.target.value)}
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 leading-relaxed focus:bg-white focus:border-rose-500 focus:outline-none resize-none"
-                    placeholder="Nhập lý do chi tiết..."
-                  />
-                </div>
+                {/* NẾU CHỌN LÝ DO KHÁC: HIỂN THỊ TEXTAREA NHẬP LÝ DO */}
+                {isKhac ? (
+                  <div className="space-y-2.5 animate-fade-in p-4 rounded-xl border-2 border-rose-300 bg-rose-50/50 shadow-xs">
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                          <span className="material-symbols-outlined text-rose-600 text-[18px]">edit_note</span>
+                          <span>Nhập lý do không thụ lý:</span>
+                          <span className="text-rose-600 font-bold">*</span>
+                        </label>
+                        <span className="text-[11px] font-normal text-slate-400">
+                          {customLyDoKhac.length} ký tự
+                        </span>
+                      </div>
+                      <textarea
+                        rows={4}
+                        value={customLyDoKhac}
+                        onChange={(e) => {
+                          setCustomLyDoKhac(e.target.value);
+                          if (errorMsg) setErrorMsg('');
+                        }}
+                        placeholder="Nhập cụ thể lý do không thụ lý giải quyết đơn..."
+                        className={`w-full p-3 bg-white border-2 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none shadow-2xs transition-all leading-relaxed ${
+                          errorMsg
+                            ? 'border-rose-500 focus:border-rose-600 focus:ring-2 focus:ring-rose-200'
+                            : 'border-rose-200 focus:border-rose-500 focus:ring-2 focus:ring-rose-100'
+                        }`}
+                        autoFocus
+                      />
+                      {errorMsg && (
+                        <p className="text-[11px] text-rose-600 font-semibold mt-1 flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[14px]">error</span>
+                          <span>{errorMsg}</span>
+                        </p>
+                      )}
+                      <p className="text-[11px] text-slate-500 italic mt-1">
+                        * Nội dung lý do này sẽ được trích dẫn trực tiếp vào văn bản Thông báo không thụ lý gửi công dân và trình Lãnh đạo.
+                      </p>
+                    </div>
+
+                    <div className="pt-1 border-t border-rose-200/60">
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center gap-1">
+                        <span>Căn cứ pháp lý áp dụng (tùy chỉnh):</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={customCanCu}
+                        onChange={(e) => setCustomCanCu(e.target.value)}
+                        placeholder="Ví dụ: Quy định pháp luật liên quan, Nghị định..."
+                        className="w-full px-3 py-2 bg-white border border-rose-200 focus:border-rose-500 focus:ring-1 focus:ring-rose-200 rounded-lg text-xs text-slate-800 focus:outline-none shadow-2xs font-medium"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  /* NẾU CHỌN CĂN CỨ LUẬT ĐỊNH (1-4): HIỂN THỊ CĂN CỨ VÀ NỘI DUNG */
+                  <div className="p-3.5 rounded-xl border border-rose-200/80 bg-rose-50/50 space-y-1.5 animate-fade-in">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-rose-600 text-[16px]">verified</span>
+                        <span>Căn cứ pháp lý:</span>
+                      </span>
+                      <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-200">
+                        {currentReason.canCu}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-700 leading-relaxed text-justify">
+                      {finalChiTiet}
+                    </p>
+                  </div>
+                )}
               </div>
             </>
           ) : (
@@ -301,11 +372,11 @@ export default function KhongThuLyModal({
                   <p>
                     Sau khi kiểm tra điều kiện thụ lý tố cáo theo quy định tại Điều 24 và Điều 29 Luật Tố cáo năm 2018, Ủy ban nhân dân quận nhận thấy:
                   </p>
-                  <div className="p-3 bg-rose-50 border-l-4 border-rose-500 rounded-r-lg font-sans text-[11.5px] text-rose-950 font-medium">
-                    {finalChiTiet}
+                  <div className="p-3 bg-rose-50 border-l-4 border-rose-500 rounded-r-lg font-sans text-[11.5px] text-rose-950 font-medium whitespace-pre-wrap">
+                    {finalChiTiet || (isKhac ? '(Chưa nhập chi tiết lý do không thụ lý)' : currentReason.chiTiet)}
                   </div>
                   <p>
-                    Căn cứ <strong>{currentReason.canCu}</strong>, Ủy ban nhân dân quận thông báo: <strong>Không thụ lý giải quyết nội dung tố cáo nêu trên</strong>.
+                    Căn cứ <strong>{finalCanCu}</strong>, Ủy ban nhân dân quận thông báo: <strong>Không thụ lý giải quyết nội dung tố cáo nêu trên</strong>.
                   </p>
                   <p>
                     Ủy ban nhân dân quận thông báo để Ông/Bà được biết và thực hiện theo đúng quy định của pháp luật./.
@@ -334,22 +405,22 @@ export default function KhongThuLyModal({
         </div>
 
         {/* FOOTER */}
-        <div className="bg-slate-50 px-6 py-3.5 border-t border-slate-200 flex items-center justify-between gap-3 shrink-0 flex-wrap">
+        <div className="bg-slate-50 border-t border-slate-200 px-6 py-3.5 flex items-center justify-between shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-semibold cursor-pointer transition-colors"
+            className="px-4 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold cursor-pointer transition shadow-2xs"
           >
-            Hủy bỏ
+            Hủy
           </button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <button
               type="button"
               onClick={() => setActiveTab(activeTab === 'form' ? 'preview' : 'form')}
-              className="px-4 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold cursor-pointer transition-colors flex items-center gap-1.5"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold cursor-pointer transition shadow-2xs"
             >
-              <span className="material-symbols-outlined text-[16px]">
+              <span className="material-symbols-outlined text-[16px] text-slate-500">
                 {activeTab === 'form' ? 'visibility' : 'edit_note'}
               </span>
               <span>{activeTab === 'form' ? 'Xem trước bản in' : 'Quay lại biểu mẫu'}</span>
@@ -357,11 +428,22 @@ export default function KhongThuLyModal({
 
             <button
               type="button"
-              onClick={handleConfirmSubmit}
-              className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-200 cursor-pointer flex items-center gap-2 transition-all active:scale-95"
+              onClick={() => handleConfirmSubmit('save')}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold cursor-pointer transition shadow-2xs"
+              title="Lưu văn bản vào tab Hồ sơ & Văn bản (Trạng thái: Bản nháp)"
             >
-              <span className="material-symbols-outlined text-[18px]">check_circle</span>
-              <span>Ban hành Thông báo Không thụ lý ➔ Kết thúc đơn</span>
+              <span className="material-symbols-outlined text-[16px] text-slate-500">save</span>
+              <span>Lưu văn bản</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleConfirmSubmit('trinh_ky')}
+              className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-98 text-white text-xs font-bold shadow-md shadow-rose-200 cursor-pointer transition"
+              title="Lưu văn bản và chuyển sang luồng trình ký Lãnh đạo phê duyệt"
+            >
+              <span className="material-symbols-outlined text-[18px]">send</span>
+              <span>Trình ký Lãnh đạo</span>
             </button>
           </div>
         </div>

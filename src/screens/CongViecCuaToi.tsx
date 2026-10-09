@@ -534,8 +534,8 @@ export default function CongViecCuaToi({
             timeReceived: ad.ngayNhan || 'Vừa xong',
             priority: 'normal',
             deadlineType: 'today',
-            deadlineText: 'Hôm nay - 17:00',
-            deadlineFull: 'Hôm nay - 17:00',
+            deadlineText: 'Hôm nay',
+            deadlineFull: 'Hôm nay',
             column: isChoTiepNhan ? 'action_required' : 'processing',
             nextAction: isChoTiepNhan
               ? 'Kiểm tra kết quả AI và xác nhận tiếp nhận giải quyết'
@@ -2373,9 +2373,6 @@ export default function CongViecCuaToi({
                   CẦN XỬ LÝ
                 </h2>
               </div>
-              <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white font-bold text-[11px] font-label-technical">
-                {String(columnItems.action_required.length).padStart(2, '0')}
-              </span>
             </div>
 
             <p className="text-[10.5px] text-rose-800/80 px-1 -mt-1 font-medium">
@@ -2415,9 +2412,7 @@ export default function CongViecCuaToi({
                   ĐANG THỰC HIỆN
                 </h2>
               </div>
-              <span className="px-2 py-0.5 rounded-full bg-amber-600 text-white font-bold text-[11px] font-label-technical">
-                {String(columnItems.processing.length).padStart(2, '0')}
-              </span>
+
             </div>
 
             <p className="text-[10.5px] text-amber-800/80 px-1 -mt-1 font-medium">
@@ -2457,9 +2452,6 @@ export default function CongViecCuaToi({
                   ĐANG CHỜ
                 </h2>
               </div>
-              <span className="px-2 py-0.5 rounded-full bg-sky-700 text-white font-bold text-[11px] font-label-technical">
-                {String(columnItems.waiting.length).padStart(2, '0')}
-              </span>
             </div>
 
             <p className="text-[10.5px] text-sky-800/80 px-1 -mt-1 font-medium">
@@ -2499,9 +2491,7 @@ export default function CongViecCuaToi({
                   HOÀN TẤT / BÀN GIAO
                 </h2>
               </div>
-              <span className="px-2 py-0.5 rounded-full bg-emerald-700 text-white font-bold text-[11px] font-label-technical">
-                {String(columnItems.completed.length + columnItems.handed_over.length).padStart(2, '0')}
-              </span>
+
             </div>
 
             <p className="text-[10.5px] text-emerald-800/80 px-1 -mt-1 font-medium">

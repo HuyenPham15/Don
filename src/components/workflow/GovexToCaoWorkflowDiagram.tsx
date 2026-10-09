@@ -1091,9 +1091,7 @@ export default function GovexToCaoWorkflowDiagram({
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-label-technical">
-                Bước đang chọn:
-              </span>
+
               <h3 className="text-sm font-bold text-slate-900 tracking-tight font-headline-md">
                 {selectedNode.name}
               </h3>
@@ -1132,13 +1130,9 @@ export default function GovexToCaoWorkflowDiagram({
             {/* CỘT TRÁI (7/12): KẾT QUẢ CUỐI CÙNG CỦA STEP */}
             <div className="lg:col-span-7 bg-gradient-to-br from-blue-50/40 via-sky-50/20 to-white rounded-xl border border-blue-200/80 p-3 space-y-2 shadow-2xs">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-blue-900 font-bold text-xs uppercase tracking-wider font-label-technical">
-                  <span className="material-symbols-outlined text-[16px] text-blue-700">task_alt</span>
-                  <span>1. KẾT QUẢ CUỐI CÙNG CỦA STEP NÀY</span>
+                <div className="flex items-center gap-1.5 text-blue-900 font-bold text-xs tracking-wider">
+                  <span>1. Văn bản/Biểu mẫu</span>
                 </div>
-                <span className="text-[9.5px] font-semibold text-blue-700 bg-blue-100/70 px-2 py-0.5 rounded-full">
-                  Sản phẩm đầu ra
-                </span>
               </div>
 
               {/* Văn bản / Biểu mẫu đầu ra ban hành */}
