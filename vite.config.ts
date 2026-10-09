@@ -19,6 +19,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       tailwindcss(),
+      backendApiPlugin(),
       figmaSiteConfiguration(siteConfiguration),
       figmaErrorOverlayReplay(),
       figmaReactRefreshBoundaryFallback(),
@@ -27,6 +28,7 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
+        '@server': path.resolve(__dirname, './server/src'),
       },
     },
     server: {
@@ -46,6 +48,28 @@ export default defineConfig(({ mode }) => {
     },
   }
 })
+
+/** Integrates Express Backend API into Vite dev server middlewares */
+function backendApiPlugin(): Plugin {
+  return {
+    name: 'backend-api-plugin',
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        if (req.url && (req.url.startsWith('/api') || req.url.startsWith('/api/'))) {
+          try {
+            const { app } = await import('./server/src/app');
+            return app(req as any, res as any, next);
+          } catch (err) {
+            console.error('[Backend API Error]', err);
+            next(err);
+          }
+        } else {
+          next();
+        }
+      });
+    },
+  };
+}
 
 type FigmaSiteConfiguration = {
   title?: string

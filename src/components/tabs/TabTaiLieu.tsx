@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DonDetail } from '../../types';
 import { VanBanXacMinhItem } from '../modals/XacMinhVaDeXuatModal';
+import { SigningDocument, SigningStatus } from '../../types/signing';
 
 export interface TabTaiLieuProps {
   currentDon: DonDetail;
@@ -26,6 +27,8 @@ export interface TabTaiLieuProps {
   onReturnToXacMinh?: () => void;
   sharedVanBanList?: VanBanXacMinhItem[];
   onUpdateSharedVanBanList?: (list: VanBanXacMinhItem[] | ((prev: VanBanXacMinhItem[]) => VanBanXacMinhItem[])) => void;
+  signingDocuments?: SigningDocument[];
+  onOpenBaoCaoDeXuat?: () => void;
 }
 
 export interface DocItem {
@@ -43,7 +46,7 @@ export interface DocItem {
   previewExcerpt: string;
   isProcessDoc?: boolean;
   isEditable?: boolean;
-  loaiVanBan?: 'giay_moi' | 'bien_ban' | 'cong_van' | 'quyet_dinh' | 'thong_bao' | 'khac';
+  loaiVanBan?: 'giay_moi' | 'bien_ban' | 'cong_van' | 'quyet_dinh' | 'thong_bao' | 'khac' | 'bao_cao_de_xuat' | 'bao_cao_xac_minh';
   nguoiNhan?: string;
   diaDiem?: string;
   thoiGianHen?: string;
@@ -51,6 +54,7 @@ export interface DocItem {
   noiDungChiTiet?: string;
   trangThai?: 'du_thao' | 'da_ban_hanh' | 'da_dinh_kem';
   fromXacMinh?: boolean;
+  signingStatus?: SigningStatus;
 }
 
 export default function TabTaiLieu({
@@ -61,6 +65,8 @@ export default function TabTaiLieu({
   onReturnToXacMinh,
   sharedVanBanList,
   onUpdateSharedVanBanList,
+  signingDocuments,
+  onOpenBaoCaoDeXuat,
 }: TabTaiLieuProps) {
   const isToGiac = currentDon.code.startsWith('Đ-2026') || currentDon.nguoiNop === 'Nguyễn Văn A';
 
@@ -307,7 +313,7 @@ export default function TabTaiLieu({
   // Các trường form trong Live Direct Document Editor
   const [editSoHieu, setEditSoHieu] = useState('');
   const [editTenVanBan, setEditTenVanBan] = useState('');
-  const [editLoaiVanBan, setEditLoaiVanBan] = useState<'giay_moi' | 'bien_ban' | 'cong_van' | 'quyet_dinh' | 'thong_bao' | 'khac'>('giay_moi');
+  const [editLoaiVanBan, setEditLoaiVanBan] = useState<'giay_moi' | 'bien_ban' | 'cong_van' | 'quyet_dinh' | 'thong_bao' | 'khac' | 'bao_cao_de_xuat' | 'bao_cao_xac_minh'>('giay_moi');
   const [editCategory, setEditCategory] = useState('');
   const [editNgayLap, setEditNgayLap] = useState('');
   const [editCoQuanCapTren, setEditCoQuanCapTren] = useState('ỦY BAN NHÂN DÂN QUẬN CẦU GIẤY');
@@ -625,6 +631,79 @@ export default function TabTaiLieu({
       });
     }
   }, [sharedVanBanList]);
+
+  // Đồng bộ văn bản trình ký / Báo cáo đề xuất (SigningDocument) thuộc đơn này vào Hồ sơ & Văn bản
+  useEffect(() => {
+    if (!signingDocuments || signingDocuments.length === 0) return;
+
+    // Lọc các văn bản thuộc đơn đang mở
+    const relevantSigningDocs = signingDocuments.filter(
+      (sd) =>
+        sd.hoSoCode === currentDon.code ||
+        sd.luotNhanId === currentDon.luotNhanId ||
+        (currentDon.id && sd.hoSoCode === currentDon.id)
+    );
+
+    if (relevantSigningDocs.length === 0) return;
+
+    setDocuments((prev) => {
+      let nextDocs = [...prev];
+      let hasChanges = false;
+
+      relevantSigningDocs.forEach((sd) => {
+        const item: DocItem = {
+          id: sd.id,
+          name: `${sd.tenVanBan.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
+          category:
+            sd.loaiVanBanLabel ||
+            (sd.loaiVanBan === 'bao_cao_de_xuat'
+              ? 'Báo cáo đề xuất hướng xử lý'
+              : sd.loaiVanBan === 'bao_cao_xac_minh'
+              ? 'Báo cáo xác minh'
+              : 'Văn bản trình ký'),
+          soHieu: sd.soKyHieu,
+          size: sd.tepDinhKem?.[0]?.dungLuong || '340 KB',
+          pages: 2,
+          uploadDate: sd.ngayTao,
+          signer: `${sd.nguoiLap} (${sd.donViNguoiLap || 'Cán bộ thụ lý'})`,
+          coQuanBanHanh: sd.donViNguoiLap || 'Phòng Tiếp công dân & Xử lý đơn',
+          stepBelongsTo: 'Bước 2: Xác minh thông tin & Đề xuất',
+          ocrStatus: 'Hoàn tất',
+          isProcessDoc: true,
+          isEditable: true,
+          loaiVanBan: (sd.loaiVanBan as any) || 'bao_cao_de_xuat',
+          trichYeu: sd.trichYeu,
+          noiDungChiTiet: sd.noiDungChiTiet,
+          previewExcerpt: sd.noiDungChiTiet,
+          trangThai: sd.status === 'da_ky' || sd.status === 'hoan_tat' ? 'da_ban_hanh' : 'du_thao',
+          fromXacMinh: true,
+          signingStatus: sd.status,
+        };
+
+        const existingIdx = nextDocs.findIndex((d) => d.id === sd.id || (d.soHieu && d.soHieu === sd.soKyHieu));
+        if (existingIdx >= 0) {
+          // Cập nhật trạng thái và nội dung nếu đã tồn tại
+          if (
+            nextDocs[existingIdx].signingStatus !== sd.status ||
+            nextDocs[existingIdx].soHieu !== sd.soKyHieu ||
+            nextDocs[existingIdx].previewExcerpt !== sd.noiDungChiTiet
+          ) {
+            nextDocs[existingIdx] = {
+              ...nextDocs[existingIdx],
+              ...item,
+            };
+            hasChanges = true;
+          }
+        } else {
+          // Thêm mới lên đầu danh sách văn bản
+          nextDocs = [item, ...nextDocs];
+          hasChanges = true;
+        }
+      });
+
+      return hasChanges ? nextDocs : prev;
+    });
+  }, [signingDocuments, currentDon.code, currentDon.luotNhanId, currentDon.id]);
 
   // Tự động nhận prop initialEditingDoc từ Modal Xác minh
   useEffect(() => {
@@ -1553,6 +1632,38 @@ export default function TabTaiLieu({
                                   Xác minh
                                 </span>
                               )}
+                              {doc.signingStatus && (
+                                <span
+                                  className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9.5px] font-bold border ${
+                                    doc.signingStatus === 'nhap'
+                                      ? 'bg-slate-100 text-slate-700 border-slate-300'
+                                      : doc.signingStatus === 'yeu_cau_chinh_sua'
+                                      ? 'bg-rose-100 text-rose-800 border-rose-300'
+                                      : doc.signingStatus === 'da_ky' || doc.signingStatus === 'hoan_tat'
+                                      ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                      : 'bg-amber-100 text-amber-800 border-amber-300'
+                                  }`}
+                                >
+                                  <span className="material-symbols-outlined text-[11px]">
+                                    {doc.signingStatus === 'nhap'
+                                      ? 'edit_note'
+                                      : doc.signingStatus === 'yeu_cau_chinh_sua'
+                                      ? 'replay'
+                                      : doc.signingStatus === 'da_ky' || doc.signingStatus === 'hoan_tat'
+                                      ? 'verified'
+                                      : 'pending_actions'}
+                                  </span>
+                                  <span>
+                                    {doc.signingStatus === 'nhap'
+                                      ? 'Bản nháp'
+                                      : doc.signingStatus === 'yeu_cau_chinh_sua'
+                                      ? 'Cần sửa đổi'
+                                      : doc.signingStatus === 'da_ky' || doc.signingStatus === 'hoan_tat'
+                                      ? 'Đã ký duyệt'
+                                      : 'Chờ ký duyệt'}
+                                  </span>
+                                </span>
+                              )}
                             </div>
 
                             <div className="flex items-center gap-2 mt-0.5 flex-wrap text-[10.5px]">
@@ -1614,16 +1725,28 @@ export default function TabTaiLieu({
 
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-1">
-                          {/* NÚT CHỈNH SỬA TRỰC TIẾP */}
-                          <button
-                            type="button"
-                            onClick={() => handleStartEdit(doc)}
-                            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-[#004ac6] border border-blue-200 text-[11px] font-bold transition-all cursor-pointer shadow-2xs"
-                            title="Mở trình soạn thảo và chỉnh sửa trực tiếp văn bản này trên trang A4"
-                          >
-                            <span className="material-symbols-outlined text-[14px]">edit_document</span>
-                            <span>Sửa trực tiếp</span>
-                          </button>
+                          {/* NÚT CHỈNH SỬA TRỰC TIẾP HOẶC MỞ LẠI BÁO CÁO ĐỀ XUẤT */}
+                          {doc.loaiVanBan === 'bao_cao_de_xuat' && onOpenBaoCaoDeXuat ? (
+                            <button
+                              type="button"
+                              onClick={() => onOpenBaoCaoDeXuat()}
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-[#004ac6] border border-blue-200 text-[11px] font-bold transition-all cursor-pointer shadow-2xs"
+                              title="Mở lại biểu mẫu Báo cáo đề xuất hướng xử lý đơn"
+                            >
+                              <span className="material-symbols-outlined text-[14px]">rate_review</span>
+                              <span>Sửa báo cáo</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleStartEdit(doc)}
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-[#004ac6] border border-blue-200 text-[11px] font-bold transition-all cursor-pointer shadow-2xs"
+                              title="Mở trình soạn thảo và chỉnh sửa trực tiếp văn bản này trên trang A4"
+                            >
+                              <span className="material-symbols-outlined text-[14px]">edit_document</span>
+                              <span>Sửa trực tiếp</span>
+                            </button>
+                          )}
 
                           <button
                             type="button"

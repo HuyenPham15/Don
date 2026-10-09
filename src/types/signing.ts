@@ -61,6 +61,7 @@ export interface DetailedAuditLog {
 }
 
 export type DocumentType =
+  | 'bao_cao_de_xuat'       // Báo cáo đề xuất hướng xử lý đơn
   | 'to_trinh_thu_ly'        // Tờ trình đề xuất thụ lý
   | 'quyet_dinh_thu_ly'      // Quyết định thụ lý tố cáo
   | 'thong_bao_khong_thu_ly' // Thông báo không thụ lý

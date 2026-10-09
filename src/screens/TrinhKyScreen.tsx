@@ -331,7 +331,9 @@ export default function TrinhKyScreen({
       tenVanBan: newTenVanBan,
       loaiVanBan: newLoaiVanBan,
       loaiVanBanLabel:
-        newLoaiVanBan === 'to_trinh_thu_ly'
+        newLoaiVanBan === 'bao_cao_de_xuat'
+          ? 'Báo cáo đề xuất hướng xử lý'
+          : newLoaiVanBan === 'to_trinh_thu_ly'
           ? 'Tờ trình đề xuất thụ lý'
           : newLoaiVanBan === 'quyet_dinh_thu_ly'
           ? 'Quyết định thụ lý tố cáo'
@@ -1172,6 +1174,7 @@ export default function TrinhKyScreen({
                     onChange={(e) => setNewLoaiVanBan(e.target.value as DocumentType)}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-[#004ac6] cursor-pointer"
                   >
+                    <option value="bao_cao_de_xuat">Báo cáo đề xuất hướng xử lý</option>
                     <option value="to_trinh_thu_ly">Tờ trình đề xuất thụ lý</option>
                     <option value="quyet_dinh_thu_ly">Quyết định thụ lý tố cáo</option>
                     <option value="thong_bao_khong_thu_ly">Thông báo không thụ lý</option>

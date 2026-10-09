@@ -25,6 +25,7 @@ export interface XacMinhVaDeXuatModalProps {
   onClose: () => void;
   onSelectHuongXuLy: (huong: HuongGiaiQuyetType | 'quy_trinh') => void;
   onNav?: (screen: Screen) => void;
+  onOpenBaoCaoXacMinh?: () => void;
   sharedVanBanList?: VanBanXacMinhItem[];
   onUpdateSharedVanBanList?: (list: VanBanXacMinhItem[] | ((prev: VanBanXacMinhItem[]) => VanBanXacMinhItem[])) => void;
   onOpenDocInTab?: (
@@ -65,6 +66,7 @@ export default function XacMinhVaDeXuatModal({
   onClose,
   onSelectHuongXuLy,
   onNav,
+  onOpenBaoCaoXacMinh,
   onOpenDocInTab,
   sharedVanBanList,
   onUpdateSharedVanBanList,
@@ -886,6 +888,21 @@ export default function XacMinhVaDeXuatModal({
               <span className="material-symbols-outlined text-[16px]">account_tree</span>
               <span>Sơ đồ Quy trình</span>
             </button>
+
+            {onOpenBaoCaoXacMinh && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenBaoCaoXacMinh();
+                }}
+                className="px-4 py-2 rounded-xl border border-blue-300 bg-blue-50/90 hover:bg-blue-100 text-[#004ac6] text-xs font-bold cursor-pointer transition-colors flex items-center gap-1.5 shadow-2xs"
+                title="Tạo Báo cáo đề xuất hướng xử lý Đơn và chuyển sang quy trình trình ký"
+              >
+                <span className="material-symbols-outlined text-[16px]">rate_review</span>
+                <span>Tạo báo cáo đề xuất</span>
+              </button>
+            )}
 
             <button
               type="button"

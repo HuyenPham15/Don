@@ -1,0 +1,197 @@
+// src/constants/baoCaoXacMinhData.ts
+import { BaoCaoXacMinhData } from '../types/baoCaoXacMinh';
+
+export const INITIAL_BAO_CAO_XAC_MINH: BaoCaoXacMinhData = {
+  id: 'BCXM-2026-0044',
+  maHoSo: 'Đ-2026-00125',
+  tieuDeHoSo: 'Tố giác dấu hiệu lừa đảo huy động vốn phân lô chiếm đoạt tài sản (Dự án Khu đô thị Y)',
+  soBaoCao: '08/BC-CAX-XM',
+  ngayLap: '18/09/2026',
+  nguoiLap: 'Thượng úy Nguyễn Minh Anh',
+  chucVuNguoiLap: 'Cán bộ Công an cấp xã',
+  donViLap: 'Công an xã Tiên Dương / Công an cấp xã',
+  trangThai: 'du_thao',
+
+  // 1. Tự động tổng hợp từ hồ sơ tiếp nhận
+  thoiGianTiepNhan: '16/09/2026 10:30',
+  nguonTinChiTiet: 'Công dân Nguyễn Văn A trực tiếp đến Công an xã nộp đơn tố giác ông Trần Văn B (Giám đốc Công ty Cổ phần X) có hành vi gian dối trong việc huy động vốn đầu tư dự án không có thật, nhận số tiền 3.500.000.000 VNĐ rồi né tránh không thực hiện cam kết.',
+  thoiGianDiaDiemXayRa: 'Từ tháng 03/2024 đến tháng 08/2026 tại địa bàn xã Tiên Dương và các khu vực lân cận.',
+  danhSachNguoiLienQuan: [
+    {
+      id: 'NLQ-01',
+      hoTen: 'Nguyễn Văn A',
+      vaiTro: 'nguoi_to_giac',
+      cccd: '001088012345',
+      sdt: '0983 123 456',
+      diaChi: 'Thôn Trung, xã Tiên Dương, huyện Đông Anh, TP Hà Nội',
+      ghiChu: 'Người trực tiếp nộp đơn và cung cấp tài liệu gốc',
+    },
+    {
+      id: 'NLQ-02',
+      hoTen: 'Trần Văn B',
+      vaiTro: 'nguoi_bi_to_giac',
+      cccd: '001079009876',
+      sdt: '0912 345 678',
+      diaChi: 'Số 45 phố Nguyễn Thị Định, phường Trung Hòa, Cầu Giấy, Hà Nội',
+      ghiChu: 'Giám đốc Công ty Cổ phần X, đối tượng bị tố giác nhận tiền',
+    },
+    {
+      id: 'NLQ-03',
+      hoTen: 'Lê Quang Đ',
+      vaiTro: 'nguoi_lien_quan',
+      cccd: '001082005432',
+      sdt: '0904 555 888',
+      diaChi: 'Hà Nội',
+      ghiChu: 'Người đại diện theo ủy quyền sơ bộ của bên công ty',
+    },
+  ],
+
+  // 2. Dữ liệu hoạt động kiểm tra, xác minh và kết quả tương ứng
+  danhSachHoatDong: [
+    {
+      id: 'HD-01',
+      tenHoatDong: 'Lấy lời khai người tố giác (Nguyễn Văn A)',
+      loaiHoatDong: 'lay_loi_khai',
+      ngayThucHien: '16/09/2026 14:00',
+      canBoThucHien: 'Thượng úy Nguyễn Minh Anh',
+      diaDiem: 'Phòng làm việc Công an cấp xã',
+      moTaChiTiet: 'Tiến hành lấy lời khai chi tiết về quá trình quen biết, thỏa thuận góp vốn, hình thức chuyển tiền và các lần đòi tiền bất thành.',
+      ketQuaTuongUng: 'Người tố giác cam đoan nội dung tố giác là đúng sự thật; đã chuyển tổng cộng 3.5 tỷ VNĐ qua 2 đợt vào tài khoản ngân hàng của Trần Văn B; cung cấp đầy đủ sao kê có đóng dấu ngân hàng.',
+      taiLieuDinhKemId: 'TL-01',
+      tenTaiLieuDinhKem: 'Biên bản ghi lời khai người tố giác số 01/BB-LK',
+      daLienKetBaoCao: true,
+    },
+    {
+      id: 'HD-02',
+      tenHoatDong: 'Xác minh thực tế tại địa điểm giới thiệu dự án đất nền',
+      loaiHoatDong: 'kham_nghiem_kiem_tra',
+      ngayThucHien: '17/09/2026 09:00',
+      canBoThucHien: 'Thượng úy Nguyễn Minh Anh, Đại úy Trần Tuấn Hưng',
+      diaDiem: 'Khu đất nông nghiệp giáp ranh thôn Đông, xã Tiên Dương',
+      moTaChiTiet: 'Kiểm tra hiện trường thực tế khu đất mà ông Trần Văn B quảng cáo là "Dự án Khu đô thị Y phân lô bán nền".',
+      ketQuaTuongUng: 'Khu đất hiện trạng là đất nông nghiệp trồng cây hàng năm, chưa có bất kỳ quy hoạch phân lô nào được cấp có thẩm quyền phê duyệt; có biển cảnh báo của UBND xã về việc không giao dịch mua bán.',
+      taiLieuDinhKemId: 'TL-02',
+      tenTaiLieuDinhKem: 'Biên bản kiểm tra thực địa & 04 ảnh chụp hiện trường',
+      daLienKetBaoCao: true,
+    },
+    {
+      id: 'HD-03',
+      tenHoatDong: 'Tra soát dữ liệu cư trú và nhân thân đối tượng bị tố giác',
+      loaiHoatDong: 'tra_soat_xac_minh',
+      ngayThucHien: '17/09/2026 15:30',
+      canBoThucHien: 'Thượng úy Nguyễn Minh Anh',
+      diaDiem: 'Hệ thống CSDL Quốc gia về dân cư',
+      moTaChiTiet: 'Tra cứu thông tin nhân thân của Trần Văn B, kiểm tra tình trạng cư trú thực tế tại địa phương.',
+      ketQuaTuongUng: 'Đối tượng Trần Văn B có đăng ký thường trú tại quận Cầu Giấy, hiện không có mặt tại nơi đăng ký doanh nghiệp; Công an phường Trung Hòa xác nhận công ty đã đóng cửa văn phòng từ tháng 07/2026.',
+      taiLieuDinhKemId: 'TL-03',
+      tenTaiLieuDinhKem: 'Phiếu tra cứu thông tin nhân thân & Công văn trao đổi xác minh số 12/CV-CAX',
+      daLienKetBaoCao: true,
+    },
+    {
+      id: 'HD-04',
+      tenHoatDong: 'Tiếp nhận, kiểm đếm và bảo quản tài liệu chứng cứ giao nộp',
+      loaiHoatDong: 'thu_giu_niem_phong',
+      ngayThucHien: '18/09/2026 08:30',
+      canBoThucHien: 'Thượng úy Nguyễn Minh Anh',
+      diaDiem: 'Bộ phận Tiếp nhận Công an cấp xã',
+      moTaChiTiet: 'Lập biên bản niêm phong hồ sơ hợp đồng góp vốn bản chính và chứng từ giao dịch ngân hàng.',
+      ketQuaTuongUng: 'Đã bảo quản nguyên trạng 01 hợp đồng góp vốn gốc số 14/2024, 02 chứng từ ủy nhiệm chi ngân hàng và USB chứa 03 tập tin ghi âm đối thoại.',
+      taiLieuDinhKemId: 'TL-04',
+      tenTaiLieuDinhKem: 'Biên bản giao nhận và niêm phong tài liệu đồ vật số 05/BB-GN',
+      daLienKetBaoCao: true,
+    },
+  ],
+
+  // 3. Danh mục tài liệu làm căn cứ
+  danhMucTaiLieuCanCu: [
+    {
+      id: 'TL-01',
+      maTaiLieu: 'DOC-XM-01',
+      tenTaiLieu: 'Biên bản ghi lời khai người tố giác (Nguyễn Văn A)',
+      loaiTaiLieu: 'loi_khai',
+      ngayNhanLap: '16/09/2026',
+      nguoiCungCap: 'Nguyễn Văn A',
+      tinhTrang: 'ban_chinh',
+      trichDanChungMinh: 'Xác nhận quá trình thỏa thuận và giao nhận số tiền 3.500.000.000 VNĐ cho ông Trần Văn B.',
+    },
+    {
+      id: 'TL-02',
+      maTaiLieu: 'DOC-XM-02',
+      tenTaiLieu: 'Biên bản kiểm tra thực địa kèm 04 ảnh chụp khu đất',
+      loaiTaiLieu: 'bien_ban',
+      ngayNhanLap: '17/09/2026',
+      nguoiCungCap: 'Tổ công tác Công an xã',
+      tinhTrang: 'ban_chinh',
+      trichDanChungMinh: 'Chứng minh khu đất không có dự án nhà ở, hiện trạng đất nông nghiệp, dấu hiệu đưa thông tin sai sự thật.',
+    },
+    {
+      id: 'TL-03',
+      maTaiLieu: 'DOC-XM-03',
+      tenTaiLieu: 'Công văn phúc đáp xác minh của Công an phường Trung Hòa',
+      loaiTaiLieu: 'ket_qua_tra_cuu',
+      ngayNhanLap: '17/09/2026',
+      nguoiCungCap: 'Công an phường Trung Hòa',
+      tinhTrang: 'file_so_hoa',
+      trichDanChungMinh: 'Công ty Cổ phần X không còn hoạt động tại trụ sở kinh doanh, đối tượng có biểu hiện bỏ trốn khỏi nơi cư trú.',
+    },
+    {
+      id: 'TL-04',
+      maTaiLieu: 'DOC-XM-04',
+      tenTaiLieu: 'Hợp đồng góp vốn gốc số 14/2024 & Sao kê ngân hàng 3.5 tỷ VNĐ',
+      loaiTaiLieu: 'tai_lieu_thu_giu',
+      ngayNhanLap: '18/09/2026',
+      nguoiCungCap: 'Nguyễn Văn A',
+      tinhTrang: 'ban_chinh',
+      trichDanChungMinh: 'Căn cứ vật chất thể hiện giao dịch tài chính và chữ ký, con dấu của pháp nhân liên quan.',
+    },
+  ],
+
+  // 4. Nội dung báo cáo do cán bộ kiểm tra, biên tập và xác nhận
+  noiDungTomTat: 'Báo cáo kết quả kiểm tra, xác minh ban đầu đối với nguồn tin tố giác của công dân Nguyễn Văn A về hành vi huy động vốn có dấu hiệu lừa đảo chiếm đoạt tài sản xảy ra tại địa bàn xã.',
+  dienBienSuViecXacMinh: 'Qua công tác nắm tình hình và các biện pháp kiểm tra ban đầu theo quy định tại Khoản 3 Điều 146 BLTTHS và TTLT 01/2021, Công an cấp xã xác định: Vào tháng 03/2024, ông Trần Văn B giới thiệu với ông Nguyễn Văn A về dự án phân lô bán nền tại khu đất thôn Đông (thực tế là đất nông nghiệp). Ông B đưa ra bản vẽ tự lập, cam kết chuyển đổi mục đích sử dụng đất trong vòng 6 tháng và nhận 3.5 tỷ đồng tiền đặt cọc góp vốn. Sau khi nhận tiền, ông B không thực hiện thủ tục nào, trả mặt bằng văn phòng và cắt đứt liên lạc với ông A.',
+  ketQuaLamViecCacBen: 'Đã làm việc và ghi nhận đầy đủ lời khai của người tố giác. Đã tiến hành xác minh tại nơi cư trú và trụ sở công ty của người bị tố giác (Trần Văn B) nhưng đối tượng hiện vắng mặt tại địa phương, có dấu hiệu tẩu tán tài sản.',
+  ketQuaKiemTraVatChungDauVet: 'Tài liệu hợp đồng và sao kê giao dịch tài chính đã được bảo quản, niêm phong theo quy định. Thực địa khu đất không có công trình xây dựng hay cơ sở hạ tầng như thỏa thuận hợp đồng.',
+  danhGiaTinhCoCanCu: 'Nguồn tin tố giác của công dân Nguyễn Văn A có căn cứ, có tài liệu chứng cứ kèm theo. Vụ việc có dấu hiệu của tội phạm hình sự (dấu hiệu tội Lừa đảo chiếm đoạt tài sản theo Điều 174 BLHS với số tiền trên 500 triệu đồng). Vụ việc vượt quá thẩm quyền xử lý của Công an cấp xã.',
+  khoKhanVuongMac: 'Đối tượng bị tố giác không còn cư trú tại địa chỉ thường trú, cần áp dụng các biện pháp nghiệp vụ của Cơ quan Cảnh sát điều tra cấp huyện để xác minh truy tìm.',
+
+  // 5. Cấu hình phân tách: Tách bạch báo cáo xác minh với báo cáo đề xuất hướng xử lý
+  choPhepKemDeXuat: false, // Thể hiện cấu hình tách bạch rõ ràng theo nguyên tắc nghiệp vụ!
+  yKienDeXuatSoBo: 'Đề xuất Trưởng Công an xã phê duyệt báo cáo xác minh, sau đó chuyển sang Bước 7 để lập Báo cáo đề xuất chuyển toàn bộ hồ sơ, vật chứng đến Cơ quan CSĐT Công an huyện Đông Anh thụ lý theo thẩm quyền.',
+
+  dieuKienTrinh: {
+    daDuKetQuaXacMinh: true,
+    daDinhKemTaiLieuCanCu: true,
+    daKyXacNhanNoiDung: true,
+  },
+
+  nguoiKiemTra: 'Đại úy Trần Tuấn Hưng',
+  chucVuNguoiKiemTra: 'Phó Trưởng Công an xã phụ trách hình sự',
+  ngayKiemTra: '18/09/2026 11:00',
+  yKienKiemTra: 'Hồ sơ xác minh ban đầu cơ bản đầy đủ, các tài liệu chứng cứ được thu thập đúng trình tự quy định của TTLT 01/2021. Đủ điều kiện trình Trưởng Công an xã xem xét.',
+
+  nguoiPheDuyet: 'Trung tá Lê Hồng Hải',
+  chucVuNguoiPheDuyet: 'Trưởng Công an cấp xã',
+  ngayPheDuyet: '',
+  yKienPheDuyet: '',
+
+  lichSuChinhSua: [
+    {
+      id: 'LS-01',
+      phienBan: 'v1.0 (Khởi tạo)',
+      thoiDiem: '17/09/2026 16:45',
+      nguoiThucHien: 'Thượng úy Nguyễn Minh Anh',
+      chucVu: 'Cán bộ thụ lý',
+      hanhDong: 'Khởi tạo báo cáo xác minh',
+      noiDungThayDoi: 'Hệ thống tự động tổng hợp thông tin người tố giác, đối tượng bị tố giác và 02 hoạt động xác minh đầu tiên từ hồ sơ.',
+    },
+    {
+      id: 'LS-02',
+      phienBan: 'v1.1 (Cập nhật)',
+      thoiDiem: '18/09/2026 09:30',
+      nguoiThucHien: 'Thượng úy Nguyễn Minh Anh',
+      chucVu: 'Cán bộ thụ lý',
+      hanhDong: 'Bổ sung kết quả niêm phong tài liệu',
+      noiDungThayDoi: 'Bổ sung hoạt động HD-04 và tài liệu TL-04 (Hợp đồng góp vốn gốc và USB ghi âm); hoàn thiện phần đánh giá tính có căn cứ.',
+    },
+  ],
+};

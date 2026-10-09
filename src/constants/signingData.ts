@@ -7,7 +7,7 @@ export const INITIAL_LEADERS: LanhDaoAuthority[] = [
     name: 'Đ/c Trần Văn Hùng',
     chucVu: 'Phó Chánh Thanh tra thành phố',
     coQuan: 'Thanh tra Thành phố',
-    thamQuyenKy: ['to_trinh_thu_ly', 'quyet_dinh_thu_ly', 'bao_cao_xac_minh', 'ket_luan_to_cao'],
+    thamQuyenKy: ['bao_cao_de_xuat', 'to_trinh_thu_ly', 'quyet_dinh_thu_ly', 'bao_cao_xac_minh', 'ket_luan_to_cao'],
     isAvailable: true,
   },
   {
@@ -15,7 +15,7 @@ export const INITIAL_LEADERS: LanhDaoAuthority[] = [
     name: 'Đ/c Trần Văn Cường',
     chucVu: 'Phó Chánh Thanh tra thành phố',
     coQuan: 'Thanh tra Thành phố',
-    thamQuyenKy: ['to_trinh_thu_ly', 'quyet_dinh_thu_ly', 'bao_cao_xac_minh'],
+    thamQuyenKy: ['bao_cao_de_xuat', 'to_trinh_thu_ly', 'quyet_dinh_thu_ly', 'bao_cao_xac_minh'],
     isAvailable: true,
   },
   {
@@ -23,7 +23,7 @@ export const INITIAL_LEADERS: LanhDaoAuthority[] = [
     name: 'Đ/c Đặng Quốc Bảo',
     chucVu: 'Chánh Thanh tra thành phố',
     coQuan: 'Ban Lãnh đạo Thanh tra',
-    thamQuyenKy: ['to_trinh_thu_ly', 'quyet_dinh_thu_ly', 'bao_cao_xac_minh', 'ket_luan_to_cao'],
+    thamQuyenKy: ['bao_cao_de_xuat', 'to_trinh_thu_ly', 'quyet_dinh_thu_ly', 'bao_cao_xac_minh', 'ket_luan_to_cao'],
     isAvailable: true,
   },
   {
@@ -31,7 +31,7 @@ export const INITIAL_LEADERS: LanhDaoAuthority[] = [
     name: 'Đ/c Nguyễn Hoàng Nam',
     chucVu: 'Phó Chủ tịch UBND Quận',
     coQuan: 'UBND Quận',
-    thamQuyenKy: ['to_trinh_thu_ly', 'quyet_dinh_thu_ly', 'thong_bao_khong_thu_ly', 'bien_ban_ban_giao', 'van_ban_tra_lai'],
+    thamQuyenKy: ['bao_cao_de_xuat', 'to_trinh_thu_ly', 'quyet_dinh_thu_ly', 'thong_bao_khong_thu_ly', 'bien_ban_ban_giao', 'van_ban_tra_lai'],
     isAvailable: true,
   },
   {
@@ -39,7 +39,7 @@ export const INITIAL_LEADERS: LanhDaoAuthority[] = [
     name: 'Đ/c Phạm Thu Hương',
     chucVu: 'Trưởng phòng Tiếp công dân & Xử lý đơn',
     coQuan: 'Ban Tiếp công dân',
-    thamQuyenKy: ['to_trinh_thu_ly', 'bien_ban_ban_giao', 'van_ban_tra_lai', 'thong_bao_khong_thu_ly'],
+    thamQuyenKy: ['bao_cao_de_xuat', 'to_trinh_thu_ly', 'bien_ban_ban_giao', 'van_ban_tra_lai', 'thong_bao_khong_thu_ly'],
     isAvailable: true,
   },
   {
@@ -47,7 +47,7 @@ export const INITIAL_LEADERS: LanhDaoAuthority[] = [
     name: 'Đ/c Lê Hồng Phong',
     chucVu: 'Thủ trưởng Cơ quan CSĐT',
     coQuan: 'Công an Thành phố',
-    thamQuyenKy: ['quyet_dinh_thu_ly', 'ket_luan_to_cao', 'thong_bao_khong_thu_ly'],
+    thamQuyenKy: ['bao_cao_de_xuat', 'quyet_dinh_thu_ly', 'ket_luan_to_cao', 'thong_bao_khong_thu_ly'],
     isAvailable: true,
   },
 ];

@@ -1,0 +1,14 @@
+import { Router } from 'express';
+import { donController } from '../controllers/donController';
+
+const router = Router();
+
+router.get('/', donController.getDonList);
+router.get('/trung-lap', donController.getDonTrungList);
+router.get('/:id', donController.getDonById);
+router.post('/', donController.createDon);
+router.put('/:id', donController.updateDon);
+router.post('/:id/ghep', donController.ghepDon);
+router.post('/:id/ban-giao', donController.banGiaoDon);
+
+export default router;

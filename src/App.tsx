@@ -33,16 +33,20 @@ export default function App() {
   const [selectedDon, setSelectedDon] = useState<DonDetail | null>({
     id: "Đ-2025-0105",
     code: "Đ-2025-0105",
-    title: "Thẩm tra thay đổi ngành nghề HKD cá thể",
+    title: "Tố cáo hành vi vi phạm trật tự xây dựng và quản lý đất đai",
     luotNhanId: "LN-2025-0105",
     nguoiNop: "Vũ Thị Thanh",
     ngayNhan: "16/09/2026 09:30",
-    loaiDon: "Đơn khiếu nại đất đai",
+    loaiDon: "Đơn tố cáo",
     type: "ĐƠN TIẾP NHẬN",
     statusBadge: "Đang xử lý",
     canBoTiepNhan: "Nguyễn Minh Anh",
     chucVuCanBo: "Chuyên viên Tiếp nhận",
     donViXuLy: "Phòng Tiếp công dân & Xử lý đơn",
+    cccd: "001088012345",
+    sdt: "0983 123 456",
+    diaChi: "Số 15 đường Cầu Giấy, phường Quan Hoa, quận Cầu Giấy, Hà Nội",
+    noiDung: "Tố cáo hành vi vi phạm quy định pháp luật trong quản lý đất đai và trật tự xây dựng",
   });
   const [acceptedDons, setAcceptedDons] = useState<DonDetail[]>([]);
   const [extraCard, setExtraCard] = useState<LuotNhan | null>(null);
@@ -673,6 +677,11 @@ export default function App() {
                 donDetail={selectedDon}
                 openXacMinhOnEnter={openXacMinhOnDonTiepNhan}
                 onXacMinhOpened={() => setOpenXacMinhOnDonTiepNhan(false)}
+                onCreateSigningDocument={handleCreateSigningDocument}
+                signingDocuments={signingDocuments}
+                onUpdateSigningDocuments={setSigningDocuments}
+                onSelectSigningDoc={setSelectedSigningDocId}
+                currentAccount={currentAccount}
               />
             )}
             {screen === "quy-trinh-xu-ly" && (
