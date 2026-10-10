@@ -13,6 +13,7 @@ import AITiepNhanChatScreen from "./screens/AITiepNhanChatScreen";
 import TiepNhanVaXuLyScreen from "./screens/TiepNhanVaXuLyScreen";
 import TrinhKyScreen from "./screens/TrinhKyScreen";
 import VanBanChoKyScreen from "./screens/VanBanChoKyScreen";
+import QuanLyTrinhKyScreen from "./screens/quanLyTrinhKy/QuanLyTrinhKyScreen";
 import { LN19, ALL_LUOT_NHAN } from "./constants";
 import { LuotNhan, Screen, DonDetail } from "./types";
 import { SigningDocument, CurrentUserAccount, DEMO_ACCOUNTS } from "./types/signing";
@@ -77,6 +78,7 @@ export default function App() {
   }, [signingDocuments]);
 
   const [selectedSigningDocId, setSelectedSigningDocId] = useState<string | undefined>();
+  const [selectedQuanLyTrinhKyId, setSelectedQuanLyTrinhKyId] = useState<string | undefined>();
 
   // Tài khoản người dùng đang đăng nhập (Cán bộ thụ lý hoặc Lãnh đạo ký duyệt)
   const [currentAccount, setCurrentAccount] = useState<CurrentUserAccount>(DEMO_ACCOUNTS[0]);
@@ -750,6 +752,23 @@ export default function App() {
                     setScreen("cong-viec");
                   }
                 }}
+              />
+            )}
+            {screen === "quan-ly-trinh-ky" && (
+              <QuanLyTrinhKyScreen
+                onNav={setScreen}
+                currentAccount={currentAccount}
+                onSwitchAccount={(role) => {
+                  const target = DEMO_ACCOUNTS.find((a) => a.role === role);
+                  if (target) {
+                    setCurrentAccount(target);
+                  }
+                }}
+                onSelectHoSo={(hoSoCode) => {
+                  const matched = acceptedDons.find((d) => d.code === hoSoCode || d.id === hoSoCode);
+                  if (matched) setSelectedDon(matched);
+                }}
+                initialLuotTrinhId={selectedQuanLyTrinhKyId}
               />
             )}
             {screen === "quan-tri-quy-trinh" && (

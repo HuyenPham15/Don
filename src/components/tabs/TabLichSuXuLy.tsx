@@ -203,7 +203,6 @@ export default function TabLichSuXuLy({
                     {/* Actor information */}
                     <div className="flex items-center gap-2 text-xs text-slate-500 mt-2">
                       <span className="font-semibold text-slate-800">{log.actor}</span>
-                      {log.actorRole && <span>• {log.actorRole}</span>}
                       {log.actorDept && <span className="text-slate-400">• {log.actorDept}</span>}
                     </div>
 

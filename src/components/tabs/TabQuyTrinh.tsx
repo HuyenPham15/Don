@@ -80,13 +80,14 @@ export default function TabQuyTrinh({
     <div className="space-y-6">
 
       {viewMode === 'swimlane' && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden min-h-[680px] h-[720px] flex flex-col">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden min-h-[750px] h-[calc(100vh-210px)] flex flex-col">
           <SwimlaneWorkflowDiagram
             initialWorkflowType={getSwimlaneType()}
             donCode={currentDon.code}
             donTitle={currentDon.title}
             nguoiNop={currentDon.nguoiNop}
             onViewDocument={onViewDocument}
+            onOpenQuanLyTrinhKy={() => onNav('quan-ly-trinh-ky')}
           />
         </div>
       )}
@@ -99,7 +100,7 @@ export default function TabQuyTrinh({
                 type="button"
                 onClick={() => setSelectedStepFilter('all')}
                 className={`px-3 py-1 rounded-lg border transition-colors cursor-pointer ${selectedStepFilter === 'all'
-                  ? 'bg-slate-800 text-white border-slate-800 font-bold'
+                  ? 'bg-blue-600 text-white border-blue-600 font-bold'
                   : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                   }`}
               >
@@ -205,7 +206,7 @@ export default function TabQuyTrinh({
                               </>
                             )}
                             <span>•</span>
-                            <span className="flex items-center gap-1 text-indigo-700 font-medium">
+                            <span className="flex items-center gap-1 text-blue-700 font-medium">
                               <span className="material-symbols-outlined text-[14px]">timer</span>
                               Thời hạn: ~{step.estimatedDays} ngày làm việc
                             </span>
@@ -282,7 +283,7 @@ export default function TabQuyTrinh({
                                   </label>
 
                                   {t.aiAssistance?.summary && (
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-medium text-[10px] shrink-0 border border-indigo-200">
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-medium text-[10px] shrink-0 border border-blue-200">
                                       <span className="material-symbols-outlined text-[12px]">auto_awesome</span>
                                       AI hỗ trợ
                                     </span>

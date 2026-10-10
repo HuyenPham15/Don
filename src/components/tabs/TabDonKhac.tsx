@@ -203,7 +203,7 @@ export default function TabDonKhac({ currentDon }: TabDonKhacProps) {
       )}
 
       {/* Header Banner: Giải thích bản chất màn hình */}
-      <div className="bg-white rounded-xl border border-slate-200/90 p-4.5 shadow-2xs">
+      <div className=" p-4.5 shadow-2xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
@@ -214,10 +214,7 @@ export default function TabDonKhac({ currentDon }: TabDonKhacProps) {
                 <h2 className="text-sm font-bold text-slate-900">
                   Đơn &amp; Lượt nhận đã ghép vào hồ sơ
                 </h2>
-                <p className="text-xs text-slate-500">
-                  Các đơn thư hoặc lượt nhận phát sinh cùng vụ việc đã được thẩm tra và quyết định ghép vào hồ sơ gốc{' '}
-                  <strong className="text-slate-800 font-mono">{currentDon.code}</strong> để xử lý tập trung.
-                </p>
+
               </div>
             </div>
           </div>

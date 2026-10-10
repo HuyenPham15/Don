@@ -151,7 +151,6 @@ export default function NhanDonList({
                 <th className="py-3 px-4">Ngày nhận</th>
                 <th className="py-3 px-4">Người nộp đơn</th>
                 <th className="py-3 px-4">Hình thức</th>
-                <th className="py-3 px-4 min-w-[240px]">Nội dung chính</th>
                 <th className="py-3 px-4">Đơn vị tiếp nhận</th>
                 <th className="py-3 px-4">Trạng thái</th>
                 <th className="py-3 px-4 text-center">Thao tác</th>
@@ -225,14 +224,7 @@ export default function NhanDonList({
                         <span>{ln.hinhThuc}</span>
                       </span>
                     </td>
-                    <td className="py-3.5 px-4">
-                      <p className="font-normal text-slate-800 leading-relaxed line-clamp-2 text-[13.5px]" title={ln.noiDung}>
-                        {ln.noiDung}
-                      </p>
-                      <span className="text-[12px] text-slate-400 block mt-1">
-                        Lĩnh vực: Đất đai • Bồi thường
-                      </span>
-                    </td>
+
                     <td className="py-3.5 px-4 whitespace-nowrap text-slate-700 text-[13.5px]">
                       <span className="font-normal">{ln.donVi}</span>
                     </td>
@@ -262,14 +254,13 @@ export default function NhanDonList({
                     <td className="py-3.5 px-4 text-center whitespace-nowrap">
                       <button
                         type="button"
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-[#004ac6] text-[#004ac6] hover:text-white font-medium text-[13px] transition-all cursor-pointer"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleItemClick();
                         }}
                       >
                         <span className="material-symbols-outlined text-[15px]">visibility</span>
-                        <span>{ln.status === 'da_chuyen' ? 'Xem đơn' : 'Xem chi tiết'}</span>
+                        {/* <span>{ln.status === 'da_chuyen' ? 'Xem đơn' : 'Xem chi tiết'}</span> */}
                       </button>
                     </td>
                   </tr>

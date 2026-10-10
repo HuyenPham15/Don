@@ -123,7 +123,59 @@ export default function TrinhKyScreen({
     activeDoc &&
     (activeDoc.status === 'nhap' ||
       activeDoc.status === 'cho_trinh' ||
-      activeDoc.status === 'yeu_cau_chinh_sua');
+      activeDoc.status === 'yeu_cau_chinh_sua' ||
+      activeDoc.status === 'da_thu_hoi');
+
+  // Cán bộ thu hồi văn bản trình ký
+  const handleThuHoiTrinhKy = () => {
+    if (!activeDoc) return;
+    if (
+      !window.confirm(
+        `Bạn có chắc chắn muốn thu hồi văn bản trình ký "${activeDoc.tenVanBan}" không?\n\nSau khi thu hồi, văn bản sẽ mở khóa để bạn có thể chỉnh sửa nội dung và tạo trình ký lại.`
+      )
+    )
+      return;
+
+    const timeNow =
+      new Date().toLocaleDateString('vi-VN') +
+      ' ' +
+      new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+
+    const newLog: DetailedAuditLog = {
+      id: `al-${Date.now()}`,
+      time: timeNow,
+      actor: 'Nguyễn Minh Anh',
+      actorRole: 'Cán bộ thụ lý',
+      action: 'Thu hồi văn bản trình ký',
+      statusBefore: activeDoc.status,
+      statusAfter: 'da_thu_hoi',
+      version: activeDoc.phienBanHienTai || 'V1',
+      note: 'Cán bộ chủ động thu hồi văn bản để chỉnh sửa và hoàn thiện nội dung.',
+    };
+
+    const newHistory = {
+      id: `h-${Date.now()}`,
+      time: timeNow,
+      actor: 'Nguyễn Minh Anh (Cán bộ thụ lý)',
+      action: 'Thu hồi văn bản trình ký',
+      note: 'Chủ động thu hồi để chỉnh sửa trước khi lãnh đạo ký',
+    };
+
+    const updatedDocs = documents.map((d) => {
+      if (d.id === activeDoc.id) {
+        return {
+          ...d,
+          status: 'da_thu_hoi' as SigningStatus,
+          auditLogs: [newLog, ...(d.auditLogs || [])],
+          history: [newHistory, ...(d.history || [])],
+        };
+      }
+      return d;
+    });
+
+    onUpdateDocuments(updatedDocs);
+    showToast(`✓ Đã thu hồi văn bản "${activeDoc.tenVanBan}". Bạn có thể chỉnh sửa nội dung ngay bây giờ!`);
+  };
 
   // Kiểm tra điều kiện trước khi trình ký
   const validateBeforeTrinh = (doc: SigningDocument, sList: SignerItem[], noiDung: string): string[] => {
@@ -584,9 +636,20 @@ export default function TrinhKyScreen({
             )}
 
             {activeDoc.status === 'da_trinh' || activeDoc.status === 'cho_ky' || activeDoc.status === 'dang_ky' ? (
-              <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-50 text-amber-800 border border-amber-300 text-xs font-bold shadow-2xs">
-                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                <span>Đang chờ Lãnh đạo ký số</span>
+              <div className="flex items-center gap-2">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 text-amber-800 border border-amber-300 text-xs font-bold shadow-2xs">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                  <span>Đang chờ Lãnh đạo ký số</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleThuHoiTrinhKy}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-rose-300 bg-white hover:bg-rose-50 text-rose-700 text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95"
+                  title="Thu hồi văn bản về trạng thái có thể chỉnh sửa nội dung"
+                >
+                  <span className="material-symbols-outlined text-[16px]">undo</span>
+                  <span>Thu hồi trình ký</span>
+                </button>
               </div>
             ) : activeDoc.status === 'da_ky' || activeDoc.status === 'hoan_tat' ? (
               <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-300 text-xs font-bold shadow-2xs">
@@ -602,7 +665,11 @@ export default function TrinhKyScreen({
               >
                 <span className="material-symbols-outlined text-[17px]">send</span>
                 <span>
-                  {activeDoc.status === 'yeu_cau_chinh_sua' ? 'XÁC NHẬN TRÌNH KÝ LẠI (V2)' : 'TRÌNH LÃNH ĐẠO KÝ'}
+                  {activeDoc.status === 'yeu_cau_chinh_sua'
+                    ? 'XÁC NHẬN TRÌNH KÝ LẠI (V2)'
+                    : activeDoc.status === 'da_thu_hoi'
+                    ? 'TẠO TRÌNH KÝ LẠI'
+                    : 'TRÌNH LÃNH ĐẠO KÝ'}
                 </span>
               </button>
             )}
@@ -618,6 +685,19 @@ export default function TrinhKyScreen({
       <div className="flex-1 overflow-y-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* ==================== CỘT TRÁI: FORM VÀ CẤU HÌNH (5 CỘT) ==================== */}
         <div className="lg:col-span-5 flex flex-col space-y-4">
+          {/* Cảnh báo nếu văn bản đã được thu hồi */}
+          {activeDoc.status === 'da_thu_hoi' && (
+            <div className="p-4 rounded-xl bg-slate-100 border-2 border-slate-300 text-slate-800 space-y-1.5 shadow-2xs animate-fade-in">
+              <div className="flex items-center gap-1.5 font-bold text-xs text-slate-700">
+                <span className="material-symbols-outlined text-[18px] text-slate-500">undo</span>
+                <span>VĂN BẢN ĐÃ ĐƯỢC THU HỒI:</span>
+              </div>
+              <p className="text-xs leading-relaxed bg-white/90 p-2.5 rounded-lg border border-slate-200 font-medium">
+                Văn bản đã mở khóa chỉnh sửa. Cán bộ có thể sửa lại nội dung văn bản bên dưới, sau đó bấm <strong>"TẠO TRÌNH KÝ LẠI"</strong> để tiếp tục luồng phê duyệt của Lãnh đạo.
+              </p>
+            </div>
+          )}
+
           {/* Cảnh báo nếu Lãnh đạo yêu cầu chỉnh sửa */}
           {activeDoc.status === 'yeu_cau_chinh_sua' && activeDoc.lyDoTraLai && (
             <div className="p-4 rounded-xl bg-rose-50 border-2 border-rose-300 text-rose-900 space-y-1.5 shadow-2xs">

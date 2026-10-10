@@ -166,21 +166,18 @@ export default function ChuyenTiepNhanModal({
                   <span>Đơn vị &amp; Cán bộ tiếp nhận</span>
                   <span className="text-[#C62828]">*</span>
                 </label>
-                <span className="text-[10.5px] text-slate-500 font-normal">
-                  Chọn đơn vị để mở rộng danh sách cán bộ
-                </span>
+
               </div>
 
               {/* Ô trigger dạng select cây */}
               <div
                 onClick={() => setIsTreeOpen(!isTreeOpen)}
-                className={`w-full px-3 py-2.5 bg-white border rounded-xl text-xs flex items-center justify-between transition-all cursor-pointer shadow-xs ${
-                  errors.donVi
-                    ? 'border-rose-400 ring-2 ring-rose-100'
-                    : isTreeOpen
+                className={`w-full px-3 py-2.5 bg-white border rounded-xl text-xs flex items-center justify-between transition-all cursor-pointer shadow-xs ${errors.donVi
+                  ? 'border-rose-400 ring-2 ring-rose-100'
+                  : isTreeOpen
                     ? 'border-[#C62828] ring-2 ring-[#C62828]/15'
                     : 'border-slate-300 hover:border-slate-400'
-                }`}
+                  }`}
               >
                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
                   <div className="w-6 h-6 rounded-md bg-rose-50 text-[#C62828] flex items-center justify-center shrink-0">
@@ -196,8 +193,7 @@ export default function ChuyenTiepNhanModal({
                           <span className="material-symbols-outlined text-[15px] text-slate-500">domain</span>
                           {selectedDepartment.name}
                         </span>
-                        <span className="text-slate-300">/</span>
-                        {selectedOfficer ? (
+                        {/* {selectedOfficer ? (
                           <span className="font-bold text-blue-700 flex items-center gap-1 truncate bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
                             <span className="material-symbols-outlined text-[14px]">person</span>
                             {selectedOfficer.name} ({selectedOfficer.role})
@@ -207,7 +203,7 @@ export default function ChuyenTiepNhanModal({
                             <span className="material-symbols-outlined text-[14px] text-amber-600">hourglass_top</span>
                             Hàng chờ đơn vị (Không chỉ định cán bộ)
                           </span>
-                        )}
+                        )} */}
                       </>
                     )}
                   </div>
@@ -277,21 +273,20 @@ export default function ChuyenTiepNhanModal({
                         const deptOfficers = getDeptOfficers(dept.id);
                         const filteredDeptOfficers = searchQuery.trim()
                           ? deptOfficers.filter(
-                              (o) =>
-                                o.name.toLowerCase().includes(searchQuery.toLowerCase().trim()) ||
-                                o.role.toLowerCase().includes(searchQuery.toLowerCase().trim())
-                            )
+                            (o) =>
+                              o.name.toLowerCase().includes(searchQuery.toLowerCase().trim()) ||
+                              o.role.toLowerCase().includes(searchQuery.toLowerCase().trim())
+                          )
                           : deptOfficers;
 
                         return (
                           <div key={dept.id} className="rounded-lg transition-colors">
                             {/* NÚT CẤP 1: ĐƠN VỊ TIẾP NHẬN */}
                             <div
-                              className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-all ${
-                                isDeptActive
-                                  ? 'bg-rose-50/70 text-slate-900 font-semibold border border-rose-200'
-                                  : 'hover:bg-slate-50 text-slate-800 border border-transparent'
-                              }`}
+                              className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-all ${isDeptActive
+                                ? 'bg-rose-50/70 text-slate-900 font-semibold border'
+                                : 'hover:bg-slate-50 text-slate-800 border border-transparent'
+                                }`}
                               onClick={() => {
                                 setDonViId(dept.id);
                                 if (!isExpanded) {
@@ -317,9 +312,8 @@ export default function ChuyenTiepNhanModal({
                                 </button>
 
                                 <span
-                                  className={`material-symbols-outlined text-[18px] shrink-0 ${
-                                    isDeptActive ? 'text-[#C62828]' : 'text-slate-500'
-                                  }`}
+                                  className={`material-symbols-outlined text-[18px] shrink-0 ${isDeptActive ? 'text-[#C62828]' : 'text-slate-500'
+                                    }`}
                                 >
                                   domain
                                 </span>
@@ -347,11 +341,10 @@ export default function ChuyenTiepNhanModal({
                                   {deptOfficers.length} cán bộ
                                 </span>
                                 <div
-                                  className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
-                                    isDeptActive
-                                      ? 'border-[#C62828] bg-[#C62828] text-white'
-                                      : 'border-slate-300'
-                                  }`}
+                                  className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${isDeptActive
+                                    ? 'border-[#C62828] bg-[#C62828] text-white'
+                                    : 'border-slate-300'
+                                    }`}
                                 >
                                   {isDeptActive && (
                                     <span className="material-symbols-outlined text-[10px]">check</span>
@@ -370,11 +363,10 @@ export default function ChuyenTiepNhanModal({
                                     setSelectedCanBoId('');
                                     if (errors.donVi) setErrors({});
                                   }}
-                                  className={`p-1.5 px-2 rounded-lg flex items-center justify-between cursor-pointer transition-all ${
-                                    isQueueActive
-                                      ? 'bg-amber-50/90 border border-amber-300 ring-1 ring-amber-300/60 text-amber-900 font-medium'
-                                      : 'hover:bg-slate-50 text-slate-700 border border-transparent'
-                                  }`}
+                                  className={`p-1.5 px-2 rounded-lg flex items-center justify-between cursor-pointer transition-all ${isQueueActive
+                                    ? 'bg-amber-50/90 border border-amber-300 ring-1 ring-amber-300/60 text-amber-900 font-medium'
+                                    : 'hover:bg-slate-50 text-slate-700 border border-transparent'
+                                    }`}
                                 >
                                   <div className="flex items-center gap-2 min-w-0">
                                     <span className="material-symbols-outlined text-amber-600 text-[16px] shrink-0">
@@ -412,11 +404,10 @@ export default function ChuyenTiepNhanModal({
                                           setSelectedCanBoId(isOfficerActive ? '' : officer.id);
                                           if (errors.donVi) setErrors({});
                                         }}
-                                        className={`p-1.5 px-2 rounded-lg flex items-center justify-between cursor-pointer transition-all ${
-                                          isOfficerActive
-                                            ? 'bg-blue-50 border border-blue-400 ring-1 ring-blue-300 text-blue-900 font-medium'
-                                            : 'hover:bg-slate-50 text-slate-700 border border-transparent'
-                                        }`}
+                                        className={`p-1.5 px-2 rounded-lg flex items-center justify-between cursor-pointer transition-all ${isOfficerActive
+                                          ? 'bg-blue-50 border border-blue-400 ring-1 ring-blue-300 text-blue-900 font-medium'
+                                          : 'hover:bg-slate-50 text-slate-700 border border-transparent'
+                                          }`}
                                       >
                                         <div className="flex items-center gap-2 min-w-0">
                                           <div className="w-5 h-5 rounded-full bg-slate-200 text-slate-700 font-bold text-[9.5px] flex items-center justify-center shrink-0">
@@ -497,7 +488,7 @@ export default function ChuyenTiepNhanModal({
             <button
               type="submit"
               form="chuyen-tiep-nhan-form"
-              className="px-5 py-2 rounded-xl bg-[#C62828] hover:bg-[#b71c1c] active:scale-95 text-white text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
+              className="px-5 py-2 rounded-xl bg-[#004ac6] hover:bg-[#003ea8] active:scale-95 text-white text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
             >
               <span className="material-symbols-outlined text-[16px]">send</span>
               <span>Xác nhận chuyển</span>

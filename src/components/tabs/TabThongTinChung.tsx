@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DonDetail } from '../../types';
 import QuyTrinhSuggestedActions from '../workflow/QuyTrinhSuggestedActions';
 import { matchWorkflowByLoaiDon } from '../../constants/workflows';
@@ -50,11 +50,23 @@ export const LOAI_DON_SUGGESTIONS = [
   'Đơn kiến nghị khởi tố',
   'Đơn khiếu nại (Lần 1)',
   'Đơn khiếu nại (Lần 2)',
+  'Đơn khiếu nại đất đai',
   'Đơn tố cáo',
+  'Đơn tố cáo cán bộ vi phạm công vụ',
   'Đơn phản ánh, kiến nghị',
   'Đơn tranh chấp dân sự / khởi kiện',
   'Đơn đề nghị giám đốc thẩm / tái thẩm',
   'Đơn khiếu nại trong hoạt động tố tụng',
+];
+
+export const DON_VI_SUGGESTIONS = [
+  'Phòng Tiếp công dân & Xử lý đơn',
+  'Thanh tra Quận / Huyện',
+  'Phòng Tài nguyên và Môi trường',
+  'Phòng Quản lý đô thị',
+  'Ban Quản lý dự án ĐTXD',
+  'UBND Phường / Xã',
+  'Cơ quan Cảnh sát điều tra (Công an thành phố Hà Nội)',
 ];
 
 export const LINH_VUC_SUGGESTIONS = [
@@ -96,12 +108,20 @@ interface TabThongTinChungProps {
   currentDon?: DonDetail | null;
   onOpenLuotNhan?: () => void;
   onOpenSoDo?: () => void;
+  isEditing?: boolean;
+  onStartEdit?: () => void;
+  onCancelEdit?: () => void;
+  onSaveDon?: (updatedDon: DonDetail) => void;
 }
 
 export default function TabThongTinChung({
   currentDon,
   onOpenLuotNhan,
   onOpenSoDo,
+  isEditing,
+  onStartEdit,
+  onCancelEdit,
+  onSaveDon,
 }: TabThongTinChungProps) {
   const isToGiac =
     currentDon?.code?.startsWith('Đ-2026') ||
@@ -116,6 +136,150 @@ export default function TabThongTinChung({
     setTimeout(() => {
       setToastMsg((curr) => (curr === msg ? null : curr));
     }, 3200);
+  };
+
+  const [internalEditing, setInternalEditing] = useState(false);
+  const isEditingMode = isEditing !== undefined ? isEditing : internalEditing;
+
+  const [editFormData, setEditFormData] = useState<DonDetail>(() => ({
+    id: currentDon?.id || 'Đ-2025-0105',
+    code: currentDon?.code || 'Đ-2025-0105',
+    title: currentDon?.title || 'Tố cáo hành vi vi phạm trật tự xây dựng và quản lý đất đai',
+    luotNhanId: currentDon?.luotNhanId || 'LN-2025-0105',
+    nguoiNop: currentDon?.nguoiNop || 'Vũ Thị Thanh',
+    ngayNhan: currentDon?.ngayNhan || '16/09/2026 09:30',
+    loaiDon: currentDon?.loaiDon || 'Đơn tố cáo',
+    canBoTiepNhan: currentDon?.canBoTiepNhan || 'Nguyễn Minh Anh',
+    canBoXuLy: currentDon?.canBoXuLy || currentDon?.canBoTiepNhan || 'Nguyễn Minh Anh',
+    chucVuCanBo: currentDon?.chucVuCanBo || 'Chuyên viên Tiếp nhận',
+    donViXuLy: currentDon?.donViXuLy || currentDon?.donViTiepNhan || 'Phòng Tiếp công dân & Xử lý đơn',
+    donViTiepNhan: currentDon?.donViTiepNhan || 'Phòng Tiếp công dân & Xử lý đơn',
+    cccd: currentDon?.cccd || '001088012345',
+    sdt: currentDon?.sdt || '0983 123 456',
+    diaChi: currentDon?.diaChi || 'Số 15 đường Cầu Giấy, phường Quan Hoa, quận Cầu Giấy, Hà Nội',
+    noiDung: currentDon?.noiDung || 'Tố cáo hành vi vi phạm quy định pháp luật trong quản lý đất đai và trật tự xây dựng',
+  }));
+
+  useEffect(() => {
+    if (currentDon) {
+      setEditFormData({
+        id: currentDon.id || 'Đ-2025-0105',
+        code: currentDon.code || 'Đ-2025-0105',
+        title: currentDon.title || '',
+        luotNhanId: currentDon.luotNhanId || '',
+        nguoiNop: currentDon.nguoiNop || '',
+        ngayNhan: currentDon.ngayNhan || '',
+        loaiDon: currentDon.loaiDon || 'Đơn khiếu nại',
+        canBoTiepNhan: currentDon.canBoTiepNhan || 'Nguyễn Minh Anh',
+        canBoXuLy: currentDon.canBoXuLy || currentDon.canBoTiepNhan || 'Nguyễn Minh Anh',
+        chucVuCanBo: currentDon.chucVuCanBo || 'Chuyên viên Tiếp nhận',
+        donViXuLy: currentDon.donViXuLy || currentDon.donViTiepNhan || 'Phòng Tiếp công dân & Xử lý đơn',
+        donViTiepNhan: currentDon.donViTiepNhan || 'Phòng Tiếp công dân & Xử lý đơn',
+        cccd: currentDon.cccd || '',
+        sdt: currentDon.sdt || '',
+        diaChi: currentDon.diaChi || '',
+        noiDung: currentDon.noiDung || '',
+      });
+    }
+  }, [currentDon]);
+
+  const handleStartEdit = () => {
+    setEditPhanLoaiForm((prev) => ({
+      ...prev,
+      ...phanLoai,
+      loaiDon: editFormData.loaiDon || phanLoai.loaiDon,
+      noiDungDon: (editFormData.noiDung as any) || phanLoai.noiDungDon,
+    }));
+    if (onStartEdit) {
+      onStartEdit();
+    } else {
+      setInternalEditing(true);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    if (currentDon) {
+      setEditFormData({
+        id: currentDon.id || 'Đ-2025-0105',
+        code: currentDon.code || 'Đ-2025-0105',
+        title: currentDon.title || '',
+        luotNhanId: currentDon.luotNhanId || '',
+        nguoiNop: currentDon.nguoiNop || '',
+        ngayNhan: currentDon.ngayNhan || '',
+        loaiDon: currentDon.loaiDon || 'Đơn khiếu nại',
+        canBoTiepNhan: currentDon.canBoTiepNhan || 'Nguyễn Minh Anh',
+        canBoXuLy: currentDon.canBoXuLy || currentDon.canBoTiepNhan || 'Nguyễn Minh Anh',
+        chucVuCanBo: currentDon.chucVuCanBo || 'Chuyên viên Tiếp nhận',
+        donViXuLy: currentDon.donViXuLy || currentDon.donViTiepNhan || 'Phòng Tiếp công dân & Xử lý đơn',
+        donViTiepNhan: currentDon.donViTiepNhan || 'Phòng Tiếp công dân & Xử lý đơn',
+        cccd: currentDon.cccd || '',
+        sdt: currentDon.sdt || '',
+        diaChi: currentDon.diaChi || '',
+        noiDung: currentDon.noiDung || '',
+      });
+    }
+    setEditPhanLoaiForm({ ...phanLoai });
+    if (onCancelEdit) {
+      onCancelEdit();
+    } else {
+      setInternalEditing(false);
+    }
+  };
+
+  const handleSaveEdit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!editFormData.title?.trim()) {
+      showToast('⚠️ Vui lòng nhập tiêu đề đơn!');
+      return;
+    }
+    if (!editFormData.nguoiNop?.trim()) {
+      showToast('⚠️ Vui lòng nhập họ và tên người nộp đơn!');
+      return;
+    }
+
+    // Cập nhật người nộp chính trong bảng đương sự
+    setDuongSuList((prev) =>
+      prev.map((item) =>
+        item.isPrimary
+          ? {
+            ...item,
+            hoTen: editFormData.nguoiNop,
+            dinhDanh: editFormData.cccd || item.dinhDanh,
+            sdt: editFormData.sdt || item.sdt,
+            diaChi: editFormData.diaChi || item.diaChi,
+          }
+          : item
+      )
+    );
+
+    // Cập nhật phân loại đơn
+    const now = new Date();
+    const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} ngày ${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+
+    const updatedPhanLoai: PhanLoaiDonState = {
+      ...phanLoai,
+      ...editPhanLoaiForm,
+      loaiDon: editFormData.loaiDon || editPhanLoaiForm.loaiDon || phanLoai.loaiDon,
+      noiDungDon: editFormData.noiDung || editPhanLoaiForm.noiDungDon || phanLoai.noiDungDon,
+      isModifiedByUser: true,
+      ngayCapNhat: timeStr,
+      nguoiCapNhat: editFormData.canBoXuLy || 'Nguyễn Minh Anh',
+    };
+
+    setPhanLoai(updatedPhanLoai);
+
+    const updatedDataToSave: DonDetail = {
+      ...editFormData,
+      loaiDon: updatedPhanLoai.loaiDon,
+      noiDung: typeof updatedPhanLoai.noiDungDon === 'string' ? updatedPhanLoai.noiDungDon : editFormData.noiDung,
+    };
+
+    if (onSaveDon) {
+      onSaveDon(updatedDataToSave);
+    } else {
+      setInternalEditing(false);
+      showToast('✓ Đã lưu thay đổi thông tin đơn thành công!');
+    }
   };
 
   // Dữ liệu danh sách cá nhân, tổ chức liên quan đa dạng nhiều người và nhiều vai trò từ Lượt nhận & AI đọc từ file ra
@@ -426,6 +590,10 @@ export default function TabThongTinChung({
       thamQuyen: suggestedThamQuyen,
       huongXuLy: suggestedHuongXuLy,
     }));
+    setEditFormData((prev) => ({
+      ...prev,
+      loaiDon: newLoaiDon,
+    }));
   };
 
   const handleSavePhanLoai = (e?: React.FormEvent) => {
@@ -607,8 +775,8 @@ export default function TabThongTinChung({
         'Cơ quan Cảnh sát điều tra (Công an thành phố Hà Nội) - Bộ phận Tiếp dân & Xử lý đơn',
       noiDungDon: (
         <>
-          Người làm đơn tố giác hành vi có dấu hiệu lừa đảo chiếm đoạt tài sản xảy ra tại <strong>Công ty Cổ phần Đầu tư &amp; Phát triển Đô thị X</strong>. 
-          Vào tháng 04/2024, thông qua Hợp đồng góp vốn đầu tư bất động sản số 88/2024/HĐGV tại Dự án Khu đô thị Y, công dân đã nộp số tiền 3,5 tỷ đồng. 
+          Người làm đơn tố giác hành vi có dấu hiệu lừa đảo chiếm đoạt tài sản xảy ra tại <strong>Công ty Cổ phần Đầu tư &amp; Phát triển Đô thị X</strong>.
+          Vào tháng 04/2024, thông qua Hợp đồng góp vốn đầu tư bất động sản số 88/2024/HĐGV tại Dự án Khu đô thị Y, công dân đã nộp số tiền 3,5 tỷ đồng.
           Tuy nhiên, đến thời hạn cam kết bàn giao, Công ty không thực hiện nghĩa vụ, có hành vi tẩu tán tài sản và trốn tránh trách nhiệm.
         </>
       ),
@@ -633,8 +801,8 @@ export default function TabThongTinChung({
         'Phòng Tiếp công dân & Xử lý đơn - UBND quận Cầu Giấy',
       noiDungDon: (
         <>
-          Công dân phản ánh và khiếu nại về phương án bồi thường, hỗ trợ tái định cư khi Nhà nước thu hồi đất để thực hiện dự án mở rộng hạ tầng giao thông. 
-          Theo Quyết định thu hồi đất, gia đình bị thu hồi diện tích 120m² đất ở và đất trồng cây lâu năm tại <strong>Thửa đất số 45, Tờ bản đồ số 12</strong>. 
+          Công dân phản ánh và khiếu nại về phương án bồi thường, hỗ trợ tái định cư khi Nhà nước thu hồi đất để thực hiện dự án mở rộng hạ tầng giao thông.
+          Theo Quyết định thu hồi đất, gia đình bị thu hồi diện tích 120m² đất ở và đất trồng cây lâu năm tại <strong>Thửa đất số 45, Tờ bản đồ số 12</strong>.
           Công dân cho rằng việc áp giá bồi thường chưa sát với giá trị thị trường và chưa xem xét bố trí tái định cư thỏa đáng theo quy định pháp luật.
         </>
       ),
@@ -696,6 +864,27 @@ export default function TabThongTinChung({
         </div>
       )}
 
+      {/* Nút thao tác khi đang ở chế độ chỉnh sửa thông tin trực tiếp */}
+      {isEditingMode && (
+        <div className="sticky top-0 z-30 py-1.5 flex items-center justify-end gap-2.5 animate-fade-in bg-[#f8fafc]/90 backdrop-blur-xs">
+          <button
+            type="button"
+            onClick={handleCancelEdit}
+            className="px-4 py-2 rounded-xl text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 shadow-2xs transition-all cursor-pointer"
+          >
+            Hủy bỏ
+          </button>
+          <button
+            type="button"
+            onClick={handleSaveEdit}
+            className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold text-white bg-[#004ac6] hover:bg-[#003da8] shadow-xs hover:shadow-md transition-all cursor-pointer active:scale-95"
+          >
+            <span className="material-symbols-outlined text-[16px]">save</span>
+            <span>Lưu thay đổi</span>
+          </button>
+        </div>
+      )}
+
       {/* ========================================================================= */}
       {/* KHỐI 1: THÔNG TIN TIẾP NHẬN & ĐỐI TƯỢNG LIÊN QUAN                         */}
       {/* ========================================================================= */}
@@ -703,25 +892,33 @@ export default function TabThongTinChung({
         {/* Header Khối 1 */}
         <div className="px-5 py-3 border-b border-slate-200/90 flex items-center justify-between bg-white flex-wrap gap-2.5">
           <div className="flex items-center gap-2.5">
-            <span className="w-2 h-2 rounded-full "></span>
+            <span className="w-2 h-2 rounded-full bg-[#004ac6]"></span>
             <h2 className="text-[14px] font-bold text-slate-900 tracking-tight font-headline-md uppercase">
-              1. THÔNG TIN TIẾP NHẬN
+              1. THÔNG TIN TIẾP NHẬN &amp; NGƯỜI NỘP ĐƠN
             </h2>
-
+            {isEditingMode && (
+              <span className="px-2 py-0.5 rounded text-[10.5px] font-bold bg-blue-100 text-[#004ac6] border border-blue-200 uppercase tracking-wide">
+                Đang sửa trực tiếp
+              </span>
+            )}
           </div>
-          {/* 
-          <button
-            type="button"
-            onClick={onOpenLuotNhan}
-            className="inline-flex items-center gap-1 text-[11.5px] text-blue-700 hover:text-blue-900 font-semibold px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors cursor-pointer"
-            title="Xem chi tiết Lượt nhận hồ sơ ban đầu"
-          >
-            <span className="material-symbols-outlined text-[14px]">open_in_new</span>
-            <span>Xem lượt nhận gốc</span>
-          </button> */}
+
+          {!isEditingMode && (
+            <button
+              type="button"
+              onClick={handleStartEdit}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg border border-blue-200 bg-blue-50 text-[#004ac6] hover:bg-blue-100 hover:border-blue-300 transition-all cursor-pointer shadow-2xs"
+              title="Chỉnh sửa thông tin hồ sơ và người nộp trực tiếp tại màn hình"
+            >
+              <span className="material-symbols-outlined text-[16px]">edit_note</span>
+              <span>Chỉnh sửa thông tin</span>
+            </button>
+          )}
         </div>
 
         <div className="p-5 space-y-5">
+
+
           <div className="space-y-3  border-slate-100">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-2">
@@ -942,446 +1139,498 @@ export default function TabThongTinChung({
       {/* ========================================================================= */}
       {/* KHỐI 2: THÔNG TIN ĐƠN & PHÂN LOẠI NGHIỆP VỤ                               */}
       {/* ========================================================================= */}
-      <div className="bg-white rounded-xl  overflow-hidden">
-        {/* Header Khối 2 */}
-        <div className="px-6 py-3.5 border-b border-slate-200/90 flex items-center justify-between bg-white flex-wrap gap-2">
-          <div className="flex items-center gap-2.5">
-            <span className="w-2 h-2 rounded-full bg-[#004ac6]"></span>
-            <h2 className="text-[14px] font-bold text-slate-900 tracking-tight font-headline-md uppercase">
-              2. THÔNG TIN ĐƠN
-            </h2>
-
-          </div>
-
-
-        </div>
-
-        {/* ========================================================================= */}
-        {/* NỘI DUNG KHỐI 2: CHẾ ĐỘ XEM (VIEW MODE) HOẶC CHỈNH SỬA (EDIT MODE)        */}
-        {/* ========================================================================= */}
-        {!isEditingPhanLoai ? (
-          <div className="p-5 space-y-3.5">
-            {/* Banner thông báo nếu cán bộ đã điều chỉnh */}
-            {phanLoai.isModifiedByUser && (
-              <div className="px-3.5 py-2 rounded-lg bg-amber-50/90 border border-amber-200/90 flex items-center justify-between gap-3 text-xs text-amber-900 flex-wrap">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[18px] text-amber-600 shrink-0">verified_user</span>
-                  <span className="font-bold">Phân loại nghiệp vụ đã được điều chỉnh bởi: {phanLoai.nguoiCapNhat}</span>
-                  {phanLoai.ghiChuCuaCanBo && (
-                    <span className="text-amber-800 text-[11.5px] italic">
-                      — &ldquo;{phanLoai.ghiChuCuaCanBo}&rdquo;
-                    </span>
-                  )}
-                </div>
-                <span className="text-[11px] text-amber-700 font-label-technical shrink-0">
-                  {phanLoai.ngayCapNhat}
-                </span>
-              </div>
-            )}
-
-            {/* Lưới 4 thông tin phân loại chính: Loại đơn, Lĩnh vực, Thẩm quyền, Hướng xử lý */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {/* Thẻ 1: Loại đơn */}
-              <div className="p-3.5 rounded-lg bg-slate-50/80 border border-slate-200/80 flex flex-col justify-between">
-                <span className="text-[10.5px] font-bold text-slate-500 uppercase tracking-tight flex items-center gap-1.5 mb-2">
-                  <span className="material-symbols-outlined text-[15px] text-rose-600">gavel</span>
-                  Phân loại đơn
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold">
-                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-                    {phanLoai.loaiDon}
-                  </span>
-                </div>
-              </div>
-
-              {/* Thẻ 2: Lĩnh vực chuyên môn */}
-              <div className="p-3.5 rounded-lg bg-slate-50/80 border border-slate-200/80 flex flex-col justify-between">
-                <span className="text-[10.5px] font-bold text-slate-500 uppercase tracking-tight flex items-center gap-1.5 mb-2">
-                  <span className="material-symbols-outlined text-[15px] text-[#004ac6]">category</span>
-                  Lĩnh vực chuyên môn
-                </span>
-                <div className="text-xs font-bold text-slate-800 leading-snug">
-                  {phanLoai.linhVuc}
-                </div>
-              </div>
-
-
-            </div>
-
-
-            {/* Lưới 2 thẻ: Nội dung đơn & Tóm tắt yêu cầu của người nộp đơn */}
-            <div className="space-y-3">
-              {/* Thẻ 1: Nội dung đơn */}
-              <div className="p-3.5 rounded-lg bg-slate-50/80 border border-slate-200/80">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[10.5px] font-bold text-slate-500 uppercase tracking-tight flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-[15px] text-[#004ac6]">article</span>
-                    Nội dung đơn
-                  </span>
-                  <span className="text-[10.5px] text-slate-400 font-medium">Tóm tắt diễn biến vụ việc</span>
-                </div>
-                <div className="text-xs text-slate-800 leading-relaxed text-justify">
-                  {phanLoai.noiDungDon || info.noiDungDon}
-                </div>
-              </div>
-
-              {/* Thẻ 2: Tóm tắt yêu cầu của người nộp đơn */}
-              <div className="p-3.5 rounded-lg bg-slate-50/80 border border-slate-200/80">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[10.5px] font-bold text-slate-500 uppercase tracking-tight flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-[15px] text-[#004ac6]">task_alt</span>
-                    Tóm tắt yêu cầu của người nộp đơn
-                  </span>
-                  <span className="text-[10.5px] text-slate-400 font-medium">Yêu cầu, kiến nghị cụ thể</span>
-                </div>
-                <div className="text-xs text-slate-800 leading-relaxed text-justify">
-                  {phanLoai.tomTatYeuCau || info.tomTatYeuCau}
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : (
-          /* FORM ĐIỀU CHỈNH PHÂN LOẠI NGHIỆP VỤ */
-          <form onSubmit={handleSavePhanLoai} className="p-5 space-y-4 bg-slate-50/30">
-            {/* Banner hướng dẫn (gọn, không AI) */}
-            <div className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-blue-50/80 border border-blue-200/80 text-xs text-blue-900">
-              <span className="material-symbols-outlined text-[17px] text-[#004ac6] shrink-0">tune</span>
-              <span className="font-medium">
-                Cán bộ có thể điều chỉnh loại đơn, lĩnh vực chuyên môn, cơ quan thẩm quyền hoặc hướng xử lý. Mọi thay đổi sẽ được ghi nhận và lưu vết kiểm toán.
-              </span>
-            </div>
-
-            {/* LƯỚI FORM NHẬP LIỆU GỌN GÀNG */}
-            <div className="p-4 rounded-xl bg-white border border-slate-200 space-y-4 shadow-2xs">
-              {/* Hàng 1: Loại đơn & Lĩnh vực */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* 1. Loại đơn */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-[12.5px] font-semibold text-slate-800 flex items-center gap-1">
-                      <span>1. Loại đơn</span>
-                      <span className="text-rose-500 font-bold ml-0.5 text-[12px]">*</span>
-                    </label>
-                  </div>
-                  <select
-                    value={editPhanLoaiForm.loaiDon}
-                    onChange={(e) => handleSelectLoaiDon(e.target.value)}
-                    className="w-full px-3 py-2 text-[13.5px] font-normal text-slate-800 bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6] transition-all cursor-pointer"
-                  >
-                    {LOAI_DON_SUGGESTIONS.map((item) => (
-                      <option key={item} value={item}>
-                        {item}
-                      </option>
-                    ))}
-                  </select>
-
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    <span className="text-[10px] text-slate-400 font-medium self-center">Chọn nhanh:</span>
-                    {[
-                      { label: 'Đơn tố giác về tội phạm', color: 'rose' },
-                      { label: 'Đơn khiếu nại (Lần 1)', color: 'amber' },
-                      { label: 'Đơn tố cáo', color: 'purple' },
-                      { label: 'Đơn phản ánh, kiến nghị', color: 'blue' },
-                    ].map((chip) => {
-                      const isSelected = editPhanLoaiForm.loaiDon === chip.label;
-                      const activeClasses =
-                        chip.color === 'rose'
-                          ? 'bg-rose-50 text-rose-700 border-rose-300 font-bold shadow-2xs'
-                          : chip.color === 'amber'
-                            ? 'bg-amber-50 text-amber-800 border-amber-300 font-bold shadow-2xs'
-                            : chip.color === 'purple'
-                              ? 'bg-purple-50 text-purple-700 border-purple-300 font-bold shadow-2xs'
-                              : 'bg-blue-50 text-blue-700 border-blue-300 font-bold shadow-2xs';
-
-                      return (
-                        <button
-                          key={chip.label}
-                          type="button"
-                          onClick={() => handleSelectLoaiDon(chip.label)}
-                          className={`text-[10px] px-2 py-0.5 rounded border transition-all cursor-pointer flex items-center gap-1 ${isSelected
-                            ? activeClasses
-                            : 'bg-slate-50 hover:bg-white text-slate-600 border-slate-200'
-                            }`}
-                        >
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full ${chip.color === 'rose'
-                              ? 'bg-rose-500'
-                              : chip.color === 'amber'
-                                ? 'bg-amber-500'
-                                : chip.color === 'purple'
-                                  ? 'bg-purple-500'
-                                  : 'bg-blue-500'
-                              }`}
-                          ></span>
-                          <span>{chip.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* 2. Lĩnh vực chuyên môn */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-[12.5px] font-semibold text-slate-800 flex items-center gap-1">
-                      <span>2. Lĩnh vực chuyên môn</span>
-                      <span className="text-rose-500 font-bold ml-0.5 text-[12px]">*</span>
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => setIsCustomLinhVuc(!isCustomLinhVuc)}
-                      className="text-[11px] text-[#004ac6] hover:underline font-semibold flex items-center gap-0.5 cursor-pointer"
-                    >
-                      <span className="material-symbols-outlined text-[13px]">
-                        {isCustomLinhVuc ? 'list' : 'edit'}
-                      </span>
-                      <span>{isCustomLinhVuc ? 'Chọn từ danh mục' : 'Tự nhập lĩnh vực'}</span>
-                    </button>
-                  </div>
-
-                  {!isCustomLinhVuc ? (
-                    <select
-                      value={LINH_VUC_SUGGESTIONS.includes(editPhanLoaiForm.linhVuc) ? editPhanLoaiForm.linhVuc : 'custom'}
-                      onChange={(e) => {
-                        if (e.target.value === 'custom') {
-                          setIsCustomLinhVuc(true);
-                        } else {
-                          setEditPhanLoaiForm({ ...editPhanLoaiForm, linhVuc: e.target.value });
-                        }
-                      }}
-                      className="w-full px-3 py-1.5 text-xs font-semibold text-slate-800 bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6] transition-all cursor-pointer"
-                    >
-                      {LINH_VUC_SUGGESTIONS.map((item) => (
-                        <option key={item} value={item}>
-                          {item}
-                        </option>
-                      ))}
-                      <option value="custom">-- Lĩnh vực chuyên môn khác (Tự nhập...) --</option>
-                    </select>
-                  ) : (
-                    <div>
-                      <input
-                        type="text"
-                        value={editPhanLoaiForm.linhVuc}
-                        onChange={(e) => setEditPhanLoaiForm({ ...editPhanLoaiForm, linhVuc: e.target.value })}
-                        placeholder="Nhập lĩnh vực chuyên môn cụ thể..."
-                        autoFocus
-                        className="w-full px-3 py-1.5 text-xs font-semibold text-slate-800 bg-white border border-[#004ac6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 transition-all"
-                      />
-                      <span className="text-[10px] text-slate-400 block mt-1">
-                        Đang ở chế độ tự nhập lĩnh vực chuyên môn.
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Hàng 2: Thẩm quyền giải quyết & Hướng xử lý */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
-                {/* 3. Thẩm quyền giải quyết */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
-                    <label className="text-[12.5px] font-semibold text-slate-800 flex items-center gap-1">
-                      <span>3. Cơ quan có thẩm quyền giải quyết</span>
-                      <span className="text-rose-500 font-bold ml-0.5 text-[12px]">*</span>
-                    </label>
-                    <div className="flex items-center gap-1">
-                      <span className="text-[10px] text-slate-400">Mẫu:</span>
-                      <select
-                        onChange={(e) => {
-                          if (e.target.value) {
-                            setEditPhanLoaiForm({ ...editPhanLoaiForm, thamQuyen: e.target.value });
-                          }
-                        }}
-                        className="text-[10.5px] font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded px-1.5 py-0.5 focus:outline-none cursor-pointer max-w-[130px] truncate"
-                        defaultValue=""
-                      >
-                        <option value="" disabled>-- Chọn mẫu --</option>
-                        {THAM_QUYEN_SUGGESTIONS.map((item, idx) => (
-                          <option key={idx} value={item}>
-                            {item}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <textarea
-                    rows={2}
-                    value={editPhanLoaiForm.thamQuyen}
-                    onChange={(e) => setEditPhanLoaiForm({ ...editPhanLoaiForm, thamQuyen: e.target.value })}
-                    className="w-full px-3 py-2 text-[13.5px] font-normal text-slate-800 placeholder:text-slate-400 placeholder:text-[12.5px] bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6] transition-all leading-relaxed"
-                    placeholder="Nhập chi tiết cơ quan có thẩm quyền giải quyết..."
-                  />
-                </div>
-
-                {/* 4. Hướng xử lý đề xuất */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
-                    <label className="text-[12.5px] font-semibold text-slate-800 flex items-center gap-1">
-                      <span>4. Hướng xử lý đề xuất tiếp theo</span>
-                      <span className="text-rose-500 font-bold ml-0.5 text-[12px]">*</span>
-                    </label>
-                    <div className="flex items-center gap-1">
-                      <span className="text-[10px] text-slate-400">Mẫu:</span>
-                      <select
-                        onChange={(e) => {
-                          if (e.target.value) {
-                            setEditPhanLoaiForm({ ...editPhanLoaiForm, huongXuLy: e.target.value });
-                          }
-                        }}
-                        className="text-[10.5px] font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded px-1.5 py-0.5 focus:outline-none cursor-pointer max-w-[130px] truncate"
-                        defaultValue=""
-                      >
-                        <option value="" disabled>-- Chọn mẫu --</option>
-                        {HUONG_XU_LY_SUGGESTIONS.map((item, idx) => (
-                          <option key={idx} value={item}>
-                            {item}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <textarea
-                    rows={2}
-                    value={editPhanLoaiForm.huongXuLy}
-                    onChange={(e) => setEditPhanLoaiForm({ ...editPhanLoaiForm, huongXuLy: e.target.value })}
-                    className="w-full px-3 py-2 text-[13.5px] font-normal text-slate-800 placeholder:text-slate-400 placeholder:text-[12.5px] bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6] transition-all leading-relaxed"
-                    placeholder="Nhập nội dung đề xuất thụ lý, chuyển đơn hoặc hướng dẫn..."
-                  />
-                </div>
-              </div>
-
-              {/* Hàng 3: Căn cứ pháp lý */}
-              <div className="pt-2 border-t border-slate-100">
-                <div className="flex items-center justify-between mb-1.5 flex-wrap gap-2">
-                  <label className="text-[12.5px] font-semibold text-slate-800">
-                    5. Căn cứ pháp lý áp dụng
-                  </label>
-                  <div className="flex flex-wrap items-center gap-1">
-                    <span className="text-[10px] text-slate-400">Thêm nhanh:</span>
-                    {[
-                      'BLTTHS 2015',
-                      'BLHS 2015',
-                      'Luật Khiếu nại 2011',
-                      'Luật Tố cáo 2018',
-                      'Luật Đất đai 2024',
-                    ].map((law) => {
-                      const isIncluded = editPhanLoaiForm.canCuPhapLy.includes(law);
-                      return (
-                        <button
-                          key={law}
-                          type="button"
-                          onClick={() => {
-                            const current = editPhanLoaiForm.canCuPhapLy.trim();
-                            if (isIncluded) {
-                              const updated = current
-                                .replace(new RegExp(`(;\\s*)?${law}(;\\s*)?`, 'g'), '; ')
-                                .replace(/^;\s*|;\s*$/g, '')
-                                .trim();
-                              setEditPhanLoaiForm({ ...editPhanLoaiForm, canCuPhapLy: updated });
-                            } else {
-                              const addition = current ? `; ${law}` : law;
-                              setEditPhanLoaiForm({ ...editPhanLoaiForm, canCuPhapLy: current + addition });
-                            }
-                          }}
-                          className={`text-[10px] px-1.5 py-0.5 rounded border transition-all cursor-pointer flex items-center gap-0.5 ${isIncluded
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-300 font-bold'
-                            : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
-                            }`}
-                        >
-                          <span className="material-symbols-outlined text-[11px]">
-                            {isIncluded ? 'check' : 'add'}
-                          </span>
-                          <span>{law}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-                <textarea
-                  rows={2}
-                  value={editPhanLoaiForm.canCuPhapLy}
-                  onChange={(e) => setEditPhanLoaiForm({ ...editPhanLoaiForm, canCuPhapLy: e.target.value })}
-                  className="w-full px-3 py-2 text-[13.5px] font-normal text-slate-800 placeholder:text-slate-400 placeholder:text-[12.5px] bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6] leading-relaxed transition-all"
-                  placeholder="Nhập điều khoản luật, nghị định, thông tư căn cứ..."
-                />
-              </div>
-
-              {/* Hàng: Nội dung đơn & Tóm tắt yêu cầu */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
-                <div>
-                  <label className="text-[12.5px] font-semibold text-slate-800 block mb-1.5">
-                    6. Nội dung đơn (Tóm tắt diễn biến vụ việc)
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={editPhanLoaiForm.noiDungDon || ''}
-                    onChange={(e) => setEditPhanLoaiForm({ ...editPhanLoaiForm, noiDungDon: e.target.value })}
-                    className="w-full px-3 py-2 text-[13.5px] font-normal text-slate-800 placeholder:text-slate-400 placeholder:text-[12.5px] bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6] leading-relaxed transition-all"
-                    placeholder="Nhập nội dung tóm tắt vụ việc..."
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[12.5px] font-semibold text-slate-800 block mb-1.5">
-                    7. Tóm tắt yêu cầu của người nộp đơn
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={editPhanLoaiForm.tomTatYeuCau || ''}
-                    onChange={(e) => setEditPhanLoaiForm({ ...editPhanLoaiForm, tomTatYeuCau: e.target.value })}
-                    className="w-full px-3 py-2 text-[13.5px] font-normal text-slate-800 placeholder:text-slate-400 placeholder:text-[12.5px] bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6] leading-relaxed transition-all"
-                    placeholder="Nhập yêu cầu, kiến nghị cụ thể..."
-                  />
-                </div>
-              </div>
-
-              {/* Hàng 5: Ghi chú điều chỉnh của cán bộ */}
-              <div className="p-3 rounded-lg bg-amber-50/60 border border-amber-200/80">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <span className="material-symbols-outlined text-[15px] text-amber-700">verified_user</span>
-                  <label className="text-xs font-bold text-amber-900 uppercase tracking-tight">
-                    8. Lý do / Ghi chú điều chỉnh của Cán bộ (Lưu vết kiểm toán)
-                  </label>
-                  <span className="text-[9.5px] text-amber-700 bg-amber-100 px-1.5 py-0.2 rounded font-semibold ml-auto">
-                    Lưu lịch sử
-                  </span>
-                </div>
-                <input
-                  type="text"
-                  value={editPhanLoaiForm.ghiChuCuaCanBo || ''}
-                  onChange={(e) => setEditPhanLoaiForm({ ...editPhanLoaiForm, ghiChuCuaCanBo: e.target.value })}
-                  className="w-full px-3 py-1.5 text-xs text-slate-800 bg-white border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-600 transition-all placeholder:text-slate-400"
-                  placeholder="VD: Điều chỉnh từ Tin báo sang Tố giác theo hồ sơ tài liệu xác minh bổ sung..."
-                />
-              </div>
-            </div>
-
-            {/* BOTTOM ACTION BAR */}
-            <div className="flex items-center justify-between pt-4 border-t border-slate-200/90 flex-wrap gap-3">
+      {(() => {
+        const isEditingBlock2 = isEditingMode || isEditingPhanLoai;
+        return (
+          <div className="bg-white rounded-xl overflow-hidden">
+            {/* Header Khối 2 */}
+            <div className="px-5 py-3 border-b border-slate-200/90 flex items-center justify-between bg-white flex-wrap gap-2.5">
               <div className="flex items-center gap-2.5">
+                <span className="w-2 h-2 rounded-full bg-[#004ac6]"></span>
+                <h2 className="text-[14px] font-bold text-slate-900 tracking-tight font-headline-md uppercase">
+                  2. THÔNG TIN ĐƠN &amp; PHÂN LOẠI NGHIỆP VỤ
+                </h2>
+                {isEditingBlock2 && (
+                  <span className="px-2 py-0.5 rounded text-[10.5px] font-bold bg-blue-100 text-[#004ac6] border border-blue-200 uppercase tracking-wide">
+                    Đang sửa trực tiếp
+                  </span>
+                )}
+              </div>
+
+              {!isEditingBlock2 && (
                 <button
                   type="button"
-                  onClick={handleCancelEditPhanLoai}
-                  className="px-4 py-2 rounded-xl text-[13.5px] font-medium text-slate-600 hover:bg-slate-100 border border-slate-300 transition-all cursor-pointer"
+                  onClick={handleStartEdit}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg border border-blue-200 bg-blue-50 text-[#004ac6] hover:bg-blue-100 hover:border-blue-300 transition-all cursor-pointer shadow-2xs"
+                  title="Chỉnh sửa thông tin đơn và phân loại nghiệp vụ trực tiếp"
                 >
-                  Hủy bỏ
+                  <span className="material-symbols-outlined text-[16px]">edit_note</span>
+                  <span>Chỉnh sửa thông tin</span>
                 </button>
-                <button
-                  type="submit"
-                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl text-[13.5px] font-semibold text-white bg-[#004ac6] hover:bg-[#003da8] shadow-xs hover:shadow-md transition-all cursor-pointer active:scale-95"
-                >
-                  <span className="material-symbols-outlined text-[17px]">check</span>
-                  <span>Xác nhận &amp; Lưu phân loại</span>
-                </button>
-              </div>
+              )}
             </div>
-          </form>
-        )}
-      </div>
+
+            {/* ========================================================================= */}
+            {/* NỘI DUNG KHỐI 2: CHẾ ĐỘ XEM (VIEW MODE) HOẶC CHỈNH SỬA (EDIT MODE)        */}
+            {/* ========================================================================= */}
+            {!isEditingBlock2 ? (
+              <div className="p-5 space-y-3.5">
+                {/* Banner thông báo nếu cán bộ đã điều chỉnh */}
+
+                {/* Lưới 4 thông tin phân loại chính: Loại đơn, Lĩnh vực, Thẩm quyền, Hướng xử lý */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* Thẻ 1: Loại đơn */}
+                  <div className="p-3.5 rounded-lg bg-slate-50/80 border border-slate-200/80 flex flex-col justify-between">
+                    <span className="text-[10.5px] font-bold text-slate-500 uppercase tracking-tight flex items-center gap-1.5 mb-2">
+                      <span className="material-symbols-outlined text-[15px] text-rose-600">gavel</span>
+                      Phân loại đơn
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold">
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                        {phanLoai.loaiDon || editFormData.loaiDon}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Thẻ 2: Lĩnh vực chuyên môn */}
+                  <div className="p-3.5 rounded-lg bg-slate-50/80 border border-slate-200/80 flex flex-col justify-between">
+                    <span className="text-[10.5px] font-bold text-slate-500 uppercase tracking-tight flex items-center gap-1.5 mb-2">
+                      <span className="material-symbols-outlined text-[15px] text-[#004ac6]">category</span>
+                      Lĩnh vực chuyên môn
+                    </span>
+                    <div className="text-xs font-bold text-slate-800 leading-snug">
+                      {phanLoai.linhVuc}
+                    </div>
+                  </div>
+
+                  {/* Thẻ 3: Cơ quan có thẩm quyền giải quyết */}
+                  <div className="p-3.5 rounded-lg bg-slate-50/80 border border-slate-200/80 flex flex-col justify-between">
+                    <span className="text-[10.5px] font-bold text-slate-500 uppercase tracking-tight flex items-center gap-1.5 mb-2">
+                      <span className="material-symbols-outlined text-[15px] text-indigo-600">account_balance</span>
+                      Cơ quan có thẩm quyền giải quyết
+                    </span>
+                    <div className="text-xs font-semibold text-slate-800 leading-snug">
+                      {phanLoai.thamQuyen || info.thamQuyen}
+                    </div>
+                  </div>
+
+
+                </div>
+
+                {/* Lưới 2 thẻ: Nội dung đơn & Tóm tắt yêu cầu của người nộp đơn */}
+                <div className="space-y-3">
+                  {/* Thẻ 1: Nội dung đơn */}
+                  <div className="p-3.5 rounded-lg bg-slate-50/80 border border-slate-200/80">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[10.5px] font-bold text-slate-500 uppercase tracking-tight flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-[15px] text-[#004ac6]">article</span>
+                        Nội dung đơn
+                      </span>
+                      <span className="text-[10.5px] text-slate-400 font-medium">Tóm tắt diễn biến vụ việc</span>
+                    </div>
+                    <div className="text-xs text-slate-800 leading-relaxed text-justify">
+                      {editFormData.noiDung || phanLoai.noiDungDon || info.noiDungDon}
+                    </div>
+                  </div>
+
+                  {/* Thẻ 2: Tóm tắt yêu cầu của người nộp đơn */}
+                  <div className="p-3.5 rounded-lg bg-slate-50/80 border border-slate-200/80">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[10.5px] font-bold text-slate-500 uppercase tracking-tight flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-[15px] text-[#004ac6]">task_alt</span>
+                        Tóm tắt yêu cầu của người nộp đơn
+                      </span>
+                      <span className="text-[10.5px] text-slate-400 font-medium">Yêu cầu, kiến nghị cụ thể</span>
+                    </div>
+                    <div className="text-xs text-slate-800 leading-relaxed text-justify">
+                      {phanLoai.tomTatYeuCau || info.tomTatYeuCau}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* FORM CHỈNH SỬA THÔNG TIN ĐƠN & PHÂN LOẠI NGHIỆP VỤ TRỰC TIẾP TẠI MÀN HÌNH */
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (isEditingMode) {
+                    handleSaveEdit(e);
+                  } else {
+                    handleSavePhanLoai(e);
+                  }
+                }}
+                className="p-5 space-y-4 bg-slate-50/30"
+              >
+                {/* Banner hướng dẫn */}
+                <div className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-blue-50/80 border border-blue-200/80 text-xs text-blue-900">
+                  <span className="material-symbols-outlined text-[17px] text-[#004ac6] shrink-0">tune</span>
+                  <span className="font-medium">
+                    Sửa trực tiếp tiêu đề hồ sơ, loại đơn, thẩm quyền, hướng xử lý và nội dung diễn biến ngay trên giao diện. Mọi thay đổi sẽ được cập nhật đồng bộ.
+                  </span>
+                </div>
+
+                {/* LƯỚI FORM NHẬP LIỆU */}
+                <div className="p-4 rounded-xl bg-white border border-slate-200 space-y-4 shadow-2xs">
+                  {/* Hàng 0: Tiêu đề hồ sơ đơn */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-[12.5px] font-semibold text-slate-800 flex items-center gap-1">
+                        <span>1. Tiêu đề hồ sơ đơn</span>
+                        <span className="text-rose-500 font-bold ml-0.5 text-[12px]">*</span>
+                      </label>
+                      <span className="text-[11px] text-slate-400">Tên ngắn gọn, rõ ràng theo trích yếu nội dung</span>
+                    </div>
+                    <input
+                      type="text"
+                      required
+                      value={editFormData.title}
+                      onChange={(e) => setEditFormData({ ...editFormData, title: e.target.value })}
+                      className="w-full px-3 py-2 text-[13.5px] font-bold text-slate-900 bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6] transition-all"
+                      placeholder="Nhập tiêu đề hồ sơ đơn..."
+                    />
+                  </div>
+
+                  {/* Hàng 1: Loại đơn & Lĩnh vực */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+                    {/* 2. Loại đơn */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-[12.5px] font-semibold text-slate-800 flex items-center gap-1">
+                          <span>2. Loại đơn</span>
+                          <span className="text-rose-500 font-bold ml-0.5 text-[12px]">*</span>
+                        </label>
+                      </div>
+                      <select
+                        value={editPhanLoaiForm.loaiDon || editFormData.loaiDon}
+                        onChange={(e) => handleSelectLoaiDon(e.target.value)}
+                        className="w-full px-3 py-2 text-[13.5px] font-normal text-slate-800 bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6] transition-all cursor-pointer"
+                      >
+                        {LOAI_DON_SUGGESTIONS.map((item) => (
+                          <option key={item} value={item}>
+                            {item}
+                          </option>
+                        ))}
+                      </select>
+
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        <span className="text-[10px] text-slate-400 font-medium self-center">Chọn nhanh:</span>
+                        {[
+                          { label: 'Đơn tố giác về tội phạm', color: 'rose' },
+                          { label: 'Đơn khiếu nại (Lần 1)', color: 'amber' },
+                          { label: 'Đơn tố cáo', color: 'purple' },
+                          { label: 'Đơn phản ánh, kiến nghị', color: 'blue' },
+                        ].map((chip) => {
+                          const currentSelectedLoai = editPhanLoaiForm.loaiDon || editFormData.loaiDon;
+                          const isSelected = currentSelectedLoai === chip.label;
+                          const activeClasses =
+                            chip.color === 'rose'
+                              ? 'bg-rose-50 text-rose-700 border-rose-300 font-bold shadow-2xs'
+                              : chip.color === 'amber'
+                                ? 'bg-amber-50 text-amber-800 border-amber-300 font-bold shadow-2xs'
+                                : chip.color === 'purple'
+                                  ? 'bg-purple-50 text-purple-700 border-purple-300 font-bold shadow-2xs'
+                                  : 'bg-blue-50 text-blue-700 border-blue-300 font-bold shadow-2xs';
+
+                          return (
+                            <button
+                              key={chip.label}
+                              type="button"
+                              onClick={() => handleSelectLoaiDon(chip.label)}
+                              className={`text-[10px] px-2 py-0.5 rounded border transition-all cursor-pointer flex items-center gap-1 ${isSelected
+                                ? activeClasses
+                                : 'bg-slate-50 hover:bg-white text-slate-600 border-slate-200'
+                                }`}
+                            >
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full ${chip.color === 'rose'
+                                  ? 'bg-rose-500'
+                                  : chip.color === 'amber'
+                                    ? 'bg-amber-500'
+                                    : chip.color === 'purple'
+                                      ? 'bg-purple-500'
+                                      : 'bg-blue-500'
+                                  }`}
+                              ></span>
+                              <span>{chip.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* 3. Lĩnh vực chuyên môn */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-[12.5px] font-semibold text-slate-800 flex items-center gap-1">
+                          <span>3. Lĩnh vực chuyên môn</span>
+                          <span className="text-rose-500 font-bold ml-0.5 text-[12px]">*</span>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setIsCustomLinhVuc(!isCustomLinhVuc)}
+                          className="text-[11px] text-[#004ac6] hover:underline font-semibold flex items-center gap-0.5 cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-[13px]">
+                            {isCustomLinhVuc ? 'list' : 'edit'}
+                          </span>
+                          <span>{isCustomLinhVuc ? 'Chọn từ danh mục' : 'Tự nhập lĩnh vực'}</span>
+                        </button>
+                      </div>
+
+                      {!isCustomLinhVuc ? (
+                        <select
+                          value={LINH_VUC_SUGGESTIONS.includes(editPhanLoaiForm.linhVuc) ? editPhanLoaiForm.linhVuc : 'custom'}
+                          onChange={(e) => {
+                            if (e.target.value === 'custom') {
+                              setIsCustomLinhVuc(true);
+                            } else {
+                              setEditPhanLoaiForm({ ...editPhanLoaiForm, linhVuc: e.target.value });
+                            }
+                          }}
+                          className="w-full px-3 py-2 text-[13.5px] font-normal text-slate-800 bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6] transition-all cursor-pointer"
+                        >
+                          {LINH_VUC_SUGGESTIONS.map((item) => (
+                            <option key={item} value={item}>
+                              {item}
+                            </option>
+                          ))}
+                          <option value="custom">-- Lĩnh vực chuyên môn khác (Tự nhập...) --</option>
+                        </select>
+                      ) : (
+                        <div>
+                          <input
+                            type="text"
+                            value={editPhanLoaiForm.linhVuc}
+                            onChange={(e) => setEditPhanLoaiForm({ ...editPhanLoaiForm, linhVuc: e.target.value })}
+                            placeholder="Nhập lĩnh vực chuyên môn cụ thể..."
+                            autoFocus
+                            className="w-full px-3 py-2 text-[13.5px] text-slate-800 bg-white border border-[#004ac6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 transition-all"
+                          />
+                          <span className="text-[10px] text-slate-400 block mt-1">
+                            Đang ở chế độ tự nhập lĩnh vực chuyên môn.
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Hàng 2: Thẩm quyền giải quyết & Hướng xử lý */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+                    {/* 4. Thẩm quyền giải quyết */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
+                        <label className="text-[12.5px] font-semibold text-slate-800 flex items-center gap-1">
+                          <span>4. Cơ quan có thẩm quyền giải quyết</span>
+                          <span className="text-rose-500 font-bold ml-0.5 text-[12px]">*</span>
+                        </label>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[10px] text-slate-400">Mẫu:</span>
+                          <select
+                            onChange={(e) => {
+                              if (e.target.value) {
+                                setEditPhanLoaiForm({ ...editPhanLoaiForm, thamQuyen: e.target.value });
+                              }
+                            }}
+                            className="text-[10.5px] font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded px-1.5 py-0.5 focus:outline-none cursor-pointer max-w-[130px] truncate"
+                            defaultValue=""
+                          >
+                            <option value="" disabled>-- Chọn mẫu --</option>
+                            {THAM_QUYEN_SUGGESTIONS.map((item, idx) => (
+                              <option key={idx} value={item}>
+                                {item}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      <textarea
+                        rows={2}
+                        value={editPhanLoaiForm.thamQuyen}
+                        onChange={(e) => setEditPhanLoaiForm({ ...editPhanLoaiForm, thamQuyen: e.target.value })}
+                        className="w-full px-3 py-2 text-[13.5px] font-normal text-slate-800 placeholder:text-slate-400 placeholder:text-[12.5px] bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6] transition-all leading-relaxed"
+                        placeholder="Nhập chi tiết cơ quan có thẩm quyền giải quyết..."
+                      />
+                    </div>
+
+                    {/* 5. Hướng xử lý đề xuất */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
+                        <label className="text-[12.5px] font-semibold text-slate-800 flex items-center gap-1">
+                          <span>5. Hướng xử lý đề xuất tiếp theo</span>
+                          <span className="text-rose-500 font-bold ml-0.5 text-[12px]">*</span>
+                        </label>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[10px] text-slate-400">Mẫu:</span>
+                          <select
+                            onChange={(e) => {
+                              if (e.target.value) {
+                                setEditPhanLoaiForm({ ...editPhanLoaiForm, huongXuLy: e.target.value });
+                              }
+                            }}
+                            className="text-[10.5px] font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded px-1.5 py-0.5 focus:outline-none cursor-pointer max-w-[130px] truncate"
+                            defaultValue=""
+                          >
+                            <option value="" disabled>-- Chọn mẫu --</option>
+                            {HUONG_XU_LY_SUGGESTIONS.map((item, idx) => (
+                              <option key={idx} value={item}>
+                                {item}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      <textarea
+                        rows={2}
+                        value={editPhanLoaiForm.huongXuLy}
+                        onChange={(e) => setEditPhanLoaiForm({ ...editPhanLoaiForm, huongXuLy: e.target.value })}
+                        className="w-full px-3 py-2 text-[13.5px] font-normal text-slate-800 placeholder:text-slate-400 placeholder:text-[12.5px] bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6] transition-all leading-relaxed"
+                        placeholder="Nhập nội dung đề xuất thụ lý, chuyển đơn hoặc hướng dẫn..."
+                      />
+                    </div>
+                  </div>
+
+                  {/* Hàng 3: Căn cứ pháp lý */}
+                  <div className="pt-2 border-t border-slate-100">
+                    <div className="flex items-center justify-between mb-1.5 flex-wrap gap-2">
+                      <label className="text-[12.5px] font-semibold text-slate-800">
+                        6. Căn cứ pháp lý áp dụng
+                      </label>
+                      <div className="flex flex-wrap items-center gap-1">
+                        <span className="text-[10px] text-slate-400">Thêm nhanh:</span>
+                        {[
+                          'BLTTHS 2015',
+                          'BLHS 2015',
+                          'Luật Khiếu nại 2011',
+                          'Luật Tố cáo 2018',
+                          'Luật Đất đai 2024',
+                        ].map((law) => {
+                          const isIncluded = editPhanLoaiForm.canCuPhapLy.includes(law);
+                          return (
+                            <button
+                              key={law}
+                              type="button"
+                              onClick={() => {
+                                const current = editPhanLoaiForm.canCuPhapLy.trim();
+                                if (isIncluded) {
+                                  const updated = current
+                                    .replace(new RegExp(`(;\\s*)?${law}(;\\s*)?`, 'g'), '; ')
+                                    .replace(/^;\s*|;\s*$/g, '')
+                                    .trim();
+                                  setEditPhanLoaiForm({ ...editPhanLoaiForm, canCuPhapLy: updated });
+                                } else {
+                                  const addition = current ? `; ${law}` : law;
+                                  setEditPhanLoaiForm({ ...editPhanLoaiForm, canCuPhapLy: current + addition });
+                                }
+                              }}
+                              className={`text-[10px] px-1.5 py-0.5 rounded border transition-all cursor-pointer flex items-center gap-0.5 ${isIncluded
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-300 font-bold'
+                                : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+                                }`}
+                            >
+                              <span className="material-symbols-outlined text-[11px]">
+                                {isIncluded ? 'check' : 'add'}
+                              </span>
+                              <span>{law}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <textarea
+                      rows={2}
+                      value={editPhanLoaiForm.canCuPhapLy}
+                      onChange={(e) => setEditPhanLoaiForm({ ...editPhanLoaiForm, canCuPhapLy: e.target.value })}
+                      className="w-full px-3 py-2 text-[13.5px] font-normal text-slate-800 placeholder:text-slate-400 placeholder:text-[12.5px] bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6] leading-relaxed transition-all"
+                      placeholder="Nhập điều khoản luật, nghị định, thông tư căn cứ..."
+                    />
+                  </div>
+
+                  {/* Hàng 4: Nội dung đơn & Tóm tắt yêu cầu */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+                    <div>
+                      <label className="text-[12.5px] font-semibold text-slate-800 block mb-1.5">
+                        7. Nội dung đơn (Tóm tắt diễn biến vụ việc)
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={editFormData.noiDung || (typeof editPhanLoaiForm.noiDungDon === 'string' ? editPhanLoaiForm.noiDungDon : '')}
+                        onChange={(e) => {
+                          setEditFormData({ ...editFormData, noiDung: e.target.value });
+                          setEditPhanLoaiForm({ ...editPhanLoaiForm, noiDungDon: e.target.value });
+                        }}
+                        className="w-full px-3 py-2 text-[13.5px] font-normal text-slate-800 placeholder:text-slate-400 placeholder:text-[12.5px] bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6] leading-relaxed transition-all"
+                        placeholder="Nhập nội dung tóm tắt vụ việc..."
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[12.5px] font-semibold text-slate-800 block mb-1.5">
+                        8. Tóm tắt yêu cầu của người nộp đơn
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={typeof editPhanLoaiForm.tomTatYeuCau === 'string' ? editPhanLoaiForm.tomTatYeuCau : ''}
+                        onChange={(e) => setEditPhanLoaiForm({ ...editPhanLoaiForm, tomTatYeuCau: e.target.value })}
+                        className="w-full px-3 py-2 text-[13.5px] font-normal text-slate-800 placeholder:text-slate-400 placeholder:text-[12.5px] bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6] leading-relaxed transition-all"
+                        placeholder="Nhập yêu cầu, kiến nghị cụ thể..."
+                      />
+                    </div>
+                  </div>
+
+                  {/* Hàng 5: Ghi chú điều chỉnh của cán bộ */}
+                  <div className="p-3 rounded-lg bg-amber-50/60 border border-amber-200/80">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className="material-symbols-outlined text-[15px] text-amber-700">verified_user</span>
+                      <label className="text-xs font-bold text-amber-900 uppercase tracking-tight">
+                        9. Lý do / Ghi chú điều chỉnh của Cán bộ (Lưu vết kiểm toán)
+                      </label>
+                      <span className="text-[9.5px] text-amber-700 bg-amber-100 px-1.5 py-0.2 rounded font-semibold ml-auto">
+                        Lưu lịch sử
+                      </span>
+                    </div>
+                    <input
+                      type="text"
+                      value={editPhanLoaiForm.ghiChuCuaCanBo || ''}
+                      onChange={(e) => setEditPhanLoaiForm({ ...editPhanLoaiForm, ghiChuCuaCanBo: e.target.value })}
+                      className="w-full px-3 py-1.5 text-xs text-slate-800 bg-white border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-600 transition-all placeholder:text-slate-400"
+                      placeholder="VD: Điều chỉnh từ Tin báo sang Tố giác theo hồ sơ tài liệu xác minh bổ sung..."
+                    />
+                  </div>
+                </div>
+
+                {/* BOTTOM ACTION BAR KHỐI 2 */}
+                <div className="flex items-center justify-between pt-4 border-t border-slate-200/90 flex-wrap gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (isEditingMode) {
+                          handleCancelEdit();
+                        } else {
+                          handleCancelEditPhanLoai();
+                        }
+                      }}
+                      className="px-4 py-2 rounded-xl text-[13px] font-semibold text-slate-700 hover:bg-slate-100 border border-slate-300 transition-all cursor-pointer"
+                    >
+                      Hủy bỏ
+                    </button>
+                    <button
+                      type="submit"
+                      className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl text-[13px] font-bold text-white bg-[#004ac6] hover:bg-[#003da8] shadow-xs hover:shadow-md transition-all cursor-pointer active:scale-95"
+                    >
+                      <span className="material-symbols-outlined text-[17px]">save</span>
+                      <span>{isEditingMode ? 'Lưu thay đổi thông tin đơn' : 'Xác nhận & Lưu phân loại'}</span>
+                    </button>
+                  </div>
+                </div>
+              </form>
+            )}
+          </div>
+        );
+      })()}
 
 
       {/* ========================================================================= */}

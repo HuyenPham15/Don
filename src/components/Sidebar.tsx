@@ -83,6 +83,34 @@ export default function Sidebar({ screen, onNav, currentAccount, signingCounts }
             </div>
           </button>
 
+          {/* Quản lý trình ký (Menu độc lập theo yêu cầu) */}
+          <button
+            type="button"
+            onClick={() => onNav('quan-ly-trinh-ky')}
+            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer ${
+              screen === 'quan-ly-trinh-ky'
+                ? 'bg-blue-50 text-[#004ac6] font-semibold border border-blue-100/60 shadow-2xs'
+                : 'text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <span
+                className={`material-symbols-outlined text-[20px] ${
+                  screen === 'quan-ly-trinh-ky' ? 'text-[#004ac6]' : 'text-slate-600'
+                }`}
+              >
+                approval
+              </span>
+              <span className="text-[13.5px] font-medium">Quản lý trình ký</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="px-1.5 py-0.5 rounded-md bg-purple-100 text-purple-800 text-[10px] font-bold">
+                Tập trung
+              </span>
+              {screen === 'quan-ly-trinh-ky' && <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>}
+            </div>
+          </button>
+
           {/* AI Tiếp nhận đơn (Chat) */}
           <button
             type="button"

@@ -13,6 +13,7 @@ export type Screen =
   | "quan-tri-bieu-mau"
   | "trinh-ky"
   | "van-ban-cho-ky"
+  | "quan-ly-trinh-ky"
   | "thu-vien" 
   | "bao-cao" 
   | "tiep-nhan-xu-ly"
@@ -20,6 +21,7 @@ export type Screen =
   | "login";
 
 export * from './signing';
+export * from './quanLyTrinhKy';
 
 export type AIJob = 0 | 1 | 2 | 3 | 4 | 5;
 

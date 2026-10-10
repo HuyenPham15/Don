@@ -630,6 +630,7 @@ interface SwimlaneWorkflowDiagramProps {
     trichYeu?: string;
     noiDungChiTiet?: string;
   }) => void;
+  onOpenQuanLyTrinhKy?: (luotTrinhId?: string) => void;
 }
 
 export default function SwimlaneWorkflowDiagram({
@@ -639,6 +640,7 @@ export default function SwimlaneWorkflowDiagram({
   nguoiNop = 'Nguyễn Văn A',
   onConfirmStep,
   onViewDocument,
+  onOpenQuanLyTrinhKy,
 }: SwimlaneWorkflowDiagramProps) {
   // Lựa chọn loại quy trình
   const [currentWorkflowType, setCurrentWorkflowType] = useState<WorkflowType>(initialWorkflowType);
@@ -900,6 +902,7 @@ export default function SwimlaneWorkflowDiagram({
             donTitle={donTitle}
             nguoiNop={nguoiNop}
             onViewDocument={onViewDocument}
+            onOpenQuanLyTrinhKy={onOpenQuanLyTrinhKy}
           />
         </div>
       </div>

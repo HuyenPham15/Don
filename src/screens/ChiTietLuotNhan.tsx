@@ -203,8 +203,8 @@ export default function ChiTietLuotNhan({
   };
 
   const isDaChuyen = currentLuotNhan.status === 'da_chuyen';
-  const ngayNhanFormatted = currentLuotNhan.ngayNhan.includes(':') 
-    ? currentLuotNhan.ngayNhan 
+  const ngayNhanFormatted = currentLuotNhan.ngayNhan.includes(':')
+    ? currentLuotNhan.ngayNhan
     : `${currentLuotNhan.ngayNhan} ${currentLuotNhan.gioNhan || '19:41:00'}`;
   const nguoiThaoTac = currentLuotNhan.nguoiThaoTacGanNhat || `Lê Ngọc Mai – ${ngayNhanFormatted.split(' ')[0]} ${new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
 
@@ -278,19 +278,17 @@ export default function ChiTietLuotNhan({
             </div>
           </div>
 
-          {/* Cụm Giữa: Toast / Pill thông báo thành công xanh lá */}
-          {isJustCreated && (
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#e6f4ea] text-[#137333] border border-[#ceead6] text-[12px] font-medium shadow-2xs">
-              <span className="material-symbols-outlined text-[15px] text-[#137333]">check_circle</span>
-              <span>Đã ghi lượt nhận {currentLuotNhan.id}</span>
-            </div>
-          )}
-
           {/* Cụm Phải: Action buttons */}
           <div className="flex items-center gap-2.5">
             <button
               type="button"
-              onClick={() => setIsEditModalOpen(true)}
+              onClick={() => {
+                setEditNguoiNop(currentLuotNhan.nguoiNop || '');
+                setEditDonVi(currentLuotNhan.donVi || 'Công an thành phố Hà Nội');
+                setEditHinhThuc(currentLuotNhan.hinhThuc || 'Trực tiếp');
+                setEditNoiDung(currentLuotNhan.noiDung || '');
+                setIsEditModalOpen(true);
+              }}
               className="inline-flex items-center gap-1 px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg text-slate-700 text-[12px] font-medium shadow-2xs hover:shadow-xs transition-all cursor-pointer"
             >
               <span className="material-symbols-outlined text-[15px] text-slate-500">edit</span>
@@ -300,7 +298,7 @@ export default function ChiTietLuotNhan({
             <button
               type="button"
               onClick={() => setIsChuyenModalOpen(true)}
-              className="inline-flex items-center gap-1 px-3.5 py-1.5 bg-[#8b1515] hover:bg-[#731212] active:scale-95 text-white text-[12px] font-semibold rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer"
+              className="inline-flex items-center gap-1 px-3.5 py-1.5 bg-[#004ac6] hover:bg-[#003ea8] cursor-pointer active:scale-95 text-white text-[12px] font-semibold rounded-lg shadow-sm hover:shadow-md transition-all"
             >
               <span className="material-symbols-outlined text-[15px] rotate-[-25deg]">send</span>
               <span>Chuyển xử lý</span>
@@ -318,11 +316,10 @@ export default function ChiTietLuotNhan({
             <button
               type="button"
               onClick={() => setActiveTab('thong-tin')}
-              className={`flex items-center gap-1.5 py-2.5 px-2 text-[13px] font-semibold transition-colors cursor-pointer border-b-2 ${
-                activeTab === 'thong-tin'
-                  ? 'border-[#8b1515] text-[#8b1515]'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
-              }`}
+              className={`flex items-center gap-1.5 py-2.5 px-2 text-[13px] font-semibold transition-colors cursor-pointer border-b-2 ${activeTab === 'thong-tin'
+                ? 'border-[#8b1515] text-[#8b1515]'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
             >
               <span className="material-symbols-outlined text-[16px]">description</span>
               <span>Thông tin chung</span>
@@ -331,11 +328,10 @@ export default function ChiTietLuotNhan({
             <button
               type="button"
               onClick={() => setActiveTab('lich-su')}
-              className={`flex items-center gap-1.5 py-2.5 px-3 text-[13px] font-semibold transition-colors cursor-pointer border-b-2 ml-2 ${
-                activeTab === 'lich-su'
-                  ? 'border-[#8b1515] text-[#8b1515]'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
-              }`}
+              className={`flex items-center gap-1.5 py-2.5 px-3 text-[13px] font-semibold transition-colors cursor-pointer border-b-2 ml-2 ${activeTab === 'lich-su'
+                ? 'border-[#8b1515] text-[#8b1515]'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
             >
               <span className="material-symbols-outlined text-[16px]">schedule</span>
               <span>Lịch sử xử lý</span>
@@ -367,7 +363,7 @@ export default function ChiTietLuotNhan({
                     </span>
                   </div>
 
-                  <div className="py-2.5 flex items-center justify-between">
+                  {/* <div className="py-2.5 flex items-center justify-between">
                     <span className="text-slate-500 font-normal">Ngày chuyển xử lý</span>
                     <span className="text-slate-600 font-normal text-right">
                       {currentLuotNhan.ngayChuyenXuLy || (isDaChuyen ? 'Đã chuyển' : 'Chưa chuyển xử lý')}
@@ -377,7 +373,7 @@ export default function ChiTietLuotNhan({
                   <div className="py-2.5 flex items-center justify-between">
                     <span className="text-slate-500 font-normal">Người thao tác gần nhất</span>
                     <span className="text-slate-900 font-medium text-right">{nguoiThaoTac}</span>
-                  </div>
+                  </div> */}
                 </div>
 
                 {/* Section Tài liệu đính kèm */}
@@ -397,7 +393,7 @@ export default function ChiTietLuotNhan({
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="inline-flex items-center gap-1 px-3 py-1 bg-[#8b1515] hover:bg-[#731212] active:scale-95 text-white text-[11.5px] font-medium rounded-md shadow-2xs transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1 px-3 py-1 bg-[#004ac6] hover:bg-[#003ea8] active:scale-95 text-white text-[11.5px] font-medium rounded-md shadow-2xs transition-colors cursor-pointer"
                       >
                         <span className="material-symbols-outlined text-[14px]">upload</span>
                         <span>Tải tệp</span>
@@ -414,11 +410,10 @@ export default function ChiTietLuotNhan({
                           <div
                             key={idx}
                             onClick={() => setSelectedFile(file)}
-                            className={`flex items-center justify-between p-2.5 rounded-lg border text-xs cursor-pointer transition-all ${
-                              isSelected
-                                ? 'bg-red-50/40 border-red-200 text-slate-900 font-medium shadow-2xs'
-                                : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700'
-                            }`}
+                            className={`flex items-center justify-between p-2.5 rounded-lg border text-xs cursor-pointer transition-all ${isSelected
+                              ? 'bg-red-50/40 border-red-200 text-slate-900 font-medium shadow-2xs'
+                              : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700'
+                              }`}
                           >
                             <div className="flex items-center gap-2 min-w-0">
                               <span className="material-symbols-outlined text-[18px] text-red-600 shrink-0">
@@ -538,7 +533,7 @@ export default function ChiTietLuotNhan({
                     <span className="font-normal text-xs normal-case">Độc lập - Tự do - Hạnh phúc</span>
                   </div>
                   <div className="border-b border-slate-300 w-32 mx-auto my-2" />
-                  
+
                   <div className="text-center font-bold text-base text-slate-900 mt-4 uppercase">
                     {currentLuotNhan.loaiDon || 'ĐƠN TIẾP NHẬN YÊU CẦU / PHẢN ÁNH'}
                   </div>
