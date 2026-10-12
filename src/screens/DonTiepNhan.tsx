@@ -383,6 +383,38 @@ export default function DonTiepNhan({
     existingSigningDoc && existingSigningDoc.status !== 'nhap'
   );
 
+  // Kiểm tra báo cáo đề xuất đã được ký duyệt chính thức chưa (đã ký / hoàn tất)
+  const isBaoCaoDaKy = Boolean(
+    (existingSigningDoc &&
+      (existingSigningDoc.status === 'da_ky' || existingSigningDoc.status === 'hoan_tat')) ||
+    currentDon?.statusBadge?.includes('Đã ký')
+  );
+
+  // Kiểm tra văn bản trả lại đơn của hồ sơ này
+  const existingTraLaiSigningDoc = useMemo(() => {
+    return (
+      signingDocuments?.find(
+        (d) => d.hoSoCode === currentDon.code && d.loaiVanBan === 'van_ban_tra_lai'
+      ) || null
+    );
+  }, [signingDocuments, currentDon.code]);
+
+  // Khi văn bản trả lại đơn đã được Lãnh đạo ký duyệt (status === 'da_ky' || 'hoan_tat')
+  // thì quy trình trả lại đơn mới chính thức kết thúc
+  useEffect(() => {
+    if (
+      existingTraLaiSigningDoc &&
+      (existingTraLaiSigningDoc.status === 'da_ky' || existingTraLaiSigningDoc.status === 'hoan_tat') &&
+      currentDon.statusBadge !== 'Đã trả lại đơn'
+    ) {
+      setCurrentDon((prev) => ({
+        ...prev,
+        statusBadge: 'Đã trả lại đơn',
+      }));
+      setHuongXuLyDaChon('tra_lai');
+    }
+  }, [existingTraLaiSigningDoc, currentDon.statusBadge]);
+
   // 1. Nhấn vào "Tạo báo cáo đề xuất" -> Hiển thị popup/modal "Tạo báo cáo đề xuất"
   const handleTaoBaoCaoDeXuat = () => {
     if (isBaoCaoDaTrinhKy) {
@@ -752,24 +784,25 @@ export default function DonTiepNhan({
 
           {/* Action Buttons: Nút Chỉnh sửa thông tin + Split Button chính */}
           <div className="flex items-center gap-2.5 shrink-0">
-            {/* Nút Tạo / Xem báo cáo đề xuất (nghiệp vụ Quản lý Đơn) */}
-            <button
-              type="button"
-              onClick={handleTaoBaoCaoDeXuat}
-              className={`inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border transition-all cursor-pointer shadow-2xs active:scale-95 text-[13px] font-bold ${isBaoCaoDaTrinhKy
-                ? 'border-blue-300 bg-blue-50/90 hover:bg-blue-100 text-[#004ac6]'
-                : 'border-blue-600 bg-[#004ac6] hover:bg-[#003ea8] text-white shadow-md ring-2 ring-blue-300/40'
-                }`}
-              title={
-                isBaoCaoDaTrinhKy
-                  ? 'Xem văn bản Báo cáo đề xuất tại tab Hồ sơ & Văn bản'
-                  : 'Khởi tạo văn bản Báo cáo đề xuất chi tiết tại tab Hồ sơ & Văn bản để chỉnh sửa và trình ký'
-              }
-            >
-              <span className="material-symbols-outlined text-[18px]">rate_review</span>
-              <span>{isBaoCaoDaTrinhKy ? 'Xem báo cáo đề xuất' : 'Tạo báo cáo đề xuất'}</span>
-
-            </button>
+            {/* Nút Tạo / Xem báo cáo đề xuất (nghiệp vụ Quản lý Đơn): Sau khi đã ký báo cáo đề xuất thì không hiển thị nút này nữa */}
+            {!isBaoCaoDaKy && (
+              <button
+                type="button"
+                onClick={handleTaoBaoCaoDeXuat}
+                className={`inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border transition-all cursor-pointer shadow-2xs active:scale-95 text-[13px] font-bold ${isBaoCaoDaTrinhKy
+                  ? 'border-blue-300 bg-blue-50/90 hover:bg-blue-100 text-[#004ac6]'
+                  : 'border-blue-600 bg-[#004ac6] hover:bg-[#003ea8] text-white shadow-md ring-2 ring-blue-300/40'
+                  }`}
+                title={
+                  isBaoCaoDaTrinhKy
+                    ? 'Xem văn bản Báo cáo đề xuất tại tab Hồ sơ & Văn bản'
+                    : 'Khởi tạo văn bản Báo cáo đề xuất chi tiết tại tab Hồ sơ & Văn bản để chỉnh sửa và trình ký'
+                }
+              >
+                <span className="material-symbols-outlined text-[18px]">rate_review</span>
+                <span>{isBaoCaoDaTrinhKy ? 'Xem báo cáo đề xuất' : 'Tạo báo cáo đề xuất'}</span>
+              </button>
+            )}
             {/* Dropdown Thao tác khác: Ghép hồ sơ đơn, Tải bổ sung file, Phân công xử lý, Chỉnh sửa thông tin đơn */}
             <div className="relative inline-flex items-center">
               <button
@@ -920,14 +953,12 @@ export default function DonTiepNhan({
                     {HUONG_XU_LY_CONFIG[huongXuLyDaChon]?.icon || 'gavel'}
                   </span>
                   <span>{HUONG_XU_LY_CONFIG[huongXuLyDaChon]?.buttonText || 'Thụ lý'}</span>
-                  {huongXuLyDaChon === 'yeu_cau_bo_sung' && isAiNeedsMissingDocs && (
+                  {/* {huongXuLyDaChon === 'yeu_cau_bo_sung' && isAiNeedsMissingDocs && (
                     <span className="px-1.5 py-0.2 rounded bg-white/20 text-[10px] font-bold text-white uppercase tracking-wider">
                       AI đề xuất
                     </span>
-                  )}
+                  )} */}
                 </button>
-
-                {/* 2. NÚT MŨI TÊN DROPDOWN SỔ CÁC HƯỚNG XỬ LÝ KHÁC */}
                 <button
                   type="button"
                   onClick={() => setShowHuongDropdown(!showHuongDropdown)}
@@ -1093,7 +1124,7 @@ export default function DonTiepNhan({
                         </button>
 
                         {/* 6. Trả lời đơn */}
-                        <button
+                        {/* <button
                           type="button"
                           onClick={() => handleSelectHuong('tra_loi_don')}
                           className={`w-full flex items-start gap-2.5 p-2.5 rounded-xl text-left transition-colors cursor-pointer ${huongXuLyDaChon === 'tra_loi_don'
@@ -1115,7 +1146,7 @@ export default function DonTiepNhan({
                           {huongXuLyDaChon === 'tra_loi_don' && (
                             <span className="material-symbols-outlined text-teal-600 text-[18px] shrink-0 mt-1">check</span>
                           )}
-                        </button>
+                        </button> */}
                       </div>
 
                       {/* Phân cách & Bảng xác minh chi tiết */}
@@ -1624,27 +1655,136 @@ export default function DonTiepNhan({
         onClose={() => setShowTraLaiModal(false)}
         onSubmit={(data: TraLaiDonSubmitData) => {
           setShowTraLaiModal(false);
-          showToast(`✓ Đã ban hành Phiếu hướng dẫn trả đơn (${data.cauHinhVanBan.soKyHieu}) cho công dân ${data.nguoiNhan}.`);
-          setDocCount((c) => c + 1);
-          addHistoryLog({
-            title: `Ban hành Phiếu hướng dẫn trả lại đơn (${data.cauHinhVanBan.soKyHieu})`,
-            actor: currentDon.canBoXuLy || 'Nguyễn Minh Anh',
-            actorRole: currentDon.chucVuCanBo || 'Chuyên viên Tiếp nhận & Xử lý đơn',
-            actorDept: currentDon.donViXuLy || 'Phòng Tiếp công dân & Xử lý đơn',
-            category: 'van_ban',
-            statusBadge: {
-              text: 'Trả lại đơn',
-              bgClass: 'bg-amber-50',
-              textClass: 'text-amber-800',
-              borderClass: 'border-amber-200',
-            },
-            description: `Ban hành Phiếu hướng dẫn số ${data.cauHinhVanBan.soKyHieu} trả lại đơn và hướng dẫn công dân ${data.nguoiNhan} gửi đến cơ quan có thẩm quyền.`,
-            docInfo: {
-              name: 'Phiếu hướng dẫn chuyển/trả đơn',
-              code: data.cauHinhVanBan.soKyHieu,
-              type: 'phieu_huong_dan',
-            },
-          });
+
+          const timeNow =
+            new Date().toLocaleDateString('vi-VN') +
+            ' ' +
+            new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+
+          if (data.actionType === 'trinh_ky') {
+            // Đưa vào Luồng Trình ký Lãnh đạo
+            const newSigningDoc: SigningDocument = {
+              id: `vb-tra-lai-${Date.now()}`,
+              soKyHieu: data.cauHinhVanBan.soKyHieu,
+              tenVanBan: `Phiếu hướng dẫn trả lại đơn (${data.cauHinhVanBan.soKyHieu})`,
+              loaiVanBan: 'van_ban_tra_lai',
+              loaiVanBanLabel: 'Phiếu hướng dẫn trả lại đơn',
+              hoSoCode: currentDon.code,
+              loaiDon: currentDon.loaiDon || 'Đơn tiếp nhận hành chính',
+              nguoiGuiDon: currentDon.nguoiNop || data.nguoiNhan,
+              noiDungDon: currentDon.noiDung || currentDon.title || 'Đơn chuyển/trả lại theo thẩm quyền',
+              nguoiLap: currentAccount?.name || currentDon.canBoXuLy || 'Nguyễn Minh Anh',
+              donViNguoiLap: currentAccount?.phongBan || currentDon.donViXuLy || 'Phòng Tiếp công dân & Xử lý đơn',
+              ngayTao: timeNow.split(' ')[0],
+              hanXuLy: data.hanXuLy || '24 giờ',
+              mucDoUuTien: 'khan',
+              status: 'da_trinh',
+              currentSignerIndex: 0,
+              lanhDaoId: data.lanhDaoKyId || 'ld-01',
+              lanhDaoName: data.lanhDaoKyTen || 'Đ/c Trần Văn Hùng',
+              lanhDaoChucVu: data.lanhDaoKyChucVu || 'Phó Chánh Thanh tra thành phố',
+              trichYeu: `Phiếu hướng dẫn trả lại đơn cho công dân ${data.nguoiNhan}`,
+              noiDungChiTiet: data.lyDoChiTiet,
+              yKienCanBo: data.yKienTrinh || 'Kính trình Lãnh đạo xem xét phê duyệt và ký ban hành Phiếu hướng dẫn trả lại đơn.',
+              thoiGianTrinh: timeNow,
+              phienBanHienTai: 'V1',
+              versionHistory: [
+                {
+                  version: 'V1',
+                  thoiGian: timeNow,
+                  nguoiTao: currentAccount?.name || 'Nguyễn Minh Anh',
+                  trangThaiLucDo: 'Khởi tạo và trình ký',
+                  ghiChu: 'Lập dự thảo Phiếu hướng dẫn trả lại đơn',
+                  noiDungSnapshot: data.lyDoChiTiet,
+                },
+              ],
+              tepDinhKem: [],
+              signers: [
+                {
+                  id: data.lanhDaoKyId || 'ld-01',
+                  name: data.lanhDaoKyTen || 'Đ/c Trần Văn Hùng',
+                  chucVu: data.lanhDaoKyChucVu || 'Phó Chánh Thanh tra thành phố',
+                  vaiTro: 'ky',
+                  thuTu: 1,
+                  status: 'cho_ky',
+                },
+              ],
+              auditLogs: [
+                {
+                  id: `al-${Date.now()}-1`,
+                  time: timeNow,
+                  actor: currentAccount?.name || 'Nguyễn Minh Anh',
+                  actorRole: 'Cán bộ thụ lý',
+                  action: `Lập văn bản trả lại đơn và trình ký đến ${data.lanhDaoKyTen || 'Lãnh đạo'}`,
+                  statusBefore: 'nhap',
+                  statusAfter: 'da_trinh',
+                  version: 'V1',
+                  note: data.yKienTrinh || 'Trình duyệt văn bản trả lại đơn theo quy định',
+                },
+              ],
+              history: [
+                {
+                  id: `h-${Date.now()}`,
+                  time: timeNow,
+                  actor: `${currentAccount?.name || 'Nguyễn Minh Anh'} (Cán bộ thụ lý)`,
+                  action: 'Trình văn bản trả lại đơn',
+                  note: `Chuyển trình Lãnh đạo ${data.lanhDaoKyTen || 'phê duyệt'}`,
+                },
+              ],
+            };
+
+            if (onUpdateSigningDocuments) {
+              onUpdateSigningDocuments((prev) => [newSigningDoc, ...prev]);
+            } else if (onCreateSigningDocument) {
+              onCreateSigningDocument(newSigningDoc);
+            }
+
+            setCurrentDon((prev) => ({
+              ...prev,
+              statusBadge: 'Chờ duyệt trả đơn',
+            }));
+
+            setDocCount((c) => c + 1);
+            showToast(`✓ Đã chuyển văn bản trả lại đơn (${data.cauHinhVanBan.soKyHieu}) sang luồng Trình ký. Quy trình trả đơn sẽ hoàn tất khi Lãnh đạo ký duyệt!`);
+
+            addHistoryLog({
+              title: `Trình ký văn bản trả lại đơn (${data.cauHinhVanBan.soKyHieu})`,
+              actor: currentDon.canBoXuLy || 'Nguyễn Minh Anh',
+              actorRole: currentDon.chucVuCanBo || 'Chuyên viên Tiếp nhận & Xử lý đơn',
+              actorDept: currentDon.donViXuLy || 'Phòng Tiếp công dân & Xử lý đơn',
+              category: 'van_ban',
+              statusBadge: {
+                text: 'Chờ duyệt ký',
+                bgClass: 'bg-blue-50',
+                textClass: 'text-blue-800',
+                borderClass: 'border-blue-200',
+              },
+              description: `Cán bộ đã chuyển Phiếu hướng dẫn trả đơn số ${data.cauHinhVanBan.soKyHieu} đến ${data.lanhDaoKyTen || 'Lãnh đạo'} để duyệt ký. Sau khi Lãnh đạo phê duyệt và ký số mới kết thúc quy trình trả đơn.`,
+              docInfo: {
+                name: 'Phiếu hướng dẫn chuyển/trả đơn',
+                code: data.cauHinhVanBan.soKyHieu,
+                type: 'phieu_huong_dan',
+              },
+            });
+          } else {
+            // Lưu bản nháp
+            setDocCount((c) => c + 1);
+            showToast(`✓ Đã lưu bản nháp văn bản trả lại đơn (${data.cauHinhVanBan.soKyHieu}) vào Hồ sơ!`);
+            addHistoryLog({
+              title: `Lưu bản nháp văn bản trả lại đơn (${data.cauHinhVanBan.soKyHieu})`,
+              actor: currentDon.canBoXuLy || 'Nguyễn Minh Anh',
+              actorRole: currentDon.chucVuCanBo || 'Chuyên viên Tiếp nhận & Xử lý đơn',
+              actorDept: currentDon.donViXuLy || 'Phòng Tiếp công dân & Xử lý đơn',
+              category: 'van_ban',
+              statusBadge: {
+                text: 'Bản nháp',
+                bgClass: 'bg-slate-100',
+                textClass: 'text-slate-800',
+                borderClass: 'border-slate-300',
+              },
+              description: `Lưu dự thảo Phiếu hướng dẫn trả đơn số ${data.cauHinhVanBan.soKyHieu} trong hồ sơ đơn.`,
+            });
+          }
         }}
         donInfo={{
           code: currentDon.code,

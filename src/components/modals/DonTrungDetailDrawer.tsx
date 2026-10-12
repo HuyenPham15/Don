@@ -46,6 +46,9 @@ export interface DonTrungItem {
   quaTrinhXuLy?: QuaTrinhXuLyItem[];
   taiLieuDinhKem?: TaiLieuDinhKemItem[];
   tieuChiSoSanh?: TieuChiSoSanhItem[];
+  tieuChiDoiChieu?: string;
+  nguonDuLieu?: string;
+  truongDoiChieu?: string[];
 }
 
 export interface DonTrungDetailDrawerProps {
@@ -236,14 +239,8 @@ export default function DonTrungDetailDrawer({
                   <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-blue-100 text-blue-700">
                     {donTrung.status}
                   </span>
-                  <span
-                    className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${
-                      donTrung.matchPercent >= 90
-                        ? 'bg-rose-100/90 text-rose-800 border-rose-200'
-                        : 'bg-amber-100/90 text-amber-800 border-amber-200'
-                    }`}
-                  >
-                    Trùng {donTrung.matchPercent}%
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold border bg-indigo-50 text-indigo-800 border-indigo-200">
+                    Đối chiếu: Trùng CCCD & Đối tượng
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 font-medium truncate mt-0.5">
@@ -322,9 +319,9 @@ export default function DonTrungDetailDrawer({
               }`}
             >
               <span className="material-symbols-outlined text-[17px]">compare_arrows</span>
-              <span>Đối chiếu AI</span>
-              <span className="px-1.5 py-0.2 rounded-full bg-rose-100 text-rose-800 text-[10px] font-bold">
-                {donTrung.matchPercent}%
+              <span>Đối chiếu chi tiết</span>
+              <span className="px-1.5 py-0.2 rounded-full bg-indigo-100 text-indigo-800 text-[10px] font-bold">
+                Trùng khớp
               </span>
             </button>
           </div>
@@ -339,10 +336,10 @@ export default function DonTrungDetailDrawer({
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-rose-950 flex items-center gap-1.5 text-xs">
                       <span className="material-symbols-outlined text-[17px] text-rose-700">psychology</span>
-                      Đánh giá mức độ trùng lặp do AI phân tích
+                      Kết quả đối chiếu CSDL hồ sơ liên quan (GOVEX)
                     </span>
-                    <span className="px-2 py-0.5 rounded-full bg-rose-200/80 text-rose-900 text-[11px] font-extrabold">
-                      Tương đồng {donTrung.matchPercent}%
+                    <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-900 text-[11px] font-bold border border-indigo-200">
+                      Khớp tiêu chí xác thực
                     </span>
                   </div>
                   <p className="text-[11.5px] text-slate-700 leading-relaxed">
@@ -550,7 +547,7 @@ export default function DonTrungDetailDrawer({
             {activeTab === 'doi-chieu' && (
               <div className="space-y-4 animate-in fade-in duration-150">
                 <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-950 flex items-center justify-between">
-                  <span className="font-bold">Độ tương đồng nội dung: {donTrung.matchPercent}%</span>
+                  <span className="font-bold">Tiêu chí đối chiếu: Trùng CCCD, Cùng đối tượng & Địa bàn</span>
                   <span className="text-emerald-800 font-semibold">Khuyến nghị: Ghép vào hồ sơ gốc</span>
                 </div>
 

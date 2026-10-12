@@ -31,17 +31,19 @@ export default function XemTaiLieuModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Toolbar */}
-        <div className="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <span className="material-symbols-outlined text-rose-400 text-2xl">picture_as_pdf</span>
+        <div className="px-5 py-3.5 bg-white border-b border-slate-200 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 border border-rose-200 flex items-center justify-center shrink-0 shadow-2xs">
+              <span className="material-symbols-outlined text-[22px]">picture_as_pdf</span>
+            </div>
             <div className="min-w-0">
-              <h4 className="text-sm font-bold text-white truncate">{document.tenTaiLieu}</h4>
-              <div className="flex items-center gap-2 text-[10.5px] text-slate-300">
-                <span>{document.soKyHieu || 'Chưa cấp số'}</span>
+              <h4 className="text-sm font-bold text-slate-900 truncate">{document.tenTaiLieu}</h4>
+              <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5">
+                <span className="font-mono font-semibold text-slate-700">{document.soKyHieu || 'Chưa cấp số'}</span>
                 <span>•</span>
-                <span>Phiên bản {document.phienBan}</span>
+                <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 border border-slate-200 font-medium text-[10.5px]">Phiên bản {document.phienBan}</span>
                 <span>•</span>
-                <span className="text-emerald-400 font-semibold uppercase">{document.loaiTaiLieu}</span>
+                <span className="text-[#004ac6] font-semibold">{document.loaiTaiLieu}</span>
                 {document.dungLuong && <span>• {document.dungLuong}</span>}
               </div>
             </div>
@@ -51,17 +53,18 @@ export default function XemTaiLieuModal({
             <button
               type="button"
               onClick={() => alert(`✓ Đang chuẩn bị tải xuống: ${document.tenTaiLieu}`)}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#004ac6] border border-blue-200 text-xs font-bold transition-all cursor-pointer shadow-2xs"
             >
-              <span className="material-symbols-outlined text-[15px]">download</span>
+              <span className="material-symbols-outlined text-[16px]">download</span>
               <span>Tải file</span>
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+              className="w-8 h-8 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
+              title="Đóng"
             >
-              <span className="material-symbols-outlined text-lg">close</span>
+              <span className="material-symbols-outlined text-[20px]">close</span>
             </button>
           </div>
         </div>

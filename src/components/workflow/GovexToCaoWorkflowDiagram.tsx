@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import GovexStepDetailPanel from './GovexStepDetailPanel';
 import {
   GovexNodeDetail,
   GOVEX_NODES_DATA,
@@ -535,38 +536,12 @@ export default function GovexToCaoWorkflowDiagram({
               {/* A. THÔNG TIN CHUNG BƯỚC XỬ LÝ                                             */}
               {/* ========================================================================= */}
               <div className="bg-white rounded-xl border border-slate-200 shadow-2xs p-3.5 space-y-3.5">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                  <div className="flex items-center gap-1.5 text-blue-900 font-bold text-xs uppercase tracking-wide">
-                    <span className="w-5 h-5 rounded-md bg-blue-100 text-blue-800 flex items-center justify-center text-[11px] font-black">A</span>
-                    <span>THÔNG TIN CHUNG BƯỚC XỬ LÝ</span>
-                  </div>
-                  <span
-                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${selectedNode.status === 'completed'
-                      ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                      : selectedNode.status === 'active'
-                        ? 'bg-blue-50 text-blue-800 border-blue-200'
-                        : 'bg-slate-100 text-slate-700 border-slate-200'
-                      }`}
-                  >
-                    {selectedNode.trangThaiText}
-                  </span>
-                </div>
-
-                {/* Banner nếu step đang xử lý */}
-                {selectedNode.status === 'active' && (
-                  <div className="p-2.5 rounded-lg bg-blue-50/70 border border-blue-200 flex items-center gap-2 text-[11px] text-blue-900">
-                    <span className="material-symbols-outlined text-blue-600 text-[18px] animate-spin">sync</span>
-                    <div>
-                      <strong>Bước đang trong quá trình thực hiện:</strong> Cán bộ chuyên môn đang thụ lý và hoàn thiện hồ sơ.
-                    </div>
-                  </div>
-                )}
 
                 {/* 1. Người thực hiện & Vai trò, chức vụ */}
                 <div className="space-y-1.5">
                   <div className="text-[10.5px] uppercase font-bold text-slate-400 flex items-center gap-1">
                     <span className="material-symbols-outlined text-[13px] text-slate-500">person</span>
-                    <span>1. Người thực hiện &amp; Vai trò, chức vụ:</span>
+                    <span>Người thực hiện &amp; Vai trò, chức vụ:</span>
                   </div>
 
                   {/* Cán bộ thực hiện chính */}
@@ -644,7 +619,7 @@ export default function GovexToCaoWorkflowDiagram({
                 </div>
 
                 {/* 2. Thời gian bắt đầu, hoàn thành & chuyển tiếp */}
-                <div className="space-y-1.5">
+                {/* <div className="space-y-1.5">
                   <div className="text-[10.5px] uppercase font-bold text-slate-400 flex items-center gap-1">
                     <span className="material-symbols-outlined text-[13px] text-slate-500">schedule</span>
                     <span>2. Thời gian bắt đầu &amp; hoàn thành:</span>
@@ -662,17 +637,12 @@ export default function GovexToCaoWorkflowDiagram({
                     </div>
                   </div>
 
-                </div>
+                </div> */}
               </div>
-
-              {/* ========================================================================= */}
-              {/* B. TÀI LIỆU VÀ VĂN BẢN XỬ LÝ TRONG STEP                                   */}
-              {/* ========================================================================= */}
               {selectedNode.taiLieuVanBan && (
                 <div className="bg-white rounded-xl border border-slate-200 shadow-2xs p-3.5 space-y-3">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                     <div className="flex items-center gap-1.5 text-blue-900 font-bold text-xs uppercase tracking-wide">
-                      <span className="w-5 h-5 rounded-md bg-blue-100 text-blue-800 flex items-center justify-center text-[11px] font-black">B</span>
                       <span>TÀI LIỆU LIÊN QUAN</span>
                     </div>
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200">
@@ -770,7 +740,7 @@ export default function GovexToCaoWorkflowDiagram({
               {/* ========================================================================= */}
               {/* C. LỊCH SỬ TRÌNH KÝ & PHÊ DUYỆT CỦA STEP                                   */}
               {/* ========================================================================= */}
-              {selectedNode.lichSuTrinhKy && selectedNode.lichSuTrinhKy.length > 0 && (
+              {/* {selectedNode.lichSuTrinhKy && selectedNode.lichSuTrinhKy.length > 0 && (
                 <div className="bg-white rounded-xl border border-slate-200 shadow-2xs p-3.5 space-y-3">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                     <div className="flex items-center gap-1.5 text-blue-900 font-bold text-xs uppercase tracking-wide">
@@ -813,7 +783,6 @@ export default function GovexToCaoWorkflowDiagram({
                           </div>
                         </div>
 
-                        {/* Danh sách người tham gia phê duyệt */}
                         <div className="space-y-1 pt-1 border-t border-slate-200/80">
                           {round.danhSachNguoiThamGia.map((p) => (
                             <div key={p.id} className="p-2 bg-white rounded-lg border border-slate-200/80 space-y-1 text-[11px]">
@@ -839,7 +808,7 @@ export default function GovexToCaoWorkflowDiagram({
                     ))}
                   </div>
                 </div>
-              )}
+              )} */}
             </div>
           </aside>
         )}

@@ -243,12 +243,14 @@ export default function TaoLuotTrinhModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2.5">
-            <span className="material-symbols-outlined text-blue-400 text-2xl">post_add</span>
+        <div className="px-6 py-4 bg-white border-b border-slate-200 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#004ac6] border border-blue-200/80 flex items-center justify-center shrink-0 shadow-2xs">
+              <span className="material-symbols-outlined text-[22px]">post_add</span>
+            </div>
             <div>
-              <h3 className="font-bold text-sm tracking-tight">Tạo lượt trình ký / phê duyệt mới</h3>
-              <p className="text-[11px] text-slate-300">
+              <h3 className="font-bold text-base text-slate-900 font-headline-md tracking-tight">Tạo lượt trình ký / phê duyệt mới</h3>
+              <p className="text-xs text-slate-500">
                 Gắn văn bản hoặc tệp hồ sơ, thiết lập lãnh đạo duyệt theo quy định
               </p>
             </div>
@@ -256,9 +258,10 @@ export default function TaoLuotTrinhModal({
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
+            title="Đóng"
           >
-            <span className="material-symbols-outlined text-lg">close</span>
+            <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
         </div>
 

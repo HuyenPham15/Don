@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { INITIAL_LEADERS } from '../../constants/signingData';
 
 export interface TaiLieuTraLaiItem {
   id: string;
@@ -11,6 +12,12 @@ export interface TaiLieuTraLaiItem {
 export interface TraLaiDonSubmitData {
   stepId: 'STEP-03D';
   huongXuLy: 'tra_lai';
+  actionType: 'trinh_ky' | 'luu_nhap'; // 'trinh_ky' để gửi duyệt ký trước khi kết thúc
+  lanhDaoKyId?: string;
+  lanhDaoKyTen?: string;
+  lanhDaoKyChucVu?: string;
+  yKienTrinh?: string;
+  hanXuLy?: string;
   // Dữ liệu lý do bắt buộc
   lyDoChinh: string;
   lyDoChiTiet: string;
@@ -172,6 +179,17 @@ export default function TraLaiDonModal({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
+  // Cấu hình Luồng trình ký Lãnh đạo
+  const [selectedLeaderId, setSelectedLeaderId] = useState<string>('ld-01');
+  const [hanXuLy, setHanXuLy] = useState<string>('24 giờ');
+  const [yKienTrinh, setYKienTrinh] = useState<string>(
+    'Kính trình Lãnh đạo xem xét, phê duyệt và ký số Phiếu hướng dẫn trả lại đơn theo quy định.'
+  );
+
+  const selectedLeaderObj = useMemo(() => {
+    return INITIAL_LEADERS.find((l) => l.id === selectedLeaderId) || INITIAL_LEADERS[0];
+  }, [selectedLeaderId]);
+
   // Cập nhật địa chỉ khi donInfo thay đổi
   useEffect(() => {
     if (donInfo.diaChi) {
@@ -262,8 +280,7 @@ export default function TraLaiDonModal({
     return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleDoSubmit = (actionType: 'trinh_ky' | 'luu_nhap' = 'trinh_ky') => {
     if (!validateForm()) {
       setActiveTab('form');
       return;
@@ -276,6 +293,12 @@ export default function TraLaiDonModal({
       onSubmit({
         stepId: 'STEP-03D',
         huongXuLy: 'tra_lai',
+        actionType,
+        lanhDaoKyId: selectedLeaderObj.id,
+        lanhDaoKyTen: selectedLeaderObj.name,
+        lanhDaoKyChucVu: selectedLeaderObj.chucVu,
+        yKienTrinh: yKienTrinh.trim(),
+        hanXuLy,
         lyDoChinh,
         lyDoChiTiet: lyDoChiTiet.trim(),
         canCuPhapLy: canCuPhapLy.trim(),
@@ -305,6 +328,11 @@ export default function TraLaiDonModal({
     }, 400);
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleDoSubmit('trinh_ky');
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -319,6 +347,9 @@ export default function TraLaiDonModal({
             <div className="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shadow-md shadow-rose-600/20 shrink-0">
               <span className="material-symbols-outlined text-[24px]">assignment_return</span>
             </div>
+            <div className="flex flex-col">
+              <span className="text-slate-950 text-lg font-bold">Trả lại đơn</span>
+            </div>
 
           </div>
 
@@ -329,8 +360,8 @@ export default function TraLaiDonModal({
                 type="button"
                 onClick={() => setActiveTab('form')}
                 className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === 'form'
-                    ? 'bg-white text-slate-900 shadow-2xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
                   }`}
               >
                 <span className="material-symbols-outlined text-[16px]">edit_document</span>
@@ -340,8 +371,8 @@ export default function TraLaiDonModal({
                 type="button"
                 onClick={() => setActiveTab('preview')}
                 className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === 'preview'
-                    ? 'bg-white text-rose-900 shadow-2xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white text-rose-900 shadow-2xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
                   }`}
               >
                 <span className="material-symbols-outlined text-[16px]">description</span>
@@ -359,28 +390,6 @@ export default function TraLaiDonModal({
             </button>
           </div>
         </div>
-
-        {/* ===================== HỒ SƠ TÓM TẮT BANNER ===================== */}
-        <div className="bg-rose-50/60 border-b border-rose-200/80 px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-3">
-            <span className="font-bold text-rose-950 font-label-technical flex items-center gap-1">
-              <span className="material-symbols-outlined text-rose-700 text-[16px]">folder_open</span>
-              {donInfo.code || donInfo.luotNhanId}
-            </span>
-            <span className="text-slate-400">|</span>
-            <span className="text-slate-700">
-              Người nộp đơn: <strong className="text-slate-900">{donInfo.nguoiNop}</strong>
-            </span>
-            <span className="text-slate-400 hidden sm:inline">|</span>
-            <span className="text-slate-700 hidden sm:inline">
-              Loại: <strong className="text-slate-900">{donInfo.loaiDon}</strong>
-            </span>
-          </div>
-          <div className="text-[11px] text-rose-800 font-medium">
-            Cán bộ xử lý: <strong>{currentOfficerName}</strong> ({currentDepartmentName})
-          </div>
-        </div>
-
         {/* ===================== BODY CONTENT ===================== */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {activeTab === 'form' ? (
@@ -446,18 +455,7 @@ export default function TraLaiDonModal({
                     />
                     {errors.lyDo && <p className="text-[11px] text-rose-600 font-medium">{errors.lyDo}</p>}
                   </div>
-                ) : (
-                  /* Hiển thị tóm tắt lý do và căn cứ pháp lý đã được chọn */
-                  <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-xl text-xs space-y-1.5 animate-fade-in">
-                    <div className="flex items-start gap-1.5 text-slate-700">
-                      <span className="material-symbols-outlined text-rose-600 text-[16px] shrink-0 mt-0.5">info</span>
-                      <p className="leading-relaxed italic text-slate-800">&quot;{lyDoChiTiet}&quot;</p>
-                    </div>
-                    <div className="text-[11px] text-slate-500 pt-1 border-t border-slate-200/60 font-mono">
-                      Căn cứ: {canCuPhapLy}
-                    </div>
-                  </div>
-                )}
+                ) : null}
               </div>
 
               {/* ──────────────── 2. THÔNG TIN ĐỊA CHỈ TRẢ LẠI CỦA NGƯỜI NỘP ĐƠN ──────────────── */}
@@ -519,13 +517,10 @@ export default function TraLaiDonModal({
                       Hình thức nhận của người nộp đơn
                     </h3>
                   </div>
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-[10.5px] font-bold border border-emerald-200 flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[13px]">sync</span>
-                    Tự động đồng bộ từ Lượt nhận
-                  </span>
+
                 </div>
 
-                <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                <div className="flex items-center gap-3 ">
                   <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 text-rose-600 flex items-center justify-center shrink-0 shadow-2xs">
                     <span className="material-symbols-outlined text-[22px]">{hinhThucNhanInfo.icon}</span>
                   </div>
@@ -535,38 +530,90 @@ export default function TraLaiDonModal({
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${hinhThucNhanInfo.badgeColor}`}>
                         {hinhThucNhanInfo.badge}
                       </span>
-                      <span className="text-[11px] text-slate-500 font-mono">
-                        (Nguồn tiếp nhận: {donInfo.hinhThucTiepNhan || 'Trực tiếp tại trụ sở'})
-                      </span>
+
                     </div>
-                    <p className="text-[11.5px] text-slate-600 mt-0.5 leading-snug">
-                      {hinhThucNhanInfo.moTa}
-                    </p>
+
                   </div>
                 </div>
               </div>
 
-              {/* ──────────────── 4. KÝ SỐ & VĂN BẢN TRẢ LỜI ĐƠN (MẪU SỐ 02/TL-Đ) ──────────────── */}
-              <div className="p-3.5 bg-rose-50/70 border border-rose-200 rounded-xl flex items-center justify-between gap-3 flex-wrap text-xs">
-                <div className="flex items-center gap-2.5">
-                  <span className="material-symbols-outlined text-rose-600 text-[20px]">assignment_turned_in</span>
+              {/* ──────────────── 4. LUỒNG TRÌNH KÝ LÃNH ĐẠO DUYỆT VĂN BẢN TRẢ ĐƠN ──────────────── */}
+              {/* <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-blue-100 text-[#004ac6] text-xs font-bold flex items-center justify-center">
+                      4
+                    </span>
+                    <h3 className="text-xs sm:text-sm font-bold text-slate-900 uppercase tracking-wide">
+                      Luồng trình ký Lãnh đạo duyệt văn bản trả lại
+                    </h3>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[10.5px] font-bold border border-blue-200 flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[13px]">draw</span>
+                    Trình ký trước khi kết thúc
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div>
-                    <span className="font-bold text-slate-900 block">
-                      Văn bản trả lời đơn cho người nộp đơn (Mẫu số 02/TL-Đ) • Số: <strong className="font-mono text-rose-800">{soKyHieu}</strong>
-                    </span>
-                    <span className="text-[11px] text-slate-500">
-                      Cán bộ xử lý: <strong>{currentOfficerName}</strong> ({currentDepartmentName}) • Ngày ban hành: {todayStr}
-                    </span>
+                    <label className="block font-semibold text-slate-800 mb-1">
+                      Lãnh đạo ký duyệt <span className="text-rose-600">*</span>
+                    </label>
+                    <select
+                      value={selectedLeaderId}
+                      onChange={(e) => setSelectedLeaderId(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none focus:border-blue-600 cursor-pointer"
+                    >
+                      {INITIAL_LEADERS.map((leader) => (
+                        <option key={leader.id} value={leader.id}>
+                          {leader.name} - {leader.chucVu} ({leader.coQuan})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-slate-800 mb-1">
+                      Hạn xử lý trình ký
+                    </label>
+                    <select
+                      value={hanXuLy}
+                      onChange={(e) => setHanXuLy(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-800 focus:bg-white focus:outline-none focus:border-blue-600 cursor-pointer"
+                    >
+                      <option value="24 giờ">Trong vòng 24 giờ</option>
+                      <option value="48 giờ">Trong vòng 48 giờ</option>
+                      <option value="3 ngày">Trong vòng 3 ngày làm việc</option>
+                      <option value="Hỏa tốc">Hỏa tốc trong ngày</option>
+                    </select>
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block font-semibold text-slate-800 mb-1">
+                      Ý kiến kính trình Lãnh đạo
+                    </label>
+                    <input
+                      type="text"
+                      value={yKienTrinh}
+                      onChange={(e) => setYKienTrinh(e.target.value)}
+                      placeholder="Kính trình Lãnh đạo xem xét, phê duyệt và ký số Phiếu hướng dẫn trả lại đơn..."
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-800 focus:bg-white focus:outline-none focus:border-blue-600"
+                    />
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300 text-[11px] font-bold">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                  <span>Đã tích hợp Chữ ký số VGCA</span>
-                </div>
-              </div>
 
-              {/* FOOTER ACTIONS */}
+                <div className="p-2.5 bg-blue-50/70 border border-blue-200/80 rounded-xl flex items-center gap-2 text-xs text-blue-900">
+                  <span className="material-symbols-outlined text-[18px] text-blue-600 shrink-0">info</span>
+                  <span>
+                    Văn bản trả lại đơn số <strong>{soKyHieu}</strong> sẽ được đưa vào <strong>Hệ thống Trình ký</strong>. Quy trình xử lý đơn sẽ hoàn tất sau khi Lãnh đạo phê duyệt và ký số.
+                  </span>
+                </div>
+              </div> */}
+
               <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-200 flex-wrap">
+
+
+
                 <button
                   type="button"
                   onClick={onClose}
@@ -574,35 +621,23 @@ export default function TraLaiDonModal({
                 >
                   Hủy bỏ
                 </button>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('preview')}
-                    className="px-4 py-2 rounded-xl border border-rose-300 bg-white hover:bg-rose-50 text-rose-900 text-xs font-bold cursor-pointer transition-colors flex items-center gap-1.5"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">visibility</span>
-                    <span>Xem bản in Mẫu 02 (A4)</span>
-                  </button>
-
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-bold shadow-md shadow-rose-600/20 cursor-pointer flex items-center gap-1.5 transition-all disabled:opacity-50"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                        <span>Đang ban hành...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="material-symbols-outlined text-[18px]">send</span>
-                        <span>Xác nhận &amp; Ban hành văn bản trả lại ➔</span>
-                      </>
-                    )}
-                  </button>
-                </div>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-6 py-2.5 rounded-xl bg-[#004ac6] hover:bg-[#003ea8] active:scale-95 text-white text-xs font-bold shadow-md shadow-blue-600/20 cursor-pointer flex items-center gap-1.5 transition-all disabled:opacity-50"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                      <span>Đang chuyển trình ký...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined text-[18px]">draw</span>
+                      <span>Lưu &amp; Trình ký Lãnh đạo ➔</span>
+                    </>
+                  )}
+                </button>
               </div>
             </form>
           ) : (

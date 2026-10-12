@@ -99,8 +99,8 @@ export default function KhongThuLyModal({
   const finalCanCu = isKhac ? (customCanCu.trim() || 'Quy định pháp luật hiện hành') : currentReason.canCu;
   const finalLyDoChinh = isKhac
     ? (customLyDoKhac.trim()
-        ? `Lý do khác: ${customLyDoKhac.trim().slice(0, 60)}${customLyDoKhac.trim().length > 60 ? '...' : ''}`
-        : 'Lý do khác')
+      ? `Lý do khác: ${customLyDoKhac.trim().slice(0, 60)}${customLyDoKhac.trim().length > 60 ? '...' : ''}`
+      : 'Lý do khác')
     : currentReason.label;
 
   const handleConfirmSubmit = (action: 'save' | 'trinh_ky' = 'save') => {
@@ -132,7 +132,7 @@ export default function KhongThuLyModal({
               <span className="material-symbols-outlined text-[24px]">block</span>
             </div>
             <div>
-              <div className="flex items-center gap-2 flex-wrap">
+              {/* <div className="flex items-center gap-2 flex-wrap">
                 {donInfo.code && (
                   <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-200">
                     {donInfo.code}
@@ -143,7 +143,7 @@ export default function KhongThuLyModal({
                     Người nộp: <strong className="text-slate-800">{donInfo.nguoiNop}</strong>
                   </span>
                 )}
-              </div>
+              </div> */}
               <h2 className="text-base sm:text-lg font-bold text-slate-900 font-headline-md tracking-tight mt-0.5">
                 Thông báo không thụ lý giải quyết đơn
               </h2>
@@ -155,11 +155,10 @@ export default function KhongThuLyModal({
               <button
                 type="button"
                 onClick={() => setActiveTab('form')}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                  activeTab === 'form'
-                    ? 'bg-white text-slate-900 shadow-2xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === 'form'
+                  ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
+                  }`}
               >
                 <span className="material-symbols-outlined text-[16px]">edit_document</span>
                 <span>Biểu mẫu</span>
@@ -167,11 +166,10 @@ export default function KhongThuLyModal({
               <button
                 type="button"
                 onClick={() => setActiveTab('preview')}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                  activeTab === 'preview'
-                    ? 'bg-white text-rose-900 shadow-2xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === 'preview'
+                  ? 'bg-white text-rose-900 shadow-2xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
+                  }`}
               >
                 <span className="material-symbols-outlined text-[16px]">description</span>
                 <span>Xem trước bản in</span>
@@ -266,7 +264,7 @@ export default function KhongThuLyModal({
 
                 {/* NẾU CHỌN LÝ DO KHÁC: HIỂN THỊ TEXTAREA NHẬP LÝ DO */}
                 {isKhac ? (
-                  <div className="space-y-2.5 animate-fade-in p-4 rounded-xl border-2 border-rose-300 bg-rose-50/50 shadow-xs">
+                  <div className="space-y-2.5 animate-fade-in shadow-xs">
                     <div>
                       <div className="flex items-center justify-between mb-1.5">
                         <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
@@ -286,11 +284,10 @@ export default function KhongThuLyModal({
                           if (errorMsg) setErrorMsg('');
                         }}
                         placeholder="Nhập cụ thể lý do không thụ lý giải quyết đơn..."
-                        className={`w-full p-3 bg-white border-2 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none shadow-2xs transition-all leading-relaxed ${
-                          errorMsg
-                            ? 'border-rose-500 focus:border-rose-600 focus:ring-2 focus:ring-rose-200'
-                            : 'border-rose-200 focus:border-rose-500 focus:ring-2 focus:ring-rose-100'
-                        }`}
+                        className={`w-full p-3 bg-white border-2 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none shadow-2xs transition-all leading-relaxed ${errorMsg
+                          ? 'border-rose-500 focus:border-rose-600 focus:ring-2 focus:ring-rose-200'
+                          : 'border-rose-200 focus:border-rose-500 focus:ring-2 focus:ring-rose-100'
+                          }`}
                         autoFocus
                       />
                       {errorMsg && (
@@ -299,45 +296,15 @@ export default function KhongThuLyModal({
                           <span>{errorMsg}</span>
                         </p>
                       )}
-                      <p className="text-[11px] text-slate-500 italic mt-1">
-                        * Nội dung lý do này sẽ được trích dẫn trực tiếp vào văn bản Thông báo không thụ lý gửi công dân và trình Lãnh đạo.
-                      </p>
+
                     </div>
 
-                    <div className="pt-1 border-t border-rose-200/60">
-                      <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center gap-1">
-                        <span>Căn cứ pháp lý áp dụng (tùy chỉnh):</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={customCanCu}
-                        onChange={(e) => setCustomCanCu(e.target.value)}
-                        placeholder="Ví dụ: Quy định pháp luật liên quan, Nghị định..."
-                        className="w-full px-3 py-2 bg-white border border-rose-200 focus:border-rose-500 focus:ring-1 focus:ring-rose-200 rounded-lg text-xs text-slate-800 focus:outline-none shadow-2xs font-medium"
-                      />
-                    </div>
+
                   </div>
-                ) : (
-                  /* NẾU CHỌN CĂN CỨ LUẬT ĐỊNH (1-4): HIỂN THỊ CĂN CỨ VÀ NỘI DUNG */
-                  <div className="p-3.5 rounded-xl border border-rose-200/80 bg-rose-50/50 space-y-1.5 animate-fade-in">
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                        <span className="material-symbols-outlined text-rose-600 text-[16px]">verified</span>
-                        <span>Căn cứ pháp lý:</span>
-                      </span>
-                      <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-200">
-                        {currentReason.canCu}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-700 leading-relaxed text-justify">
-                      {finalChiTiet}
-                    </p>
-                  </div>
-                )}
+                ) : null}
               </div>
             </>
           ) : (
-            /* PREVIEW THÔNG BÁO KHÔNG THỤ LÝ CHUẨN MẪU */
             <div className="bg-slate-100 p-4 rounded-xl flex justify-center">
               <div className="bg-white border border-slate-300 shadow-md p-8 rounded-lg max-w-2xl w-full text-xs text-slate-800 space-y-4 font-serif leading-relaxed">
                 <div className="flex justify-between items-start border-b border-slate-200 pb-3 font-sans">
@@ -415,7 +382,7 @@ export default function KhongThuLyModal({
           </button>
 
           <div className="flex items-center gap-2.5">
-            <button
+            {/* <button
               type="button"
               onClick={() => setActiveTab(activeTab === 'form' ? 'preview' : 'form')}
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold cursor-pointer transition shadow-2xs"
@@ -424,7 +391,7 @@ export default function KhongThuLyModal({
                 {activeTab === 'form' ? 'visibility' : 'edit_note'}
               </span>
               <span>{activeTab === 'form' ? 'Xem trước bản in' : 'Quay lại biểu mẫu'}</span>
-            </button>
+            </button> */}
 
             <button
               type="button"
@@ -436,7 +403,7 @@ export default function KhongThuLyModal({
               <span>Lưu văn bản</span>
             </button>
 
-            <button
+            {/* <button
               type="button"
               onClick={() => handleConfirmSubmit('trinh_ky')}
               className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-98 text-white text-xs font-bold shadow-md shadow-rose-200 cursor-pointer transition"
@@ -444,7 +411,7 @@ export default function KhongThuLyModal({
             >
               <span className="material-symbols-outlined text-[18px]">send</span>
               <span>Trình ký Lãnh đạo</span>
-            </button>
+            </button> */}
           </div>
         </div>
       </div>

@@ -130,11 +130,119 @@ export default function App() {
         hasFile: false,
         sourceType: undefined,
       };
-    // Lưu lượt nhận vào danh sách, không tạo Task ngay
-    setLuotNhanList((prev) => [record, ...prev.filter((d) => d.id !== record.id)]);
+
+    // 1. Tự động hình thành mã Đơn chính thức (Đ-...)
+    const donCode = record.id.startsWith('LN-')
+      ? `Đ-${record.id.replace('LN-', '')}`
+      : record.id.startsWith('Đ-')
+        ? record.id
+        : `Đ-${record.id}`;
+
+    // 2. Phân loại nghiệp vụ hồ sơ
+    const isTuThu = record.loaiNghiepVu === 'nguoi_tu_thu' || record.id.startsWith('TT-');
+    const isDauThu = record.loaiNghiepVu === 'nguoi_dau_thu' || record.id.startsWith('DT-');
+    const isBatQuaTang = record.loaiNghiepVu === 'bat_qua_tang' || record.id.startsWith('QT-');
+    const isCanBoPhatHien = record.loaiNghiepVu === 'can_bo_phat_hien' || record.id.startsWith('PH-');
+    const isTinBao =
+      record.loaiNghiepVu === 'tin_bao_to_giac' ||
+      record.loaiNghiepVu === 'tin_bao_toi_pham' ||
+      record.loaiNghiepVu === 'to_giac_toi_pham' ||
+      record.id.startsWith('TB-');
+
+    const donType: DonDetail['type'] =
+      isTuThu || isDauThu
+        ? 'TỰ THÚ / ĐẦU THÚ'
+        : isBatQuaTang
+          ? 'BẮT QUẢ TANG'
+          : isCanBoPhatHien
+            ? 'CÁN BỘ PHÁT HIỆN'
+            : 'ĐƠN TIẾP NHẬN';
+
+    const donLoai =
+      record.loaiDon ||
+      (isBatQuaTang
+        ? 'Biên bản bắt người phạm tội quả tang'
+        : isCanBoPhatHien
+          ? 'Báo cáo phát hiện dấu hiệu vi phạm'
+          : isTuThu
+            ? 'Tiếp nhận người tự thú'
+            : isDauThu
+              ? 'Tiếp nhận người đầu thú'
+              : isTinBao
+                ? 'Tin báo, tố giác về tội phạm'
+                : 'Đơn tiếp nhận');
+
+    // 3. Hình thành đối tượng Đơn chính thức
+    const donObj: DonDetail = {
+      id: donCode,
+      code: donCode,
+      title: record.noiDung,
+      luotNhanId: record.id,
+      nguoiNop: record.nguoiNop,
+      ngayNhan: record.ngayNhan,
+      gioNhan: record.gioNhan,
+      loaiDon: donLoai,
+      type: donType,
+      statusBadge: 'Chờ tiếp nhận',
+      currentStep: 1,
+      stepName: 'Tiếp nhận hồ sơ',
+      canBoTiepNhan: record.canBoNhan || 'Lê Ngọc Mai',
+      donViTiepNhan: record.donVi || 'Công an thành phố Hà Nội',
+      cccd: record.cccd,
+      sdt: record.sdt,
+      diaChi: record.diaChi,
+      noiDung: record.noiDung,
+      progress: {
+        currentStep: 1,
+        totalSteps: 5,
+        stepName: 'Tiếp nhận hồ sơ',
+        steps: ['Tiếp nhận', 'Phân loại', 'Thẩm tra & Xác minh', 'Trình ký', 'Trả kết quả'],
+      },
+    };
+
+    // 4. Lượt nhận được cập nhật sang trạng thái 'da_chuyen' (đã hình thành hồ sơ đơn)
+    const updatedRecord: LuotNhan = {
+      ...record,
+      status: 'da_chuyen',
+      ngayChuyenXuLy: `${todayFormatted} ${timeNow}`,
+      historyLogs: [
+        ...(record.historyLogs || []),
+        {
+          time: `${todayFormatted} ${timeNow}`,
+          action: `Hình thành Đơn [${donCode}] và chuyển tiếp nhận vào Công việc của tôi`,
+          actor: record.canBoNhan || 'Lê Ngọc Mai',
+          note: `Đã tiếp nhận và hình thành hồ sơ Đơn ${donCode} thành công`,
+        },
+      ],
+    };
+
+    // 5. Cập nhật state hệ thống: thêm vào lượt nhận, đưa Đơn vào acceptedDons
+    setLuotNhanList((prev) => [updatedRecord, ...prev.filter((d) => d.id !== updatedRecord.id)]);
+    setAcceptedDons((prev) => [donObj, ...prev.filter((d) => d.code !== donObj.code && d.id !== donObj.id)]);
+    setSelectedDon(donObj);
+    setSelected(updatedRecord);
     setExtraCard(null);
-    setSelected(record);
-    setScreen("chi-tiet-luot-nhan");
+
+    // 6. Khởi tạo quy trình thụ lý cho đơn vừa hình thành
+    const wfDef = matchWorkflowByLoaiDon(donLoai);
+    setActiveWorkflow({
+      donCode: donObj.code,
+      donTitle: donObj.title,
+      luotNhanId: updatedRecord.id,
+      nguoiNop: donObj.nguoiNop,
+      loaiDonConfirmed: donLoai,
+      workflow: wfDef,
+      activeStepId: wfDef.steps[0]?.id || 'step-1',
+      tasks: wfDef.defaultTasks,
+      missingInfoList: wfDef.potentialMissingInfo,
+      status: 'dang_xu_ly',
+      startedAt: `${todayFormatted} ${timeNow}`,
+      assignedOfficer: 'Nguyễn Minh Anh',
+      historyLogs: [],
+    });
+
+    // 7. Chuyển ngay sang màn "Công việc của tôi" để cán bộ thấy Đơn vừa hình thành
+    setScreen("cong-viec");
   }, []);
 
   const handleUpdateLuotNhan = useCallback((updated: LuotNhan) => {

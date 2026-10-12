@@ -469,23 +469,10 @@ export default function BanGiaoDonModal({
         {/* ===================== HEADER ===================== */}
         <div className="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-amber-500/10 via-slate-50 to-white flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-600 text-white flex items-center justify-center shadow-md shadow-amber-600/20 shrink-0">
-              <span className="material-symbols-outlined text-[24px]">swap_horiz</span>
-            </div>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 text-[11px] font-bold tracking-wider font-label-technical">
-                  STEP-03C
-                </span>
-                <span className="text-xs px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-semibold">
-                  Cán bộ chuyên môn
-                </span>
-                <span className="text-xs text-amber-700 font-semibold hidden sm:inline-block">
-                  • Hướng xử lý: Chuyển thẩm quyền
-                </span>
-              </div>
+
               <h2 className="text-base sm:text-lg font-bold text-slate-900 font-headline-md tracking-tight mt-0.5">
-                Chuyển thẩm quyền xử lý đơn tố cáo (Mẫu số 03/TT-TTCP)
+                Chuyển thẩm quyền xử lý
               </h2>
             </div>
           </div>
@@ -527,28 +514,6 @@ export default function BanGiaoDonModal({
             </button>
           </div>
         </div>
-
-        {/* ===================== HỒ SƠ TÓM TẮT BANNER ===================== */}
-        <div className="bg-amber-50/60 border-b border-amber-200/80 px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-3">
-            <span className="font-bold text-amber-950 font-label-technical flex items-center gap-1">
-              <span className="material-symbols-outlined text-amber-700 text-[16px]">folder_open</span>
-              {donInfo.code || donInfo.luotNhanId}
-            </span>
-            <span className="text-slate-400">|</span>
-            <span className="text-slate-700">
-              Người nộp: <strong className="text-slate-900">{donInfo.nguoiNop}</strong> ({donInfo.sdt || '0983 123 456'})
-            </span>
-            <span className="text-slate-400 hidden sm:inline">|</span>
-            <span className="text-slate-700 hidden sm:inline truncate max-w-xs">
-              Loại: <strong className="text-slate-900">{donInfo.loaiDon}</strong>
-            </span>
-          </div>
-          <div className="text-[11px] text-amber-800 font-medium">
-            Cán bộ lập: <strong>{currentOfficerName}</strong> ({currentDepartmentName})
-          </div>
-        </div>
-
         {/* ===================== BODY CONTENT ===================== */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {activeTab === 'form' ? (
@@ -907,11 +872,6 @@ export default function BanGiaoDonModal({
 
         {/* ===================== FOOTER BUTTONS ===================== */}
         <div className="px-6 py-4 border-t border-slate-200 bg-slate-50/80 flex items-center justify-between">
-          <div className="text-xs text-slate-500 flex items-center gap-1.5">
-            <span className="material-symbols-outlined text-[16px] text-amber-600">bolt</span>
-            <span>Chế độ 1 chạm: Đã điền sẵn đầy đủ căn cứ, Phiếu chuyển Mẫu 03 và chữ ký số.</span>
-          </div>
-
           <div className="flex items-center gap-2.5">
             <button
               type="button"
@@ -921,26 +881,6 @@ export default function BanGiaoDonModal({
               Hủy bỏ
             </button>
 
-            {activeTab === 'preview' ? (
-              <button
-                type="button"
-                onClick={() => setActiveTab('form')}
-                className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-semibold cursor-pointer transition-colors"
-              >
-                Quay lại biểu mẫu
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  if (validateForm()) setActiveTab('preview');
-                }}
-                className="px-4 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-colors"
-              >
-                <span className="material-symbols-outlined text-[16px]">visibility</span>
-                <span>Xem trước Mẫu 03</span>
-              </button>
-            )}
 
             <button
               type="button"
@@ -949,7 +889,7 @@ export default function BanGiaoDonModal({
               className="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-95 text-white text-xs font-bold shadow-md shadow-amber-600/20 cursor-pointer flex items-center gap-1.5 transition-all disabled:opacity-50"
             >
               <span className="material-symbols-outlined text-[18px]">forward</span>
-              <span>{isSubmitting ? 'Đang chuyển hồ sơ...' : 'Xác nhận chuyển thẩm quyền'}</span>
+              <span>{isSubmitting ? 'Đang chuyển hồ sơ...' : 'Lưu văn bản'}</span>
             </button>
           </div>
         </div>

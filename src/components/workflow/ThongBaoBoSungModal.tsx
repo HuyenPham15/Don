@@ -27,12 +27,12 @@ export default function ThongBaoBoSungModal({
     workflow.potentialMissingInfo && workflow.potentialMissingInfo.length > 0
       ? workflow.potentialMissingInfo.map((m) => m.title)
       : workflow.id === 'to-giac'
-      ? [
+        ? [
           'Bản sao kê tài khoản ngân hàng chính thức có đóng dấu xác nhận giao dịch',
           'Văn bản ủy quyền cho người đại diện / Luật sư có công chứng, chứng thực',
           'Các chứng từ chuyển khoản, thỏa thuận gốc đối chiếu',
         ]
-      : [
+        : [
           'Bản sao có chứng thực Quyết định hành chính hoặc thông báo bị khiếu nại',
           'Giấy tờ, tài liệu chứng minh quyền và lợi ích hợp pháp bị xâm phạm',
           'Bản sao CCCD / Định danh điện tử của người đứng đơn',
@@ -80,9 +80,9 @@ export default function ThongBaoBoSungModal({
               <h3 className="font-bold text-slate-900 text-sm tracking-tight">
                 Yêu cầu bổ sung hồ sơ, tài liệu
               </h3>
-              <p className="text-[11px] text-slate-500 font-medium">
+              {/* <p className="text-[11px] text-slate-500 font-medium">
                 Đơn <span className="font-semibold text-slate-700">{donCode}</span> • Người nộp: <strong className="text-slate-800">{nguoiNop}</strong>
-              </p>
+              </p> */}
             </div>
           </div>
 
@@ -99,18 +99,7 @@ export default function ThongBaoBoSungModal({
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-4 text-xs">
           {/* Thông tin số hiệu & thời hạn */}
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block font-bold text-slate-700 mb-1">
-                Số hiệu thông báo <span className="text-rose-600">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={soHieu}
-                onChange={(e) => setSoHieu(e.target.value)}
-                className="w-full px-3 py-2 text-xs font-mono font-bold text-slate-800 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-[#004ac6]"
-              />
-            </div>
+
             <div>
               <label className="block font-bold text-slate-700 mb-1">Thời hạn bổ sung</label>
               <select
@@ -141,11 +130,10 @@ export default function ThongBaoBoSungModal({
                 return (
                   <label
                     key={idx}
-                    className={`flex items-start gap-2.5 p-2 rounded-lg cursor-pointer transition-colors border ${
-                      isChecked
-                        ? 'bg-amber-50/80 border-amber-300 text-amber-950 font-medium'
-                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
-                    }`}
+                    className={`flex items-start gap-2.5 p-2 rounded-lg cursor-pointer transition-colors border ${isChecked
+                      ? 'bg-amber-50/80 border-amber-300 text-amber-950 font-medium'
+                      : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+                      }`}
                   >
                     <input
                       type="checkbox"
@@ -211,14 +199,13 @@ export default function ThongBaoBoSungModal({
             <button
               type="submit"
               disabled={selectedItems.length === 0}
-              className={`px-4 py-2 rounded-xl text-white font-bold shadow-xs transition-all cursor-pointer flex items-center gap-1.5 text-xs active:scale-95 ${
-                selectedItems.length === 0
-                  ? 'bg-slate-300 cursor-not-allowed'
-                  : 'bg-amber-600 hover:bg-amber-700'
-              }`}
+              className={`px-4 py-2 rounded-xl text-white font-bold shadow-xs transition-all cursor-pointer flex items-center gap-1.5 text-xs active:scale-95 ${selectedItems.length === 0
+                ? 'bg-slate-300 cursor-not-allowed'
+                : 'bg-amber-600 hover:bg-amber-700'
+                }`}
             >
               <span className="material-symbols-outlined text-[15px]">send</span>
-              <span>Ban hành thông báo bổ sung</span>
+              <span>Lưu văn bản</span>
             </button>
           </div>
         </form>

@@ -59,7 +59,7 @@ export default function Sidebar({ screen, onNav, currentAccount, signingCounts }
             </div>
           </button>
 
-          {/* Nhận đơn */}
+          {/* Hàng đợi tiếp nhận (Trước đây là Nhận đơn) */}
           <button
             type="button"
             onClick={() => onNav('nhan-don-list')}
@@ -73,13 +73,55 @@ export default function Sidebar({ screen, onNav, currentAccount, signingCounts }
                 className={`material-symbols-outlined text-[20px] ${isNhanDon ? 'text-[#004ac6]' : 'text-slate-600'
                   }`}
               >
-                post_add
+                inbox
               </span>
-              <span className="text-[13.5px] font-medium">Nhận đơn</span>
+              <span className="text-[13.5px] font-medium">Hàng đợi tiếp nhận</span>
             </div>
             <div className="flex items-center gap-1.5">
-
               {isNhanDon && <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>}
+            </div>
+          </button>
+
+          {/* Tiếp nhận tin báo, tố giác (Mục chuyên biệt cho nghiệp vụ tố tụng hình sự) */}
+          <button
+            type="button"
+            onClick={() => onNav('nhan-don-them')}
+            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer ${screen === 'nhan-don-them'
+              ? 'bg-rose-50 text-[#b91c1c] font-semibold border border-rose-200/80 shadow-2xs'
+              : 'text-slate-700 hover:bg-slate-50'
+              }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <span
+                className={`material-symbols-outlined text-[20px] ${screen === 'nhan-don-them' ? 'text-[#b91c1c]' : 'text-rose-600'
+                  }`}
+              >
+                local_police
+              </span>
+              <span className="text-[13.5px] font-medium">Tiếp nhận tin báo, tố giác</span>
+            </div>
+          </button>
+
+          {/* Quản lý đơn */}
+          <button
+            type="button"
+            onClick={() => onNav('don-tiep-nhan')}
+            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer ${screen === 'don-tiep-nhan'
+              ? 'bg-blue-50 text-[#004ac6] font-semibold border border-blue-100/60 shadow-2xs'
+              : 'text-slate-700 hover:bg-slate-50'
+              }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <span
+                className={`material-symbols-outlined text-[20px] ${screen === 'don-tiep-nhan' ? 'text-[#004ac6]' : 'text-slate-600'
+                  }`}
+              >
+                folder_open
+              </span>
+              <span className="text-[13.5px] font-medium">Quản lý đơn &amp; Hồ sơ</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              {screen === 'don-tiep-nhan' && <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>}
             </div>
           </button>
 
@@ -87,17 +129,15 @@ export default function Sidebar({ screen, onNav, currentAccount, signingCounts }
           <button
             type="button"
             onClick={() => onNav('quan-ly-trinh-ky')}
-            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer ${
-              screen === 'quan-ly-trinh-ky'
+            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer ${screen === 'quan-ly-trinh-ky'
                 ? 'bg-blue-50 text-[#004ac6] font-semibold border border-blue-100/60 shadow-2xs'
                 : 'text-slate-700 hover:bg-slate-50'
-            }`}
+              }`}
           >
             <div className="flex items-center gap-2.5">
               <span
-                className={`material-symbols-outlined text-[20px] ${
-                  screen === 'quan-ly-trinh-ky' ? 'text-[#004ac6]' : 'text-slate-600'
-                }`}
+                className={`material-symbols-outlined text-[20px] ${screen === 'quan-ly-trinh-ky' ? 'text-[#004ac6]' : 'text-slate-600'
+                  }`}
               >
                 approval
               </span>

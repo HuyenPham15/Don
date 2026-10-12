@@ -418,27 +418,40 @@ export default function CongViecCuaToi({
   // Submit Modal Trả lại đơn chuẩn (STEP-03D)
   const handleTraLaiDonSubmit = (data: TraLaiDonSubmitData) => {
     if (selectedItemForAction) {
+      const isTrinhKy = data.actionType === 'trinh_ky';
       setItems((prev) => {
         const updatedItem: WorkItem = {
           ...selectedItemForAction,
-          column: 'completed',
-          subStatus: 'bi_tra_lai',
+          column: isTrinhKy ? 'waiting' : 'completed',
+          subStatus: isTrinhKy ? 'cho_ky' : 'bi_tra_lai',
           lyDoTraLai: data.lyDoChinh,
           holder: {
-            role: 'Đã hoàn thành',
-            name: currentAccount?.name || 'Nguyễn Minh Anh',
-            department: 'Phòng Tiếp công dân & Xử lý đơn',
+            role: isTrinhKy ? 'Đang chờ' : 'Đã hoàn thành',
+            name: isTrinhKy ? (data.lanhDaoKyTen || 'Lãnh đạo phê duyệt') : (currentAccount?.name || 'Nguyễn Minh Anh'),
+            department: isTrinhKy ? 'Ban Lãnh đạo' : 'Phòng Tiếp công dân & Xử lý đơn',
           },
-          actionTitle: `Trả lại đơn [STEP-03D]: ${data.cauHinhVanBan.soKyHieu || data.lyDoChinh}`,
-          completionResult: `Đã trả lại đơn: ${data.lyDoChinh}`,
-          completedAt: new Date().toLocaleDateString('vi-VN'),
-          nextAction: 'Đã lập thông báo trả lại & hướng dẫn công dân',
-          cta: { label: 'Xem văn bản trả lại', actionType: 'view_doc', variant: 'neutral' },
+          actionTitle: isTrinhKy
+            ? `Trình ký trả lại đơn [STEP-03D]: ${data.cauHinhVanBan.soKyHieu || data.lyDoChinh}`
+            : `Trả lại đơn [STEP-03D]: ${data.cauHinhVanBan.soKyHieu || data.lyDoChinh}`,
+          completionResult: isTrinhKy ? undefined : `Đã trả lại đơn: ${data.lyDoChinh}`,
+          completedAt: isTrinhKy ? undefined : new Date().toLocaleDateString('vi-VN'),
+          nextAction: isTrinhKy
+            ? `Chờ ${data.lanhDaoKyTen || 'Lãnh đạo'} ký duyệt văn bản trả lại đơn`
+            : 'Đã lập thông báo trả lại & hướng dẫn công dân',
+          cta: {
+            label: isTrinhKy ? 'Theo dõi ký' : 'Xem văn bản trả lại',
+            actionType: isTrinhKy ? 'view_progress' : 'view_doc',
+            variant: isTrinhKy ? 'outline' : 'neutral',
+          },
         };
         return prev.map((it) => (it.id === selectedItemForAction.id ? updatedItem : it));
       });
 
-      showToast(`✓ Đã lập văn bản trả lại hồ sơ ${selectedItemForAction.code} cho công dân (STEP-03D)!`);
+      if (isTrinhKy) {
+        showToast(`✓ Đã chuyển văn bản trả lại đơn (${data.cauHinhVanBan.soKyHieu}) sang luồng Trình ký Lãnh đạo!`);
+      } else {
+        showToast(`✓ Đã lập văn bản trả lại hồ sơ ${selectedItemForAction.code} cho công dân (STEP-03D)!`);
+      }
     }
     setIsTraLaiModalOpen(false);
     setSelectedItemForAction(null);
@@ -524,21 +537,35 @@ export default function CongViecCuaToi({
         acceptedDons.forEach((ad) => {
           // Loại bỏ lượt nhận hoặc đơn cũ ở cột 'action_required' nếu đã được tiếp nhận
           list = list.filter((it) => it.id !== ad.luotNhanId && it.code !== ad.luotNhanId && it.code !== ad.code && it.id !== ad.id);
-          const isChoTiepNhan = ad.statusBadge === 'Chờ tiếp nhận';
+          const isChoTiepNhan = ad.statusBadge === 'Chờ tiếp nhận' || ad.statusBadge === 'Cần xử lý' || ad.statusBadge === 'Mới tiếp nhận';
+          const isBatQuaTang = ad.type === 'BẮT QUẢ TANG';
+          const isCanBoPhatHien = ad.type === 'CÁN BỘ PHÁT HIỆN';
+          const isTuThuDauThu = ad.type === 'TỰ THÚ / ĐẦU THÚ';
+          const isTinBao =
+            ad.loaiDon?.toLowerCase().includes('tin báo') ||
+            ad.loaiDon?.toLowerCase().includes('tố giác') ||
+            ad.code.includes('TB-') ||
+            (ad.luotNhanId && ad.luotNhanId.includes('TB-'));
+          const isUrgent = isBatQuaTang || isTuThuDauThu;
+
           list.unshift({
             id: ad.id,
             code: ad.code,
             title: ad.title,
             sender: ad.nguoiNop,
             source: 'Tiếp nhận & phân công',
+            sourceType: 'don',
             timeReceived: ad.ngayNhan || 'Vừa xong',
-            priority: 'normal',
+            priority: isUrgent ? 'urgent' : 'normal',
             deadlineType: 'today',
-            deadlineText: 'Hôm nay',
+            deadlineText: isUrgent ? 'Khẩn cấp (Hôm nay)' : 'Hôm nay',
             deadlineFull: 'Hôm nay',
             column: isChoTiepNhan ? 'action_required' : 'processing',
+            actionTitle: isChoTiepNhan
+              ? (isBatQuaTang ? 'Lập hồ sơ bắt giữ trong 24h & Thụ lý' : isTuThuDauThu ? 'Lập biên bản tiếp nhận tự thú/đầu thú' : isTinBao ? 'Kiểm tra & Thụ lý tin báo tội phạm' : 'Kiểm tra & Xác nhận tiếp nhận')
+              : 'Thực hiện thẩm tra & giải quyết đơn theo thẩm quyền',
             nextAction: isChoTiepNhan
-              ? 'Kiểm tra kết quả AI và xác nhận tiếp nhận giải quyết'
+              ? (isBatQuaTang ? 'Lập hồ sơ bắt người phạm tội quả tang (Điều 111 BLTTHS), thông báo VKS và lấy lời khai ban đầu' : isTuThuDauThu ? 'Lập biên bản tiếp nhận người phạm tội tự thú/đầu thú, phân loại và xác minh căn cước công dân' : isTinBao ? 'Kiểm tra dấu hiệu tội phạm, thụ lý tin báo tố giác và phân công thụ lý' : 'Kiểm tra hồ sơ đơn mới hình thành và xác nhận giải quyết')
               : 'Thực hiện thẩm tra & giải quyết đơn theo thẩm quyền',
             holder: {
               role: isChoTiepNhan ? 'Chờ tiếp nhận' : 'Đang xử lý',
@@ -551,7 +578,7 @@ export default function CongViecCuaToi({
               currentStep: isChoTiepNhan ? 1 : 2,
               totalSteps: 5,
               stepName: isChoTiepNhan ? 'Tiếp nhận hồ sơ' : 'Thụ lý giải quyết',
-              steps: ['Tiếp nhận', 'Phân loại', 'Thẩm tra', 'Trình ký', 'Trả kết quả'],
+              steps: ['Tiếp nhận', 'Phân loại', 'Thẩm tra & Xác minh', 'Trình ký', 'Trả kết quả'],
             },
             docCount: 3,
             cta: {
@@ -559,12 +586,16 @@ export default function CongViecCuaToi({
               actionType: isChoTiepNhan ? 'handle_now' : 'continue',
               variant: isChoTiepNhan ? 'urgent' : 'primary',
             },
-            category: 'Đã chuyển tiếp nhận',
-            tags: ['Đã chuyển đến', isChoTiepNhan ? 'Chờ tiếp nhận' : 'Đang xử lý'],
+            category: 'Đơn mới hình thành',
+            tags: [
+              'Đã hình thành đơn',
+              isBatQuaTang ? 'BẮT QUẢ TANG' : isCanBoPhatHien ? 'CÁN BỘ PHÁT HIỆN' : isTuThuDauThu ? 'TỰ THÚ / ĐẦU THÚ' : isTinBao ? 'TIN BÁO' : 'ĐƠN TIẾP NHẬN',
+              isChoTiepNhan ? 'Chờ tiếp nhận' : 'Đang xử lý',
+            ],
             loaiDon: ad.loaiDon || 'Đơn tiếp nhận hành chính',
             luotNhanId: ad.luotNhanId,
             nguoiGiao: 'Trần Trọng Giáp (Trưởng phòng)',
-            ngayDuocGiao: '16/09/2026',
+            ngayDuocGiao: 'Hôm nay',
             aiStatus: 'completed',
             taskReadiness: 'action_required',
           });
@@ -1262,28 +1293,39 @@ export default function CongViecCuaToi({
         luotNhanList.find((l) => l.id === item.id || l.id === item.code || l.id === item.luotNhanId) ||
         ALL_LUOT_NHAN.find((l) => l.id === item.id || l.id === item.code);
 
-      // Nếu lượt nhận đã tiếp nhận xong -> mở màn chi tiết đơn chứ không mở màn phân tích AI
+      // Nếu lượt nhận đã tiếp nhận xong hoặc đã hình thành Đơn -> mở màn chi tiết đơn
       const isDaTiepNhan =
         matchedLn?.status === 'da_chuyen' ||
         matchedLn?.status === 'da_thu_ly' ||
-        Boolean(item.tags?.includes('Đã tiếp nhận'));
+        Boolean(item.tags?.includes('Đã tiếp nhận')) ||
+        Boolean(item.tags?.includes('Đã hình thành đơn')) ||
+        item.code.startsWith('Đ-');
 
       if (isDaTiepNhan) {
         const dynamicCode = item.code.startsWith('LN-') ? `Đ-${item.code.replace('LN-', '')}` : item.code;
-        const donObj: DonDetail = {
+        const matchedDon = acceptedDons?.find((d) => d.code === item.code || d.id === item.id || d.code === dynamicCode);
+        const donObj: DonDetail = matchedDon || {
           id: dynamicCode,
           code: dynamicCode,
           title: item.title,
-          luotNhanId: item.code,
+          luotNhanId: item.luotNhanId || item.code,
           nguoiNop: item.sender,
           ngayNhan: item.timeReceived,
-          loaiDon: item.loaiDon || 'Đơn phản ánh kiến nghị',
-          type: 'ĐƠN TIẾP NHẬN',
-          statusBadge: 'Đang xác minh thông tin',
+          loaiDon: item.loaiDon || 'Đơn tiếp nhận',
+          type: (item.code.startsWith('VV')
+            ? 'VỤ VIỆC'
+            : item.tags?.includes('BẮT QUẢ TANG')
+              ? 'BẮT QUẢ TANG'
+              : item.tags?.includes('CÁN BỘ PHÁT HIỆN')
+                ? 'CÁN BỘ PHÁT HIỆN'
+                : item.tags?.includes('TỰ THÚ / ĐẦU THÚ')
+                  ? 'TỰ THÚ / ĐẦU THÚ'
+                  : 'ĐƠN TIẾP NHẬN') as DonDetail['type'],
+          statusBadge: 'Đang xử lý',
         };
         if (onSelectDon) onSelectDon(donObj);
         onNav('don-tiep-nhan');
-        showToast(`Mở màn chi tiết đơn [${dynamicCode}] (Đã tiếp nhận)`);
+        showToast(`Mở màn chi tiết đơn [${dynamicCode}]`);
         return;
       }
 
@@ -3034,6 +3076,28 @@ function TaskCard({ item, onClick, onRetryAI, onTiepNhanXuLy, onBanGiao, onBanGi
         <span className="font-mono text-[11px] font-bold text-slate-800 group-hover/card:text-[#C62828] transition-colors">
           {item.code}
         </span>
+
+        {/* BADGE NGHIỆP VỤ ĐẶC THÙ */}
+        {item.tags?.includes('BẮT QUẢ TANG') && (
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300 tracking-wider uppercase shrink-0 font-label-technical">
+            BẮT QUẢ TANG
+          </span>
+        )}
+        {item.tags?.includes('CÁN BỘ PHÁT HIỆN') && (
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-teal-100 text-teal-800 border border-teal-300 tracking-wider uppercase shrink-0 font-label-technical">
+            CB PHÁT HIỆN
+          </span>
+        )}
+        {item.tags?.includes('TỰ THÚ / ĐẦU THÚ') && (
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-300 tracking-wider uppercase shrink-0 font-label-technical">
+            TỰ THÚ / ĐẦU THÚ
+          </span>
+        )}
+        {item.tags?.includes('TIN BÁO') && (
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-orange-100 text-orange-800 border border-orange-300 tracking-wider uppercase shrink-0 font-label-technical">
+            TIN BÁO
+          </span>
+        )}
 
         {/* BADGE PHỤ BÊN PHẢI */}
         <div className="ml-auto flex items-center gap-1 flex-wrap">
