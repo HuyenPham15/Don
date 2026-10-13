@@ -16,6 +16,7 @@ import { getSuggestedActionsForWorkflow } from '../components/workflow/QuyTrinhS
 import { SigningDocument, CurrentUserAccount } from '../types/signing';
 import { INITIAL_LEADERS } from '../constants/signingData';
 import DonTrungDetailDrawer, { DonTrungItem } from '../components/modals/DonTrungDetailDrawer';
+import { TuDonAnalysisBlocks } from '../components/analysis/TuDonAnalysisBlocks';
 
 interface BanPhanTichProps {
   luotNhan: LuotNhan;
@@ -128,10 +129,14 @@ export default function BanPhanTich({
     );
   }, [luotNhan]);
 
-  // Phân định nghiệp vụ Tiếp nhận Tin báo / Tố giác tội phạm
-  const isTinBaoToGiac = useMemo(() => {
-    if (isTuThuDauThu || isBatQuaTang || isCanBoPhatHien) return false;
-    return Boolean(
+  // ─── 2 TRƯỜNG HỢP TIẾP NHẬN & PHÂN TÍCH AI (GOVEX CORE WORKFLOW) ───────────────
+  // Trường hợp 1: 'tu_don' -> Người nộp/Cán bộ nhập thông tin và TẢI FILE (đơn scan, tài liệu đính kèm, OCR bóc tách văn bản)
+  // Trường hợp 2: 'tin_bao_to_giac' -> Tiếp nhận tin báo, tố giác tội phạm: CÓ THỂ KHÔNG ĐỦ THÔNG TIN, TÀI LIỆU ban đầu (NLP ghi nhận trực tiếp, không ép buộc có file)
+  const defaultTruongHopPhanTich = useMemo<'tu_don' | 'tin_bao_to_giac'>(() => {
+    if (
+      isTuThuDauThu ||
+      isBatQuaTang ||
+      isCanBoPhatHien ||
       luotNhan?.loaiNghiepVu === 'tin_bao_to_giac' ||
       luotNhan?.loaiNghiepVu === 'tin_bao_toi_pham' ||
       luotNhan?.loaiNghiepVu === 'to_giac_toi_pham' ||
@@ -140,8 +145,24 @@ export default function BanPhanTich({
       luotNhan?.loaiDon?.toLowerCase().includes('tin báo') ||
       luotNhan?.noiDung?.toLowerCase().includes('tố giác') ||
       luotNhan?.noiDung?.toLowerCase().includes('lừa đảo')
-    );
-  }, [luotNhan, isTuThuDauThu, isBatQuaTang, isCanBoPhatHien]);
+    ) {
+      return 'tin_bao_to_giac';
+    }
+    return 'tu_don';
+  }, [isTuThuDauThu, isBatQuaTang, isCanBoPhatHien, luotNhan]);
+
+  const [truongHopPhanTich, setTruongHopPhanTich] = useState<'tu_don' | 'tin_bao_to_giac'>(defaultTruongHopPhanTich);
+
+  useEffect(() => {
+    setTruongHopPhanTich(defaultTruongHopPhanTich);
+  }, [defaultTruongHopPhanTich]);
+
+  // Phân định nghiệp vụ Tiếp nhận Tin báo / Tố giác tội phạm
+  const isTinBaoToGiac = useMemo(() => {
+    if (truongHopPhanTich === 'tu_don') return false;
+    if (isTuThuDauThu || isBatQuaTang || isCanBoPhatHien) return false;
+    return true;
+  }, [truongHopPhanTich, isTuThuDauThu, isBatQuaTang, isCanBoPhatHien]);
 
   // Cán bộ xác nhận phân loại Tự thú vs Đầu thú (Mục 12.6.3)
   const [truongHopConfirmed, setTruongHopConfirmed] = useState<TruongHopTrinhDien>(
@@ -190,11 +211,46 @@ export default function BanPhanTich({
 
   // Tab điều hướng cột trái: "noi_dung" (Ghi nhận trực tiếp / Lời khai) vs "tai_lieu" (Tệp số hóa / OCR)
   const hasRealUploadedFiles = Boolean(
-    (luotNhan?.files && luotNhan.files.length > 0) || extraUploadedFiles.length > 0
+    (luotNhan?.files && luotNhan.files.length > 0) || extraUploadedFiles.length > 0 || truongHopPhanTich === 'tu_don'
   );
   const [leftPaneTab, setLeftPaneTab] = useState<'noi_dung' | 'tai_lieu'>(() => {
-    return hasRealUploadedFiles ? 'tai_lieu' : 'noi_dung';
+    return defaultTruongHopPhanTich === 'tu_don' ? 'tai_lieu' : 'noi_dung';
   });
+
+  // ─── ĐIỀU KIỆN THỤ LÝ & HƯỚNG XỬ LÝ ĐƠN THƯ (TRƯỜNG HỢP 1: TỪ ĐƠN) ───────────
+  const [checklistDieuKienThuLy, setChecklistDieuKienThuLy] = useState<Record<string, boolean>>({
+    coChuKy: true,
+    dungThamQuyen: true,
+    conThoiHieu: true,
+    duTaiLieuChungCu: true,
+  });
+  const [huongXuLyDonThu, setHuongXuLyDonThu] = useState<'thu_ly' | 'chuyen_don' | 'huong_dan' | 'luu_don'>('thu_ly');
+  const [officerNoteDonThu, setOfficerNoteDonThu] = useState<string>(
+    'Đơn phản ánh tranh chấp ranh giới ngõ đi chung đủ điều kiện tiếp nhận ban đầu. Đề xuất: Tiếp nhận và chuyển UBND phường Nghĩa Đô tổ chức hòa giải cơ sở theo quy định tại Điều 202 Luật Đất đai.'
+  );
+  const [checklistXacMinhDonThu, setChecklistXacMinhDonThu] = useState<Record<string, boolean>>({
+    xm1: true,
+    xm2: false,
+    xm3: false,
+    xm4: false,
+  });
+
+  const handleChangeTruongHop = (mode: 'tu_don' | 'tin_bao_to_giac') => {
+    setTruongHopPhanTich(mode);
+    if (mode === 'tu_don') {
+      setLeftPaneTab('tai_lieu');
+      setAiAnalysisState('da_cap_nhat');
+      setAiVersion(2);
+      setSelectedFileIndex(0);
+      showToast('Đã chuyển sang Trường hợp 1: Từ đơn (Đã có tệp scan & bóc tách OCR)');
+    } else {
+      setLeftPaneTab('noi_dung');
+      setAiAnalysisState('phan_tich_so_bo');
+      setAiVersion(1);
+      setSelectedFileIndex(0);
+      showToast('Đã chuyển sang Trường hợp 2: Tiếp nhận tin báo, tố giác (Có thể thiếu tài liệu)');
+    }
+  };
 
   // Nội dung ghi nhận ban đầu do cán bộ nhập trực tiếp
   const [directDescriptionInput, setDirectDescriptionInput] = useState<string>(
@@ -214,10 +270,24 @@ export default function BanPhanTich({
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [zoomLevel, setZoomLevel] = useState<number>(100);
 
-  // Danh sách tệp thực tế: Không tự bịa tệp scan nếu lượt nhận thực tế không có tệp!
+  // Danh sách tệp thực tế: Phân định theo 2 trường hợp tiếp nhận
   const currentFiles: UploadedFile[] = useMemo(() => {
     const combined = [...(luotNhan?.files || []), ...extraUploadedFiles];
     if (combined.length > 0) return combined;
+    if (truongHopPhanTich === 'tu_don') {
+      // Trường hợp 1: Từ đơn -> user nhập thông tin và tải file tài liệu đính kèm
+      if (luotNhan?.id?.includes('LN-58')) {
+        return [
+          { name: 'Don_phan_anh_tranh_chap_dat_dai_DoVietThang.pdf', size: '2.4 MB', category: 'main' },
+          { name: 'Trich_luc_so_do_dia_chinh_thua_dat_ngo_di_chung.pdf', size: '1.8 MB', category: 'attach' },
+          { name: 'Bien_ban_hoa_giai_co_so_To_dan_pho.pdf', size: '1.1 MB', category: 'attach' },
+        ];
+      }
+      return [
+        { name: 'Don_khieu_nai_phan_anh_ban_scan_chinh.pdf', size: '2.1 MB', category: 'main' },
+        { name: 'Tai_lieu_giay_to_phap_ly_kem_theo.pdf', size: '1.5 MB', category: 'attach' },
+      ];
+    }
     if (isTuThuDauThu) {
       // Với tự thú / đầu thú, có biên bản Mẫu 02-BCA lập tại cơ quan
       return isDauThuItem
@@ -230,9 +300,9 @@ export default function BanPhanTich({
           { name: 'Ban_tu_khai_loi_nhan_toi.pdf', size: '1.2 MB', category: 'attach' },
         ];
     }
-    // Với bắt quả tang, cán bộ phát hiện hoặc tin báo chưa có tệp -> Danh sách tệp rỗng hợp lệ
+    // Trường hợp 2: Với tiếp nhận tin báo tố giác -> có thể KHÔNG ĐỦ tài liệu ban đầu -> Danh sách tệp rỗng hợp lệ
     return [];
-  }, [luotNhan?.files, extraUploadedFiles, isTuThuDauThu, isDauThuItem]);
+  }, [luotNhan?.files, extraUploadedFiles, truongHopPhanTich, luotNhan?.id, isTuThuDauThu, isDauThuItem]);
 
   const [selectedFileIndex, setSelectedFileIndex] = useState<number>(0);
   const activeFile = currentFiles[selectedFileIndex] || currentFiles[0];
@@ -1962,6 +2032,77 @@ Kính trình Lãnh đạo phê duyệt:
       </div>
 
       {/* ========================================================================= */}
+      {/* THANH ĐIỀU HƯỚNG 2 TRƯỜNG HỢP TIẾP NHẬN & PHÂN TÍCH AI                   */}
+      {/* Trường hợp 1: Từ đơn (User nhập thông tin & Tải file scan OCR)            */}
+      {/* Trường hợp 2: Tiếp nhận tin báo, tố giác (Có thể không đủ thông tin/tài liệu) */}
+      {/* ========================================================================= */}
+      <div className="mx-4 mt-3 mb-1 p-2.5 rounded-2xl bg-gradient-to-r from-blue-50/90 via-slate-50 to-indigo-50/80 border border-blue-200/90 shadow-2xs flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-[#004ac6] text-white flex items-center justify-center shadow-xs">
+            <span className="material-symbols-outlined text-[19px]">account_tree</span>
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-900 uppercase tracking-tight">
+                2 Trường hợp Phân tích AI Tiếp nhận:
+              </span>
+              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${
+                truongHopPhanTich === 'tu_don'
+                  ? 'bg-blue-100 text-blue-900 border-blue-300'
+                  : 'bg-rose-100 text-rose-900 border-rose-300'
+              }`}>
+                {truongHopPhanTich === 'tu_don' ? '1. Từ đơn (Đã có tệp scan & OCR)' : '2. Tin báo, tố giác (Có thể thiếu tệp/thông tin)'}
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500">
+              {truongHopPhanTich === 'tu_don'
+                ? 'Công dân/Cán bộ đã nhập thông tin & tải file tài liệu số hóa • AI OCR bóc tách và thẩm định tính hợp lệ'
+                : 'Tiếp nhận nguồn tin tội phạm: Có thể không đủ thông tin, tài liệu • AI NLP phân tích trực tiếp trên lời khai & gợi ý xác minh'}
+            </p>
+          </div>
+        </div>
+
+        {/* Nút chuyển đổi 2 trường hợp */}
+        <div className="flex items-center gap-1.5 p-1 bg-white rounded-xl border border-slate-200 shadow-2xs">
+          <button
+            type="button"
+            onClick={() => handleChangeTruongHop('tu_don')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              truongHopPhanTich === 'tu_don'
+                ? 'bg-[#004ac6] text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[15px]">description</span>
+            <span>1. Từ đơn (Nhập thông tin &amp; Tải file)</span>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+              truongHopPhanTich === 'tu_don' ? 'bg-blue-200/90 text-blue-950 font-bold' : 'bg-slate-100 text-slate-500'
+            }`}>
+              Đủ tệp scan
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleChangeTruongHop('tin_bao_to_giac')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              truongHopPhanTich === 'tin_bao_to_giac'
+                ? 'bg-[#C62828] text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[15px]">local_police</span>
+            <span>2. Tiếp nhận tin báo, tố giác</span>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+              truongHopPhanTich === 'tin_bao_to_giac' ? 'bg-rose-200/90 text-rose-950 font-bold' : 'bg-slate-100 text-slate-500'
+            }`}>
+              Có thể thiếu tài liệu
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
       {/* 2. MAIN WORKSPACE: BỐ CỤC 2 CỘT CHÍNH (TÀI LIỆU & AI PHÂN TÍCH)            */}
       {/* ========================================================================= */}
       <div className="flex-1 flex overflow-hidden p-4 gap-4">
@@ -1972,29 +2113,59 @@ Kính trình Lãnh đạo phê duyệt:
           {/* Header Chuyển đổi Tab Cột Trái: Ghi nhận trực tiếp vs Tài liệu đính kèm */}
           <div className="px-3.5 py-2.5 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between shrink-0 flex-wrap gap-2">
             <div className="flex items-center gap-1.5 p-0.5 bg-slate-200/80 rounded-xl">
-              <button
-                type="button"
-                onClick={() => setLeftPaneTab('noi_dung')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${leftPaneTab === 'noi_dung'
-                  ? 'bg-white text-blue-700 shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900'
-                  }`}
-              >
-                <span className="material-symbols-outlined text-[15px]">edit_note</span>
-                <span>Ghi nhận trực tiếp &amp; Diễn biến</span>
-              </button>
+              {truongHopPhanTich === 'tu_don' ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setLeftPaneTab('tai_lieu')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${leftPaneTab === 'tai_lieu'
+                      ? 'bg-white text-blue-700 shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                  >
+                    <span className="material-symbols-outlined text-[15px]">description</span>
+                    <span>Tài liệu số hóa &amp; Đơn scan {currentFiles.length > 0 ? `(${currentFiles.length})` : '(Chưa có)'}</span>
+                  </button>
 
-              <button
-                type="button"
-                onClick={() => setLeftPaneTab('tai_lieu')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${leftPaneTab === 'tai_lieu'
-                  ? 'bg-white text-blue-700 shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900'
-                  }`}
-              >
-                <span className="material-symbols-outlined text-[15px]">description</span>
-                <span>Tài liệu số hóa {currentFiles.length > 0 ? `(${currentFiles.length})` : '(Không tệp)'}</span>
-              </button>
+                  <button
+                    type="button"
+                    onClick={() => setLeftPaneTab('noi_dung')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${leftPaneTab === 'noi_dung'
+                      ? 'bg-white text-blue-700 shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                  >
+                    <span className="material-symbols-outlined text-[15px]">edit_note</span>
+                    <span>Thông tin người nộp &amp; Đơn đã nhập</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setLeftPaneTab('noi_dung')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${leftPaneTab === 'noi_dung'
+                      ? 'bg-white text-blue-700 shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                  >
+                    <span className="material-symbols-outlined text-[15px]">edit_note</span>
+                    <span>Ghi nhận trực tiếp &amp; Diễn biến</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setLeftPaneTab('tai_lieu')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${leftPaneTab === 'tai_lieu'
+                      ? 'bg-white text-blue-700 shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                  >
+                    <span className="material-symbols-outlined text-[15px]">description</span>
+                    <span>Tài liệu số hóa {currentFiles.length > 0 ? `(${currentFiles.length})` : '(Không tệp)'}</span>
+                  </button>
+                </>
+              )}
             </div>
 
             <div className="flex items-center gap-1.5">
@@ -2012,123 +2183,287 @@ Kính trình Lãnh đạo phê duyệt:
 
           {leftPaneTab === 'noi_dung' ? (
             <div className="flex-1 overflow-y-auto p-4 space-y-3.5 bg-slate-50/50">
-              {/* Banner nguyên tắc dữ liệu trực tiếp */}
-              <div className="p-3 rounded-xl bg-blue-50/80 border border-blue-200 text-blue-950 text-xs space-y-1">
-                <div className="flex items-center justify-between">
-                  <strong className="flex items-center gap-1.5 text-blue-900 font-semibold text-[12.5px]">
-                    <span className="material-symbols-outlined text-[16px] text-blue-600">verified</span>
-                    Nguồn: Cán bộ ghi nhận trực tiếp trên giao diện &amp; Lời trình bày
-                  </strong>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-300">
-                    Không phụ thuộc OCR
-                  </span>
-                </div>
-                <p className="text-[11.5px] text-blue-900/90 leading-relaxed">
-                  Hệ thống phân tích ngôn ngữ tự nhiên (NLP) trực tiếp trên các trường thông tin và mô tả ban đầu do cán bộ nhập, không bắt buộc phải có tài liệu đính kèm.
-                </p>
-              </div>
-
-              {/* Form ghi nhận và chỉnh sửa trực tiếp */}
-              <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-3 shadow-2xs">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                  <span className="text-xs font-bold text-slate-800 uppercase tracking-tight flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-[16px] text-blue-600">edit_square</span>
-                    Thông tin sự việc ghi nhận ban đầu
-                  </span>
-                  <span className="text-[11px] text-slate-500 italic">Cán bộ có thể sửa &amp; chạy phân tích lại</span>
-                </div>
-
-                {/* Các trường thông tin nhanh */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                      {isBatQuaTang
-                        ? 'Người bị bắt quả tang'
-                        : isCanBoPhatHien
-                          ? 'Chủ thể nghi vấn vi phạm'
-                          : isTuThuDauThu
-                            ? 'Người trình diện (Tự thú/Đầu thú)'
-                            : 'Người cung cấp thông tin / Người gửi'}
-                    </label>
-                    <input
-                      type="text"
-                      disabled
-                      value={extractData.nguoiGui || luotNhan?.nguoiNop || ''}
-                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                      Thời điểm phát sinh / Tiếp nhận
-                    </label>
-                    <input
-                      type="text"
-                      value={thoiGianDirectInput}
-                      onChange={(e) => setThoiGianDirectInput(e.target.value)}
-                      placeholder="VD: 08:30 ngày 16/09/2026..."
-                      className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                      Địa điểm xảy ra sự việc / Khu vực phát hiện
-                    </label>
-                    <input
-                      type="text"
-                      value={diaDiemDirectInput}
-                      onChange={(e) => setDiaDiemDirectInput(e.target.value)}
-                      placeholder="VD: Bến xe Giáp Bát, Hoàng Mai, Hà Nội..."
-                      className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  {(isBatQuaTang || isCanBoPhatHien || luotNhan?.tangVatThuGiu || luotNhan?.doVatGiaoNop) && (
-                    <div className="sm:col-span-2">
-                      <label className="block text-[11px] font-semibold text-amber-900 mb-1">
-                        Tang vật thu giữ tại chỗ / Đồ vật giao nộp (Điều 106, 111 BLTTHS)
-                      </label>
-                      <input
-                        type="text"
-                        value={tangVatDirectInput}
-                        onChange={(e) => setTangVatDirectInput(e.target.value)}
-                        placeholder="VD: 02 túi nilon tinh thể màu trắng nghi ma túy đá, 01 điện thoại iPhone..."
-                        className="w-full p-2 bg-amber-50/60 border border-amber-300 rounded-lg text-xs text-amber-950 font-medium focus:outline-none focus:ring-1 focus:ring-amber-500"
-                      />
+              {truongHopPhanTich === 'tu_don' ? (
+                <>
+                  {/* Banner nguyên tắc: Từ đơn có thông tin và tệp scan */}
+                  <div className="p-3 rounded-xl bg-blue-50/90 border border-blue-200 text-blue-950 text-xs space-y-1">
+                    <div className="flex items-center justify-between">
+                      <strong className="flex items-center gap-1.5 text-blue-900 font-semibold text-[12.5px]">
+                        <span className="material-symbols-outlined text-[16px] text-blue-600">verified</span>
+                        Nguồn: Thông tin người nộp đơn kê khai &amp; Hồ sơ Một cửa
+                      </strong>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-300">
+                        Form điện tử + OCR bóc tách
+                      </span>
                     </div>
-                  )}
-
-                  <div className="sm:col-span-2">
-                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                      Mô tả ban đầu sự việc / Lời trình bày chi tiết của đương sự:
-                    </label>
-                    <textarea
-                      rows={5}
-                      value={directDescriptionInput}
-                      onChange={(e) => setDirectDescriptionInput(e.target.value)}
-                      placeholder="Nhập chi tiết lời khai, diễn biến sự việc, phương thức thủ đoạn..."
-                      className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-100"
-                    />
+                    <p className="text-[11.5px] text-blue-900/90 leading-relaxed">
+                      Thông tin trích xuất từ dữ liệu người làm đơn nộp trực tuyến qua Cổng DVC / Bộ phận Một cửa, kết hợp công nghệ OCR bóc tách văn bản scan đối chiếu chéo.
+                    </p>
                   </div>
-                </div>
 
-                {/* Nút kích hoạt phân tích NLP trên nội dung trực tiếp */}
-                <div className="pt-2 flex items-center justify-between border-t border-slate-100 flex-wrap gap-2">
-                  <span className="text-[11px] text-slate-500">
-                    Cập nhật lại mô tả sẽ kích hoạt phân tích sơ bộ tương ứng.
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handleRunAiAnalysisOnDirectInput}
-                    disabled={isSimulating}
-                    className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shadow-xs disabled:opacity-50"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">psychology</span>
-                    <span>Phân tích lại AI NLP trên mô tả này</span>
-                  </button>
-                </div>
-              </div>
+                  {/* Form thông tin đơn đã nhập */}
+                  <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-3 shadow-2xs">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                      <span className="text-xs font-bold text-slate-800 uppercase tracking-tight flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-[16px] text-blue-600">badge</span>
+                        Thông tin người làm đơn &amp; Lượt tiếp nhận
+                      </span>
+                      <span className="text-[11px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                        Đã đối soát CCCD C06
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                          Họ và tên người làm đơn / Người đại diện
+                        </label>
+                        <input
+                          type="text"
+                          disabled
+                          value={extractData.nguoiGui || luotNhan?.nguoiNop || 'Ông Đỗ Viết Thắng'}
+                          className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-900"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                          Số CCCD / Mã định danh cá nhân
+                        </label>
+                        <input
+                          type="text"
+                          disabled
+                          value={extractData.cccd || luotNhan?.cccd || '001065009182'}
+                          className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-bold text-slate-800"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                          Số điện thoại liên hệ
+                        </label>
+                        <input
+                          type="text"
+                          disabled
+                          value={extractData.sdt || luotNhan?.sdt || '0913 229 118'}
+                          className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-800"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                          Thời điểm tiếp nhận đơn
+                        </label>
+                        <input
+                          type="text"
+                          disabled
+                          value={thoiGianDirectInput || luotNhan?.ngayNhan || '16/09/2026 08:45'}
+                          className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                          Địa chỉ thường trú / Nơi phát sinh tranh chấp
+                        </label>
+                        <input
+                          type="text"
+                          disabled
+                          value={diaDiemDirectInput || extractData.diaChi || 'Số 14 ngõ 35 phố Nghĩa Đô, Cầu Giấy, Hà Nội'}
+                          className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 font-medium"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                          Nội dung tóm tắt trong đơn người dân đã nộp:
+                        </label>
+                        <textarea
+                          rows={4}
+                          value={directDescriptionInput}
+                          onChange={(e) => setDirectDescriptionInput(e.target.value)}
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-100"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Danh sách các tài liệu người dân đã tải lên kèm theo đơn */}
+                    <div className="pt-2 border-t border-slate-100 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11.5px] font-bold text-slate-700 flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[15px] text-blue-600">attach_file</span>
+                          Danh sách hồ sơ / tài liệu đính kèm ({currentFiles.length})
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setLeftPaneTab('tai_lieu')}
+                          className="text-[11px] text-blue-700 hover:underline font-semibold cursor-pointer"
+                        >
+                          Mở trình xem tài liệu scan →
+                        </button>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        {currentFiles.map((file, idx) => (
+                          <div
+                            key={idx}
+                            onClick={() => {
+                              setSelectedFileIndex(idx);
+                              setLeftPaneTab('tai_lieu');
+                            }}
+                            className="p-2 rounded-lg bg-slate-50 border border-slate-200 hover:bg-blue-50/60 hover:border-blue-300 cursor-pointer transition-all flex items-center justify-between text-xs"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="material-symbols-outlined text-[17px] text-rose-600 shrink-0">
+                                picture_as_pdf
+                              </span>
+                              <span className="font-semibold text-slate-800 truncate">{file.name}</span>
+                            </div>
+                            <span className="text-[10.5px] text-slate-500 font-mono bg-white px-2 py-0.5 rounded border border-slate-200 shrink-0 ml-2">
+                              {file.size}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="pt-2 flex items-center justify-between border-t border-slate-100">
+                      <span className="text-[11px] text-slate-500">
+                        Cán bộ có thể chỉnh sửa nội dung tóm tắt để AI cập nhật phân tích.
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleRunAiAnalysisOnDirectInput}
+                        disabled={isSimulating}
+                        className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">psychology</span>
+                        <span>Cập nhật phân tích đơn</span>
+                      </button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Banner nguyên tắc dữ liệu trực tiếp: Tin báo tố giác */}
+                  <div className="p-3 rounded-xl bg-rose-50/80 border border-rose-200 text-rose-950 text-xs space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <strong className="flex items-center gap-1.5 text-rose-900 font-bold text-[12.5px]">
+                        <span className="material-symbols-outlined text-[16px] text-rose-600">priority_high</span>
+                        Đặc thù tiếp nhận Tin báo, Tố giác tội phạm
+                      </strong>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-300">
+                        Có thể không đủ tài liệu ban đầu
+                      </span>
+                    </div>
+                    <p className="text-[11.5px] text-rose-900/90 leading-relaxed">
+                      <strong>Quy định nghiệp vụ:</strong> Nguồn tin tội phạm tiếp nhận qua điện thoại nóng, trực ban hình sự, người báo tin ẩn danh hoặc hiện trường ban đầu thường <strong>chưa có đầy đủ hồ sơ, tài liệu chứng minh</strong>. Hệ thống AI GOVEX phân tích trực tiếp trên mô tả do cán bộ nhập, tuyệt đối không bắt buộc phải có tệp scan mới cho phép thụ lý.
+                    </p>
+                  </div>
+
+                  {/* Form ghi nhận và chỉnh sửa trực tiếp */}
+                  <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-3 shadow-2xs">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                      <span className="text-xs font-bold text-slate-800 uppercase tracking-tight flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-[16px] text-blue-600">edit_square</span>
+                        Thông tin sự việc ghi nhận ban đầu
+                      </span>
+                      <span className="text-[11px] text-slate-500 italic">Cán bộ có thể sửa &amp; chạy phân tích lại</span>
+                    </div>
+
+                    {/* Các trường thông tin nhanh */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                          {isBatQuaTang
+                            ? 'Người bị bắt quả tang'
+                            : isCanBoPhatHien
+                              ? 'Chủ thể nghi vấn vi phạm'
+                              : isTuThuDauThu
+                                ? 'Người trình diện (Tự thú/Đầu thú)'
+                                : 'Người cung cấp thông tin / Người gửi'}
+                        </label>
+                        <input
+                          type="text"
+                          disabled
+                          value={extractData.nguoiGui || luotNhan?.nguoiNop || ''}
+                          className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                          Thời điểm phát sinh / Tiếp nhận
+                        </label>
+                        <input
+                          type="text"
+                          value={thoiGianDirectInput}
+                          onChange={(e) => setThoiGianDirectInput(e.target.value)}
+                          placeholder="VD: 08:30 ngày 16/09/2026..."
+                          className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                          Địa điểm xảy ra sự việc / Khu vực phát hiện
+                        </label>
+                        <input
+                          type="text"
+                          value={diaDiemDirectInput}
+                          onChange={(e) => setDiaDiemDirectInput(e.target.value)}
+                          placeholder="VD: Bến xe Giáp Bát, Hoàng Mai, Hà Nội..."
+                          className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      {(isBatQuaTang || isCanBoPhatHien || luotNhan?.tangVatThuGiu || luotNhan?.doVatGiaoNop) && (
+                        <div className="sm:col-span-2">
+                          <label className="block text-[11px] font-semibold text-amber-900 mb-1">
+                            Tang vật thu giữ tại chỗ / Đồ vật giao nộp (Điều 106, 111 BLTTHS)
+                          </label>
+                          <input
+                            type="text"
+                            value={tangVatDirectInput}
+                            onChange={(e) => setTangVatDirectInput(e.target.value)}
+                            placeholder="VD: 02 túi nilon tinh thể màu trắng nghi ma túy đá, 01 điện thoại iPhone..."
+                            className="w-full p-2 bg-amber-50/60 border border-amber-300 rounded-lg text-xs text-amber-950 font-medium focus:outline-none focus:ring-1 focus:ring-amber-500"
+                          />
+                        </div>
+                      )}
+
+                      <div className="sm:col-span-2">
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                          Mô tả ban đầu sự việc / Lời trình bày chi tiết của đương sự:
+                        </label>
+                        <textarea
+                          rows={5}
+                          value={directDescriptionInput}
+                          onChange={(e) => setDirectDescriptionInput(e.target.value)}
+                          placeholder="Nhập chi tiết lời khai, diễn biến sự việc, phương thức thủ đoạn..."
+                          className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-100"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Nút kích hoạt phân tích NLP trên nội dung trực tiếp */}
+                    <div className="pt-2 flex items-center justify-between border-t border-slate-100 flex-wrap gap-2">
+                      <span className="text-[11px] text-slate-500">
+                        Cập nhật lại mô tả sẽ kích hoạt phân tích sơ bộ tương ứng.
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleRunAiAnalysisOnDirectInput}
+                        disabled={isSimulating}
+                        className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">psychology</span>
+                        <span>Phân tích lại AI NLP trên mô tả này</span>
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
 
               {/* Chi tiết theo mẫu nghiệp vụ */}
               {isBatQuaTang && (
@@ -2205,6 +2540,51 @@ Kính trình Lãnh đạo phê duyệt:
             </div>
           ) : (
             <>
+              {/* Thanh chuyển đổi nhanh các tệp số hóa đã tải lên */}
+              {currentFiles.length > 1 && (
+                <div className="px-3 py-1.5 bg-slate-100 border-b border-slate-200 flex items-center justify-between gap-2 overflow-x-auto shrink-0">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-tight shrink-0 mr-1 flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[14px] text-blue-600">folder_open</span>
+                      Tệp ({currentFiles.length}):
+                    </span>
+                    {currentFiles.map((f, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          setSelectedFileIndex(idx);
+                          setCurrentPage(1);
+                          showToast(`Đang hiển thị tệp: ${f.name}`);
+                        }}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-all cursor-pointer ${selectedFileIndex === idx
+                          ? 'bg-[#004ac6] text-white shadow-2xs font-bold'
+                          : 'bg-white text-slate-700 hover:bg-slate-200/80 border border-slate-200'
+                          }`}
+                        title={f.name}
+                      >
+                        <span className="material-symbols-outlined text-[13px]">
+                          {f.category === 'main' ? 'picture_as_pdf' : 'description'}
+                        </span>
+                        <span className="truncate max-w-[170px]">{f.name}</span>
+                        <span className={`text-[9.5px] px-1 py-0.2 rounded font-mono ${selectedFileIndex === idx ? 'bg-blue-800 text-blue-100' : 'bg-slate-100 text-slate-500'
+                          }`}>
+                          {f.size}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddDocumentModal(true)}
+                    className="text-[11px] font-semibold text-blue-700 hover:text-blue-900 bg-white hover:bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg shrink-0 flex items-center gap-1 cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[13px]">upload_file</span>
+                    <span>+ Tải thêm</span>
+                  </button>
+                </div>
+              )}
+
               {/* PDF Viewer Dark Toolbar */}
               <div className="px-3 py-1.5 bg-[#2d3748] text-white flex items-center justify-between text-xs shrink-0 select-none">
                 <div className="flex items-center gap-2">
@@ -2468,189 +2848,368 @@ Kính trình Lãnh đạo phê duyệt:
                     </>
                   ) : (
                     <>
-                      {/* Header Quốc hiệu */}
-                      <div className="text-center space-y-1 pb-1">
-                        <p className="font-bold uppercase text-[10.5px] tracking-wide text-slate-900">
-                          CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
-                        </p>
-                        <p className="text-[10px] underline font-medium text-slate-800">
-                          Độc lập - Tự do - Hạnh phúc
-                        </p>
-                        <p className="text-right text-[10.5px] italic text-slate-600 pt-1">
-                          Hà Nội, ngày 10 tháng 9 năm 2026
-                        </p>
-                      </div>
-
-                      {/* Tiêu đề Đơn */}
-                      <div className="text-center py-1">
-                        <h3 className="text-[15px] font-bold uppercase text-slate-950 tracking-wide">
-                          {extractData.loaiNoiDung === 'Hồ sơ cấp phép xây dựng'
-                            ? 'ĐƠN ĐỀ NGHỊ CẤP GIẤY PHÉP XÂY DỰNG'
-                            : extractData.loaiNoiDung === 'Đơn phản ánh kiến nghị'
-                              ? 'ĐƠN PHẢN ÁNH KIẾN NGHỊ'
-                              : 'ĐƠN TỐ GIÁC'}
-                        </h3>
-                        {extractData.loaiNoiDung === 'Hồ sơ cấp phép xây dựng' && (
-                          <p className="text-[10.5px] italic text-slate-600">(Công trình: Nhà ở riêng lẻ đô thị - 5 tầng + 1 lửng)</p>
-                        )}
-                        {extractData.loaiNoiDung === 'Đơn phản ánh kiến nghị' && (
-                          <p className="text-[10.5px] italic text-slate-600">(V/v: Cơ sở tái chế phế liệu xả khói bụi và tiếng ồn ban đêm)</p>
-                        )}
-                      </div>
-
-                      {/* Kính gửi */}
-                      <p className="font-semibold text-slate-900">
-                        Kính gửi:{' '}
-                        <span className="font-normal text-slate-800">
-                          {extractData.loaiNoiDung === 'Hồ sơ cấp phép xây dựng'
-                            ? 'Ủy ban nhân dân Quận Ba Đình - Phòng Quản lý Đô thị'
-                            : extractData.loaiNoiDung === 'Đơn phản ánh kiến nghị'
-                              ? 'Ủy ban nhân dân Quận Cầu Giấy - Phòng Tài nguyên và Môi trường'
-                              : 'Cơ quan Cảnh sát điều tra Công an thành phố Hà Nội'}
-                        </span>
-                      </p>
-
-                      {/* Thông tin người làm đơn */}
-                      <div className="space-y-1 pt-0.5 border-b border-slate-200/60 pb-2">
-                        <p>
-                          <strong>1. Người làm đơn: </strong>
-                          <span
-                            className={`font-semibold text-slate-900 px-1 py-0.5 rounded transition-colors ${activeHighlightKey === 'nguoiGui' ? 'bg-amber-200 ring-2 ring-amber-400' : ''
-                              }`}
-                          >
-                            {extractData.nguoiGui}
-                          </span>{' '}
-                          (Sinh năm: {extractData.namSinh} | CCCD:{' '}
-                          <span
-                            className={`font-label-technical px-1 py-0.5 rounded transition-colors ${activeHighlightKey === 'cccd' ? 'bg-amber-200 ring-2 ring-amber-400' : ''
-                              }`}
-                          >
-                            {extractData.cccd}
-                          </span>
-                          )
-                        </p>
-                        <p>
-                          Địa chỉ thường trú:{' '}
-                          <span
-                            className={`px-1 py-0.5 rounded transition-colors ${activeHighlightKey === 'diaChi' ? 'bg-amber-200 ring-2 ring-amber-400' : ''
-                              }`}
-                          >
-                            {extractData.diaChi}
-                          </span>{' '}
-                          | SĐT: <span className="font-label-technical">{extractData.sdt}</span>
-                        </p>
-                        {extractData.dongNguoiGui && extractData.dongNguoiGui !== 'Không có' && (
-                          <p>
-                            <strong>2. Người cùng đứng đơn / Đồng sở hữu: </strong>
-                            <span className="font-semibold text-slate-900">{extractData.dongNguoiGui}</span> (CCCD:{' '}
-                            <span className="font-label-technical">{extractData.cccdDongNguoiGui}</span>)
-                          </p>
-                        )}
-                        {extractData.luatSu && extractData.luatSu !== 'Không có' && (
-                          <p>
-                            <strong>3. Người đại diện theo ủy quyền: </strong>
-                            <span className="font-semibold text-purple-900">{extractData.luatSu}</span> (Thẻ LS:{' '}
-                            <span className="font-label-technical">{extractData.theLuatSu}</span>)
-                          </p>
-                        )}
-                      </div>
-
-                      {/* HỘP CẢNH BÁO / KẾT QUẢ AI PHÂN TÍCH */}
-                      {extractData.loaiNoiDung === 'Hồ sơ cấp phép xây dựng' && (
-                        <div className="p-2.5 rounded-lg bg-orange-50 border border-orange-300 text-[11px] text-orange-950 space-y-1">
-                          <div className="flex items-center gap-1 font-bold text-orange-900">
-                            <span className="material-symbols-outlined text-[15px] text-orange-600">warning</span>
-                            <span>AI PHÂN TÍCH &amp; CẢNH BÁO (Cần cán bộ xác minh thực địa):</span>
+                      {truongHopPhanTich === 'tu_don' && selectedFileIndex === 1 ? (
+                        /* ========================================================= */
+                        /* FILE #2: TRÍCH LỤC SƠ ĐỒ ĐỊA CHÍNH & HIỆN TRẠNG NGÕ ĐI   */
+                        /* ========================================================= */
+                        <div className="space-y-3">
+                          <div className="flex items-start justify-between border-b border-slate-200 pb-2">
+                            <div className="text-left text-[10px] space-y-0.5">
+                              <p className="font-bold uppercase text-slate-900">SỞ TÀI NGUYÊN VÀ MÔI TRƯỜNG TP. HÀ NỘI</p>
+                              <p className="font-semibold text-slate-700">VĂN PHÒNG ĐĂNG KÝ ĐẤT ĐAI HÀ NỘI</p>
+                              <p className="text-slate-500 italic">Chi nhánh: Quận Cầu Giấy • Số TL: 82/TL-VPĐKĐĐ</p>
+                            </div>
+                            <div className="text-center space-y-0.5">
+                              <p className="font-bold uppercase text-[10px] tracking-wide text-slate-900">
+                                CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+                              </p>
+                              <p className="text-[9.5px] underline font-medium text-slate-800">
+                                Độc lập - Tự do - Hạnh phúc
+                              </p>
+                              <p className="text-[9px] text-slate-500 italic">Hà Nội, ngày 12 tháng 09 năm 2026</p>
+                            </div>
                           </div>
-                          <p className="leading-relaxed">
-                            Đối soát với CSDL Quy hoạch &amp; bản đồ chỉ giới: Bản vẽ hiện trạng có dấu hiệu chồng lấn <strong>0.35m</strong> với chỉ giới ngõ đi chung. Cần cán bộ kiểm tra thực địa trước khi tiếp nhận.
-                          </p>
-                        </div>
-                      )}
 
-                      {extractData.loaiNoiDung === 'Đơn phản ánh kiến nghị' && (
-                        <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-300 text-[11px] text-emerald-950 space-y-1">
-                          <div className="flex items-center gap-1 font-bold text-emerald-900">
-                            <span className="material-symbols-outlined text-[15px] text-emerald-600">verified</span>
-                            <span>AI ĐÃ PHÂN TÍCH &amp; BÓC TÁCH (Đã bóc tách tự động):</span>
+                          <div className="text-center py-1">
+                            <h3 className="text-[14.5px] font-bold uppercase text-blue-950 tracking-wide">
+                              BẢN TRÍCH LỤC BẢN ĐỒ ĐỊA CHÍNH VÀ HIỆN TRẠNG SỬ DỤNG ĐẤT
+                            </h3>
+                            <p className="text-[10px] italic text-slate-600">
+                              (Phục vụ đối soát giải quyết phản ánh ranh giới lối đi chung tại TDP số 4, phường Nghĩa Đô)
+                            </p>
                           </div>
-                          <p className="leading-relaxed">
-                            Đã bóc tách tự động hành vi phản ánh về môi trường tiếng ồn và khí thải. Đối tượng liên quan: {extractData.doiTuong}.
-                          </p>
-                        </div>
-                      )}
 
-                      {extractData.loaiNoiDung !== 'Hồ sơ cấp phép xây dựng' && extractData.loaiNoiDung !== 'Đơn phản ánh kiến nghị' && (
-                        <div className="p-2.5 rounded-lg bg-blue-50 border border-blue-200 text-[11px] text-blue-950 space-y-1">
-                          <div className="flex items-center gap-1 font-bold text-blue-900">
-                            <span className="material-symbols-outlined text-[15px] text-blue-600">smart_toy</span>
-                            <span>AI ĐÃ PHÂN TÍCH VĂN BẢN (Đã phân tích văn bản):</span>
+                          {/* Bảng thông số kỹ thuật thửa đất */}
+                          <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-[11px] grid grid-cols-2 gap-2">
+                            <div>• <strong>Thửa đất số:</strong> 42 (Hộ ông Đỗ Viết Thắng) | Tờ bản đồ: 08</div>
+                            <div>• <strong>Diện tích:</strong> 78.5 m² (Đã cấp GCN QSDĐ số CH-02918)</div>
+                            <div>• <strong>Thửa liền kề:</strong> Thửa 43 (Hộ bà Nguyễn Thị H) | Tờ bản đồ: 08</div>
+                            <div>• <strong>Ngõ đi chung:</strong> Ngõ 35 phố Nghĩa Đô (Lối đi dân sinh)</div>
                           </div>
-                          <p className="leading-relaxed">
-                            Đã trích xuất tự động thông tin người gửi, đối tượng liên quan và các yêu cầu cụ thể của người gửi đơn.
-                          </p>
-                        </div>
-                      )}
 
-                      {/* Nội dung chi tiết */}
-                      <div className="space-y-1 pt-1 text-justify leading-relaxed">
-                        <p>
-                          <strong>Nội dung trình bày: </strong>
-                          {extractData.noiDungTomTat}
-                        </p>
-                        <div className="p-2 rounded bg-slate-100/70 border border-slate-200/80 space-y-1">
-                          <p>
-                            • <strong>Đối tượng liên quan: </strong>
-                            <span
-                              className={`font-semibold text-slate-900 px-1 py-0.5 rounded transition-colors ${activeHighlightKey === 'doiTuong' ? 'bg-amber-200 ring-2 ring-amber-400' : ''
-                                }`}
-                            >
-                              {extractData.doiTuong}
+                          {/* Sơ đồ trực quan mô phỏng ranh giới và phần lấn chiếm */}
+                          <div className="p-3 rounded-xl bg-slate-100 border border-slate-300 space-y-2 text-center">
+                            <span className="text-[10.5px] font-bold text-slate-700 uppercase tracking-tight block">
+                              SƠ ĐỒ HIỆN TRẠNG TRANH CHẤP RANH GIỚI NGÕ ĐI (TỶ LỆ 1/500)
+                            </span>
+                            <div className="h-44 bg-white rounded-lg border border-slate-300 relative overflow-hidden flex items-center justify-center p-3">
+                              {/* Thửa 42 */}
+                              <div className="absolute top-3 left-4 w-28 h-36 bg-blue-50 border-2 border-blue-500 rounded p-1 text-[10px] text-blue-950 font-bold flex flex-col justify-between text-left">
+                                <span>Thửa số 42 (Hộ Đỗ Viết Thắng)</span>
+                                <span className="text-[9px] text-blue-700 font-normal">DT: 78.5m²</span>
+                              </div>
+
+                              {/* Ngõ đi chung quy hoạch 2.8m */}
+                              <div className="absolute top-3 left-36 w-24 h-36 bg-slate-100 border-x-2 border-dashed border-slate-400 flex flex-col items-center justify-center text-[10px] text-slate-600 font-semibold">
+                                <span className="rotate-90 block whitespace-nowrap">NGÕ ĐI CHUNG (Quy hoạch 2.8m)</span>
+                                {/* Phần lấn chiếm màu đỏ nhấp nháy */}
+                                <div className="absolute bottom-2 right-0 w-10 h-24 bg-rose-200/90 border-2 border-rose-600 rounded text-[9px] text-rose-950 font-bold flex items-center justify-center p-0.5 text-center leading-tight">
+                                  <span>Phần lấn chiếm<br/>(1.2m x 6m)</span>
+                                </div>
+                              </div>
+
+                              {/* Thửa 43 */}
+                              <div className="absolute top-3 right-4 w-28 h-36 bg-amber-50 border-2 border-amber-500 rounded p-1 text-[10px] text-amber-950 font-bold flex flex-col justify-between text-left">
+                                <span>Thửa số 43 (Hộ Nguyễn Thị H)</span>
+                                <span className="text-[9px] text-amber-700 font-normal">DT: 82.1m²</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-around text-[10px] text-slate-600">
+                              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 bg-blue-400 rounded-xs"></span> Thửa số 42</span>
+                              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 bg-rose-500 rounded-xs"></span> Phần xây lấn lối đi (1.2m)</span>
+                              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 bg-amber-400 rounded-xs"></span> Thửa số 43</span>
+                            </div>
+                          </div>
+
+                          {/* Nhận xét của cơ quan trích lục */}
+                          <div className="p-2.5 rounded-lg bg-blue-50/70 border border-blue-200 text-[11px] text-blue-950 space-y-1">
+                            <strong>Kết quả kiểm tra hồ sơ địa chính gốc:</strong>
+                            <p className="leading-relaxed">
+                              Theo bản đồ địa chính đo vẽ năm 2005 (hệ tọa độ VN-2000), lối đi ngõ 35 tại đoạn tiếp giáp thửa 42 và 43 có chiều rộng là <strong>2.80 mét</strong>. Hiện trạng thực tế đo đạc ngày 10/09/2026 ghi nhận công trình tường bao và mái che của hộ thửa 43 làm thu hẹp ngõ chỉ còn <strong>1.60 mét</strong>, lấn vào lối đi chung <strong>1.20 mét</strong>.
+                            </p>
+                          </div>
+
+                          {/* Chữ ký cán bộ đo đạc & Giám đốc VPĐKĐĐ */}
+                          <div className="pt-2 grid grid-cols-2 gap-4 text-center text-[10.5px]">
+                            <div className="space-y-0.5">
+                              <p className="font-semibold text-slate-800">Cán bộ đo đạc địa chính</p>
+                              <div className="h-6 flex items-center justify-center italic text-blue-900 font-script text-xs">TranThanhTung</div>
+                              <p className="font-semibold text-slate-700">Trần Thanh Tùng</p>
+                            </div>
+                            <div className="space-y-0.5">
+                              <p className="font-semibold text-slate-800">GIÁM ĐỐC CHI NHÁNH VPĐKĐĐ</p>
+                              <div className="h-6 flex items-center justify-center italic text-blue-900 font-script text-xs">NguyenVanHoang</div>
+                              <p className="font-semibold text-slate-700">Nguyễn Văn Hoàng (Đã ký đóng dấu)</p>
+                            </div>
+                          </div>
+                        </div>
+                      ) : truongHopPhanTich === 'tu_don' && selectedFileIndex === 2 ? (
+                        /* ========================================================= */
+                        /* FILE #3: BIÊN BẢN HÒA GIẢI CƠ SỞ TỔ DÂN PHỐ SỐ 4           */
+                        /* ========================================================= */
+                        <div className="space-y-3">
+                          <div className="flex items-start justify-between border-b border-slate-200 pb-2">
+                            <div className="text-left text-[10px] space-y-0.5">
+                              <p className="font-bold uppercase text-slate-900">UBND PHƯỜNG NGHĨA ĐÔ</p>
+                              <p className="font-semibold text-slate-700">TỔ DÂN PHỐ SỐ 4</p>
+                              <p className="text-slate-500 italic">Số: 09/BB-HGCS</p>
+                            </div>
+                            <div className="text-center space-y-0.5">
+                              <p className="font-bold uppercase text-[10px] tracking-wide text-slate-900">
+                                CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+                              </p>
+                              <p className="text-[9.5px] underline font-medium text-slate-800">
+                                Độc lập - Tự do - Hạnh phúc
+                              </p>
+                              <p className="text-[9px] text-slate-500 italic">Nghĩa Đô, ngày 05 tháng 09 năm 2026</p>
+                            </div>
+                          </div>
+
+                          <div className="text-center py-1">
+                            <h3 className="text-[14.5px] font-bold uppercase text-purple-950 tracking-wide">
+                              BIÊN BẢN HÒA GIẢI CƠ SỞ TRANH CHẤP RANH GIỚI LỐI ĐI CHUNG
+                            </h3>
+                            <p className="text-[10px] italic text-slate-600">
+                              (Căn cứ Luật Hòa giải ở cơ sở năm 2013 &amp; Điều 202 Luật Đất đai)
+                            </p>
+                          </div>
+
+                          <div className="space-y-1 text-slate-800 leading-relaxed text-[11px]">
+                            <p>
+                              Hôm nay, vào hồi 09 giờ 00 phút ngày 05/09/2026, tại Nhà sinh hoạt văn hóa Tổ dân phố số 4, phường Nghĩa Đô, quận Cầu Giấy, Hà Nội.
+                            </p>
+                            <p><strong>I. Thành phần tham gia buổi hòa giải:</strong></p>
+                            <p className="pl-2">• 1. Ông Nguyễn Văn Bình - Tổ trưởng TDP số 4 (Chủ trì buổi hòa giải)</p>
+                            <p className="pl-2">• 2. Bà Lê Thị Mai - Trưởng ban Công tác Mặt trận TDP số 4</p>
+                            <p className="pl-2">• 3. Ông Đỗ Viết Thắng - Đại diện hộ gia đình thửa số 42 (Bên yêu cầu)</p>
+                            <p className="pl-2">• 4. Bà Nguyễn Thị H - Đại diện hộ gia đình thửa số 43 (Bên bị yêu cầu)</p>
+                          </div>
+
+                          <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-[11px] space-y-1.5 leading-relaxed">
+                            <p><strong>II. Diễn biến và ý kiến của các bên:</strong></p>
+                            <p>• <strong>Ý kiến ông Đỗ Viết Thắng:</strong> Ngõ đi chung số 35 hình thành từ trước năm 1995, các hộ đi lại ổn định. Hộ bà H xây dựng tường bao và gác mái tôn lấn chiếm 1.2m làm các phương tiện và xe cấp cứu, PCCC không vào được. Đề nghị tự giác tháo dỡ.</p>
+                            <p>• <strong>Ý kiến bà Nguyễn Thị H:</strong> Cho rằng diện tích tường bao xây dựng trên phần đất lưu không phía trước nhà do gia đình sử dụng lâu năm, không đồng ý tháo dỡ nếu chưa có quyết định giải quyết của UBND quận.</p>
+                          </div>
+
+                          <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-300 text-[11px] text-rose-950 space-y-1">
+                            <strong className="text-rose-900 font-bold">III. Kết luận của Tổ hòa giải:</strong>
+                            <p className="leading-relaxed">
+                              Tổ hòa giải đã vận động, giải thích quy định pháp luật về lối đi chung nhưng hai gia đình không thống nhất được phương án thỏa thuận. <strong>KẾT QUẢ: HÒA GIẢI KHÔNG THÀNH</strong>. Tổ dân phố lập biên bản hướng dẫn các bên gửi đơn lên UBND phường Nghĩa Đô để tiến hành hòa giải tranh chấp đất đai theo quy định tại Điều 202 Luật Đất đai.
+                            </p>
+                          </div>
+
+                          {/* Chữ ký các bên */}
+                          <div className="pt-2 grid grid-cols-3 gap-2 text-center text-[10px]">
+                            <div>
+                              <p className="font-semibold text-slate-800">Bên yêu cầu</p>
+                              <div className="h-6 flex items-center justify-center italic text-blue-900 font-script">DoVietThang</div>
+                              <p className="font-semibold text-slate-700">Đỗ Viết Thắng</p>
+                            </div>
+                            <div>
+                              <p className="font-semibold text-slate-800">Bên bị yêu cầu</p>
+                              <div className="h-6 flex items-center justify-center italic text-slate-600 font-script">NguyenThiH</div>
+                              <p className="font-semibold text-slate-700">Nguyễn Thị H</p>
+                            </div>
+                            <div>
+                              <p className="font-semibold text-slate-800">Tổ trưởng TDP 4</p>
+                              <div className="h-6 flex items-center justify-center italic text-purple-900 font-script">NguyenVanBinh</div>
+                              <p className="font-semibold text-slate-700">Nguyễn Văn Bình</p>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        /* ========================================================= */
+                        /* FILE #1: ĐƠN GỐC SCAN CHÍNH (ĐƠN PHẢN ÁNH KIẾN NGHỊ)     */
+                        /* ========================================================= */
+                        <>
+                          {/* Header Quốc hiệu */}
+                          <div className="text-center space-y-1 pb-1">
+                            <p className="font-bold uppercase text-[10.5px] tracking-wide text-slate-900">
+                              CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+                            </p>
+                            <p className="text-[10px] underline font-medium text-slate-800">
+                              Độc lập - Tự do - Hạnh phúc
+                            </p>
+                            <p className="text-right text-[10.5px] italic text-slate-600 pt-1">
+                              Hà Nội, ngày 10 tháng 9 năm 2026
+                            </p>
+                          </div>
+
+                          {/* Tiêu đề Đơn */}
+                          <div className="text-center py-1">
+                            <h3 className="text-[15px] font-bold uppercase text-slate-950 tracking-wide">
+                              {truongHopPhanTich === 'tu_don'
+                                ? 'ĐƠN PHẢN ÁNH KIẾN NGHỊ'
+                                : extractData.loaiNoiDung === 'Hồ sơ cấp phép xây dựng'
+                                  ? 'ĐƠN ĐỀ NGHỊ CẤP GIẤY PHÉP XÂY DỰNG'
+                                  : extractData.loaiNoiDung === 'Đơn phản ánh kiến nghị'
+                                    ? 'ĐƠN PHẢN ÁNH KIẾN NGHỊ'
+                                    : 'ĐƠN TỐ GIÁC'}
+                            </h3>
+                            <p className="text-[10.5px] italic text-slate-600">
+                              {truongHopPhanTich === 'tu_don'
+                                ? '(V/v: Tranh chấp ranh giới sử dụng đất ngõ đi chung tại ngõ 35 phố Nghĩa Đô)'
+                                : extractData.loaiNoiDung === 'Hồ sơ cấp phép xây dựng'
+                                  ? '(Công trình: Nhà ở riêng lẻ đô thị - 5 tầng + 1 lửng)'
+                                  : extractData.loaiNoiDung === 'Đơn phản ánh kiến nghị'
+                                    ? '(V/v: Cơ sở tái chế phế liệu xả khói bụi và tiếng ồn ban đêm)'
+                                    : '(V/v: Tố giác hành vi lừa đảo chiếm đoạt tài sản)'}
+                            </p>
+                          </div>
+
+                          {/* Kính gửi */}
+                          <p className="font-semibold text-slate-900">
+                            Kính gửi:{' '}
+                            <span className="font-normal text-slate-800">
+                              {truongHopPhanTich === 'tu_don'
+                                ? 'Ủy ban nhân dân Quận Cầu Giấy - Phòng Tài nguyên và Môi trường; UBND Phường Nghĩa Đô'
+                                : extractData.loaiNoiDung === 'Hồ sơ cấp phép xây dựng'
+                                  ? 'Ủy ban nhân dân Quận Ba Đình - Phòng Quản lý Đô thị'
+                                  : extractData.loaiNoiDung === 'Đơn phản ánh kiến nghị'
+                                    ? 'Ủy ban nhân dân Quận Cầu Giấy - Phòng Tài nguyên và Môi trường'
+                                    : 'Cơ quan Cảnh sát điều tra Công an thành phố Hà Nội'}
                             </span>
                           </p>
-                          <p>
-                            • <strong>Địa điểm phát sinh: </strong>
-                            <span
-                              className={`font-semibold text-slate-900 px-1 py-0.5 rounded transition-colors ${activeHighlightKey === 'dia地点' || activeHighlightKey === 'diaDiem' ? 'bg-amber-200 ring-2 ring-amber-400' : ''
-                                }`}
-                            >
-                              {extractData.diaDiem}
-                            </span>
+
+                          {/* Thông tin người làm đơn */}
+                          <div className="space-y-1 pt-0.5 border-b border-slate-200/60 pb-2">
+                            <p>
+                              <strong>1. Người làm đơn: </strong>
+                              <span
+                                className={`font-semibold text-slate-900 px-1 py-0.5 rounded transition-colors ${activeHighlightKey === 'nguoiGui' ? 'bg-amber-200 ring-2 ring-amber-400' : ''
+                                  }`}
+                              >
+                                {extractData.nguoiGui}
+                              </span>{' '}
+                              (Sinh năm: {extractData.namSinh} | CCCD:{' '}
+                              <span
+                                className={`font-label-technical px-1 py-0.5 rounded transition-colors ${activeHighlightKey === 'cccd' ? 'bg-amber-200 ring-2 ring-amber-400' : ''
+                                  }`}
+                              >
+                                {extractData.cccd}
+                              </span>
+                              )
+                            </p>
+                            <p>
+                              Địa chỉ thường trú:{' '}
+                              <span
+                                className={`px-1 py-0.5 rounded transition-colors ${activeHighlightKey === 'diaChi' ? 'bg-amber-200 ring-2 ring-amber-400' : ''
+                                  }`}
+                              >
+                                {extractData.diaChi}
+                              </span>{' '}
+                              | SĐT: <span className="font-label-technical">{extractData.sdt}</span>
+                            </p>
+                            {extractData.dongNguoiGui && extractData.dongNguoiGui !== 'Không có' && (
+                              <p>
+                                <strong>2. Người cùng đứng đơn / Đồng sở hữu: </strong>
+                                <span className="font-semibold text-slate-900">{extractData.dongNguoiGui}</span> (CCCD:{' '}
+                                <span className="font-label-technical">{extractData.cccdDongNguoiGui}</span>)
+                              </p>
+                            )}
+                            {extractData.luatSu && extractData.luatSu !== 'Không có' && (
+                              <p>
+                                <strong>3. Người đại diện theo ủy quyền: </strong>
+                                <span className="font-semibold text-purple-900">{extractData.luatSu}</span> (Thẻ LS:{' '}
+                                <span className="font-label-technical">{extractData.theLuatSu}</span>)
+                              </p>
+                            )}
+                          </div>
+
+                          {/* HỘP CẢNH BÁO / KẾT QUẢ AI PHÂN TÍCH */}
+                          {truongHopPhanTich === 'tu_don' ? (
+                            <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-300 text-[11px] text-emerald-950 space-y-1">
+                              <div className="flex items-center gap-1 font-bold text-emerald-900">
+                                <span className="material-symbols-outlined text-[15px] text-emerald-600">verified</span>
+                                <span>AI ĐÃ ĐỐI SOÁT OCR &amp; DỮ LIỆU ĐỊA CHÍNH:</span>
+                              </div>
+                              <p className="leading-relaxed">
+                                Đã bóc tách tự động thông tin chủ thể Ông Đỗ Viết Thắng, đối tượng liên quan (Hộ thửa 43) và 3 yêu cầu giải quyết tranh chấp ngõ đi. Kèm theo đủ 02 văn bản chứng minh: Trích lục địa chính 1/500 và Biên bản hòa giải cơ sở TDP 4.
+                              </p>
+                            </div>
+                          ) : extractData.loaiNoiDung === 'Hồ sơ cấp phép xây dựng' ? (
+                            <div className="p-2.5 rounded-lg bg-orange-50 border border-orange-300 text-[11px] text-orange-950 space-y-1">
+                              <div className="flex items-center gap-1 font-bold text-orange-900">
+                                <span className="material-symbols-outlined text-[15px] text-orange-600">warning</span>
+                                <span>AI PHÂN TÍCH &amp; CẢNH BÁO (Cần cán bộ xác minh thực địa):</span>
+                              </div>
+                              <p className="leading-relaxed">
+                                Đối soát với CSDL Quy hoạch &amp; bản đồ chỉ giới: Bản vẽ hiện trạng có dấu hiệu chồng lấn <strong>0.35m</strong> với chỉ giới ngõ đi chung. Cần cán bộ kiểm tra thực địa trước khi tiếp nhận.
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="p-2.5 rounded-lg bg-blue-50 border border-blue-200 text-[11px] text-blue-950 space-y-1">
+                              <div className="flex items-center gap-1 font-bold text-blue-900">
+                                <span className="material-symbols-outlined text-[15px] text-blue-600">smart_toy</span>
+                                <span>AI ĐÃ PHÂN TÍCH VĂN BẢN (Đã phân tích văn bản):</span>
+                              </div>
+                              <p className="leading-relaxed">
+                                Đã trích xuất tự động thông tin người gửi, đối tượng liên quan và các yêu cầu cụ thể của người gửi đơn.
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Nội dung chi tiết */}
+                          <div className="space-y-1 pt-1 text-justify leading-relaxed">
+                            <p>
+                              <strong>Nội dung trình bày: </strong>
+                              {extractData.noiDungTomTat}
+                            </p>
+                            <div className="p-2 rounded bg-slate-100/70 border border-slate-200/80 space-y-1">
+                              <p>
+                                • <strong>Đối tượng liên quan: </strong>
+                                <span
+                                  className={`font-semibold text-slate-900 px-1 py-0.5 rounded transition-colors ${activeHighlightKey === 'doiTuong' ? 'bg-amber-200 ring-2 ring-amber-400' : ''
+                                    }`}
+                                >
+                                  {extractData.doiTuong}
+                                </span>
+                              </p>
+                              <p>
+                                • <strong>Địa điểm phát sinh: </strong>
+                                <span
+                                  className={`font-semibold text-slate-900 px-1 py-0.5 rounded transition-colors ${activeHighlightKey === 'dia地点' || activeHighlightKey === 'diaDiem' ? 'bg-amber-200 ring-2 ring-amber-400' : ''
+                                    }`}
+                                >
+                                  {extractData.diaDiem}
+                                </span>
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Yêu cầu */}
+                          <div className="space-y-1 pt-1">
+                            <p className="font-semibold text-slate-900">Kính đề nghị Quý Cơ quan xem xét, giải quyết:</p>
+                            <ol className="list-decimal list-inside space-y-0.5 pl-1 text-slate-700">
+                              <li>{extractData.yeuCau1}</li>
+                              <li>{extractData.yeuCau2}</li>
+                              <li>{extractData.yeuCau3}</li>
+                            </ol>
+                          </div>
+
+                          <p className="italic text-slate-600 pt-1 text-[11px]">
+                            Tôi/Chúng tôi xin cam đoan những nội dung trên là đúng sự thật và chịu trách nhiệm trước pháp luật về nội dung đơn thư của mình.
                           </p>
-                        </div>
-                      </div>
 
-                      {/* Yêu cầu */}
-                      <div className="space-y-1 pt-1">
-                        <p className="font-semibold text-slate-900">Kính đề nghị Quý Cơ quan xem xét, giải quyết:</p>
-                        <ol className="list-decimal list-inside space-y-0.5 pl-1 text-slate-700">
-                          <li>{extractData.yeuCau1}</li>
-                          <li>{extractData.yeuCau2}</li>
-                          <li>{extractData.yeuCau3}</li>
-                        </ol>
-                      </div>
-
-                      <p className="italic text-slate-600 pt-1 text-[11px]">
-                        Tôi/Chúng tôi xin cam đoan những nội dung trên là đúng sự thật và chịu trách nhiệm trước pháp luật về nội dung đơn thư của mình.
-                      </p>
-
-                      {/* Chữ ký */}
-                      <div className="pt-4 grid grid-cols-2 gap-4 text-center text-[11px]">
-                        <div className="space-y-0.5">
-                          <p className="font-semibold text-slate-800">Cán bộ một cửa tiếp nhận sơ bộ</p>
-                          <div className="h-7 flex items-center justify-center italic text-slate-600 font-script text-sm">
-                            NguyenMinhAnh
+                          {/* Chữ ký */}
+                          <div className="pt-4 grid grid-cols-2 gap-4 text-center text-[11px]">
+                            <div className="space-y-0.5">
+                              <p className="font-semibold text-slate-800">Cán bộ một cửa tiếp nhận sơ bộ</p>
+                              <div className="h-7 flex items-center justify-center italic text-slate-600 font-script text-sm">
+                                NguyenMinhAnh
+                              </div>
+                              <p className="font-semibold text-slate-700">Nguyễn Minh Anh</p>
+                            </div>
+                            <div className="space-y-0.5">
+                              <p className="font-semibold text-slate-800">Người làm đơn</p>
+                              <div className="h-7 flex items-center justify-center italic text-blue-900 font-script text-sm">
+                                {extractData.nguoiGui.replace(/\s+/g, '')}
+                              </div>
+                              <p className="font-semibold text-slate-900">{extractData.nguoiGui}</p>
+                            </div>
                           </div>
-                          <p className="font-semibold text-slate-700">Nguyễn Minh Anh</p>
-                        </div>
-                        <div className="space-y-0.5">
-                          <p className="font-semibold text-slate-800">Người làm đơn</p>
-                          <div className="h-7 flex items-center justify-center italic text-blue-900 font-script text-sm">
-                            {extractData.nguoiGui.replace(/\s+/g, '')}
-                          </div>
-                          <p className="font-semibold text-slate-900">{extractData.nguoiGui}</p>
-                        </div>
-                      </div>
+                        </>
+                      )}
                     </>
                   )}
                 </div>
@@ -2768,33 +3327,65 @@ Kính trình Lãnh đạo phê duyệt:
                 Các nguồn dữ liệu AI đang sử dụng:
               </span>
               <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-900 border border-blue-200 font-medium">
-                  <span className="material-symbols-outlined text-[13px] text-blue-600">edit_note</span>
-                  <span>1. Cán bộ ghi nhận trực tiếp</span>
-                </span>
+                {truongHopPhanTich === 'tu_don' ? (
+                  <>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-900 border border-blue-200 font-medium">
+                      <span className="material-symbols-outlined text-[13px] text-blue-600">picture_as_pdf</span>
+                      <span>1. Đơn scan &amp; Tệp đính kèm (OCR bóc tách)</span>
+                    </span>
 
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-50 text-purple-900 border border-purple-200 font-medium">
-                  <span className="material-symbols-outlined text-[13px] text-purple-600">record_voice_over</span>
-                  <span>2. Lời trình bày người liên quan</span>
-                </span>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-50 text-purple-900 border border-purple-200 font-medium">
+                      <span className="material-symbols-outlined text-[13px] text-purple-600">person</span>
+                      <span>2. Người nộp kê khai trực tuyến / Một cửa</span>
+                    </span>
 
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-900 border border-indigo-200 font-medium">
-                  <span className="material-symbols-outlined text-[13px] text-indigo-600">database</span>
-                  <span>3. Dữ liệu liên quan trong GOVEX</span>
-                </span>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-900 border border-emerald-200 font-medium">
+                      <span className="material-symbols-outlined text-[13px] text-emerald-600">map</span>
+                      <span>3. CSDL Địa chính &amp; Bản đồ quy hoạch</span>
+                    </span>
 
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-900 border border-emerald-200 font-medium">
-                  <span className="material-symbols-outlined text-[13px] text-emerald-600">gavel</span>
-                  <span>4. Quy định pháp luật &amp; Workflow</span>
-                </span>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-900 border border-indigo-200 font-medium">
+                      <span className="material-symbols-outlined text-[13px] text-indigo-600">gavel</span>
+                      <span>4. Luật Khiếu nại, Tố cáo, Đất đai</span>
+                    </span>
 
-                <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border font-medium ${currentFiles.length > 0 || aiVersion === 2
-                  ? 'bg-amber-50 text-amber-900 border-amber-300'
-                  : 'bg-slate-100 text-slate-500 border-slate-200'
-                  }`}>
-                  <span className="material-symbols-outlined text-[13px] text-amber-600">attach_file</span>
-                  <span>5. Biên bản &amp; Tài liệu số hóa {currentFiles.length > 0 ? `(${currentFiles.length})` : '(Chưa có)'}</span>
-                </span>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 text-amber-900 border border-amber-300 font-medium">
+                      <span className="material-symbols-outlined text-[13px] text-amber-600">inventory_2</span>
+                      <span>5. CSDL Đơn thư GOVEX (Tra cứu trùng)</span>
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-900 border border-blue-200 font-medium">
+                      <span className="material-symbols-outlined text-[13px] text-blue-600">edit_note</span>
+                      <span>1. Cán bộ ghi nhận trực tiếp (Không phụ thuộc OCR)</span>
+                    </span>
+
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-50 text-purple-900 border border-purple-200 font-medium">
+                      <span className="material-symbols-outlined text-[13px] text-purple-600">record_voice_over</span>
+                      <span>2. Lời trình bày người liên quan / tố giác</span>
+                    </span>
+
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-900 border border-indigo-200 font-medium">
+                      <span className="material-symbols-outlined text-[13px] text-indigo-600">database</span>
+                      <span>3. Dữ liệu đối tượng &amp; tiền sự GOVEX</span>
+                    </span>
+
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-900 border border-emerald-200 font-medium">
+                      <span className="material-symbols-outlined text-[13px] text-emerald-600">gavel</span>
+                      <span>4. BLHS &amp; BLTTHS 2015 (Điều 145-147)</span>
+                    </span>
+
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border font-medium ${
+                      currentFiles.length > 0 || aiVersion === 2
+                        ? 'bg-amber-50 text-amber-900 border-amber-300'
+                        : 'bg-rose-50 text-rose-800 border-rose-200'
+                    }`}>
+                      <span className="material-symbols-outlined text-[13px] text-amber-600">attach_file</span>
+                      <span>5. Biên bản &amp; Tài liệu {currentFiles.length > 0 ? `(${currentFiles.length})` : '(Chưa có / Bổ sung sau)'}</span>
+                    </span>
+                  </>
+                )}
               </div>
             </div>
 
@@ -3784,11 +4375,55 @@ Kính trình Lãnh đạo phê duyệt:
                 </div>
               </div>
             </>
+          ) : truongHopPhanTich === 'tu_don' ? (
+            /* =================================================================== */
+            /* TRƯỜNG HỢP 1: TỪ ĐƠN (USER NHẬP THÔNG TIN VÀ TẢI FILE TÀI LIỆU SỐ HÓA) */
+            /* =================================================================== */
+            <TuDonAnalysisBlocks
+              checklistDieuKienThuLy={checklistDieuKienThuLy}
+              setChecklistDieuKienThuLy={setChecklistDieuKienThuLy}
+              checklistXacMinhDonThu={checklistXacMinhDonThu}
+              setChecklistXacMinhDonThu={setChecklistXacMinhDonThu}
+              huongXuLyDonThu={huongXuLyDonThu}
+              setHuongXuLyDonThu={setHuongXuLyDonThu}
+              officerNoteDonThu={officerNoteDonThu}
+              setOfficerNoteDonThu={setOfficerNoteDonThu}
+              showToast={showToast}
+              onOpenSubmitModal={() => setShowSubmitModal(true)}
+            />
           ) : (
             /* =================================================================== */
-            /* CÁC KHỐI PHÂN TÍCH AI HIỆN TẠI (5.1 -> 5.5) CHO ĐƠN & TIN BÁO TỐ GIÁC */
+            /* TRƯỜNG HỢP 2: TIẾP NHẬN TIN BÁO TỐ GIÁC (CÓ THỂ THIẾU TÀI LIỆU/THÔNG TIN) */
             /* =================================================================== */
             <>
+              {/* BANNER NGHIỆP VỤ: ĐẶC THÙ TIN BÁO TỐ GIÁC CÓ THỂ THIẾU TÀI LIỆU */}
+              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-50/90 via-orange-50/70 to-slate-50 border border-amber-200/90 shadow-2xs space-y-2">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-8 h-8 rounded-xl bg-amber-600 text-white flex items-center justify-center shadow-xs">
+                      <span className="material-symbols-outlined text-[19px]">notification_important</span>
+                    </span>
+                    <div>
+                      <h4 className="text-[13.5px] font-bold text-amber-950 font-headline-md tracking-tight flex items-center gap-2">
+                        <span>Trường hợp 2: Tiếp nhận Tin báo, Tố giác tội phạm (Điều 145, 146, 147 BLTTHS 2015)</span>
+                      </h4>
+                      <p className="text-[11px] text-amber-900/80">
+                        Nguồn tin tiếp nhận từ quần chúng nhân dân / Lời trình bày trực tiếp / Đường dây nóng — <strong>Có thể chưa có đơn chính thức hoặc thiếu tài liệu chứng cứ ban đầu</strong>
+                      </p>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[13px]">timer</span>
+                    <span>Hạn thụ lý xác minh: 20 ngày</span>
+                  </span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-white/80 border border-amber-200/60 text-[11px] text-amber-950 flex items-start gap-2">
+                  <span className="material-symbols-outlined text-[15px] text-amber-700 shrink-0 mt-0.5">info</span>
+                  <p className="leading-relaxed">
+                    <strong>Nguyên tắc tiếp nhận bắt buộc:</strong> Cơ quan có thẩm quyền không được từ chối tiếp nhận tố giác, tin báo tội phạm chỉ vì lý do &quot;chưa đủ tài liệu, chứng cứ&quot;. Hệ thống AI GOVEX ứng dụng NLP bóc tách từ thông tin cán bộ nhập trực tiếp, phân tách thông tin thành <strong>3 Tầng</strong>, trong đó <strong>Tầng 2 làm nổi bật các nội dung còn thiếu cần khẩn trương xác minh</strong>.
+                  </p>
+                </div>
+              </div>
               {/* =================================================================== */}
               {/* MỤC 5.1: TÓM TẮT SỰ VIỆC (AI SYNTHESIS)                            */}
               {/* =================================================================== */}

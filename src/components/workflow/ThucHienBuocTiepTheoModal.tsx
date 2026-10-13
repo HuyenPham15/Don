@@ -1,10 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { WorkflowDefinition, WorkflowStepItem } from '../../types/workflow';
 
 interface ThucHienBuocTiepTheoModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: (stepName: string, docTitle: string) => void;
+  onSuccess: (
+    stepName: string,
+    docTitle: string,
+    docDetails?: {
+      docTitle: string;
+      soHieu: string;
+      assignee: string;
+      lanhDaoKy?: string;
+      ghiChu: string;
+      hanGiaiQuyet: string;
+      loaiVanBan?: string;
+      category?: string;
+      stepNumber?: number;
+      stepName?: string;
+      action?: 'save' | 'trinh_ky';
+    }
+  ) => void;
   workflow: WorkflowDefinition;
   donCode: string;
   donTitle: string;
@@ -19,7 +35,6 @@ export default function ThucHienBuocTiepTheoModal({
   onSuccess,
   workflow,
   donCode,
-  nguoiNop,
   stepNumber,
 }: ThucHienBuocTiepTheoModalProps) {
   if (!isOpen) return null;
@@ -61,21 +76,54 @@ export default function ThucHienBuocTiepTheoModal({
       ? `${nextStep.responsibleRole} - ${nextStep.responsibleUnit}`
       : 'Đ/c Nguyễn Minh Anh (Chuyên viên Phòng Tiếp dân & Xử lý đơn)';
 
+  const defaultLanhDao =
+    workflow.id === 'to-giac'
+      ? 'Lê Hoàng Nam (Thủ trưởng Cơ quan CSĐT)'
+      : 'Trần Văn Cường (Phó Chủ tịch UBND quận)';
+
   const [docTitle, setDocTitle] = useState(defaultDocTitle);
   const [soHieu, setSoHieu] = useState(defaultSoHieu);
   const [assignee, setAssignee] = useState(defaultAssignee);
+  const [lanhDaoKy, setLanhDaoKy] = useState(defaultLanhDao);
   const [hanGiaiQuyet, setHanGiaiQuyet] = useState(`${nextStep.estimatedDays || 10} ngày làm việc`);
   const [ghiChu, setGhiChu] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Đồng bộ lại dữ liệu mặc định khi modal mở hoặc bước/loại quy trình thay đổi
+  useEffect(() => {
+    setDocTitle(defaultDocTitle);
+    setSoHieu(defaultSoHieu);
+    setAssignee(defaultAssignee);
+    setLanhDaoKy(defaultLanhDao);
+    setHanGiaiQuyet(`${nextStep.estimatedDays || 10} ngày làm việc`);
+    setGhiChu('');
+  }, [isOpen, targetStepNumber, workflow.id]);
+
+  const handleFormSubmit = (e: React.FormEvent, action: 'save' | 'trinh_ky' = 'trinh_ky') => {
     e.preventDefault();
-    onSuccess(nextStep.name, docTitle);
+    const isQuyetDinh = docTitle.toLowerCase().includes('quyết định');
+    const isThongBao = docTitle.toLowerCase().includes('thông báo');
+    const loaiVanBan = isQuyetDinh ? 'quyet_dinh' : isThongBao ? 'thong_bao' : 'cong_van';
+    const category = isQuyetDinh ? 'Quyết định thụ lý' : isThongBao ? 'Thông báo thụ lý' : 'Văn bản quy trình';
+
+    onSuccess(nextStep.name, docTitle, {
+      docTitle,
+      soHieu,
+      assignee,
+      lanhDaoKy,
+      ghiChu,
+      hanGiaiQuyet,
+      loaiVanBan,
+      category,
+      stepNumber: targetStepNumber,
+      stepName: nextStep.name,
+      action,
+    });
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in font-body-md">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden animate-scale-up">
         {/* Header Modal */}
         <div className="px-5 py-3.5 border-b border-slate-200 bg-slate-50 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
@@ -84,10 +132,10 @@ export default function ThucHienBuocTiepTheoModal({
             </div>
             <div>
               <h3 className="font-bold text-slate-900 text-sm tracking-tight">
-                Thụ lý đơn
+                Đề xuất thụ lý đơn
               </h3>
               <p className="text-[11px] text-slate-500 font-medium">
-                Đơn <span className="font-semibold text-slate-700">{donCode}</span> • Người nộp: <strong className="text-slate-800">{nguoiNop}</strong>
+                Đơn <span className="font-semibold text-slate-700">{donCode}</span>
               </p>
             </div>
           </div>
@@ -101,11 +149,11 @@ export default function ThucHienBuocTiepTheoModal({
           </button>
         </div>
 
-        {/* Form Body: Chỉ giữ các thông tin cốt lõi */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-4 text-xs">
+        {/* Form Body */}
+        <form onSubmit={(e) => handleFormSubmit(e, 'trinh_ky')} className="flex-1 overflow-y-auto p-5 space-y-3.5 text-xs">
           <div>
             <label className="block font-bold text-slate-800 mb-1">
-              Cán bộ thụ lý <span className="text-rose-600">*</span>
+              Cán bộ thụ lý (Người lập đề xuất) <span className="text-rose-600">*</span>
             </label>
             <input
               type="text"
@@ -118,19 +166,88 @@ export default function ThucHienBuocTiepTheoModal({
 
           <div>
             <label className="block font-bold text-slate-800 mb-1">
-              Ghi chú / Chỉ đạo thực hiện <span className="text-slate-400 font-normal">(tùy chọn)</span>
+              Lãnh đạo phê duyệt / Ký duyệt <span className="text-rose-600">*</span>
+            </label>
+            <select
+              value={lanhDaoKy}
+              onChange={(e) => setLanhDaoKy(e.target.value)}
+              className="w-full px-3 py-2 text-xs font-semibold text-slate-800 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-[#004ac6]"
+            >
+              <option value="Trần Văn Cường (Phó Chủ tịch UBND quận)">Đ/c Trần Văn Cường - Phó Chủ tịch UBND quận</option>
+              <option value="Lê Trọng Minh (Chủ tịch UBND quận)">Đ/c Lê Trọng Minh - Chủ tịch UBND quận</option>
+              <option value="Lê Hoàng Nam (Thủ trưởng Cơ quan CSĐT)">Đ/c Lê Hoàng Nam - Thủ trưởng Cơ quan CSĐT</option>
+              <option value="Nguyễn Hải Đăng (Phó Thủ trưởng Cơ quan CSĐT)">Đ/c Nguyễn Hải Đăng - Phó Thủ trưởng Cơ quan CSĐT</option>
+            </select>
+          </div>
+
+          {/* Block thông tin văn bản sẽ được khởi tạo trong tab Hồ sơ & Văn bản */}
+          <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-xl space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-[#004ac6] font-bold text-xs">
+                <span className="material-symbols-outlined text-[17px]">description</span>
+                <span>Văn bản đề xuất / thụ lý ban hành</span>
+              </div>
+              <span className="text-[10px] bg-blue-100 text-blue-800 font-semibold px-2 py-0.5 rounded-md flex items-center gap-1">
+                <span className="material-symbols-outlined text-[12px]">send</span>
+                Chuyển trình ký Lãnh đạo
+              </span>
+            </div>
+
+            <div>
+              <label className="block font-semibold text-slate-700 mb-0.5">
+                Tên văn bản / quyết định thụ lý <span className="text-rose-600">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={docTitle}
+                onChange={(e) => setDocTitle(e.target.value)}
+                className="w-full px-2.5 py-1.5 bg-white border border-blue-200 rounded-lg text-slate-800 font-medium text-xs focus:outline-none focus:border-[#004ac6]"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-0.5">Số ký hiệu</label>
+                <input
+                  type="text"
+                  value={soHieu}
+                  onChange={(e) => setSoHieu(e.target.value)}
+                  className="w-full px-2.5 py-1.5 bg-white border border-blue-200 rounded-lg text-slate-800 font-mono text-xs focus:outline-none focus:border-[#004ac6]"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold text-slate-700 mb-0.5">Thời hạn giải quyết</label>
+                <input
+                  type="text"
+                  value={hanGiaiQuyet}
+                  onChange={(e) => setHanGiaiQuyet(e.target.value)}
+                  className="w-full px-2.5 py-1.5 bg-white border border-blue-200 rounded-lg text-slate-800 text-xs focus:outline-none focus:border-[#004ac6]"
+                />
+              </div>
+            </div>
+
+            <p className="text-[10.5px] text-blue-700 flex items-center gap-1">
+              <span className="material-symbols-outlined text-[14px]">auto_stories</span>
+              Sau khi lưu thông tin, hệ thống sẽ tự động tạo biểu mẫu văn bản này và chuyển trình ký Lãnh đạo tại tab <strong>Hồ sơ &amp; Văn bản</strong>.
+            </p>
+          </div>
+
+          <div>
+            <label className="block font-bold text-slate-800 mb-1">
+              Nội dung đề xuất / Ghi chú <span className="text-slate-400 font-normal">(tùy chọn)</span>
             </label>
             <input
               type="text"
               value={ghiChu}
               onChange={(e) => setGhiChu(e.target.value)}
-              placeholder="Nhập nội dung chỉ đạo hoặc yêu cầu xác minh..."
+              placeholder="Nhập nội dung đề xuất hoặc yêu cầu xác minh làm rõ..."
               className="w-full px-3 py-2 text-xs text-slate-800 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-[#004ac6]"
             />
           </div>
 
           {/* Footer Actions */}
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">
+          <div className="flex items-center justify-between gap-2 pt-3 border-t border-slate-200">
             <button
               type="button"
               onClick={onClose}
@@ -138,13 +255,26 @@ export default function ThucHienBuocTiepTheoModal({
             >
               Hủy
             </button>
-            <button
-              type="submit"
-              className="px-4 py-2 rounded-xl bg-[#004ac6] hover:bg-[#003da8] text-white font-bold shadow-xs transition-all cursor-pointer flex items-center gap-1.5 text-xs active:scale-95"
-            >
-              <span className="material-symbols-outlined text-[15px]">check</span>
-              <span>Xác nhận chuyển bước</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={(e) => handleFormSubmit(e, 'save')}
+                className="px-3.5 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-semibold transition-colors cursor-pointer text-xs flex items-center gap-1"
+                title="Lưu văn bản dưới dạng bản nháp"
+              >
+                <span className="material-symbols-outlined text-[15px]">save</span>
+                <span>Lưu nháp</span>
+              </button>
+              <button
+                type="button"
+                onClick={(e) => handleFormSubmit(e, 'trinh_ky')}
+                className="px-4 py-2 rounded-xl bg-[#004ac6] hover:bg-[#003da8] text-white font-bold shadow-xs transition-all cursor-pointer flex items-center gap-1.5 text-xs active:scale-95"
+                title="Lưu đề xuất và chuyển trình Lãnh đạo phê duyệt"
+              >
+                <span className="material-symbols-outlined text-[15px]">send</span>
+                <span>Lưu &amp; Trình ký Lãnh đạo</span>
+              </button>
+            </div>
           </div>
         </form>
       </div>

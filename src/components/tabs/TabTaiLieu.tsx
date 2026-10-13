@@ -1598,7 +1598,7 @@ export default function TabTaiLieu({
           uploadDate: `${initialEditingDoc.ngayLap || '16/09/2026'} 09:30`,
           signer: initialEditingDoc.signer || 'Nguyễn Minh Anh - Cán bộ thụ lý',
           coQuanBanHanh: initialEditingDoc.coQuanBanHanh || 'Phòng Tiếp công dân & Xử lý đơn',
-          stepBelongsTo: 'Bước 2: Xác minh thông tin & Đề xuất',
+          stepBelongsTo: (initialEditingDoc as any).stepBelongsTo || 'Bước 2: Xác minh thông tin & Đề xuất',
           ocrStatus: 'Hoàn tất',
           isProcessDoc: true,
           isEditable: true,

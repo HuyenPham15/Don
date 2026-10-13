@@ -879,7 +879,7 @@ export default function DonTiepNhan({
                       </button>
 
                       {/* 3. Phân công xử lý */}
-                      <button
+                      {/* <button
                         type="button"
                         onClick={() => {
                           setShowThaoTacKhacDropdown(false);
@@ -898,7 +898,7 @@ export default function DonTiepNhan({
                             Giao cán bộ thụ lý hoặc chuyển đơn vị phụ trách
                           </p>
                         </div>
-                      </button>
+                      </button> */}
 
                       {/* 4. Chỉnh sửa thông tin đơn */}
                       <button
@@ -1373,29 +1373,235 @@ export default function DonTiepNhan({
         isOpen={showModalBuocTiepTheo}
         onClose={() => setShowModalBuocTiepTheo(false)}
         stepNumber={activeStepNumber}
-        onSuccess={(stepName, docTitle) => {
-          showToast(`✓ Đã hoàn tất bước "${stepName}" và ban hành "${docTitle}" thành công!`);
+        onSuccess={(stepName, docTitle, docDetails) => {
+          const now = new Date();
+          const todayStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+          const timeStr = `${todayStr} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+          const targetSoHieu =
+            docDetails?.soHieu ||
+            (workflow.id === 'to-giac'
+              ? `QĐ-PC03/${now.getFullYear()}/CSĐT`
+              : `TB-${activeStepNumber}/${now.getFullYear()}/UBND`);
+          const targetDocTitle = docDetails?.docTitle || docTitle;
+          const targetAssignee =
+            docDetails?.assignee || currentAccount?.name || currentDon.canBoXuLy || 'Nguyễn Minh Anh';
+          const targetHanGiaiQuyet = docDetails?.hanGiaiQuyet || '30 ngày làm việc';
+          const targetGhiChu = docDetails?.ghiChu || '';
+          const isToGiac = workflow.id === 'to-giac';
+          const isToCao = workflow.id === 'to-cao';
+          const coQuan = isToGiac
+            ? 'Cơ quan CSĐT Công an TP. Hà Nội'
+            : 'UBND quận Cầu Giấy';
+
+          const loaiVanBan =
+            docDetails?.loaiVanBan ||
+            (targetDocTitle.toLowerCase().includes('quyết định')
+              ? 'quyet_dinh'
+              : targetDocTitle.toLowerCase().includes('thông báo')
+                ? 'thong_bao'
+                : 'cong_van');
+
+          const category =
+            docDetails?.category ||
+            (targetDocTitle.toLowerCase().includes('quyết định')
+              ? 'Quyết định thụ lý'
+              : targetDocTitle.toLowerCase().includes('thông báo')
+                ? 'Thông báo thụ lý'
+                : 'Văn bản quy trình');
+
+          // Sinh văn bản chuẩn hành chính theo loại hồ sơ
+          const fullDocText = isToGiac
+            ? `CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nĐộc lập - Tự do - Hạnh phúc\n\nCƠ QUAN CẢNH SÁT ĐIỀU TRA\nSố: ${targetSoHieu}\nHà Nội, ngày ${todayStr.split('/')[0]} tháng ${todayStr.split('/')[1]} năm ${todayStr.split('/')[2]}\n\nQUYẾT ĐỊNH\nPhân công Phó Thủ trưởng CQĐT, Điều tra viên, Cán bộ điều tra\ngiải quyết nguồn tin về tội phạm\n\nTHỦ TRƯỞNG CƠ QUAN CẢNH SÁT ĐIỀU TRA\n\nCăn cứ Điều 36, Điều 145 và Điều 146 Bộ luật Tố tụng hình sự năm 2015;\nCăn cứ Thông tư liên tịch số 01/2017/TTLT-BCA-BQP-BTC-BNN&PTNT-VKSNDTC quy định phối hợp trong việc tiếp nhận, giải quyết nguồn tin về tội phạm;\nXét nguồn tin về tội phạm mang mã hồ sơ số ${currentDon.code} do người gửi: ${currentDon.nguoiNop};\nNội dung nguồn tin: "${currentDon.title}".\n\nQUYẾT ĐỊNH:\n\nĐiều 1. Thụ lý giải quyết nguồn tin về tội phạm nêu trên và phân công các đồng chí sau tiến hành giải quyết:\n1. Phân công Điều tra viên thụ lý chính: ${targetAssignee}.\n2. Thời hạn giải quyết: ${targetHanGiaiQuyet}.\n\nĐiều 2. Điều tra viên được phân công có trách nhiệm thực hiện nhiệm vụ, quyền hạn theo đúng quy định của Bộ luật Tố tụng hình sự; báo cáo tiến độ và đề xuất biện pháp xử lý kịp thời.${targetGhiChu ? `\nChỉ đạo cụ thể: ${targetGhiChu}` : ''}\n\nĐiều 3. Quyết định này có hiệu lực kể từ ngày ký. Các đơn vị nghiệp vụ, Viện kiểm sát nhân dân cùng cấp và các đồng chí có tên tại Điều 1 chịu trách nhiệm thi hành Quyết định này./.\n\nNơi nhận:\n- Viện kiểm sát nhân dân cùng cấp;\n- Thủ trưởng CQĐT (để b/c);\n- Các đồng chí tại Điều 1;\n- Người nộp nguồn tin (để biết);\n- Lưu: Hồ sơ số ${currentDon.code}.\n\nTHỦ TRƯỞNG CƠ QUAN ĐIỀU TRA\n(Ký, đóng dấu)`
+            : isToCao
+              ? `CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nĐộc lập - Tự do - Hạnh phúc\n\nỦY BAN NHÂN DÂN QUẬN CẦU GIẤY\nSố: ${targetSoHieu}\nHà Nội, ngày ${todayStr.split('/')[0]} tháng ${todayStr.split('/')[1]} năm ${todayStr.split('/')[2]}\n\nQUYẾT ĐỊNH\nVề việc thụ lý giải quyết tố cáo\n\nCHỦ TỊCH ỦY BAN NHÂN DÂN QUẬN CẦU GIẤY\n\nCăn cứ Luật Tổ chức chính quyền địa phương ngày 19 tháng 6 năm 2015;\nCăn cứ Luật Tố cáo ngày 12 tháng 6 năm 2018;\nCăn cứ Nghị định số 31/2019/NĐ-CP ngày 10 tháng 4 năm 2019 của Chính phủ quy định chi tiết một số điều của Luật Tố cáo;\nXét đơn tố cáo của ông/bà ${currentDon.nguoiNop} (Mã hồ sơ: ${currentDon.code});\nNội dung tố cáo: "${currentDon.title}".\nTheo Báo cáo kết quả xác minh ban đầu và đề xuất thụ lý của bộ phận chuyên môn,\n\nQUYẾT ĐỊNH:\n\nĐiều 1. Thụ lý giải quyết tố cáo đối với các nội dung nêu trong đơn của ông/bà ${currentDon.nguoiNop}.\n- Thời hạn giải quyết tố cáo là: ${targetHanGiaiQuyet}.\n\nĐiều 2. Phân công cán bộ xác minh nội dung tố cáo:\n- Cán bộ chủ trì thụ lý xác minh: ${targetAssignee}.\n- Cán bộ được phân công có nhiệm vụ tiến hành xác minh, thu thập chứng cứ, làm rõ nội dung tố cáo theo đúng trình tự, thủ tục quy định của Luật Tố cáo và báo cáo Chủ tịch UBND quận.${targetGhiChu ? `\n- Chỉ đạo cụ thể: ${targetGhiChu}` : ''}\n\nĐiều 3. Chánh Văn phòng HĐND-UBND quận, Trưởng phòng Tiếp công dân & Xử lý đơn, cán bộ có tên tại Điều 2 và ông/bà ${currentDon.nguoiNop} chịu trách nhiệm thi hành Quyết định này./.\n\nNơi nhận:\n- Như Điều 3;\n- Chủ tịch, Phó Chủ tịch UBND quận;\n- Người tố cáo (để biết);\n- Lưu: VT, Hồ sơ ${currentDon.code}.\n\nTM. ỦY BAN NHÂN DÂN\nKT. CHỦ TỊCH - PHÓ CHỦ TỊCH\n(Ký, đóng dấu)`
+              : `CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nĐộc lập - Tự do - Hạnh phúc\n\nỦY BAN NHÂN DÂN QUẬN CẦU GIẤY\nSố: ${targetSoHieu}\nHà Nội, ngày ${todayStr.split('/')[0]} tháng ${todayStr.split('/')[1]} năm ${todayStr.split('/')[2]}\n\n${targetDocTitle.toUpperCase()}\nVề việc thụ lý giải quyết đơn của ông/bà ${currentDon.nguoiNop}\n\nKính gửi: Ông/Bà ${currentDon.nguoiNop} (Địa chỉ: ${currentDon.diaChi || 'Cầu Giấy, Hà Nội'})\n\nỦy ban nhân dân quận tiếp nhận đơn của Ông/Bà mang mã hồ sơ số ${currentDon.code}.\nNội dung đơn: "${currentDon.title}".\nSau khi kiểm tra điều kiện thụ lý và xem xét hồ sơ theo quy định của pháp luật;\n\nỦY BAN NHÂN DÂN QUẬN THÔNG BÁO:\n1. Chính thức thụ lý giải quyết nội dung đơn của Ông/Bà kể từ ngày ban hành văn bản này.\n2. Cán bộ được phân công thụ lý chính: ${targetAssignee}.\n3. Thời hạn giải quyết: ${targetHanGiaiQuyet}.${targetGhiChu ? `\n4. Chỉ đạo giải quyết: ${targetGhiChu}` : ''}\n\nỦy ban nhân dân quận thông báo để Ông/Bà được biết và phối hợp làm việc khi có yêu cầu./.\n\nNơi nhận:\n- Như trên;\n- Lãnh đạo UBND quận;\n- Cán bộ thụ lý (${targetAssignee});\n- Lưu: VT, HS.${currentDon.code}.\n\nTM. ỦY BAN NHÂN DÂN\nKT. CHỦ TỊCH - PHÓ CHỦ TỊCH\n(Ký, đóng dấu)`;
+
+          const cleanFileName = targetDocTitle
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9]/g, '_')
+            .replace(/_+/g, '_');
+
+          const isTrinhKy = docDetails?.action !== 'save';
+          const targetLanhDao =
+            docDetails?.lanhDaoKy ||
+            (isToGiac
+              ? 'Lê Hoàng Nam (Thủ trưởng Cơ quan CSĐT)'
+              : 'Trần Văn Cường (Phó Chủ tịch UBND quận)');
+
+          const newDocItem: any = {
+            id: `DOC-TL-${Date.now().toString().slice(-4)}`,
+            name: `${cleanFileName}_${targetSoHieu.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
+            category: category,
+            soHieu: targetSoHieu,
+            size: '390 KB',
+            pages: 2,
+            uploadDate: timeStr,
+            signer: isTrinhKy ? targetLanhDao : targetAssignee,
+            coQuanBanHanh: coQuan,
+            stepBelongsTo: `Bước ${activeStepNumber}: ${stepName}`,
+            ocrStatus: 'Hoàn tất',
+            isProcessDoc: true,
+            isEditable: true,
+            loaiVanBan: loaiVanBan,
+            tenVanBan: targetDocTitle,
+            nguoiNhan: currentDon.nguoiNop,
+            diaDiem: 'Trụ sở cơ quan giải quyết',
+            thoiGianHen: targetHanGiaiQuyet,
+            trichYeu: `V/v ${targetDocTitle}: ${currentDon.title}`,
+            noiDungChiTiet: fullDocText,
+            previewExcerpt: fullDocText,
+            trangThai: isTrinhKy ? 'da_ban_hanh' : 'du_thao',
+            fromXacMinh: true,
+            signingStatus: isTrinhKy ? 'cho_trinh' : 'nhap',
+          };
+
+          // 1. Thêm vào danh sách văn bản dùng chung của hồ sơ
+          setVanBanXacMinhList((prev) => [
+            {
+              id: newDocItem.id,
+              loai: loaiVanBan as any,
+              tenVanBan: targetDocTitle,
+              soKyHieu: targetSoHieu,
+              ngayLap: todayStr,
+              nguoiNhan: currentDon.nguoiNop,
+              trichYeu: newDocItem.trichYeu,
+              noiDungChiTiet: fullDocText,
+              coQuanBanHanh: coQuan,
+              trangThai: isTrinhKy ? 'da_ban_hanh' : 'du_thao',
+            },
+            ...prev,
+          ]);
+
+          // 2. Thêm vào signingDocuments phục vụ luồng trình ký Lãnh đạo
+          const signingDoc: SigningDocument = {
+            id: newDocItem.id,
+            soKyHieu: targetSoHieu,
+            hoSoCode: currentDon.code,
+            luotNhanId: currentDon.luotNhanId,
+            loaiDon: currentDon.loaiDon || 'Đơn khiếu nại',
+            nguoiGuiDon: currentDon.nguoiNop,
+            noiDungDon: currentDon.title,
+            tenVanBan: targetDocTitle,
+            loaiVanBan:
+              loaiVanBan === 'quyet_dinh'
+                ? 'quyet_dinh_thu_ly'
+                : targetDocTitle.toLowerCase().includes('đề xuất')
+                  ? 'bao_cao_de_xuat'
+                  : 'to_trinh_thu_ly',
+            loaiVanBanLabel: targetDocTitle,
+            trichYeu: newDocItem.trichYeu,
+            noiDungChiTiet: fullDocText,
+            nguoiLap: currentAccount?.name || targetAssignee,
+            donViNguoiLap: coQuan,
+            ngayTao: `${todayStr} 09:30`,
+            status: isTrinhKy ? 'cho_trinh' : 'nhap',
+            thoiGianTrinh: isTrinhKy ? `${todayStr} 10:00` : undefined,
+            nguoiTrinh: isTrinhKy ? (currentAccount?.name || targetAssignee) : undefined,
+            mucDoUuTien: 'thuong',
+            hanXuLy: '24 giờ',
+            signers: [
+              {
+                id: 'ld-01',
+                name: targetLanhDao.replace(/\s*\(.*\)/, ''),
+                chucVu: isToGiac ? 'Thủ trưởng Cơ quan CSĐT' : 'Phó Chủ tịch UBND quận',
+                coQuan: coQuan,
+                vaiTro: 'duyet',
+                thuTu: 1,
+                status: isTrinhKy ? 'cho_ky' : 'chua_den_luot',
+              },
+            ],
+            currentSignerIndex: 0,
+            lanhDaoId: 'ld-01',
+            lanhDaoName: targetLanhDao.replace(/\s*\(.*\)/, ''),
+            lanhDaoChucVu: isToGiac ? 'Thủ trưởng Cơ quan CSĐT' : 'Phó Chủ tịch UBND quận',
+            tepDinhKem: [
+              {
+                id: `att-tl-${Date.now()}`,
+                tenTep: `${cleanFileName}_${targetSoHieu.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
+                dungLuong: '390 KB',
+                loai: 'du_thao',
+              },
+            ],
+            phienBanHienTai: 'V1',
+            versionHistory: [
+              {
+                version: 'V1',
+                thoiGian: `${todayStr} 10:00`,
+                nguoiTao: currentAccount?.name || targetAssignee,
+                trangThaiLucDo: isTrinhKy ? 'Chờ trình ký' : 'Bản nháp',
+                ghiChu: `Đề xuất thụ lý đơn: ${targetDocTitle}`,
+                noiDungSnapshot: fullDocText,
+              },
+            ],
+            history: [
+              {
+                id: `hist-${Date.now()}`,
+                time: `${todayStr} 10:00`,
+                actor: currentAccount?.name || targetAssignee,
+                action: isTrinhKy
+                  ? `Trình Lãnh đạo (${targetLanhDao}) phê duyệt đề xuất thụ lý`
+                  : 'Lưu bản nháp đề xuất thụ lý',
+              },
+            ],
+            auditLogs: [
+              {
+                id: `al-${Date.now()}`,
+                time: `${todayStr} 10:00`,
+                actor: currentAccount?.name || targetAssignee,
+                actorRole: 'Cán bộ thụ lý',
+                action: isTrinhKy ? 'Trình văn bản' : 'Tạo mới',
+                statusBefore: 'nhap',
+                statusAfter: isTrinhKy ? 'cho_trinh' : 'nhap',
+                version: 'V1',
+                note: newDocItem.trichYeu,
+              },
+            ],
+          };
+
+          if (onUpdateSigningDocuments) {
+            onUpdateSigningDocuments((prev) => [signingDoc, ...prev]);
+          }
+
+          // 3. Chuyển sang tab Hồ sơ & Văn bản và hiển thị văn bản vừa tạo
           setDocCount((c) => c + 1);
           setDaHoanThanhBuoc(true);
           if (activeStepNumber < workflow.steps.length) {
             setActiveStepNumber((prev) => prev + 1);
           }
+          setEditingDocInTab(newDocItem);
+          setActiveTab('tai-lieu');
+
+          if (isTrinhKy) {
+            showToast(`✓ Đã lưu đề xuất thụ lý và chuyển trình ký Lãnh đạo (${targetLanhDao}) văn bản "${targetDocTitle}"!`);
+          } else {
+            showToast(`✓ Đã lưu bản nháp đề xuất thụ lý và tạo văn bản "${targetDocTitle}" tại tab Hồ sơ & Văn bản!`);
+          }
+
+          // 4. Ghi lịch sử xử lý
           addHistoryLog({
-            title: `Hoàn tất bước quy trình: ${stepName}`,
-            actor: currentDon.canBoXuLy || 'Nguyễn Minh Anh',
-            actorRole: currentDon.chucVuCanBo || 'Chuyên viên Tiếp nhận & Xử lý đơn',
-            actorDept: currentDon.donViXuLy || 'Phòng Tiếp công dân & Xử lý đơn',
+            title: isTrinhKy
+              ? `Trình Lãnh đạo phê duyệt Đề xuất thụ lý: ${targetDocTitle}`
+              : `Lập bản nháp Đề xuất thụ lý: ${targetDocTitle}`,
+            actor: targetAssignee,
+            actorRole: currentDon.chucVuCanBo || 'Cán bộ thụ lý',
+            actorDept: coQuan,
             category: 'quy_trinh',
             statusBadge: {
-              text: 'Bước hoàn tất',
-              bgClass: 'bg-indigo-50',
-              textClass: 'text-indigo-800',
-              borderClass: 'border-indigo-200',
+              text: isTrinhKy ? 'Chờ ký duyệt' : 'Bản nháp',
+              bgClass: isTrinhKy ? 'bg-blue-50' : 'bg-slate-100',
+              textClass: isTrinhKy ? 'text-blue-800' : 'text-slate-800',
+              borderClass: isTrinhKy ? 'border-blue-200' : 'border-slate-200',
             },
-            description: `Đã thực hiện xong nội dung bước "${stepName}" theo quy trình xử lý đơn. Ban hành văn bản/quyết định: ${docTitle}.`,
+            description: isTrinhKy
+              ? `Cán bộ thụ lý đã lập xong Đề xuất thụ lý đơn và chuyển trình ký Lãnh đạo (${targetLanhDao}) xem xét, ký số phê duyệt theo quy định. Văn bản lưu trữ tại tab Hồ sơ & Văn bản.`
+              : `Đã lưu bản nháp đề xuất thụ lý đơn. Hệ thống tự động tạo văn bản "${targetDocTitle}" (Số hiệu: ${targetSoHieu}) và lưu trữ tại tab Hồ sơ & Văn bản.`,
             docInfo: {
-              name: docTitle,
-              type: 'quyet_dinh',
+              name: targetDocTitle,
+              code: targetSoHieu,
+              type: loaiVanBan,
             },
           });
         }}
