@@ -60,7 +60,9 @@ export default function AIWorkflowPreviewCard({
         {onSelectLoaiDon && (
           <div className="flex items-center gap-1 bg-slate-100/90 p-1 rounded-xl border border-slate-200/80">
             {[
+              /* Tạm ẩn lựa chọn Đơn tố giác về tội phạm theo yêu cầu
               { label: 'Đơn tố giác về tội phạm', short: 'Tố giác (7 bước)', color: 'rose' },
+              */
               { label: 'Đơn khiếu nại (Lần 1)', short: 'Khiếu nại (6 bước)', color: 'amber' },
               { label: 'Đơn tố cáo', short: 'Tố cáo (6 bước)', color: 'purple' },
               { label: 'Đơn phản ánh, kiến nghị', short: 'Kiến nghị (4 bước)', color: 'blue' },

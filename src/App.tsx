@@ -93,13 +93,13 @@ export default function App() {
 
   // Trạng thái Quy trình xử lý đơn đang chạy
   const [activeWorkflow, setActiveWorkflow] = useState<ActiveWorkflowState>(() => {
-    const defaultWf = WORKFLOW_DEFINITIONS['to-giac'];
+    const defaultWf = WORKFLOW_DEFINITIONS['to-cao'];
     return {
       donCode: 'Đ-2026-00125',
-      donTitle: 'Tố giác vi phạm lừa đảo chiếm đoạt tài sản (Dự án Khu đô thị Y)',
+      donTitle: 'Tố cáo sai phạm trật tự xây dựng & lấn chiếm đất công (Dự án Khu đô thị Y)',
       luotNhanId: 'LN-2025-0819',
       nguoiNop: 'Nguyễn Văn A',
-      loaiDonConfirmed: 'Đơn tố giác về tội phạm',
+      loaiDonConfirmed: 'Đơn tố cáo',
       workflow: defaultWf,
       activeStepId: 'step-2',
       tasks: defaultWf.defaultTasks,
@@ -254,7 +254,7 @@ export default function App() {
 
   const handleSelectDon = useCallback((don: DonDetail) => {
     setSelectedDon(don);
-    const loaiDon = don.loaiDon || 'Đơn tố giác về tội phạm';
+    const loaiDon = don.loaiDon || 'Đơn tố cáo';
     const wfDef = matchWorkflowByLoaiDon(loaiDon);
     const targetStepNumber = don.currentStep || 2;
     const targetStep =
@@ -289,7 +289,7 @@ export default function App() {
     if (wfState) {
       setActiveWorkflow(wfState);
     } else {
-      const loaiDon = don.loaiDon || 'Đơn tố giác về tội phạm';
+      const loaiDon = don.loaiDon || 'Đơn tố cáo';
       const wfDef = matchWorkflowByLoaiDon(loaiDon);
       setActiveWorkflow({
         donCode: don.code,
@@ -635,9 +635,11 @@ export default function App() {
                   </span>
                   <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${currentAccount.role === 'lanh_dao'
                     ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                    : 'bg-blue-100 text-[#004ac6] border border-blue-200'
+                    : currentAccount.role === 'van_thu'
+                      ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                      : 'bg-blue-100 text-[#004ac6] border border-blue-200'
                     }`}>
-                    {currentAccount.role === 'lanh_dao' ? 'LÃNH ĐẠO' : 'CÁN BỘ'}
+                    {currentAccount.role === 'lanh_dao' ? 'LÃNH ĐẠO' : currentAccount.role === 'van_thu' ? 'VĂN THƯ' : 'CÁN BỘ'}
                   </span>
                 </div>
                 <span className="text-[10px] text-slate-400 leading-tight">
@@ -748,7 +750,7 @@ export default function App() {
       {/* 2. BODY: SIDEBAR + MAIN WORKSPACE */}
       <div className="flex flex-1 overflow-hidden">
         <Sidebar screen={screen} onNav={setScreen} currentAccount={currentAccount} signingCounts={signingCounts} />
-        <main className="flex-1 overflow-y-auto flex flex-col bg-[#f4f7fb]">
+        <main className="flex-1 bg-[#f4f7fb]">
           <ErrorBoundary fallbackScreen={() => setScreen("don-tiep-nhan")}>
             {(screen === "cong-viec" || screen === "tiep-nhan-xu-ly") && (
               <CongViecCuaToi
@@ -827,6 +829,7 @@ export default function App() {
                 documents={signingDocuments}
                 onUpdateDocuments={setSigningDocuments}
                 initialDocId={selectedSigningDocId}
+                currentAccount={currentAccount}
                 onBackToKanban={() => setScreen("cong-viec")}
                 onSelectHoSo={(hoSoCode) => {
                   const matched = acceptedDons.find((d) => d.code === hoSoCode || d.id === hoSoCode);

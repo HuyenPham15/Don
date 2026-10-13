@@ -82,8 +82,8 @@ export default function Sidebar({ screen, onNav, currentAccount, signingCounts }
             </div>
           </button>
 
-          {/* Tiếp nhận tin báo, tố giác (Mục chuyên biệt cho nghiệp vụ tố tụng hình sự) */}
-          <button
+          {/* Tiếp nhận tin báo, tố giác (Mục chuyên biệt cho nghiệp vụ tố tụng hình sự) - Tạm ẩn theo yêu cầu */}
+          {/* <button
             type="button"
             onClick={() => onNav('nhan-don-them')}
             className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer ${screen === 'nhan-don-them'
@@ -100,7 +100,7 @@ export default function Sidebar({ screen, onNav, currentAccount, signingCounts }
               </span>
               <span className="text-[13.5px] font-medium">Tiếp nhận tin báo, tố giác</span>
             </div>
-          </button>
+          </button> */}
 
           {/* Quản lý đơn */}
           <button

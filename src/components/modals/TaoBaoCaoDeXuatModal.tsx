@@ -171,11 +171,11 @@ export default function TaoBaoCaoDeXuatModal({
   onSubmitToLeader,
 }: TaoBaoCaoDeXuatModalProps) {
   const maDon = donInfo?.code || 'Đ-2025-0105';
-  const loaiDon = donInfo?.loaiDon?.includes('khiếu nại') ? 'Đơn tố cáo' : (donInfo?.loaiDon || 'Đơn tố giác tội phạm');
+  const loaiDon = donInfo?.loaiDon?.includes('khiếu nại') ? 'Đơn tố cáo' : (donInfo?.loaiDon || 'Đơn tố cáo');
   const nguoiGuiDonDefault = donInfo?.nguoiNop || 'Vũ Thị Thanh';
   const diaChiNguoiGuiDefault = donInfo?.diaChi || 'Số 15 đường Cầu Giấy, phường Quan Hoa, quận Cầu Giấy, Hà Nội';
   const ngayTiepNhanDefault = donInfo?.ngayNhan || '16/09/2026 09:30';
-  const noiDungDonDefault = donInfo?.title || donInfo?.noiDung || 'Tố giác hành vi vi phạm quy định pháp luật hình sự trong quản lý đất đai và trật tự xây dựng';
+  const noiDungDonDefault = donInfo?.title || donInfo?.noiDung || 'Tố cáo hành vi vi phạm quy định pháp luật trong quản lý đất đai và trật tự xây dựng';
 
   const todayFormatted = useMemo(() => {
     const now = new Date();

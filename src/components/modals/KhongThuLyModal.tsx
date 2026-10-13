@@ -192,7 +192,7 @@ export default function KhongThuLyModal({
           {activeTab === 'form' ? (
             <>
               {/* THÔNG TIN VĂN BẢN */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50/80 p-3.5 rounded-xl border border-slate-200">
+              {/* <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50/80 p-3.5 rounded-xl border border-slate-200">
                 <div>
                   <label className="block text-[11px] font-bold text-slate-700 mb-1">
                     Số ký hiệu thông báo:
@@ -226,7 +226,7 @@ export default function KhongThuLyModal({
                     className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-rose-500 shadow-2xs font-medium"
                   />
                 </div>
-              </div>
+              </div> */}
 
               {/* LÝ DO KHÔNG THỤ LÝ LUẬT ĐỊNH DẠNG DROPDOWN */}
               <div className="space-y-3">

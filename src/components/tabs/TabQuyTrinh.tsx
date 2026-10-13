@@ -71,7 +71,9 @@ export default function TabQuyTrinh({
   const getSwimlaneType = () => {
     const loai = (currentDon.loaiDon || '').toLowerCase();
     if (loai.includes('khiếu nại')) return 'khieu-nai';
+    /* Tạm ẩn luồng tiếp nhận tin tố giác theo yêu cầu
     if (loai.includes('tố giác') || loai.includes('tin báo')) return 'to-giac';
+    */
     if (loai.includes('khởi kiện') || loai.includes('dân sự')) return 'khoi-kien';
     return 'to-cao-govex';
   };

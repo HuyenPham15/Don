@@ -592,9 +592,11 @@ export const WORKFLOW_DEFINITIONS: Record<QuyTrinhId, WorkflowDefinition> = {
 export function matchWorkflowByLoaiDon(loaiDon: string): WorkflowDefinition {
   const norm = (loaiDon || '').toLowerCase().trim();
 
+  /* Tạm ẩn quy trình tiếp nhận và xử lý tố giác/tin báo theo yêu cầu
   if (norm.includes('tố giác') || norm.includes('tin báo') || norm.includes('khởi tố') || norm.includes('hình sự')) {
     return WORKFLOW_DEFINITIONS['to-giac'];
   }
+  */
   if (norm.includes('tố cáo')) {
     return WORKFLOW_DEFINITIONS['to-cao'];
   }
@@ -605,6 +607,7 @@ export function matchWorkflowByLoaiDon(loaiDon: string): WorkflowDefinition {
     return WORKFLOW_DEFINITIONS['kien-nghi'];
   }
 
-  // Mặc định trả về tố giác nếu là đơn hình sự, hoặc khiếu nại nếu chung chung
-  return WORKFLOW_DEFINITIONS['to-giac'];
+  // Mặc định trả về quy trình tố cáo hành chính theo Luật Tố cáo 2018
+  /* return WORKFLOW_DEFINITIONS['to-giac']; */
+  return WORKFLOW_DEFINITIONS['to-cao'];
 }

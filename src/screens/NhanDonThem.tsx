@@ -354,26 +354,24 @@ const MOCK_ORGANIZATIONS_DATA: Record<
 
 export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
   // ─── 0. PHÂN LOẠI NGHIỆP VỤ TIẾP NHẬN GOVEX ───────────────────
-  const [loaiNghiepVu, setLoaiNghiepVu] = useState<LoaiNghiepVuTiepNhan>('tin_bao_to_giac');
+  const [loaiNghiepVu, setLoaiNghiepVu] = useState<LoaiNghiepVuTiepNhan>('tiep_nhan_don');
   const [isLoaiNghiepVuDropdownOpen, setIsLoaiNghiepVuDropdownOpen] = useState(false);
   const [gioNhan, setGioNhan] = useState(() => {
     const d = new Date();
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
   });
-  const [nguonTin, setNguonTin] = useState('Trực tiếp bằng văn bản (Đơn tố giác)');
+  const [nguonTin, setNguonTin] = useState('Trực tiếp');
   const [yeuCauBaoMat, setYeuCauBaoMat] = useState(false);
-  const [tuCachNguoiBao, setTuCachNguoiBao] = useState('Người trực tiếp bị hại');
-  const [loaiDonToGiac, setLoaiDonToGiac] = useState('Đơn tố giác về tội phạm');
+  const [tuCachNguoiBao, setTuCachNguoiBao] = useState('Người đứng đơn');
+  const [loaiDonToGiac, setLoaiDonToGiac] = useState('Đơn phản ánh, kiến nghị');
   const [hoSoLienKetId, setHoSoLienKetId] = useState('Đ-2025-0105');
 
   // Chi tiết sự việc tin báo / tố giác (Mục 4.3)
   const [thoiGianSuViec, setThoiGianSuViec] = useState('Từ tháng 01/2025 đến tháng 08/2026');
   const [diaDiemSuViec, setDiaDiemSuViec] = useState('Dự án Khu đô thị Nam An Khánh, Hoài Đức, Hà Nội');
-  const [doiTuongBiToGiac, setDoiTuongBiToGiac] = useState('Công ty Cổ phần Bất động sản Địa Ốc X & Trần Văn B (Chủ tịch kiêm Giám đốc)');
-  const [dienBienSuViec, setDienBienSuViec] = useState(
-    'Đối tượng thành lập công ty môi giới, ký hợp đồng góp vốn nhận tiền cọc của nhiều bị hại với cam kết giao đất nền nhưng thực tế dự án không có thật, sau đó cắt đứt liên lạc và có dấu hiệu tẩu tán tài sản.'
-  );
-  const [hauQuaThietHai, setHauQuaThietHai] = useState('Chiếm đoạt số tiền ước tính trên 2.8 tỷ đồng của người tố giác');
+  const [doiTuongBiToGiac, setDoiTuongBiToGiac] = useState('');
+  const [dienBienSuViec, setDienBienSuViec] = useState('');
+  const [hauQuaThietHai, setHauQuaThietHai] = useState('');
 
   // ─── THÔNG TIN CHUYÊN BIỆT TỰ THÚ / ĐẦU THÚ (MỤC 12.3 & 12.4) ─────
   const [diaDiemTiepNhan, setDiaDiemTiepNhan] = useState('Phòng Trực ban hình sự - Công an TP. Hà Nội');
@@ -416,7 +414,7 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
   const [ngayLamDon, setNgayLamDon] = useState('');
   const [hinhThucNhan, setHinhThucNhan] = useState('Trực tiếp');
   const [canBoNhan, setCanBoNhan] = useState('Lê Ngọc Mai');
-  const [donViNhan, setDonViNhan] = useState('Công an thành phố Hà Nội');
+  const [donViNhan, setDonViNhan] = useState('Phòng Tiếp công dân & Xử lý đơn');
 
   // ─── 2. LOẠI NGƯỜI NỘP ĐƠN STATE ──────────────────────────────
   const [loaiNguoiNop, setLoaiNguoiNop] = useState<NguoiNopType>('ca-nhan');
@@ -1019,13 +1017,15 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
                 ? 'Tiếp nhận người tự thú'
                 : loaiNghiepVu === 'nguoi_dau_thu'
                   ? 'Tiếp nhận người đầu thú'
+                  /* Tạm ẩn tiếp nhận tin báo, tố giác theo yêu cầu
                   : loaiNghiepVu === 'tin_bao_to_giac' || loaiNghiepVu === 'tin_bao_toi_pham'
                     ? 'Tiếp nhận tin báo về tội phạm'
                     : loaiNghiepVu === 'to_giac_toi_pham'
                       ? 'Tiếp nhận tố giác về tội phạm'
-                      : loaiNghiepVu === 'tai_lieu_bo_sung'
-                        ? 'Tiếp nhận tài liệu bổ sung'
-                        : 'Tiếp nhận đơn hành chính'}
+                  */
+                  : loaiNghiepVu === 'tai_lieu_bo_sung'
+                    ? 'Tiếp nhận tài liệu bổ sung'
+                    : 'Tiếp nhận đơn hành chính'}
             </span>
           </div>
 
@@ -1044,13 +1044,15 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
                   ? 'Tiếp nhận người tự thú'
                   : loaiNghiepVu === 'nguoi_dau_thu'
                     ? 'Tiếp nhận người đầu thú'
+                    /* Tạm ẩn tiếp nhận tin báo, tố giác theo yêu cầu
                     : loaiNghiepVu === 'tin_bao_to_giac' || loaiNghiepVu === 'tin_bao_toi_pham'
                       ? 'Tiếp nhận tin báo về tội phạm'
                       : loaiNghiepVu === 'to_giac_toi_pham'
                         ? 'Tiếp nhận tố giác về tội phạm'
-                        : loaiNghiepVu === 'tai_lieu_bo_sung'
-                          ? 'Tiếp nhận tài liệu bổ sung cho hồ sơ vụ việc'
-                          : 'Thêm mới đơn tiếp nhận'}
+                    */
+                    : loaiNghiepVu === 'tai_lieu_bo_sung'
+                      ? 'Tiếp nhận tài liệu bổ sung cho hồ sơ vụ việc'
+                      : 'Thêm mới đơn tiếp nhận'}
               </h1>
               {/* {loaiNghiepVu === 'nguoi_tu_thu' ? (
                 <span className="px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-900 text-[11.5px] font-bold border border-indigo-200 flex items-center gap-1">
@@ -1117,8 +1119,10 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
                     ? 'Tiếp nhận Bắt quả tang & Hình thành Đơn'
                     : loaiNghiepVu === 'can_bo_phat_hien'
                       ? 'Tiếp nhận CB phát hiện & Hình thành Đơn'
-                      : loaiNghiepVu === 'tin_bao_to_giac' || loaiNghiepVu === 'tin_bao_toi_pham' || loaiNghiepVu === 'to_giac_toi_pham'
-                        ? 'Tiếp nhận tin tố giác & Hình thành Đơn'
+                        /* Tạm ẩn tiếp nhận tin tố giác theo yêu cầu
+                        : loaiNghiepVu === 'tin_bao_to_giac' || loaiNghiepVu === 'tin_bao_toi_pham' || loaiNghiepVu === 'to_giac_toi_pham'
+                          ? 'Tiếp nhận tin tố giác & Hình thành Đơn'
+                        */
                         : loaiNghiepVu === 'tai_lieu_bo_sung'
                           ? 'Tiếp nhận tài liệu & Hình thành Đơn'
                           : 'Tiếp nhận & Hình thành Đơn'}
@@ -1173,6 +1177,7 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
                   setDonViNhan('Phòng Tiếp công dân & Xử lý đơn');
                 },
               },
+              /* Tạm ẩn các tùy chọn tiếp nhận tin báo, tố giác tội phạm theo yêu cầu
               {
                 value: 'tin_bao_toi_pham',
                 label: '2. Tiếp nhận tin báo về tội phạm',
@@ -1208,6 +1213,7 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
                   setLoaiDonToGiac('Đơn tố giác về tội phạm');
                 },
               },
+              */
               {
                 value: 'nguoi_tu_thu',
                 label: '4. Tiếp nhận người tự thú',
@@ -1347,7 +1353,7 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
 
                       <div className="absolute left-0 right-0 top-full mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 overflow-hidden divide-y divide-slate-100 max-h-[460px] overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-150">
                         <div className="p-2.5 bg-slate-50/90 border-b border-slate-100 flex items-center justify-between text-[11.5px] text-slate-500 font-semibold px-3">
-                          <span>DANH SÁCH 8 LOẠI NGHIỆP VỤ TIẾP NHẬN THEO QUY ĐỊNH</span>
+                          <span>DANH SÁCH LOẠI NGHIỆP VỤ TIẾP NHẬN THEO QUY ĐỊNH</span>
                           <span>Bấm để chọn</span>
                         </div>
                         {NGHIEP_VU_OPTIONS.map((opt) => {
@@ -1509,6 +1515,7 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
                     <option value="Cơ quan, đơn vị nơi làm việc / Đơn vị quân đội đưa đến">Cơ quan, đơn vị nơi làm việc / Đơn vị quân đội đưa đến</option>
                     <option value="Cơ quan khác bàn giao (Viện kiểm sát, Tòa án, Báo chí)">Cơ quan khác bàn giao (Viện kiểm sát, Tòa án, Báo chí)</option>
                   </>
+                /* Tạm ẩn các lựa chọn hình thức nhận tin báo, tố giác theo yêu cầu
                 ) : loaiNghiepVu === 'tin_bao_to_giac' || loaiNghiepVu === 'tin_bao_toi_pham' || loaiNghiepVu === 'to_giac_toi_pham' ? (
                   <>
                     <option value="Trực tiếp bằng văn bản (Đơn tố giác)">Trực tiếp bằng văn bản (Đơn tố giác có chữ ký)</option>
@@ -1518,6 +1525,7 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
                     <option value="Đường dây nóng (Hotline 113 / Trực ban)">Đường dây nóng (Hotline 113 / Trực ban hình sự)</option>
                     <option value="Cơ quan khác chuyển giao (VKS, Tòa án, Báo chí)">Cơ quan khác chuyển giao (VKS, Tòa án, Báo chí)</option>
                   </>
+                */
                 ) : (
                   <>
                     <option value="Trực tiếp">Trực tiếp tại Một cửa</option>
@@ -1601,16 +1609,16 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
                   02
                 </div>
                 <h2 className="text-[14px] font-bold text-slate-900 font-headline-md tracking-tight">
-                  {loaiNghiepVu === 'tin_bao_to_giac' || loaiNghiepVu === 'tin_bao_toi_pham' || loaiNghiepVu === 'to_giac_toi_pham'
+                  {/* loaiNghiepVu === 'tin_bao_to_giac' || loaiNghiepVu === 'tin_bao_toi_pham' || loaiNghiepVu === 'to_giac_toi_pham'
                     ? 'Thông tin người cung cấp tin / Báo tin'
-                    : 'Loại người nộp đơn & Thông tin chủ thể'}
+                    : */ 'Loại người nộp đơn & Thông tin chủ thể'}
                 </h2>
               </div>
-              {(loaiNghiepVu === 'tin_bao_to_giac' || loaiNghiepVu === 'tin_bao_toi_pham' || loaiNghiepVu === 'to_giac_toi_pham') && (
+              {/* {(loaiNghiepVu === 'tin_bao_to_giac' || loaiNghiepVu === 'tin_bao_toi_pham' || loaiNghiepVu === 'to_giac_toi_pham') && (
                 <span className="text-[12px] text-slate-500 italic">
                   Cho phép tiếp nhận nặc danh / Chưa có đầy đủ định danh (không ép buộc)
                 </span>
-              )}
+              )} */}
             </div>
 
             {/* Lựa chọn loại người nộp dạng Radio Button */}
@@ -1659,8 +1667,8 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
                 </label>
               </div>
 
-              {/* Điều khiển bổ sung cho Tin báo tố giác: Tư cách & Bảo mật */}
-              {loaiNghiepVu === 'tin_bao_to_giac' && (
+              {/* Điều khiển bổ sung cho Tin báo tố giác: Tư cách & Bảo mật - Tạm ẩn theo yêu cầu */}
+              {/* {loaiNghiepVu === 'tin_bao_to_giac' && (
                 <div className="flex items-center gap-4 flex-wrap bg-amber-50/70 border border-amber-200/90 px-3.5 py-1.5 rounded-xl">
                   <div className="flex items-center gap-1.5 text-xs text-slate-700">
                     <span className="font-semibold text-slate-800">Tư cách:</span>
@@ -1695,7 +1703,7 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
                     </span>
                   </label>
                 </div>
-              )}
+              )} */}
             </div>
 
             {/* ─── TRƯỜNG HỢP: CÁ NHÂN ─── */}
@@ -3469,8 +3477,8 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
           </section>
         )}
 
-        {/* ─── SECTION 2B: NỘI DUNG SỰ VIỆC & DIỄN BIẾN HÀNH VI TỐ GIÁC (CHUYÊN BIỆT TIN BÁO TỐ GIÁC) ─── */}
-        {(loaiNghiepVu === 'tin_bao_to_giac' || loaiNghiepVu === 'tin_bao_toi_pham' || loaiNghiepVu === 'to_giac_toi_pham') && (
+        {/* ─── SECTION 2B: NỘI DUNG SỰ VIỆC & DIỄN BIẾN HÀNH VI TỐ GIÁC (CHUYÊN BIỆT TIN BÁO TỐ GIÁC) - Tạm ẩn theo yêu cầu ─── */}
+        {/* {(loaiNghiepVu === 'tin_bao_to_giac' || loaiNghiepVu === 'tin_bao_toi_pham' || loaiNghiepVu === 'to_giac_toi_pham') && (
           <section className="space-y-4 bg-rose-50/30 border border-rose-200/70 p-5 rounded-2xl animate-in fade-in">
             <div className="flex items-center justify-between border-b border-rose-200/80 pb-2.5">
               <div className="flex items-center gap-2.5">
@@ -3496,7 +3504,6 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {/* Thời gian xảy ra */}
               <div>
                 <label className="block text-[12px] font-semibold text-slate-700 mb-1">
                   Thời gian xảy ra sự việc <span className="text-red-500">*</span>
@@ -3510,7 +3517,6 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
                 />
               </div>
 
-              {/* Địa điểm xảy ra */}
               <div>
                 <label className="block text-[12px] font-semibold text-slate-700 mb-1">
                   Địa điểm xảy ra sự việc <span className="text-red-500">*</span>
@@ -3524,7 +3530,6 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
                 />
               </div>
 
-              {/* Người / Tổ chức bị tố giác */}
               <div className="lg:col-span-2">
                 <label className="block text-[12px] font-semibold text-slate-700 mb-1">
                   Người hoặc tổ chức bị tố giác / Đối tượng liên quan <span className="text-red-500">*</span>
@@ -3538,7 +3543,6 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
                 />
               </div>
 
-              {/* Diễn biến sự việc */}
               <div className="lg:col-span-2">
                 <label className="block text-[12px] font-semibold text-slate-700 mb-1">
                   Diễn biến hành vi được trình báo <span className="text-red-500">*</span>
@@ -3552,7 +3556,6 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
                 />
               </div>
 
-              {/* Hậu quả thiệt hại */}
               <div className="lg:col-span-2">
                 <label className="block text-[12px] font-semibold text-slate-700 mb-1">
                   Hậu quả, thiệt hại được phản ánh (Vật chất, sức khỏe, tính mạng, trật tự xã hội)
@@ -3567,7 +3570,6 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
               </div>
             </div>
 
-            {/* Dấu hiệu khẩn cấp cần ưu tiên */}
             <div className="p-3 bg-white border border-rose-200 rounded-xl flex flex-wrap items-center gap-4 text-xs">
               <span className="font-bold text-rose-800 flex items-center gap-1">
                 <span className="material-symbols-outlined text-[17px] text-rose-600">emergency</span>
@@ -3587,7 +3589,7 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
               </label>
             </div>
           </section>
-        )}
+        )} */}
 
         {/* ─── SECTION 2C: LIÊN KẾT HỒ SƠ / VỤ VIỆC (CHUYÊN BIỆT TÀI LIỆU BỔ SUNG) ─── */}
         {loaiNghiepVu === 'tai_lieu_bo_sung' && (
@@ -3622,7 +3624,7 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
                   className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-200 font-medium cursor-pointer"
                 >
                   <option value="Đ-2025-0105">Đ-2025-0105 | Đơn khiếu nại thu hồi đất DA Hòa Lạc (Đang xác minh - CB thụ lý: Nguyễn Văn B)</option>
-                  <option value="TB-2026-CATPHN_089">TB-2026-CATPHN_089 | Tố giác hành vi lừa đảo chiếm đoạt tài sản qua dự án ảo (Đang thụ lý - Điều tra viên: Lê Ngọc Mai)</option>
+                  <option value="Đ-2026-03-0089">Đ-2026-03-0089 | Đơn kiến nghị giải tỏa mặt bằng đường Vành đai 4 (Đang thụ lý - Cán bộ: Lê Ngọc Mai)</option>
                   <option value="LN-2026-03-0001">LN-2026-03-0001 | Đơn kiến nghị bồi thường GPMB đường gom (Chờ phê duyệt)</option>
                   <option value="HS-2026-02-0045">HS-2026-02-0045 | Tố cáo sai phạm trật tự xây dựng tại cụm công nghiệp (Đang giải quyết)</option>
                 </select>
@@ -4309,11 +4311,13 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
                 <h2 className="text-[14px] font-bold text-slate-900 font-headline-md tracking-tight">
                   Tài liệu kèm theo
                 </h2>
+                {/* Tạm ẩn badge trích xuất OCR tin báo tố giác theo yêu cầu
                 {(loaiNghiepVu === 'tin_bao_to_giac' || loaiNghiepVu === 'tin_bao_toi_pham' || loaiNghiepVu === 'to_giac_toi_pham') && (
                   <span className="text-[11px] font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
                     Hỗ trợ trích xuất OCR &amp; AI
                   </span>
                 )}
+                */}
                 {(loaiNghiepVu === 'nguoi_tu_thu' || loaiNghiepVu === 'nguoi_dau_thu') && (
                   <span className="text-[11px] font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
                     Mẫu 02-BCA: Biên bản tiếp nhận người tự thú / đầu thú
@@ -4339,6 +4343,7 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
+              {/* Tạm ẩn nút mẫu biên bản 01-BCA tiếp nhận tin báo tố giác theo yêu cầu
               {(loaiNghiepVu === 'tin_bao_to_giac' || loaiNghiepVu === 'tin_bao_toi_pham' || loaiNghiepVu === 'to_giac_toi_pham') && (
                 <button
                   type="button"
@@ -4353,6 +4358,7 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
                   <span>+ Mẫu Biên bản 01-BCA</span>
                 </button>
               )}
+              */}
 
               {(loaiNghiepVu === 'nguoi_tu_thu' || loaiNghiepVu === 'nguoi_dau_thu') && (
                 <button

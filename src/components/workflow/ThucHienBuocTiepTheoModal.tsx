@@ -179,60 +179,6 @@ export default function ThucHienBuocTiepTheoModal({
               <option value="Nguyễn Hải Đăng (Phó Thủ trưởng Cơ quan CSĐT)">Đ/c Nguyễn Hải Đăng - Phó Thủ trưởng Cơ quan CSĐT</option>
             </select>
           </div>
-
-          {/* Block thông tin văn bản sẽ được khởi tạo trong tab Hồ sơ & Văn bản */}
-          <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-xl space-y-2.5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 text-[#004ac6] font-bold text-xs">
-                <span className="material-symbols-outlined text-[17px]">description</span>
-                <span>Văn bản đề xuất / thụ lý ban hành</span>
-              </div>
-              <span className="text-[10px] bg-blue-100 text-blue-800 font-semibold px-2 py-0.5 rounded-md flex items-center gap-1">
-                <span className="material-symbols-outlined text-[12px]">send</span>
-                Chuyển trình ký Lãnh đạo
-              </span>
-            </div>
-
-            <div>
-              <label className="block font-semibold text-slate-700 mb-0.5">
-                Tên văn bản / quyết định thụ lý <span className="text-rose-600">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={docTitle}
-                onChange={(e) => setDocTitle(e.target.value)}
-                className="w-full px-2.5 py-1.5 bg-white border border-blue-200 rounded-lg text-slate-800 font-medium text-xs focus:outline-none focus:border-[#004ac6]"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div>
-                <label className="block font-semibold text-slate-700 mb-0.5">Số ký hiệu</label>
-                <input
-                  type="text"
-                  value={soHieu}
-                  onChange={(e) => setSoHieu(e.target.value)}
-                  className="w-full px-2.5 py-1.5 bg-white border border-blue-200 rounded-lg text-slate-800 font-mono text-xs focus:outline-none focus:border-[#004ac6]"
-                />
-              </div>
-              <div>
-                <label className="block font-semibold text-slate-700 mb-0.5">Thời hạn giải quyết</label>
-                <input
-                  type="text"
-                  value={hanGiaiQuyet}
-                  onChange={(e) => setHanGiaiQuyet(e.target.value)}
-                  className="w-full px-2.5 py-1.5 bg-white border border-blue-200 rounded-lg text-slate-800 text-xs focus:outline-none focus:border-[#004ac6]"
-                />
-              </div>
-            </div>
-
-            <p className="text-[10.5px] text-blue-700 flex items-center gap-1">
-              <span className="material-symbols-outlined text-[14px]">auto_stories</span>
-              Sau khi lưu thông tin, hệ thống sẽ tự động tạo biểu mẫu văn bản này và chuyển trình ký Lãnh đạo tại tab <strong>Hồ sơ &amp; Văn bản</strong>.
-            </p>
-          </div>
-
           <div>
             <label className="block font-bold text-slate-800 mb-1">
               Nội dung đề xuất / Ghi chú <span className="text-slate-400 font-normal">(tùy chọn)</span>

@@ -475,10 +475,6 @@ export default function GovexToCaoWorkflowDiagram({
             </div>
           </div>
         </div>
-
-        {/* ========================================================================= */}
-        {/* PHẦN 2: THÔNG TIN CHI TIẾT BƯỚC (HIỂN THỊ CHỒNG LÊN NHƯ DRAWER)             */}
-        {/* ========================================================================= */}
         {isRightPanelOpen && (
           <aside className="absolute top-0 right-0 bottom-0 w-[440px] xl:w-[480px] border-l border-slate-200 bg-white shadow-2xl z-30 flex flex-col overflow-hidden animate-drawer-slide-in">
             {/* 1. HEADER PANEL BÊN PHẢI (THÔNG TIN BƯỚC) */}

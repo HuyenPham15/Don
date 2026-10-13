@@ -17,6 +17,7 @@ import BanGiaoDonModal, { BanGiaoDonSubmitData } from '../components/modals/BanG
 import TraLaiDonModal, { TraLaiDonSubmitData } from '../components/modals/TraLaiDonModal';
 import { TiepNhanDonItem, DEPARTMENTS } from '../constants/departments';
 import { SigningDocument, CurrentUserAccount, DEMO_ACCOUNTS } from '../types/signing';
+import VanThuWorkKanban from '../components/work/VanThuWorkKanban';
 export type CongViecTab = 'tasks' | 'all';
 export type ViewMode = 'kanban' | 'list' | 'completed';
 export type FilterStatus = WorkItemColumn | 'all';
@@ -1160,207 +1161,105 @@ export default function CongViecCuaToi({
       return;
     }
 
-    // 0B. Nếu là LÃNH ĐẠO click vào văn bản cần xử lý hoặc ký duyệt -> Mở trực tiếp màn ký chi tiết của Lãnh đạo
-    if (isLeader) {
-      const matchedSigningDoc = docs.find(
-        (d) =>
-          d.id === item.id ||
-          d.id === item.code ||
-          d.hoSoCode === item.code ||
-          d.hoSoCode === item.id ||
-          (item.luotNhanId && d.hoSoCode === item.luotNhanId)
-      );
+    // 1. Kiểm tra xem hồ sơ này đã được tiếp nhận thành Đơn hay chưa
+    const matchedLn =
+      luotNhanList.find((l) => l.id === item.id || l.id === item.code || l.id === item.luotNhanId) ||
+      ALL_LUOT_NHAN.find((l) => l.id === item.id || l.id === item.code);
 
-      const isSigningAction =
-        Boolean(matchedSigningDoc) ||
-        item.id.startsWith('VB-') ||
-        item.code.startsWith('VB-') ||
-        item.subStatus === 'cho_ky' ||
-        item.actionTitle?.toLowerCase().includes('ký') ||
-        item.nextAction?.toLowerCase().includes('ký') ||
-        item.title?.toLowerCase().includes('ký duyệt') ||
-        item.title?.toLowerCase().includes('trình ký');
-
-      if (isSigningAction) {
-        const targetDoc = matchedSigningDoc || docs.find((d) => d.status === 'da_trinh') || docs[0];
-        if (targetDoc) {
-          if (onSelectSigningDoc) onSelectSigningDoc(targetDoc.id);
-          onNav('van-ban-cho-ky');
-          showToast(`Mở Bàn ký duyệt văn bản chi tiết: [${targetDoc.id}] ${targetDoc.tenVanBan}`);
-          return;
-        }
-      }
-    } else {
-      const matchedSigningDoc = docs.find(
-        (d) =>
-          d.id === item.id ||
-          d.id === item.code ||
-          d.hoSoCode === item.code ||
-          d.hoSoCode === item.id ||
-          (item.luotNhanId && d.hoSoCode === item.luotNhanId)
-      );
-
-      const isSigningAction =
-        Boolean(matchedSigningDoc) ||
-        item.id.startsWith('VB-') ||
-        item.code.startsWith('VB-') ||
-        item.actionTitle?.toLowerCase().includes('trình') ||
-        item.title?.toLowerCase().includes('trình ký');
-
-      if (isSigningAction && (matchedSigningDoc || docs.length > 0)) {
-        const targetDoc = matchedSigningDoc || docs[0];
-        if (targetDoc) {
-          if (onSelectSigningDoc) onSelectSigningDoc(targetDoc.id);
-          onNav('trinh-ky');
-          showToast(`Mở màn hình Trình ký văn bản: [${targetDoc.id}] ${targetDoc.tenVanBan}`);
-          return;
-        }
-      }
-    }
-
-    // Hồ sơ ở cột ĐANG THỰC HIỆN ('processing') hoặc đã tiếp nhận (không còn ở cột action_required)
-    // → Mở màn chi tiết đơn và hiển thị đúng bước hiện tại của quy trình
-    const isProcessingOrAfter =
+    const isAcceptedDon = Boolean(
+      acceptedDons?.some((d) => d.code === item.code || d.id === item.id || (item.luotNhanId && d.luotNhanId === item.luotNhanId)) ||
+      matchedLn?.status === 'da_chuyen' ||
+      matchedLn?.status === 'da_thu_ly' ||
+      item.tags?.includes('Đã tiếp nhận') ||
+      item.tags?.includes('Đã hình thành đơn') ||
       item.column === 'processing' ||
-      item.column === 'waiting' ||
-      item.column === 'completed' ||
-      item.column === 'handed_over' ||
-      item.column !== 'action_required';
+      item.column === 'handed_over'
+    );
 
-    if (isProcessingOrAfter) {
-      const currentStepNum = item.progress?.currentStep || (item.column === 'processing' ? 2 : 1);
-      const stepName = item.progress?.stepName || (currentStepNum === 2 ? 'Thụ lý giải quyết' : 'Đang xử lý');
-      const donObj: DonDetail = {
-        id: item.id,
-        code: item.code,
-        title: item.title,
-        luotNhanId: item.luotNhanId || item.id,
-        nguoiNop: item.sender,
-        ngayNhan: item.timeReceived,
-        loaiDon: item.loaiDon || 'Đơn tiếp nhận hành chính',
-        type: item.code.startsWith('VV') ? 'VỤ VIỆC' : 'ĐƠN TIẾP NHẬN',
-        statusBadge: item.subStatus && SUB_STATUS_LABELS[item.subStatus] ? SUB_STATUS_LABELS[item.subStatus] : 'Đang xử lý',
-        currentStep: currentStepNum,
-        stepName: stepName,
-        progress: item.progress,
-      };
-      if (onSelectDon) onSelectDon(donObj);
-      onNav('don-tiep-nhan');
-      showToast(`Mở chi tiết hồ sơ [${item.code}] — Đang ở bước: ${stepName} (Bước ${currentStepNum})`);
-      return;
-    }
+    // 2. VĂN BẢN TRÌNH KÝ & KÝ SỐ (CHỈ KHI CARD THỰC SỰ LÀ VĂN BẢN TRÌNH KÝ)
+    // Tránh việc tất cả hồ sơ có chữ "trình" hay trùng mã bị chuyển nhầm sang màn ký
+    const isActualSigningDoc = Boolean(
+      item.isSigningDoc ||
+      item.source === 'Văn bản trình ký' ||
+      item.id.startsWith('VB-') ||
+      item.code.startsWith('VB-') ||
+      (item.subStatus === 'cho_ky' && docs.some((d) => d.id === item.id || d.id === item.code))
+    );
 
-    const isAiAnalyzedForReview =
-      item.aiStatus === 'needs_review' ||
-      item.aiStatus === 'processing' ||
-      item.aiStatus === 'failed' ||
-      item.cta.actionType === 'review_ai' ||
-      (item.aiStatus === 'completed' && (
-        item.column === 'action_required' ||
-        item.code.startsWith('LN') ||
-        item.progress.currentStep <= 2 ||
-        item.nextAction.toLowerCase().includes('kiểm tra') ||
-        item.nextAction.toLowerCase().includes('tiếp nhận')
-      )) ||
-      item.code.startsWith('LN') ||
-      item.nextAction.toLowerCase().includes('kiểm tra và xác nhận kết quả ai') ||
-      item.nextAction.toLowerCase().includes('kiểm tra kết quả ai') ||
-      item.id === 'LN-56/2026-GOVEX' ||
-      item.id === 'VV-2025-0430' ||
-      item.id === 'LN-2025-0819';
+    if (isActualSigningDoc) {
+      const matchedDoc = docs.find(
+        (d) => d.id === item.id || d.id === item.code || (item.isSigningDoc && (d.id === item.id || d.hoSoCode === item.code))
+      ) || docs[0];
 
-    // Không OCR → mở màn chi tiết tiếp nhận (để cán bộ nhấn Tiếp nhận thủ công)
-    const isKhongOcr = item.aiStatus === 'none' && item.column === 'action_required';
-    if (isKhongOcr) {
-      const donObj: DonDetail = {
-        id: item.id,
-        code: item.code,
-        title: item.title,
-        luotNhanId: item.luotNhanId || item.id,
-        nguoiNop: item.sender,
-        ngayNhan: item.timeReceived,
-        loaiDon: item.loaiDon || 'Đơn tiếp nhận hành chính',
-        type: item.code.startsWith('VV') ? 'VỤ VIỆC' : 'ĐƠN TIẾP NHẬN',
-      };
-      if (onSelectDon) onSelectDon(donObj);
-      onNav('don-tiep-nhan');
-      showToast(`Mở chi tiết hồ sơ [${item.code}] — Không OCR, sẵn sàng tiếp nhận`);
-      return;
-    }
-
-    if (isAiAnalyzedForReview || item.aiStatus === 'processing' || item.aiStatus === 'failed' || item.code.startsWith('LN')) {
-      const matchedLn =
-        luotNhanList.find((l) => l.id === item.id || l.id === item.code || l.id === item.luotNhanId) ||
-        ALL_LUOT_NHAN.find((l) => l.id === item.id || l.id === item.code);
-
-      // Nếu lượt nhận đã tiếp nhận xong hoặc đã hình thành Đơn -> mở màn chi tiết đơn
-      const isDaTiepNhan =
-        matchedLn?.status === 'da_chuyen' ||
-        matchedLn?.status === 'da_thu_ly' ||
-        Boolean(item.tags?.includes('Đã tiếp nhận')) ||
-        Boolean(item.tags?.includes('Đã hình thành đơn')) ||
-        item.code.startsWith('Đ-');
-
-      if (isDaTiepNhan) {
-        const dynamicCode = item.code.startsWith('LN-') ? `Đ-${item.code.replace('LN-', '')}` : item.code;
-        const matchedDon = acceptedDons?.find((d) => d.code === item.code || d.id === item.id || d.code === dynamicCode);
-        const donObj: DonDetail = matchedDon || {
-          id: dynamicCode,
-          code: dynamicCode,
-          title: item.title,
-          luotNhanId: item.luotNhanId || item.code,
-          nguoiNop: item.sender,
-          ngayNhan: item.timeReceived,
-          loaiDon: item.loaiDon || 'Đơn tiếp nhận',
-          type: (item.code.startsWith('VV')
-            ? 'VỤ VIỆC'
-            : item.tags?.includes('BẮT QUẢ TANG')
-              ? 'BẮT QUẢ TANG'
-              : item.tags?.includes('CÁN BỘ PHÁT HIỆN')
-                ? 'CÁN BỘ PHÁT HIỆN'
-                : item.tags?.includes('TỰ THÚ / ĐẦU THÚ')
-                  ? 'TỰ THÚ / ĐẦU THÚ'
-                  : 'ĐƠN TIẾP NHẬN') as DonDetail['type'],
-          statusBadge: 'Đang xử lý',
-        };
-        if (onSelectDon) onSelectDon(donObj);
-        onNav('don-tiep-nhan');
-        showToast(`Mở màn chi tiết đơn [${dynamicCode}]`);
+      if (matchedDoc) {
+        if (onSelectSigningDoc) onSelectSigningDoc(matchedDoc.id);
+        if (isLeader) {
+          onNav('van-ban-cho-ky');
+          showToast(`Mở Bàn ký duyệt văn bản chi tiết: [${matchedDoc.id}] ${matchedDoc.tenVanBan}`);
+        } else {
+          onNav('trinh-ky');
+          showToast(`Mở màn hình Trình ký văn bản: [${matchedDoc.id}] ${matchedDoc.tenVanBan}`);
+        }
         return;
       }
+    }
 
-      const targetLuotNhan: LuotNhan = {
-        id: item.code,
+    // 3. TRƯỜNG HỢP OCR / BÀN PHÂN TÍCH AI (ban-phan-tich):
+    // "OCR lỗi hay đã ocr xong thì mở đến màn ocr" (trước khi tiếp nhận về thành đơn)
+    const isOcrState =
+      // a. OCR bị lỗi (cần vào Bàn phân tích để xem ảnh, xoay góc, chỉnh sửa hoặc OCR lại)
+      item.aiStatus === 'failed' ||
+      // b. Đã OCR xong hoặc đang phân tích AI hoặc Lượt nhận chưa tiếp nhận thành đơn
+      (!isAcceptedDon && (
+        item.aiStatus === 'needs_review' ||
+        item.aiStatus === 'processing' ||
+        item.subStatus === 'can_kiem_tra_ai' ||
+        item.cta?.actionType === 'review_ai' ||
+        item.cta?.actionType === 'manual_process' ||
+        item.sourceType === 'luot_nhan' ||
+        item.code.startsWith('LN-') ||
+        item.code.startsWith('LR-') ||
+        item.actionTitle?.toLowerCase().includes('kiểm tra kết quả ai') ||
+        item.actionTitle?.toLowerCase().includes('khắc phục lỗi ocr') ||
+        item.actionTitle?.toLowerCase().includes('xử lý theo ghi chú') ||
+        item.nextAction?.toLowerCase().includes('kiểm tra và xác nhận') ||
+        item.nextAction?.toLowerCase().includes('kiểm tra kết quả')
+      ));
+
+    if (isOcrState) {
+      const targetLuotNhan: LuotNhan = matchedLn || {
+        id: item.luotNhanId || item.code,
         ngayNhan: item.timeReceived,
         nguoiNop: item.sender,
         hinhThuc: item.source,
         noiDung: item.title,
         donVi: item.holder?.department || 'Tổ Tiếp nhận hồ sơ',
         aiJob: item.aiStatus === 'none' ? 0 : item.aiStatus === 'failed' ? 1 : (item.aiStatus === 'completed' || item.aiStatus === 'needs_review' ? 5 : item.aiStatus === 'processing' ? 3 : 0),
-        status: matchedLn?.status || 'cho_chuyen',
+        status: 'cho_chuyen',
       };
 
       onSelect(targetLuotNhan);
       onNav('ban-phan-tich');
       showToast(
-        item.aiStatus === 'none'
-          ? `Mở xử lý thủ công Lượt nhận [${item.code}] (Không OCR)`
-          : item.aiStatus === 'failed'
-            ? `Mở khắc phục lỗi OCR cho Lượt nhận [${item.code}]`
-            : `Mở chi tiết Lượt nhận [${item.code}] tại Bàn phân tích AI`
+        item.aiStatus === 'failed'
+          ? `Mở khắc phục lỗi OCR cho Lượt nhận [${targetLuotNhan.id}]`
+          : item.aiStatus === 'needs_review' || item.actionTitle?.toLowerCase().includes('kiểm tra')
+            ? `Mở kiểm tra kết quả OCR / AI cho Lượt nhận [${targetLuotNhan.id}]`
+            : `Mở Bàn phân tích OCR cho Lượt nhận [${targetLuotNhan.id}]`
       );
       return;
     }
 
-    if (item.id === 'Đ-2025-0982') {
-      onSelect(ALL_LUOT_NHAN[2] || LN19);
-      onNav('ban-phan-tich');
-      showToast(`Đang xem chi tiết phối hợp liên ngành: ${item.code}`);
-      return;
-    }
+    // 4. TRƯỜNG HỢP SAU KHI TIẾP NHẬN VỀ -> MỞ THẲNG CHI TIẾT ĐƠN (don-tiep-nhan):
+    // "sau khi tiếp nhận về thì mở thẳng chi tiết đơn"
+    const matchedDon = acceptedDons?.find(
+      (d) => d.code === item.code || d.id === item.id || (item.luotNhanId && d.luotNhanId === item.luotNhanId)
+    );
 
-    // 2. Mở màn Tiếp nhận & Xử lý đơn chi tiết (cho các hồ sơ đang xử lý ở các bước sau hoặc đã bàn giao)
-    const donObj: DonDetail = {
+    const currentStepNum = item.progress?.currentStep || (item.column === 'processing' ? 2 : 1);
+    const stepName = item.progress?.stepName || (currentStepNum === 2 ? 'Thụ lý giải quyết' : 'Đang xử lý');
+
+    const donObj: DonDetail = matchedDon || {
       id: item.id,
       code: item.code,
       title: item.title,
@@ -1368,15 +1267,43 @@ export default function CongViecCuaToi({
       nguoiNop: item.sender,
       ngayNhan: item.timeReceived,
       loaiDon: item.loaiDon || 'Đơn tiếp nhận hành chính',
-      type: item.code.startsWith('VV') ? 'VỤ VIỆC' : 'ĐƠN TIẾP NHẬN',
+      type: (item.code.startsWith('VV')
+        ? 'VỤ VIỆC'
+        : item.tags?.includes('BẮT QUẢ TANG')
+          ? 'BẮT QUẢ TANG'
+          : item.tags?.includes('CÁN BỘ PHÁT HIỆN')
+            ? 'CÁN BỘ PHÁT HIỆN'
+            : item.tags?.includes('TỰ THÚ / ĐẦU THÚ')
+              ? 'TỰ THÚ / ĐẦU THÚ'
+              : 'ĐƠN TIẾP NHẬN') as DonDetail['type'],
+      statusBadge: item.subStatus && SUB_STATUS_LABELS[item.subStatus] ? SUB_STATUS_LABELS[item.subStatus] : 'Đang xử lý',
+      currentStep: currentStepNum,
+      stepName: stepName,
+      progress: item.progress,
     };
 
-    if (onSelectDon) {
-      onSelectDon(donObj);
-    }
+    if (onSelectDon) onSelectDon(donObj);
     onNav('don-tiep-nhan');
-    showToast(`Đang mở chi tiết hồ sơ: ${item.code}`);
+    showToast(`Mở chi tiết đơn [${donObj.code}]: ${donObj.title}`);
   };
+
+  if (currentAccount.role === 'van_thu') {
+    return (
+      <VanThuWorkKanban
+        onNav={onNav}
+        onSelect={onSelect}
+        onSelectDon={onSelectDon}
+        onSwitchAccount={
+          onSwitchAccount
+            ? () => {
+                const canBo = DEMO_ACCOUNTS.find((a) => a.role === 'can_bo') || DEMO_ACCOUNTS[0];
+                onSwitchAccount(canBo);
+              }
+            : undefined
+        }
+      />
+    );
+  }
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-y-auto p-4 sm:p-5 bg-[#f4f7fb] select-none font-body-md">
@@ -1437,21 +1364,22 @@ export default function CongViecCuaToi({
             <button
               type="button"
               onClick={() => {
-                const other = DEMO_ACCOUNTS.find((a) => a.role !== currentAccount.role);
-                if (other) {
-                  onSwitchAccount(other);
-                  showToast(`Đã chuyển sang tài khoản ${other.name} (${other.roleLabel})`);
-                }
+                const roles: ('can_bo' | 'lanh_dao' | 'van_thu')[] = ['can_bo', 'lanh_dao', 'van_thu'];
+                const currentIdx = roles.indexOf(currentAccount.role as any);
+                const nextRole = roles[(currentIdx + 1) % roles.length];
+                const other = DEMO_ACCOUNTS.find((a) => a.role === nextRole) || DEMO_ACCOUNTS[0];
+                onSwitchAccount(other);
+                showToast(`Đã chuyển sang tài khoản ${other.name} (${other.roleLabel})`);
               }}
               className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer border ${isLeader
                 ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200'
                 : 'bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-300'
                 }`}
-              title="Đổi vai trò tài khoản để kiểm tra giữa Cán bộ thụ lý và Lãnh đạo ký duyệt"
+              title="Đổi vai trò tài khoản để kiểm tra giữa Cán bộ, Lãnh đạo và Văn thư"
             >
               <span className="material-symbols-outlined text-[16px]">swap_horiz</span>
               <span className="hidden md:inline">
-                {isLeader ? 'Đổi sang Cán bộ' : 'Đổi sang Lãnh đạo'}
+                {isLeader ? 'Đổi sang Văn thư' : 'Đổi sang Lãnh đạo'}
               </span>
             </button>
           )}
@@ -1763,7 +1691,7 @@ export default function CongViecCuaToi({
                         className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:border-[#004ac6] cursor-pointer"
                       >
                         <option value="all">Tất cả loại hồ sơ</option>
-                        <option value="tố giác">Đơn tố giác / Tin báo</option>
+                        {/* <option value="tố giác">Đơn tố giác / Tin báo</option> */}
                         <option value="khiếu nại">Đơn khiếu nại</option>
                         <option value="tố cáo">Đơn tố cáo</option>
                         <option value="kiến nghị">Đơn kiến nghị / Phản ánh</option>

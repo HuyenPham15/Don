@@ -15,8 +15,8 @@ const LOAI_DON_OPTIONS = [
   'Đơn tố cáo cán bộ vi phạm công vụ',
   'Đơn tố cáo hành vi vi phạm pháp luật',
   'Đơn phản ánh, kiến nghị',
-  'Đơn kiến nghị khởi tố',
-  'Đơn tố giác về tội phạm',
+  /* 'Đơn kiến nghị khởi tố',
+  'Đơn tố giác về tội phạm', */
   'Đơn tranh chấp dân sự / khởi kiện',
 ];
 

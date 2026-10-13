@@ -163,7 +163,7 @@ export interface LanhDaoAuthority {
   isAvailable: boolean;
 }
 
-export type UserRole = 'can_bo' | 'lanh_dao';
+export type UserRole = 'can_bo' | 'lanh_dao' | 'van_thu';
 
 export interface CurrentUserAccount {
   id: string;
@@ -178,6 +178,17 @@ export interface CurrentUserAccount {
 }
 
 export const DEMO_ACCOUNTS: CurrentUserAccount[] = [
+  {
+    id: 'van_thu_nga',
+    name: 'Lê Thúy Nga',
+    shortName: 'TN',
+    role: 'van_thu',
+    roleLabel: 'Văn thư - Tiếp nhận hồ sơ',
+    chucVu: 'Cán bộ Văn thư',
+    phongBan: 'Bộ phận Văn thư - Tiếp nhận một cửa',
+    avatarBg: 'bg-rose-700',
+    coQuan: 'Công an Thành phố Hà Nội',
+  },
   {
     id: 'can_bo_minhanh',
     name: 'Nguyễn Minh Anh',

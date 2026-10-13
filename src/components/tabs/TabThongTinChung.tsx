@@ -45,9 +45,11 @@ export interface PhanLoaiDonState {
 }
 
 export const LOAI_DON_SUGGESTIONS = [
+  /* Tạm ẩn các gợi ý tố giác, tin báo tội phạm theo yêu cầu
   'Đơn tố giác về tội phạm',
   'Đơn tin báo về tội phạm',
   'Đơn kiến nghị khởi tố',
+  */
   'Đơn khiếu nại (Lần 1)',
   'Đơn khiếu nại (Lần 2)',
   'Đơn khiếu nại đất đai',

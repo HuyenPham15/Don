@@ -156,10 +156,10 @@ export default function BanGiaoDonModal({
     cccd: '001088012345',
     sdt: '0983 123 456',
     diaChi: 'Số 12, ngõ 45, Cầu Giấy, Hà Nội',
-    loaiDon: 'Đơn tố giác tội phạm',
-    noiDung: 'Tố giác vi phạm lừa đảo chiếm đoạt tài sản qua hình thức huy động vốn',
+    loaiDon: 'Đơn tố cáo',
+    noiDung: 'Tố cáo hành vi vi phạm trật tự xây dựng và quy hoạch đất đai',
     ngayNhan: '16/09/2026',
-    suggestedDeptId: 'pc03',
+    suggestedDeptId: 'tt',
   },
 }: BanGiaoDonModalProps) {
   // Tabs: 'form' (Lập thông tin bàn giao) vs 'preview' (Xem trước Phiếu chuyển đơn / Biên bản)

@@ -9,8 +9,11 @@ import {
   SignerStatus,
   DocumentVersion,
   DetailedAuditLog,
+  CurrentUserAccount,
 } from '../types/signing';
 import { INITIAL_LEADERS } from '../constants/signingData';
+import { CreateFlowModal } from './quanLyTrinhKy/TrinhKyFigmaApp';
+import './quanLyTrinhKy/trinhKyFigma.css';
 
 interface TrinhKyScreenProps {
   onNav: (s: Screen) => void;
@@ -21,6 +24,7 @@ interface TrinhKyScreenProps {
   onSwitchAccount?: (role: 'can_bo' | 'lanh_dao') => void;
   initialDocId?: string;
   onBackToKanban?: () => void;
+  currentAccount?: CurrentUserAccount;
 }
 
 export default function TrinhKyScreen({
@@ -32,6 +36,7 @@ export default function TrinhKyScreen({
   onSwitchAccount,
   initialDocId,
   onBackToKanban,
+  currentAccount,
 }: TrinhKyScreenProps) {
   // Xác định văn bản đang thao tác
   const [activeDocId, setActiveDocId] = useState<string>(() => {
@@ -78,6 +83,7 @@ export default function TrinhKyScreen({
 
   // Modal Xác nhận Trình ký và Soạn mới
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showFlowModal, setShowFlowModal] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newHoSoCode, setNewHoSoCode] = useState('Đ-2026-00125');
   const [newTenVanBan, setNewTenVanBan] = useState('');
@@ -227,7 +233,7 @@ export default function TrinhKyScreen({
       return;
     }
     setValidationErrors([]);
-    setShowConfirmModal(true);
+    setShowFlowModal(true);
   };
 
   // Xác nhận trình ký tuần tự
@@ -1320,6 +1326,47 @@ export default function TrinhKyScreen({
             </div>
           </div>
         </div>
+      )}
+      {/* ===================================================================== */}
+      {/* 6. MODAL THIẾT LẬP LUỒNG TRÌNH KÝ & MA TRẬN KÝ (FIGMA FLOW MATRIX)     */}
+      {/* ===================================================================== */}
+      {showFlowModal && activeDoc && (
+        <CreateFlowModal
+          documents={[
+            {
+              title: activeDoc.tenVanBan,
+              code: activeDoc.soKyHieu || activeDoc.id,
+              request: "Ký",
+              date: activeDoc.ngayTao || "Hôm nay",
+              flow: `LT-${activeDoc.id}`,
+              status: "Chưa trình",
+              progress: "0/3 người",
+              progressValue: 0,
+              handler: activeDoc.lanhDaoName || "Lãnh đạo",
+              role: activeDoc.lanhDaoChucVu || "Lãnh đạo phê duyệt",
+              submitter: activeDoc.nguoiLap || "Nguyễn Minh Anh",
+              department: "Phòng Tiếp công dân & Xử lý đơn",
+            },
+            ...(activeDoc.tepDinhKem || []).map((t, idx) => ({
+              title: t.tenTep,
+              code: `${activeDoc.id}-TK${idx + 1}`,
+              request: "Xem" as const,
+              date: activeDoc.ngayTao || "Hôm nay",
+              flow: `LT-${activeDoc.id}`,
+              status: "Chưa trình" as const,
+              progress: "0/3 người",
+              progressValue: 0,
+              handler: "—",
+              submitter: activeDoc.nguoiLap || "Nguyễn Minh Anh",
+              department: "Phòng Tiếp công dân & Xử lý đơn",
+            })),
+          ]}
+          onClose={() => setShowFlowModal(false)}
+          onSubmit={() => {
+            setShowFlowModal(false);
+            handleConfirmTrinhKy();
+          }}
+        />
       )}
     </div>
   );

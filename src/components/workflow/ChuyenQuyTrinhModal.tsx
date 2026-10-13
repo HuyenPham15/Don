@@ -11,7 +11,9 @@ interface ChuyenQuyTrinhModalProps {
 }
 
 const AVAILABLE_LOAI_DONS = [
+  /* Tạm ẩn Đơn tố giác về tội phạm theo yêu cầu
   'Đơn tố giác về tội phạm',
+  */
   'Đơn khiếu nại (Lần 1)',
   'Đơn tố cáo',
   'Đơn phản ánh, kiến nghị',
@@ -25,9 +27,9 @@ export default function ChuyenQuyTrinhModal({
   onConfirmChange,
 }: ChuyenQuyTrinhModalProps) {
   const [selectedNewLoaiDon, setSelectedNewLoaiDon] = useState<string>(() => {
-    return currentLoaiDon.includes('tố giác')
+    return currentLoaiDon.includes('tố cáo')
       ? 'Đơn khiếu nại (Lần 1)'
-      : 'Đơn tố giác về tội phạm';
+      : 'Đơn tố cáo';
   });
 
   const [reason, setReason] = useState<string>('');

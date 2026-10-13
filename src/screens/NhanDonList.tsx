@@ -25,7 +25,8 @@ export default function NhanDonList({
   const [unitFilter, setUnitFilter] = useState<string>("");
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
-  const rawList = luotNhanList && luotNhanList.length > 0 ? luotNhanList : ALL_LUOT_NHAN;
+  // const rawList = luotNhanList && luotNhanList.length > 0 ? luotNhanList : ALL_LUOT_NHAN;
+  const rawListBase = luotNhanList && luotNhanList.length > 0 ? luotNhanList : ALL_LUOT_NHAN;
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -52,19 +53,19 @@ export default function NhanDonList({
   const isTuThuDauThuItem = (l: LuotNhan) =>
     !isBatQuaTangCanBoItem(l) &&
     (l.loaiNghiepVu === 'nguoi_tu_thu' ||
-     l.loaiNghiepVu === 'nguoi_dau_thu' ||
-     Boolean(l.truongHopTrinhDien) ||
-     l.id.startsWith('TT-') ||
-     l.id.startsWith('DT-') ||
-     Boolean(l.loaiDon?.includes('tự thú') || l.loaiDon?.includes('đầu thú')));
+      l.loaiNghiepVu === 'nguoi_dau_thu' ||
+      Boolean(l.truongHopTrinhDien) ||
+      l.id.startsWith('TT-') ||
+      l.id.startsWith('DT-') ||
+      Boolean(l.loaiDon?.includes('tự thú') || l.loaiDon?.includes('đầu thú')));
 
   const isTinBaoItem = (l: LuotNhan) =>
     !isBatQuaTangCanBoItem(l) &&
     !isTuThuDauThuItem(l) &&
     (l.loaiNghiepVu === 'tin_bao_to_giac' ||
-     l.loaiNghiepVu === 'tin_bao_toi_pham' ||
-     l.loaiNghiepVu === 'to_giac_toi_pham' ||
-     Boolean(l.loaiDon?.includes('tố giác') || l.loaiDon?.includes('tin báo')));
+      l.loaiNghiepVu === 'tin_bao_toi_pham' ||
+      l.loaiNghiepVu === 'to_giac_toi_pham' ||
+      Boolean(l.loaiDon?.includes('tố giác') || l.loaiDon?.includes('tin báo')));
 
   const isBoSungItem = (l: LuotNhan) =>
     !isBatQuaTangCanBoItem(l) &&
@@ -75,6 +76,9 @@ export default function NhanDonList({
     !isTuThuDauThuItem(l) &&
     !isTinBaoItem(l) &&
     !isBoSungItem(l);
+
+  // Tạm ẩn các bản ghi tiếp nhận tin báo, tố giác tội phạm khỏi danh sách hiển thị theo yêu cầu
+  const rawList = rawListBase.filter((l) => !isTinBaoItem(l));
 
   const countBatQuaTangCanBo = rawList.filter(isBatQuaTangCanBoItem).length;
   const countTuThuDauThu = rawList.filter(isTuThuDauThuItem).length;
@@ -154,14 +158,14 @@ export default function NhanDonList({
                 </span>
               </div>
               <p className="text-[12.5px] text-slate-500 mt-0.5">
-                Quản lý Đa Nguồn: Bắt quả tang, Cán bộ phát hiện, Người tự thú/đầu thú, Tin báo tố giác và Đơn tiếp nhận
+                Tiếp nhận &amp; đối soát thông tin đa nguồn trước khi phân loại và lập đơn điện tử
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2.5 flex-wrap">
             <button
               type="button"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-medium text-[13px] border border-slate-200 shadow-2xs transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-medium text-[13px] border border-slate-200/90 shadow-2xs transition-colors cursor-pointer"
               onClick={() => showToast('Đang xuất file Excel danh sách lượt nhận...')}
             >
               <span className="material-symbols-outlined text-[17px] text-slate-500">file_download</span>
@@ -171,137 +175,109 @@ export default function NhanDonList({
               type="button"
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-semibold text-[13px] border border-slate-300 shadow-2xs cursor-pointer transition-all"
               onClick={() => onNav('nhan-don-them')}
-              title="Tiếp nhận đơn thư hành chính thông thường"
-            >
-              <span className="material-symbols-outlined text-[18px] text-slate-600">post_add</span>
-              <span>Tiếp nhận đơn</span>
-            </button>
-            <button
-              type="button"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#b91c1c] hover:bg-[#991b1b] active:scale-95 text-white font-semibold text-[13px] shadow-sm hover:shadow-md cursor-pointer transition-all"
-              onClick={() => onNav('nhan-don-them')}
-              title="Tiếp nhận tin báo, tố giác về tội phạm"
-            >
-              <span className="material-symbols-outlined text-[18px]">local_police</span>
-              <span>+ Tin tố giác</span>
-            </button>
-            <button
-              type="button"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-700 hover:bg-indigo-800 active:scale-95 text-white font-semibold text-[13px] shadow-sm hover:shadow-md cursor-pointer transition-all"
-              onClick={() => onNav('nhan-don-them')}
               title="Tiếp nhận người tự thú, đầu thú theo Điều 145, 146 BLTTHS"
             >
-              <span className="material-symbols-outlined text-[18px]">front_hand</span>
+              <span className="material-symbols-outlined text-[18px] text-indigo-600">front_hand</span>
               <span>+ Tự thú / Đầu thú</span>
             </button>
             <button
               type="button"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-900 hover:bg-rose-950 active:scale-95 text-white font-semibold text-[13px] shadow-sm hover:shadow-md cursor-pointer transition-all"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-semibold text-[13px] border border-slate-300 shadow-2xs cursor-pointer transition-all"
               onClick={() => onNav('nhan-don-them')}
               title="Bắt quả tang (Điều 111 BLTTHS) hoặc Cán bộ phát hiện (Điều 143 BLTTHS)"
             >
-              <span className="material-symbols-outlined text-[18px]">e911_emergency</span>
+              <span className="material-symbols-outlined text-[18px] text-rose-600">e911_emergency</span>
               <span>+ Bắt quả tang / CB phát hiện</span>
+            </button>
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#c62828] hover:bg-[#b71c1c] active:scale-95 text-white font-bold text-[13px] shadow-xs cursor-pointer transition-all"
+              onClick={() => onNav('nhan-don-them')}
+              title="Tiếp nhận đơn thư hành chính thông thường"
+            >
+              <span className="material-symbols-outlined text-[18px]">add</span>
+              <span>Tiếp nhận đơn</span>
             </button>
           </div>
         </div>
 
-        {/* BỘ LỌC TABS LOẠI NGHIỆP VỤ THEO YÊU CẦU GOVEX (MỤC 12.2) */}
-        <div className="flex items-center gap-2 pt-2 border-t border-slate-100 flex-wrap overflow-x-auto">
-          <button
-            type="button"
-            onClick={() => setActiveNghiepVuTab('all')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12.5px] font-medium transition-all cursor-pointer ${
-              activeNghiepVuTab === 'all'
-                ? 'bg-slate-900 text-white font-semibold shadow-xs'
-                : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
-            }`}
-          >
-            <span>Tất cả</span>
-            <span className={`px-1.5 py-0.2 rounded-full text-[10.5px] ${activeNghiepVuTab === 'all' ? 'bg-slate-700 text-white' : 'bg-slate-200 text-slate-700'}`}>
-              {rawList.length}
-            </span>
-          </button>
+        {/* BỘ LỌC TABS LOẠI NGHIỆP VỤ ĐỒNG NHẤT HỆ THỐNG */}
+        <div className="pt-2 border-t border-slate-100">
+          <div className="inline-flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200/80 gap-1 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setActiveNghiepVuTab('all')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] transition-all cursor-pointer ${activeNghiepVuTab === 'all'
+                ? 'bg-white text-[#004ac6] font-bold shadow-2xs border border-slate-200/60'
+                : 'text-slate-600 hover:text-slate-900 font-medium'
+                }`}
+            >
+              <span>Tất cả</span>
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${activeNghiepVuTab === 'all' ? 'bg-blue-100 text-[#004ac6]' : 'bg-slate-200 text-slate-700'}`}>
+                {rawList.length}
+              </span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveNghiepVuTab('bat_qua_tang_can_bo')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12.5px] font-medium transition-all cursor-pointer ${
-              activeNghiepVuTab === 'bat_qua_tang_can_bo'
-                ? 'bg-rose-900 text-white font-semibold shadow-xs'
-                : 'bg-rose-50 hover:bg-rose-100 text-rose-900 border border-rose-300'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[15px]">e911_emergency</span>
-            <span>Bắt quả tang & Cán bộ phát hiện</span>
-            <span className={`px-1.5 py-0.2 rounded-full text-[10.5px] font-bold ${activeNghiepVuTab === 'bat_qua_tang_can_bo' ? 'bg-rose-950 text-white' : 'bg-rose-200 text-rose-950'}`}>
-              {countBatQuaTangCanBo}
-            </span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setActiveNghiepVuTab('tiep_nhan_don')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] transition-all cursor-pointer ${activeNghiepVuTab === 'tiep_nhan_don'
+                ? 'bg-white text-[#004ac6] font-bold shadow-2xs border border-slate-200/60'
+                : 'text-slate-600 hover:text-slate-900 font-medium'
+                }`}
+            >
+              <span className="material-symbols-outlined text-[15px] text-blue-600">description</span>
+              <span>Đơn tiếp nhận</span>
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${activeNghiepVuTab === 'tiep_nhan_don' ? 'bg-blue-100 text-[#004ac6]' : 'bg-slate-200 text-slate-700'}`}>
+                {countDon}
+              </span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveNghiepVuTab('tu_thu_dau_thu')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12.5px] font-medium transition-all cursor-pointer ${
-              activeNghiepVuTab === 'tu_thu_dau_thu'
-                ? 'bg-indigo-700 text-white font-semibold shadow-xs'
-                : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200/90'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[15px]">front_hand</span>
-            <span>Người tự thú, đầu thú</span>
-            <span className={`px-1.5 py-0.2 rounded-full text-[10.5px] font-bold ${activeNghiepVuTab === 'tu_thu_dau_thu' ? 'bg-indigo-950 text-white' : 'bg-indigo-200 text-indigo-950'}`}>
-              {countTuThuDauThu}
-            </span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setActiveNghiepVuTab('bat_qua_tang_can_bo')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] transition-all cursor-pointer ${activeNghiepVuTab === 'bat_qua_tang_can_bo'
+                ? 'bg-white text-[#004ac6] font-bold shadow-2xs border border-slate-200/60'
+                : 'text-slate-600 hover:text-slate-900 font-medium'
+                }`}
+            >
+              <span className="material-symbols-outlined text-[15px] text-rose-600">e911_emergency</span>
+              <span>Bắt quả tang &amp; CB phát hiện</span>
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${activeNghiepVuTab === 'bat_qua_tang_can_bo' ? 'bg-blue-100 text-[#004ac6]' : 'bg-slate-200 text-slate-700'}`}>
+                {countBatQuaTangCanBo}
+              </span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveNghiepVuTab('tin_bao_to_giac')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12.5px] font-medium transition-all cursor-pointer ${
-              activeNghiepVuTab === 'tin_bao_to_giac'
-                ? 'bg-[#b91c1c] text-white font-semibold shadow-xs'
-                : 'bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200/80'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[15px]">local_police</span>
-            <span>Tin báo, tố giác tội phạm</span>
-            <span className={`px-1.5 py-0.2 rounded-full text-[10.5px] font-bold ${activeNghiepVuTab === 'tin_bao_to_giac' ? 'bg-[#7f1d1d] text-white' : 'bg-rose-200 text-rose-900'}`}>
-              {countTinBao}
-            </span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setActiveNghiepVuTab('tu_thu_dau_thu')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] transition-all cursor-pointer ${activeNghiepVuTab === 'tu_thu_dau_thu'
+                ? 'bg-white text-[#004ac6] font-bold shadow-2xs border border-slate-200/60'
+                : 'text-slate-600 hover:text-slate-900 font-medium'
+                }`}
+            >
+              <span className="material-symbols-outlined text-[15px] text-indigo-600">front_hand</span>
+              <span>Người tự thú, đầu thú</span>
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${activeNghiepVuTab === 'tu_thu_dau_thu' ? 'bg-blue-100 text-[#004ac6]' : 'bg-slate-200 text-slate-700'}`}>
+                {countTuThuDauThu}
+              </span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveNghiepVuTab('tiep_nhan_don')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12.5px] font-medium transition-all cursor-pointer ${
-              activeNghiepVuTab === 'tiep_nhan_don'
-                ? 'bg-[#004ac6] text-white font-semibold shadow-xs'
-                : 'bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200/80'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[15px]">description</span>
-            <span>Đơn tiếp nhận</span>
-            <span className={`px-1.5 py-0.2 rounded-full text-[10.5px] font-bold ${activeNghiepVuTab === 'tiep_nhan_don' ? 'bg-[#00348c] text-white' : 'bg-blue-200 text-blue-900'}`}>
-              {countDon}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveNghiepVuTab('tai_lieu_bo_sung')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12.5px] font-medium transition-all cursor-pointer ${
-              activeNghiepVuTab === 'tai_lieu_bo_sung'
-                ? 'bg-purple-700 text-white font-semibold shadow-xs'
-                : 'bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200/80'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[15px]">note_add</span>
-            <span>Tài liệu bổ sung</span>
-            <span className={`px-1.5 py-0.2 rounded-full text-[10.5px] font-bold ${activeNghiepVuTab === 'tai_lieu_bo_sung' ? 'bg-purple-900 text-white' : 'bg-purple-200 text-purple-900'}`}>
-              {countBoSung}
-            </span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setActiveNghiepVuTab('tai_lieu_bo_sung')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] transition-all cursor-pointer ${activeNghiepVuTab === 'tai_lieu_bo_sung'
+                ? 'bg-white text-[#004ac6] font-bold shadow-2xs border border-slate-200/60'
+                : 'text-slate-600 hover:text-slate-900 font-medium'
+                }`}
+            >
+              <span className="material-symbols-outlined text-[15px] text-purple-600">note_add</span>
+              <span>Tài liệu bổ sung</span>
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${activeNghiepVuTab === 'tai_lieu_bo_sung' ? 'bg-blue-100 text-[#004ac6]' : 'bg-slate-200 text-slate-700'}`}>
+                {countBoSung}
+              </span>
+            </button>
+          </div>
         </div>
 
         {/* Filter & Search Controls */}
@@ -426,15 +402,15 @@ export default function NhanDonList({
                       ngayNhan: ln.ngayNhan,
                       loaiDon: ln.loaiDon || (
                         isTuThu ? 'Tiếp nhận người tự thú' :
-                        isDauThu ? 'Tiếp nhận người đầu thú' :
-                        isBatQuaTang ? 'Biên bản bắt người phạm tội quả tang' :
-                        isCanBoPhatHien ? 'Báo cáo phát hiện dấu hiệu vi phạm pháp luật' :
-                        isTinBao ? 'Đơn tố giác về tội phạm' :
-                        'Đơn phản ánh kiến nghị'
+                          isDauThu ? 'Tiếp nhận người đầu thú' :
+                            isBatQuaTang ? 'Biên bản bắt người phạm tội quả tang' :
+                              isCanBoPhatHien ? 'Báo cáo phát hiện dấu hiệu vi phạm pháp luật' :
+                                isTinBao ? 'Đơn tố giác về tội phạm' :
+                                  'Đơn phản ánh kiến nghị'
                       ),
                       type: isTuThuDauThu ? 'TỰ THÚ / ĐẦU THÚ' :
-                            isBatQuaTang ? 'BẮT QUẢ TANG' :
-                            isCanBoPhatHien ? 'CÁN BỘ PHÁT HIỆN' :
+                        isBatQuaTang ? 'BẮT QUẢ TANG' :
+                          isCanBoPhatHien ? 'CÁN BỘ PHÁT HIỆN' :
                             'ĐƠN TIẾP NHẬN',
                       statusBadge: 'Đang xác minh thông tin',
                     };
@@ -462,21 +438,20 @@ export default function NhanDonList({
                   >
                     <td className="py-3.5 px-4 font-semibold text-[#004ac6] text-[13px]">
                       <div className="flex items-center gap-1.5">
-                        <span className={`material-symbols-outlined text-[16px] ${
-                          isBatQuaTang ? 'text-rose-700' :
-                          isCanBoPhatHien ? 'text-teal-700' :
-                          isTuThu ? 'text-indigo-700' :
-                          isDauThu ? 'text-amber-700' :
-                          isTinBao ? 'text-rose-600' :
-                          isBoSung ? 'text-purple-600' :
-                          'text-blue-600'
-                        }`}>
+                        <span className={`material-symbols-outlined text-[16px] ${isBatQuaTang ? 'text-rose-700' :
+                            isCanBoPhatHien ? 'text-teal-700' :
+                              isTuThu ? 'text-indigo-700' :
+                                isDauThu ? 'text-amber-700' :
+                                  isTinBao ? 'text-rose-600' :
+                                    isBoSung ? 'text-purple-600' :
+                                      'text-blue-600'
+                          }`}>
                           {isBatQuaTang ? 'crisis_alert' :
-                           isCanBoPhatHien ? 'radar' :
-                           isTuThuDauThu ? 'front_hand' :
-                           isTinBao ? 'local_police' :
-                           isBoSung ? 'note_add' :
-                           'description'}
+                            isCanBoPhatHien ? 'radar' :
+                              isTuThuDauThu ? 'front_hand' :
+                                isTinBao ? 'local_police' :
+                                  isBoSung ? 'note_add' :
+                                    'description'}
                         </span>
                         <span className="font-mono">{ln.id}</span>
                       </div>
@@ -504,21 +479,16 @@ export default function NhanDonList({
                           <span className="material-symbols-outlined text-[14px] text-amber-700">security</span>
                           <span>Người đầu thú</span>
                         </span>
-                      ) : isTinBao ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11.5px] font-bold bg-rose-50 text-rose-800 border border-rose-200">
-                          <span className="material-symbols-outlined text-[14px] text-rose-700">shield</span>
-                          <span>Tin tố giác tội phạm</span>
-                        </span>
                       ) : isBoSung ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11.5px] font-bold bg-purple-50 text-purple-800 border border-purple-200">
-                          <span className="material-symbols-outlined text-[14px] text-purple-700">post_add</span>
-                          <span>Tài liệu bổ sung</span>
-                        </span>
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11.5px] font-bold bg-purple-50 text-purple-800 border border-purple-200">
+                        <span className="material-symbols-outlined text-[14px] text-purple-700">post_add</span>
+                        <span>Tài liệu bổ sung</span>
+                      </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11.5px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
-                          <span className="material-symbols-outlined text-[14px] text-blue-600">description</span>
-                          <span>Đơn tiếp nhận</span>
-                        </span>
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11.5px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                        <span className="material-symbols-outlined text-[14px] text-blue-600">description</span>
+                        <span>Đơn tiếp nhận</span>
+                      </span>
                       )}
                     </td>
 
@@ -595,8 +565,7 @@ export default function NhanDonList({
                     <td className="py-3.5 px-4 whitespace-nowrap">
                       <div className="flex flex-col gap-1 items-start">
                         <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[12px] font-medium border ${
-                            ln.hinhThuc === 'Bưu điện' || ln.hinhThuc?.includes('bưu')
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[12px] font-medium border ${ln.hinhThuc === 'Bưu điện' || ln.hinhThuc?.includes('bưu')
                               ? 'bg-purple-50 text-purple-700 border-purple-200'
                               : ln.hinhThuc === 'Trực tuyến' || ln.hinhThuc?.includes('tuyến')
                                 ? 'bg-blue-50 text-blue-700 border-blue-200'
@@ -605,7 +574,7 @@ export default function NhanDonList({
                                   : isCanBoPhatHien
                                     ? 'bg-teal-50 text-teal-800 border-teal-200'
                                     : 'bg-slate-100 text-slate-700 border-slate-200'
-                          }`}
+                            }`}
                         >
                           <span className="material-symbols-outlined text-[14px]">
                             {ln.hinhThuc === 'Bưu điện' || ln.hinhThuc?.includes('bưu')
