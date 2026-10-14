@@ -5,6 +5,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import BanPhanTich from "./screens/BanPhanTich";
 import CongViecCuaToi from "./screens/CongViecCuaToi";
 import DonTiepNhan from "./screens/DonTiepNhan";
+import NhanDonList from "./screens/NhanDonList";
 import NhanDonThem from "./screens/NhanDonThem";
 import TaoDonMoiScreen from "./screens/TaoDonMoiScreen";
 import ChiTietLuotNhan from "./screens/ChiTietLuotNhan";

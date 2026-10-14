@@ -66,7 +66,7 @@ export interface DocItem {
   fileUrl?: string;
   folder?: string;
   yeuCau?: 'Ký' | 'Duyệt' | 'Xem';
-  trangThaiTrinhKy?: 'chua_trinh' | 'dang_trinh' | 'da_co_hieu_luc';
+  trangThaiTrinhKy?: 'chua_trinh' | 'dang_trinh' | 'da_trinh' | 'da_co_hieu_luc';
 }
 
 export default function TabTaiLieu({
@@ -101,8 +101,9 @@ export default function TabTaiLieu({
     },
     {
       id: 'DOC-2026-002',
-      name: 'Tờ trình đề xuất hướng xử lý đơn',
-      category: 'Hồ sơ ban đầu',
+      name: 'Báo cáo đề xuất hướng xử lý đơn',
+      category: 'Báo cáo đề xuất',
+      loaiVanBan: 'bao_cao_de_xuat',
       folder: 'ho_so_ban_dau',
       soHieu: 'VB-2026-002',
       size: '340 KB',
@@ -114,8 +115,8 @@ export default function TabTaiLieu({
       yeuCau: 'Duyệt',
       trangThaiTrinhKy: 'chua_trinh',
       trichYeu: `Đề xuất phê duyệt phương án xử lý đơn đối với hồ sơ ${currentDon.code}`,
-      previewExcerpt: 'TỜ TRÌNH ĐỀ XUẤT HƯỚNG XỬ LÝ ĐƠN\nKính gửi: Lãnh đạo đơn vị\nCán bộ báo cáo kết quả kiểm tra sơ bộ và đề xuất tiếp nhận thụ lý...',
-      noiDungChiTiet: `CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nĐộc lập - Tự do - Hạnh phúc\n------------------------\n\nTỜ TRÌNH ĐỀ XUẤT HƯỚNG XỬ LÝ ĐƠN\nSố: VB-2026-002\n\nKính gửi: Lãnh đạo đơn vị có thẩm quyền\n\nCán bộ thụ lý báo cáo kết quả kiểm tra sơ bộ đơn của công dân ${currentDon.nguoiNop || 'Nguyễn Thị Minh Phương'}:\n1. Đơn đủ điều kiện thụ lý theo quy định.\n2. Căn cứ hồ sơ ban đầu, đề xuất chuyển bước xác minh và phân công cán bộ chuyên môn thụ lý giải quyết.\n\nKính trình Đồng chí xem xét, phê duyệt.`,
+      previewExcerpt: 'BÁO CÁO ĐỀ XUẤT HƯỚNG XỬ LÝ ĐƠN\nKính gửi: Lãnh đạo đơn vị\nCán bộ báo cáo kết quả kiểm tra sơ bộ và đề xuất tiếp nhận thụ lý...',
+      noiDungChiTiet: `CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nĐộc lập - Tự do - Hạnh phúc\n------------------------\n\nBÁO CÁO ĐỀ XUẤT HƯỚNG XỬ LÝ ĐƠN\nSố: VB-2026-002\n\nKính gửi: Lãnh đạo đơn vị có thẩm quyền\n\nCán bộ thụ lý báo cáo kết quả kiểm tra sơ bộ đơn của công dân ${currentDon.nguoiNop || 'Nguyễn Thị Minh Phương'}:\n1. Đơn đủ điều kiện thụ lý theo quy định.\n2. Căn cứ hồ sơ ban đầu, đề xuất chuyển bước xác minh và phân công cán bộ chuyên môn thụ lý giải quyết.\n\nKính trình Đồng chí xem xét, phê duyệt.`,
     },
     {
       id: 'DOC-2026-003',
@@ -187,10 +188,34 @@ export default function TabTaiLieu({
       const exists = documents.find((d) => d.id === initialEditingDoc.id || d.soHieu === initialEditingDoc.soHieu);
       if (exists) {
         setActiveDocId(exists.id);
+        setSelectedDocIds([exists.id]);
+      } else {
+        const docToAdd: DocItem = {
+          id: initialEditingDoc.id || `DOC-INIT-${Date.now()}`,
+          name: (initialEditingDoc as any).name || initialEditingDoc.tenVanBan || 'Văn bản',
+          category: initialEditingDoc.category || 'Báo cáo đề xuất',
+          soHieu: initialEditingDoc.soHieu,
+          size: (initialEditingDoc as any).size || '380 KB',
+          pages: (initialEditingDoc as any).pages || 2,
+          uploadDate: (initialEditingDoc as any).uploadDate || initialEditingDoc.ngayLap || '16/09/2026',
+          signer: initialEditingDoc.signer || currentDon.canBoXuLy || 'Nguyễn Minh Anh',
+          coQuanBanHanh: initialEditingDoc.coQuanBanHanh || 'Phòng Tiếp công dân & Xử lý đơn',
+          ocrStatus: 'Hoàn tất',
+          previewExcerpt: initialEditingDoc.noiDungChiTiet || '',
+          noiDungChiTiet: initialEditingDoc.noiDungChiTiet || '',
+          loaiVanBan: (initialEditingDoc.loai as any) || 'bao_cao_de_xuat',
+          tenVanBan: initialEditingDoc.tenVanBan,
+          trichYeu: initialEditingDoc.trichYeu,
+          trangThaiTrinhKy: 'chua_trinh',
+          yeuCau: 'Ký',
+        };
+        setDocuments((prev) => [docToAdd, ...prev]);
+        setActiveDocId(docToAdd.id);
+        setSelectedDocIds([docToAdd.id]);
       }
       onClearInitialEditingDoc?.();
     }
-  }, [initialEditingDoc, documents, onClearInitialEditingDoc]);
+  }, [initialEditingDoc, documents, onClearInitialEditingDoc, currentDon.canBoXuLy]);
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -255,142 +280,155 @@ export default function TabTaiLieu({
   ) => {
     const docsToSubmit = documents.filter((d) => selectedDocIds.includes(d.id));
 
-    // Cập nhật trạng thái các văn bản được chọn
+    // Cập nhật trạng thái các văn bản được chọn sang 'da_trinh'
     setDocuments((prev) =>
       prev.map((d) =>
         selectedDocIds.includes(d.id)
           ? {
             ...d,
-            trangThaiTrinhKy: 'dang_trinh',
-            signingStatus: 'cho_trinh',
+            trangThaiTrinhKy: 'da_trinh',
+            signingStatus: 'da_trinh',
           }
           : d
       )
     );
 
+    const now = new Date();
+    const todayStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+    const timeStr = `${todayStr} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+    const createdSigningDocs: SigningDocument[] = docsToSubmit.map((doc) => {
+      // Xây dựng danh sách signers theo ma trận phân quyền đã cấu hình
+      const signers: SignerItem[] = configuredLeaders.map((ldr, idx) => {
+        const perm = permissions[`${doc.id}:${ldr.id}`] || 'Xem';
+        let vaiTro: SignerRole = 'cho_y_kien';
+        if (perm === 'Ký số') vaiTro = 'ky';
+        else if (perm === 'Duyệt') vaiTro = 'duyet';
+
+        return {
+          id: ldr.id,
+          name: ldr.name,
+          chucVu: ldr.title,
+          coQuan: ldr.department || 'Ban Lãnh đạo',
+          vaiTro,
+          thuTu: idx + 1,
+          status: idx === 0 ? 'cho_ky' : 'chua_den_luot',
+        };
+      });
+
+      const primarySigner = signers.find((s) => s.vaiTro === 'ky') || signers[0];
+      const isBaoCao =
+        doc.category === 'Báo cáo đề xuất' ||
+        doc.loaiVanBan === 'bao_cao_de_xuat' ||
+        doc.name.toLowerCase().includes('báo cáo') ||
+        doc.name.toLowerCase().includes('bao_cao');
+
+      const newSd: SigningDocument = {
+        id: doc.id,
+        soKyHieu: doc.soHieu || 'VB-2026',
+        hoSoCode: currentDon.code,
+        luotNhanId: currentDon.luotNhanId,
+        loaiDon: currentDon.loaiDon || 'Đơn tố giác',
+        nguoiGuiDon: currentDon.nguoiNop,
+        noiDungDon: currentDon.title,
+        tenVanBan: doc.name,
+        loaiVanBan: isBaoCao ? 'bao_cao_de_xuat' : 'to_trinh_thu_ly',
+        loaiVanBanLabel: doc.category || (isBaoCao ? 'Báo cáo đề xuất' : 'Tờ trình thụ lý'),
+        trichYeu: doc.trichYeu || doc.name,
+        noiDungChiTiet: doc.noiDungChiTiet || '',
+        nguoiLap: doc.signer,
+        donViNguoiLap: doc.coQuanBanHanh || 'Phòng Tiếp công dân & Xử lý đơn',
+        ngayTao: doc.uploadDate || `${todayStr} 09:00`,
+        status: 'da_trinh',
+        thoiGianTrinh: timeStr,
+        nguoiTrinh: currentDon.canBoXuLy || 'Nguyễn Minh Anh',
+        mucDoUuTien: 'thuong',
+        hanXuLy: '24 giờ',
+        signers: signers.length > 0 ? signers : [
+          {
+            id: 'lanh_dao_hung',
+            name: 'Đ/c Trần Văn Hùng',
+            chucVu: 'Phó Chánh Thanh tra thành phố',
+            coQuan: 'Ban Lãnh đạo Thanh tra',
+            vaiTro: 'ky',
+            thuTu: 1,
+            status: 'cho_ky',
+          },
+        ],
+        currentSignerIndex: 0,
+        lanhDaoId: primarySigner?.id || 'lanh_dao_hung',
+        lanhDaoName: primarySigner?.name || 'Đ/c Trần Văn Hùng',
+        lanhDaoChucVu: primarySigner?.chucVu || 'Phó Chánh Thanh tra thành phố',
+        tepDinhKem: [
+          {
+            id: `att-${doc.id}`,
+            tenTep: `${doc.name}.pdf`,
+            dungLuong: doc.size,
+            loai: 'du_thao',
+          },
+        ],
+        phienBanHienTai: 'V1',
+        versionHistory: [
+          {
+            version: 'V1',
+            thoiGian: timeStr,
+            nguoiTao: currentDon.canBoXuLy || 'Nguyễn Minh Anh',
+            trangThaiLucDo: 'Đã trình ký',
+            ghiChu: `Trình ký ${doc.name}`,
+            noiDungSnapshot: doc.noiDungChiTiet || '',
+          },
+        ],
+        history: [
+          {
+            id: `hist-${Date.now()}-${doc.id}`,
+            time: timeStr,
+            actor: currentDon.canBoXuLy || 'Nguyễn Minh Anh',
+            action: `Trình Lãnh đạo (${primarySigner?.name || 'Lãnh đạo'}) phê duyệt văn bản ${doc.name}`,
+          },
+        ],
+        auditLogs: [
+          {
+            id: `al-${Date.now()}-${doc.id}`,
+            time: timeStr,
+            actor: currentDon.canBoXuLy || 'Nguyễn Minh Anh',
+            actorRole: 'Cán bộ thụ lý',
+            action: 'Trình văn bản',
+            statusBefore: 'nhap',
+            statusAfter: 'da_trinh',
+            version: 'V1',
+            note: doc.trichYeu,
+          },
+        ],
+      };
+
+      return newSd;
+    });
+
     // Đồng bộ sang signingDocuments
     if (onUpdateSigningDocuments) {
-      const now = new Date();
-      const todayStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
-
       onUpdateSigningDocuments((prevDocs) => {
         let next = [...prevDocs];
-        docsToSubmit.forEach((doc) => {
-          // Xây dựng danh sách signers theo ma trận phân quyền đã cấu hình
-          const signers: SignerItem[] = configuredLeaders.map((ldr, idx) => {
-            const perm = permissions[`${doc.id}:${ldr.id}`] || 'Xem';
-            let vaiTro: SignerRole = 'cho_y_kien';
-            if (perm === 'Ký số') vaiTro = 'ky';
-            else if (perm === 'Duyệt') vaiTro = 'duyet';
-
-            return {
-              id: ldr.id,
-              name: ldr.name,
-              chucVu: ldr.title,
-              coQuan: 'Sở Tài nguyên & Môi trường',
-              vaiTro,
-              thuTu: idx + 1,
-              status: idx === 0 ? 'cho_ky' : 'chua_den_luot',
-            };
-          });
-
-          const primarySigner = signers.find((s) => s.vaiTro === 'ky') || signers[0];
-
-          const newSd: SigningDocument = {
-            id: doc.id,
-            soKyHieu: doc.soHieu || 'VB-2026',
-            hoSoCode: currentDon.code,
-            luotNhanId: currentDon.luotNhanId,
-            loaiDon: currentDon.loaiDon || 'Đơn tố giác',
-            nguoiGuiDon: currentDon.nguoiNop,
-            noiDungDon: currentDon.title,
-            tenVanBan: doc.name,
-            loaiVanBan: 'bao_cao_de_xuat',
-            loaiVanBanLabel: doc.category,
-            trichYeu: doc.trichYeu || doc.name,
-            noiDungChiTiet: doc.noiDungChiTiet || '',
-            nguoiLap: doc.signer,
-            donViNguoiLap: doc.coQuanBanHanh || 'Phòng Tiếp công dân & Xử lý đơn',
-            ngayTao: doc.uploadDate || `${todayStr} 09:00`,
-            status: 'cho_trinh',
-            thoiGianTrinh: `${todayStr} 10:15`,
-            nguoiTrinh: currentDon.canBoXuLy || 'Nguyễn Minh Anh',
-            mucDoUuTien: 'thuong',
-            hanXuLy: '24 giờ',
-            signers: signers.length > 0 ? signers : [
-              {
-                id: 'ld-01',
-                name: 'Đ/c Trần Văn Hùng',
-                chucVu: 'Thủ trưởng / Phó Thủ trưởng Cơ quan Điều tra',
-                coQuan: 'Cơ quan Cảnh sát điều tra',
-                vaiTro: 'duyet',
-                thuTu: 1,
-                status: 'cho_ky',
-              },
-            ],
-            currentSignerIndex: 0,
-            lanhDaoId: primarySigner?.id || 'ld-01',
-            lanhDaoName: primarySigner?.name || 'Đ/c Trần Văn Hùng',
-            lanhDaoChucVu: primarySigner?.chucVu || 'Thủ trưởng / Phó Thủ trưởng Cơ quan Điều tra',
-            tepDinhKem: [
-              {
-                id: `att-${doc.id}`,
-                tenTep: `${doc.name}.pdf`,
-                dungLuong: doc.size,
-                loai: 'du_thao',
-              },
-            ],
-            phienBanHienTai: 'V1',
-            versionHistory: [
-              {
-                version: 'V1',
-                thoiGian: `${todayStr} 10:15`,
-                nguoiTao: 'Nguyễn Minh Anh',
-                trangThaiLucDo: 'Chờ trình ký',
-                ghiChu: `Trình ký ${doc.name}`,
-                noiDungSnapshot: doc.noiDungChiTiet || '',
-              },
-            ],
-            history: [
-              {
-                id: `hist-${Date.now()}`,
-                time: `${todayStr} 10:15`,
-                actor: 'Nguyễn Minh Anh',
-                action: `Trình ký văn bản ${doc.name}`,
-              },
-            ],
-            auditLogs: [
-              {
-                id: `al-${Date.now()}`,
-                time: `${todayStr} 10:15`,
-                actor: 'Nguyễn Minh Anh',
-                actorRole: 'Cán bộ thụ lý',
-                action: 'Trình văn bản',
-                statusBefore: 'nhap',
-                statusAfter: 'cho_trinh',
-                version: 'V1',
-                note: doc.trichYeu,
-              },
-            ],
-          };
-
-          const existIdx = next.findIndex((item) => item.id === doc.id);
+        createdSigningDocs.forEach((newSd) => {
+          const existIdx = next.findIndex((item) => item.id === newSd.id);
           if (existIdx >= 0) {
             next[existIdx] = newSd;
           } else {
             next = [newSd, ...next];
-          }
-
-          if (onTrinhKyBaoCao) {
-            onTrinhKyBaoCao(doc.id, newSd);
           }
         });
         return next;
       });
     }
 
+    // Gọi callback để thông báo cho DonTiepNhan cập nhật trạng thái bước quy trình
+    if (onTrinhKyBaoCao) {
+      createdSigningDocs.forEach((newSd) => {
+        onTrinhKyBaoCao(newSd.id, newSd);
+      });
+    }
+
     setIsTrinhKyModalOpen(false);
-    showToast(`✓ Đã tạo lượt trình và chuyển ${docsToSubmit.length} văn bản sang luồng Trình ký Lãnh đạo thành công!`);
+    showToast(`✓ Đã gửi trình ký ${docsToSubmit.length} văn bản tới Lãnh đạo thành công!`);
     setSelectedDocIds([]);
   };
 

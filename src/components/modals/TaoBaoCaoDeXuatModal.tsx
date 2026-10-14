@@ -518,9 +518,9 @@ export default function TaoBaoCaoDeXuatModal({
               <h2 className="text-base font-bold text-slate-900 tracking-tight">
                 Tạo Báo cáo đề xuất
               </h2>
-              <p className="text-[11px] text-slate-500 font-normal">
+              {/* <p className="text-[11px] text-slate-500 font-normal">
                 Báo cáo đề xuất hướng xử lý đơn theo quy trình thụ lý • Hồ sơ: <strong className="font-mono text-slate-800">{maDon}</strong>
-              </p>
+              </p> */}
             </div>
           </div>
 
@@ -548,7 +548,7 @@ export default function TaoBaoCaoDeXuatModal({
           )}
 
           {/* Tiêu đề báo cáo */}
-          <div>
+          {/* <div>
             <label className="block font-bold text-slate-800 mb-1">
               Tiêu đề báo cáo <span className="text-rose-500">*</span>
             </label>
@@ -564,9 +564,7 @@ export default function TaoBaoCaoDeXuatModal({
               placeholder="Ví dụ: Báo cáo đề xuất hướng xử lý đơn tố cáo của công dân..."
             />
             {errors.tieuDeBaoCao && <p className="text-[10.5px] text-rose-600 mt-1">{errors.tieuDeBaoCao}</p>}
-          </div>
-
-          {/* Grid 2 cột: Người/Đơn vị báo cáo & Người/Cơ quan nhận báo cáo */}
+          </div> */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div>
               <label className="block font-bold text-slate-800 mb-1">

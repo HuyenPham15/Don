@@ -18,6 +18,7 @@ import TraLaiDonModal, { TraLaiDonSubmitData } from '../components/modals/TraLai
 import { TiepNhanDonItem, DEPARTMENTS } from '../constants/departments';
 import { SigningDocument, CurrentUserAccount, DEMO_ACCOUNTS } from '../types/signing';
 import VanThuWorkKanban from '../components/work/VanThuWorkKanban';
+import TrinhKyFigmaApp from './quanLyTrinhKy/TrinhKyFigmaApp';
 export type CongViecTab = 'tasks' | 'all';
 export type ViewMode = 'kanban' | 'list' | 'completed';
 export type FilterStatus = WorkItemColumn | 'all';
@@ -1332,7 +1333,7 @@ export default function CongViecCuaToi({
     showToast(`Mở chi tiết đơn [${donObj.code}]: ${donObj.title}`);
   };
 
-  if (currentAccount.role === 'van_thu') {
+  if (currentAccount?.role === 'van_thu') {
     return (
       <VanThuWorkKanban
         onNav={onNav}
@@ -1346,6 +1347,21 @@ export default function CongViecCuaToi({
             }
             : undefined
         }
+      />
+    );
+  }
+
+  if (currentAccount?.role === 'lanh_dao') {
+    return (
+      <TrinhKyFigmaApp
+        currentAccount={currentAccount}
+        onNav={onNav}
+        initialRole="leader"
+        initialView="work"
+        hideSidebar={true}
+        hideTopNav={true}
+        onBackToKanban={() => {}}
+        onSwitchAccount={onSwitchAccount}
       />
     );
   }
@@ -1419,9 +1435,9 @@ export default function CongViecCuaToi({
                 onSwitchAccount(other);
                 showToast(`Đã chuyển sang tài khoản ${other.name} (${other.roleLabel})`);
               }}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer border ${currentAccount.role === 'lanh_dao'
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer border ${(currentAccount.role as string) === 'lanh_dao'
                   ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200'
-                  : currentAccount.role === 'van_thu'
+                  : (currentAccount.role as string) === 'van_thu'
                     ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200'
                     : 'bg-blue-50 hover:bg-blue-100 text-[#004ac6] border-blue-200'
                 }`}
@@ -1429,9 +1445,9 @@ export default function CongViecCuaToi({
             >
               <span className="material-symbols-outlined text-[16px]">swap_horiz</span>
               <span className="hidden md:inline">
-                {currentAccount.role === 'can_bo'
+                {(currentAccount.role as string) === 'can_bo'
                   ? 'Đổi sang Lãnh đạo'
-                  : currentAccount.role === 'lanh_dao'
+                  : (currentAccount.role as string) === 'lanh_dao'
                     ? 'Đổi sang Văn thư'
                     : 'Đổi sang Cán bộ'}
               </span>
@@ -1443,7 +1459,7 @@ export default function CongViecCuaToi({
             <button
               type="button"
               onClick={() => {
-                if (currentAccount.role === 'van_thu') {
+                if ((currentAccount.role as string) === 'van_thu') {
                   onNav('nhan-don-them');
                 } else {
                   onNav('tao-don-moi');
@@ -1451,14 +1467,14 @@ export default function CongViecCuaToi({
               }}
               className="px-3 py-1.5 text-xs font-bold flex items-center gap-1.5 cursor-pointer hover:opacity-95"
               title={
-                currentAccount.role === 'van_thu'
+                (currentAccount.role as string) === 'van_thu'
                   ? 'Mở màn hình thêm mới lượt nhận hồ sơ'
                   : 'Mở màn hình thêm mới đơn trực tiếp'
               }
             >
               <span className="material-symbols-outlined text-[17px]">add</span>
               <span>
-                {currentAccount.role === 'van_thu' ? 'Thêm lượt nhận' : 'Tạo mới đơn'}
+                {(currentAccount.role as string) === 'van_thu' ? 'Thêm lượt nhận' : 'Tạo mới đơn'}
               </span>
             </button>
             <button

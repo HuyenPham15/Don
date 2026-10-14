@@ -50,9 +50,9 @@ export default function TaoDonMoiScreen({ onNav, onAddDirectDon }: TaoDonMoiScre
   };
 
   return (
-    <div className="app-shell trinh-ky-figma-scope w-full h-full flex flex-col overflow-hidden relative">
+    <div className="w-full h-full flex flex-col overflow-hidden relative">
       {toastMsg && (
-        <div className="fixed top-5 right-5 z-50 px-4 py-2.5 bg-slate-900/90 text-white rounded-xl shadow-xl text-xs font-medium animate-fade-in flex items-center gap-2 backdrop-blur-xs">
+        <div className="fixed top-5 z-50 px-4 py-2.5 bg-slate-900/90 text-white rounded-xl shadow-xl text-xs font-medium animate-fade-in flex items-center gap-2 backdrop-blur-xs">
           <span className="material-symbols-outlined text-emerald-400 text-lg">check_circle</span>
           <span>{toastMsg}</span>
         </div>

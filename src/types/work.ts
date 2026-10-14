@@ -108,4 +108,6 @@ export interface WorkItem {
   thoiGianKyTruoc?: string;
   tienTrinhKyHienTai?: string;
   isSigningDoc?: boolean;
+  hasFile?: boolean;
+  status?: string;
 }

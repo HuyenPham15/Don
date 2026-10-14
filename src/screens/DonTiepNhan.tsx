@@ -6,6 +6,7 @@ import TabDonKhac from '../components/tabs/TabDonKhac';
 import TabTaiLieu, { DocItem } from '../components/tabs/TabTaiLieu';
 import TabQuyTrinh from '../components/tabs/TabQuyTrinh';
 import TabLichSuXuLy, { ProcessHistoryLog } from '../components/tabs/TabLichSuXuLy';
+import TabLichSuTrinhKy from '../components/tabs/TabLichSuTrinhKy';
 import { matchWorkflowByLoaiDon } from '../constants/workflows';
 import ThongBaoBoSungModal from '../components/workflow/ThongBaoBoSungModal';
 import ThucHienBuocTiepTheoModal from '../components/workflow/ThucHienBuocTiepTheoModal';
@@ -101,7 +102,7 @@ export default function DonTiepNhan({
   onSelectSigningDoc,
   currentAccount,
 }: DonTiepNhanProps) {
-  const [activeTab, setActiveTab] = useState<'thong-tin' | 'lien-he' | 'don-khac' | 'tai-lieu' | 'quy-trinh' | 'lich-su'>('thong-tin');
+  const [activeTab, setActiveTab] = useState<'thong-tin' | 'lien-he' | 'don-khac' | 'tai-lieu' | 'quy-trinh' | 'lich-su' | 'lich-su-trinh-ky'>('thong-tin');
   const [docCount, setDocCount] = useState<number>(6);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
@@ -486,13 +487,32 @@ export default function DonTiepNhan({
     const docToSubmit = updatedDoc || existingSigningDoc;
     if (!docToSubmit) return;
 
+    if (updatedDoc && onUpdateSigningDocuments) {
+      onUpdateSigningDocuments((prev) => {
+        const idx = prev.findIndex((d) => d.id === updatedDoc.id || (d.hoSoCode === currentDon.code && d.loaiVanBan === 'bao_cao_de_xuat'));
+        if (idx >= 0) {
+          const next = [...prev];
+          next[idx] = updatedDoc;
+          return next;
+        }
+        return [updatedDoc, ...prev];
+      });
+    }
+
     setTrangThaiXacMinh('da_xac_minh');
+    setActiveStepNumber(2);
+    setCurrentDon((prev) => ({
+      ...prev,
+      currentStep: 2,
+      statusBadge: 'Chờ phê duyệt',
+    }));
+
     showToast(
-      `✓ Đã trình ký Báo cáo kết quả xác minh (${docToSubmit.soKyHieu}) tới Lãnh đạo! Nút Thụ lý đơn đã được mở khóa.`
+      `✓ Đã trình ký Báo cáo đề xuất (${docToSubmit.soKyHieu || docToSubmit.tenVanBan}) tới Lãnh đạo! Đã chuyển sang Bước 2 và mở khóa nút Thụ lý đơn.`
     );
 
     addHistoryLog({
-      title: `Trình Lãnh đạo Báo cáo kết quả xác minh (${docToSubmit.soKyHieu})`,
+      title: `Trình Lãnh đạo Báo cáo kết quả xác minh / Đề xuất (${docToSubmit.soKyHieu || docToSubmit.tenVanBan})`,
       actor: currentAccount?.name || currentDon.canBoXuLy || 'Nguyễn Minh Anh',
       actorRole: currentAccount?.role || currentDon.chucVuCanBo || 'Cán bộ thụ lý',
       actorDept: currentAccount?.phongBan || currentDon.donViXuLy || 'Phòng Tiếp công dân & Xử lý đơn',
@@ -503,7 +523,7 @@ export default function DonTiepNhan({
         textClass: 'text-blue-800',
         borderClass: 'border-blue-200',
       },
-      description: `Đã hoàn tất lập Báo cáo kết quả xác minh và chuyển sang quy trình trình ký Lãnh đạo phê duyệt.`,
+      description: `Đã hoàn tất lập Báo cáo đề xuất hướng xử lý đơn và chuyển sang luồng trình ký Lãnh đạo phê duyệt. Hồ sơ chuyển tiếp sang Bước 2: Ban hành Quyết định thụ lý.`,
       docInfo: {
         name: docToSubmit.tenVanBan,
         code: docToSubmit.soKyHieu,
@@ -594,11 +614,17 @@ export default function DonTiepNhan({
     }
 
     setTrangThaiXacMinh('da_xac_minh');
+    setActiveStepNumber(2);
+    setCurrentDon((prev) => ({
+      ...prev,
+      currentStep: 2,
+      statusBadge: 'Chờ phê duyệt',
+    }));
     setShowTaoBaoCaoDeXuatModal(false);
     setDocCount((c) => Math.max(c, 7));
 
     showToast(
-      `✓ Đã lập và trình ký Báo cáo kết quả xác minh (${updatedDoc.soKyHieu}) tới Lãnh đạo! Nút Chỉnh sửa thông tin và Thụ lý đã được mở khóa.`
+      `✓ Đã lập và trình ký Báo cáo đề xuất (${updatedDoc.soKyHieu}) tới Lãnh đạo! Đã chuyển sang Bước 2 và mở khóa nút Thụ lý đơn.`
     );
 
     addHistoryLog({
@@ -1314,6 +1340,19 @@ export default function DonTiepNhan({
             <span>Lịch sử xử lý</span>
 
           </button>
+
+          {/* Tab 7: Lịch sử trình ký */}
+          <button
+            type="button"
+            onClick={() => setActiveTab('lich-su-trinh-ky')}
+            className={`pb-3 border-b-2 flex items-center gap-1.5 transition-all cursor-pointer ${activeTab === 'lich-su-trinh-ky'
+              ? 'border-[#004ac6] text-[#004ac6]'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+          >
+            <span className="material-symbols-outlined text-[16px]">draw</span>
+            <span>Lịch sử trình ký</span>
+          </button>
         </div>
       </div>
 
@@ -1422,6 +1461,15 @@ export default function DonTiepNhan({
               historyLogs={historyLogs}
               onAddLog={addHistoryLog}
               onViewDoc={(docName) => handleViewDocInTabTaiLieu({ tenVanBan: docName })}
+            />
+          )}
+          {activeTab === 'lich-su-trinh-ky' && (
+            <TabLichSuTrinhKy
+              currentDon={currentDon}
+              signingDocuments={signingDocuments}
+              currentAccount={currentAccount}
+              onOpenQuyTrinh={() => setActiveTab('quy-trinh')}
+              onOpenTaiLieu={() => setActiveTab('tai-lieu')}
             />
           )}
         </div>

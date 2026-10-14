@@ -6,20 +6,24 @@ export interface LeaderOption {
   name: string;
   title: string;
   department?: string;
+  isProposed?: boolean;
 }
 
 export type Permission = 'Xem' | 'Ký số' | 'Duyệt' | 'Bỏ qua';
 
 export const DEFAULT_LEADERS: LeaderOption[] = [
-  { id: 'lanh-dao-1', name: 'Lê Văn A', title: 'Trưởng phòng TN&MT' },
-  { id: 'lanh-dao-2', name: 'Nguyễn Văn B', title: 'Phó Giám đốc Sở' },
-  { id: 'lanh-dao-3', name: 'Nguyễn Văn C', title: 'Giám đốc Sở' },
-  { id: 'lanh-dao-4', name: 'Trần Hoàng D', title: 'Phó phòng phụ trách' },
-  { id: 'lanh-dao-5', name: 'Phạm Minh Trí', title: 'Trưởng ban Pháp chế' },
-  { id: 'lanh-dao-6', name: 'Vũ Quốc Hùng', title: 'Chánh Văn phòng' },
+  { id: 'lanh_dao_hung', name: 'Trần Văn Hùng', title: 'Phó Chánh Thanh tra thành phố', department: 'Ban Lãnh đạo Thanh tra', isProposed: true },
+  { id: 'lanh_dao_cuong', name: 'Trần Văn Cường', title: 'Phó Chánh Thanh tra thành phố', department: 'Ban Lãnh đạo Thanh tra' },
+  { id: 'lanh-dao-1', name: 'Lê Văn A', title: 'Trưởng phòng TN&MT', department: 'Phòng Tài nguyên & Môi trường' },
+  { id: 'lanh-dao-hai', name: 'Đỗ Thanh Hải', title: 'Phó Trưởng phòng TN&MT', department: 'Phòng Tài nguyên & Môi trường' },
+  { id: 'lanh-dao-2', name: 'Nguyễn Văn B', title: 'Phó Giám đốc Sở', department: 'Ban Giám đốc Sở' },
+  { id: 'lanh-dao-3', name: 'Nguyễn Văn C', title: 'Giám đốc Sở', department: 'Ban Giám đốc Sở' },
+  { id: 'lanh-dao-4', name: 'Trần Hoàng D', title: 'Phó phòng phụ trách', department: 'Phòng Tiếp công dân & Xử lý đơn' },
+  { id: 'lanh-dao-5', name: 'Phạm Minh Trí', title: 'Trưởng ban Pháp chế', department: 'Ban Pháp chế' },
+  { id: 'lanh-dao-6', name: 'Vũ Quốc Hùng', title: 'Chánh Văn phòng', department: 'Văn phòng Sở' },
 ];
 
-export const PERMISSION_OPTIONS: Permission[] = ['Ký số', 'Xem', 'Duyệt', 'Bỏ qua'];
+export const PERMISSION_OPTIONS: Permission[] = ['Ký số', 'Duyệt', 'Xem', 'Bỏ qua'];
 
 export interface SelectedDocumentItem {
   id: string;
@@ -52,7 +56,7 @@ export default function TaoLuotTrinhModal({
     [customLeaders]
   );
 
-  // Danh sách lãnh đạo trong lượt trình (khởi đầu rỗng, người dùng chọn và thêm)
+  // Danh sách lãnh đạo trong lượt trình
   const [leaders, setLeaders] = useState<LeaderOption[]>([]);
   const [selectedLeaderId, setSelectedLeaderId] = useState<string>('');
 
@@ -63,16 +67,28 @@ export default function TaoLuotTrinhModal({
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // Reset form khi modal mở hoặc thay đổi danh sách văn bản
+  // Reset & Tự động gợi ý lãnh đạo đề xuất khi modal mở
   useEffect(() => {
     if (!isOpen) return;
 
-    setLeaders([]);
+    // Tự động thêm lãnh đạo đề xuất (isProposed hoặc lãnh đạo đầu tiên)
+    const proposed = sourceLeaders.find((l) => l.isProposed) || sourceLeaders[0];
+    if (proposed) {
+      setLeaders([proposed]);
+      const initialPerms: Record<string, Permission> = {};
+      documents.forEach((doc) => {
+        initialPerms[`${doc.id}:${proposed.id}`] = 'Ký số';
+      });
+      setPermissions(initialPerms);
+    } else {
+      setLeaders([]);
+      setPermissions({});
+    }
+
     setSelectedLeaderId('');
-    setPermissions({});
     setIsSubmitting(false);
     setSubmitError(null);
-  }, [isOpen, documents]);
+  }, [isOpen, documents, sourceLeaders]);
 
   // Xử lý phím Esc để đóng modal
   useEffect(() => {
@@ -307,33 +323,34 @@ export default function TaoLuotTrinhModal({
 
           {/* Bảng ma trận phân quyền văn bản */}
           <div className="border border-slate-200 rounded-xl overflow-x-auto shadow-2xs bg-white">
-            <table className="w-full border-collapse text-xs table-fixed">
+            <table className="w-full border-collapse text-xs">
               {/* Định nghĩa chiều rộng các cột */}
               <colgroup>
-                {/* Cột 1: Danh sách văn bản cố định 300px */}
-                <col style={{ width: '300px' }} />
+                {/* Cột 1: Danh sách văn bản cố định */}
+                <col style={{ width: '260px' }} />
                 {leaders.length === 0 ? (
                   /* Khi chưa có lãnh đạo: cột thông báo chiếm toàn bộ không gian còn lại */
-                  <col />
+                  <col style={{ width: 'auto' }} />
                 ) : (
                   <>
                     {leaders.map((leader) => (
-                      <col key={leader.id} style={{ width: '210px' }} />
+                      <col key={leader.id} style={{ width: '185px' }} />
                     ))}
                     {/* Cột đệm khi có ít hơn 3 lãnh đạo để các cột không bị phình to */}
-                    {leaders.length < 3 && <col />}
+                    {leaders.length < 3 && <col style={{ width: 'auto' }} />}
                   </>
                 )}
               </colgroup>
 
               <thead>
-                <tr className="bg-[#f8fafc] border-b border-slate-200 h-[58px]">
-                  <th className="px-4 text-left font-bold text-slate-700 text-[11px] uppercase tracking-wider border-r border-slate-200 align-middle">
-                    DANH SÁCH VĂN BẢN TRONG LƯỢT
+                <tr className="bg-[#f8fafc] border-b border-slate-200">
+                  {/* Cột 1: DANH SÁCH VĂN BẢN */}
+                  <th className="w-[260px] min-w-[240px] px-4 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider border-r border-slate-200 align-middle">
+                    DANH SÁCH VĂN BẢN
                   </th>
 
                   {leaders.length === 0 ? (
-                    <th className="px-5 text-left font-normal text-slate-400 text-xs italic bg-[#f8fafc] align-middle">
+                    <th className="px-5 text-center font-normal text-slate-400 text-xs italic bg-[#f8fafc] align-middle">
                       Chưa có lãnh đạo nào được thêm vào lượt trình.
                     </th>
                   ) : (
@@ -341,51 +358,59 @@ export default function TaoLuotTrinhModal({
                       {leaders.map((leader, index) => {
                         const badgeBg =
                           index === 0
-                            ? 'bg-emerald-600 text-white' // Lãnh đạo 1: Xanh lá
-                            : index === 1
-                              ? 'bg-[#991b1b] text-white' // Lãnh đạo 2: Đỏ sẫm
-                              : 'bg-slate-300 text-slate-700'; // Lãnh đạo 3+: Xám
+                            ? 'bg-emerald-600'
+                            : index < 3
+                              ? 'bg-[#80182a]'
+                              : 'bg-slate-400';
 
                         return (
                           <th
                             key={leader.id}
-                            className="px-3.5 py-2.5 text-left border-r border-slate-200 bg-[#f8fafc] align-top"
+                            className="w-[185px] min-w-[170px] px-3.5 py-3 text-left border-r border-slate-200 bg-[#f8fafc] align-top relative"
                           >
-                            <div className="relative pr-6">
-                              <div className="flex items-start gap-2">
-                                <span
-                                  className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 shadow-2xs ${badgeBg}`}
-                                >
-                                  {index + 1}
-                                </span>
-                                <div className="min-w-0 flex-1">
-                                  <strong
-                                    className="block text-xs font-bold text-slate-900 leading-snug truncate"
-                                    title={`${index + 1}. ${leader.name}`}
-                                  >
-                                    {index + 1}. {leader.name}
-                                  </strong>
-                                  <span
-                                    className="block text-[11px] text-slate-500 font-normal mt-0.5 truncate"
-                                    title={leader.title}
-                                  >
-                                    {leader.title}
-                                  </span>
-                                </div>
-                              </div>
-
-                              {/* Nút xóa lãnh đạo */}
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveLeader(leader.id)}
-                                disabled={isSubmitting}
-                                className="absolute -top-0.5 right-0 text-slate-400 hover:text-rose-600 hover:bg-rose-50 w-5 h-5 rounded flex items-center justify-center text-lg leading-none cursor-pointer transition disabled:opacity-40"
-                                title={`Xóa ${leader.name} khỏi lượt trình`}
-                                aria-label={`Xóa ${leader.name}`}
+                            <div className="flex items-start gap-2 pr-5">
+                              <span
+                                className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 mt-0.5 shadow-2xs ${badgeBg}`}
                               >
-                                ×
-                              </button>
+                                {index + 1}
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <strong
+                                  className="block text-xs font-bold text-slate-900 leading-snug truncate"
+                                  title={`${index + 1}. ${leader.name}`}
+                                >
+                                  {index + 1}. {leader.name}
+                                </strong>
+                                <span
+                                  className="block text-[11px] text-slate-500 font-normal mt-0.5 truncate"
+                                  title={leader.title}
+                                >
+                                  {leader.title}
+                                </span>
+
+                                {/* Huy hiệu Được đề xuất */}
+                                {leader.isProposed && (
+                                  <div className="flex items-center gap-1 mt-1 text-[#b45309] text-[10.5px] font-medium leading-tight">
+                                    <span>Được đề xuất</span>
+                                    <span className="w-4 h-4 rounded-full bg-[#f59e0b] text-white text-[9px] font-bold flex items-center justify-center shadow-2xs shrink-0">
+                                      T
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
+
+                            {/* Nút xóa lãnh đạo */}
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveLeader(leader.id)}
+                              disabled={isSubmitting}
+                              className="absolute top-2.5 right-2 text-slate-300 hover:text-rose-600 hover:bg-rose-50 w-5 h-5 rounded flex items-center justify-center text-base leading-none cursor-pointer transition disabled:opacity-40"
+                              title={`Xóa ${leader.name} khỏi lượt trình`}
+                              aria-label={`Xóa ${leader.name}`}
+                            >
+                              ×
+                            </button>
                           </th>
                         );
                       })}
@@ -399,53 +424,54 @@ export default function TaoLuotTrinhModal({
                 {documents.map((doc, docIndex) => (
                   <tr key={doc.id} className="hover:bg-slate-50/60 transition-colors">
                     {/* Cột 1: Thông tin văn bản */}
-                    <td className="px-4 py-3.5 border-r border-slate-200 align-middle">
+                    <td className="w-[260px] min-w-[240px] px-4 py-3.5 border-r border-slate-200 align-middle">
                       <div className="flex items-start gap-2.5">
                         <span className="material-symbols-outlined text-slate-500 text-base leading-none shrink-0 mt-0.5">
                           description
                         </span>
-                        <div className="min-w-0 flex-1">
-                          <strong
-                            className="block text-xs font-semibold text-slate-900 leading-snug break-words"
-                            title={doc.name}
-                          >
-                            {docIndex + 1}. {doc.name}
-                          </strong>
-                          <span className="block text-[11px] text-slate-400 font-mono mt-1">
-                            {doc.soHieu || doc.id}
-                          </span>
-                        </div>
+                        <strong
+                          className="block text-xs font-semibold text-slate-900 leading-snug break-words"
+                          title={doc.name}
+                        >
+                          {doc.name}
+                        </strong>
                       </div>
                     </td>
 
                     {/* Các cột lãnh đạo */}
                     {leaders.length === 0 ? (
-                      <td className="px-6 py-8 text-center text-slate-400 align-middle">
-                        <div className="flex flex-col items-center justify-center gap-1.5">
-                          <span className="material-symbols-outlined text-2xl text-slate-300">
-                            person_add
-                          </span>
-                          <span className="text-xs font-medium text-slate-500">
-                            Chưa có lãnh đạo nào trong lượt trình
-                          </span>
-                          <span className="text-[11px] text-slate-400">
-                            Chọn lãnh đạo phê duyệt ở danh sách phía trên và bấm "+ Thêm lãnh đạo" để cấu hình
-                          </span>
-                        </div>
-                      </td>
+                      docIndex === 0 ? (
+                        <td
+                          rowSpan={documents.length}
+                          className="px-6 py-8 text-center text-slate-400 align-middle bg-slate-50/30"
+                        >
+                          <div className="flex flex-col items-center justify-center gap-1.5 py-4">
+                            <span className="material-symbols-outlined text-3xl text-slate-300">
+                              person_add
+                            </span>
+                            <span className="text-xs font-medium text-slate-500">
+                              Chưa có lãnh đạo nào trong lượt trình
+                            </span>
+                            <span className="text-[11px] text-slate-400">
+                              Chọn lãnh đạo phê duyệt ở danh sách phía trên và bấm &quot;+ Thêm lãnh đạo&quot; để cấu hình
+                            </span>
+                          </div>
+                        </td>
+                      ) : null
                     ) : (
                       <>
                         {leaders.map((leader) => {
                           const key = `${doc.id}:${leader.id}`;
                           const currentPerm = permissions[key] || 'Xem';
                           const isMainSigner = currentPerm === 'Ký số';
+                          const isDismissed = currentPerm === 'Bỏ qua';
 
                           return (
                             <td
                               key={key}
-                              className="px-3.5 py-3 border-r border-slate-200 align-top"
+                              className="w-[185px] min-w-[170px] px-3.5 py-3 border-r border-slate-200 align-middle"
                             >
-                              <div className="relative w-full max-w-[165px]">
+                              <div className="relative w-full">
                                 <select
                                   value={currentPerm}
                                   onChange={(e) =>
@@ -456,9 +482,11 @@ export default function TaoLuotTrinhModal({
                                     )
                                   }
                                   disabled={isSubmitting}
-                                  className={`w-full h-8 pl-3 pr-7 text-xs font-medium bg-white rounded-lg border transition cursor-pointer appearance-none focus:outline-none disabled:bg-slate-100 disabled:cursor-not-allowed ${isMainSigner
-                                    ? 'border-rose-400 text-slate-900 ring-1 ring-rose-300 shadow-2xs'
-                                    : 'border-slate-300 text-slate-700 hover:border-slate-400 focus:border-blue-400'
+                                  className={`w-full h-8.5 pl-3 pr-7 text-xs font-medium rounded-lg border appearance-none transition focus:outline-none cursor-pointer disabled:bg-slate-100 disabled:cursor-not-allowed ${isMainSigner
+                                    ? 'bg-white border-rose-300 ring-1 ring-rose-200 text-slate-900 shadow-2xs'
+                                    : isDismissed
+                                      ? 'bg-white border-slate-300 text-slate-400 hover:border-slate-400'
+                                      : 'bg-white border-slate-300 text-slate-700 hover:border-slate-400 focus:border-blue-400'
                                     }`}
                                   aria-label={`Quyền của ${leader.name} với ${doc.name}`}
                                 >
@@ -472,18 +500,6 @@ export default function TaoLuotTrinhModal({
                                   arrow_drop_down
                                 </span>
                               </div>
-
-                              {/* Nhãn chú thích khi là Ký số */}
-                              {isMainSigner && (
-                                <p className="text-[10.5px] mt-1.5 leading-tight flex items-center gap-1">
-                                  <span className="text-[#dc2626] font-medium">
-                                    Thẩm quyền chính
-                                  </span>{' '}
-                                  <strong className="font-semibold text-[#059669]">
-                                    • Bước xử lý chính
-                                  </strong>
-                                </p>
-                              )}
                             </td>
                           );
                         })}
@@ -493,33 +509,6 @@ export default function TaoLuotTrinhModal({
                   </tr>
                 ))}
               </tbody>
-
-              {/* Chân bảng: Thống kê & Hướng dẫn thao tác */}
-              <tfoot>
-                <tr className="bg-[#f8fafc] border-t border-slate-200">
-                  <td
-                    colSpan={
-                      leaders.length === 0
-                        ? 2
-                        : leaders.length < 3
-                          ? leaders.length + 2
-                          : leaders.length + 1
-                    }
-                    className="px-4 py-2.5"
-                  >
-                    <div className="flex flex-wrap items-center justify-between text-[11px] text-slate-500 font-medium">
-                      <span>
-                        <strong className="text-slate-700 font-bold">{documents.length}</strong> văn bản trong lượt trình
-                      </span>
-                      <span className="text-slate-400 italic">
-                        {leaders.length === 0
-                          ? 'Vui lòng chọn lãnh đạo phê duyệt để thiết lập quyền xử lý'
-                          : 'Nhấp vào từng ô để thay đổi quyền tương ứng (Ký số, Xem, Duyệt, Bỏ qua)'}
-                      </span>
-                    </div>
-                  </td>
-                </tr>
-              </tfoot>
             </table>
           </div>
         </div>
@@ -559,9 +548,9 @@ export default function TaoLuotTrinhModal({
             </button>
           </div>
 
-          <div className="text-[11.5px] text-slate-400 font-normal hidden sm:block">
+          {/* <div className="text-[11.5px] text-slate-400 font-normal hidden sm:block">
             * Mỗi văn bản cần tối thiểu 01 lãnh đạo phân quyền Ký số hoặc Duyệt
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

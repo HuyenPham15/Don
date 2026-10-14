@@ -1,7 +1,8 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
 import './trinhKyFigma.css';
-import { CurrentUserAccount } from "../../types/signing";
+import { CurrentUserAccount, DEMO_ACCOUNTS } from "../../types/signing";
 import { Screen } from "../../types";
+import ChinhSuaLuotTrinhModal from "../../components/modals/ChinhSuaLuotTrinhModal";
 
 const asset = (name: string) => `/assets/${name}.svg`;
 
@@ -330,11 +331,10 @@ function Sidebar({
       <nav className="nav" aria-label="Điều hướng chính">
         {navItems.map(([icon, label], index) => (
           <button
-            className={`nav__item ${
-              label === "Công việc của tôi" && active === "work"
-                ? "is-active"
-                : ""
-            }`}
+            className={`nav__item ${label === "Công việc của tôi" && active === "work"
+              ? "is-active"
+              : ""
+              }`}
             type="button"
             key={label}
             onClick={label === "Công việc của tôi" ? onWork : undefined}
@@ -1099,7 +1099,11 @@ function LeaderWorkCard({
   onAction: () => void
 }) {
   return (
-    <article className="work-card officer-card">
+    <article
+      className="work-card officer-card"
+      onClick={onAction}
+      style={{ cursor: 'pointer' }}
+    >
       <div className="work-card__meta" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ fontSize: '11px', color: '#1e3a8a', background: '#f1f5f9', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>
           Lượt trình
@@ -1128,7 +1132,7 @@ function LeaderWorkCard({
         </div>
       </dl>
 
-      <div style={{ marginTop: '16px' }}>
+      <div style={{ marginTop: '16px' }} onClick={(e) => e.stopPropagation()}>
         <Button
           variant={tone === "green" ? "secondary" : "primary"}
           className="leader-action-btn"
@@ -1147,6 +1151,7 @@ export function WorkPage({
   onAddReceipt,
   onAddCase,
   initialRole = "officer",
+  onSwitchRole,
 }: {
   onNotify: (message: string) => void
   onOpenLeaderDocument: (card: WorkCard) => void
@@ -1154,6 +1159,7 @@ export function WorkPage({
   onAddReceipt: () => void
   onAddCase: () => void
   initialRole?: WorkRole
+  onSwitchRole?: (role: WorkRole) => void
 }) {
   const [role, setRole] = useState<WorkRole>(initialRole)
   useEffect(() => {
@@ -1178,26 +1184,26 @@ export function WorkPage({
   const summaries =
     role === "officer"
       ? [
-          ["Tổng công việc", "31", "Hồ sơ đang mở", "neutral"],
-          ["Lượt tiếp nhận cần xử lý", "14", "Hồ sơ cần xử lý", "red"],
-          ["Đang xử lý", "3", "Cần theo dõi", "pink"],
-          ["Chờ phê duyệt", "4", "Hồ sơ chờ duyệt", "amber"],
-          ["Đã xử lý", "6", "Đã hoàn thành", "blue"],
-        ]
+        ["Tổng công việc", "31", "Hồ sơ đang mở", "neutral"],
+        ["Lượt tiếp nhận cần xử lý", "14", "Hồ sơ cần xử lý", "red"],
+        ["Đang xử lý", "3", "Cần theo dõi", "pink"],
+        ["Chờ phê duyệt", "4", "Hồ sơ chờ duyệt", "amber"],
+        ["Đã xử lý", "6", "Đã hoàn thành", "blue"],
+      ]
       : role === "clerk"
         ? [
-            ["Tổng công việc", "68", "Toàn bộ hồ sơ đang theo dõi", "neutral"],
-            ["Chưa chuyển", "13", "Chưa chuyển cho cán bộ nào", "red"],
-            ["Đã chuyển cán bộ", "27", "Đã chuyển cho cán bộ, chờ kết quả", "amber"],
-            ["Đã chuyển về đơn vị", "6", "Đơn vị nhận đang xử lý", "blue"],
-          ]
+          ["Tổng công việc", "68", "Toàn bộ hồ sơ đang theo dõi", "neutral"],
+          ["Chưa chuyển", "13", "Chưa chuyển cho cán bộ nào", "red"],
+          ["Đã chuyển cán bộ", "27", "Đã chuyển cho cán bộ, chờ kết quả", "amber"],
+          ["Đã chuyển về đơn vị", "6", "Đơn vị nhận đang xử lý", "blue"],
+        ]
         : [
-            ["Tổng công việc", "122", "Toàn bộ hồ sơ đang theo dõi", "neutral"],
-            ["Lượt nhận cần xử lý", "17", "Hồ sơ cần xử lý", "red"],
-            ["Tiếp nhận & xử lý", "57", "Hồ sơ đã tiếp nhận", "amber"],
-            ["Đang chờ", "0", "Chờ phối hợp & phê duyệt", "blue"],
-            ["Đã bàn giao · Theo dõi", "48", "Đã duyệt hoặc bàn giao", "green"],
-          ]
+          ["Tổng công việc", "122", "Toàn bộ hồ sơ đang theo dõi", "neutral"],
+          ["Lượt nhận cần xử lý", "17", "Hồ sơ cần xử lý", "red"],
+          ["Tiếp nhận & xử lý", "57", "Hồ sơ đã tiếp nhận", "amber"],
+          ["Đang chờ", "0", "Chờ phối hợp & phê duyệt", "blue"],
+          ["Đã bàn giao · Theo dõi", "48", "Đã duyệt hoặc bàn giao", "green"],
+        ]
 
   return (
     <main className="page work-page">
@@ -1209,21 +1215,30 @@ export function WorkPage({
               <button
                 className={role === "officer" ? "is-active" : ""}
                 type="button"
-                onClick={() => setRole("officer")}
+                onClick={() => {
+                  setRole("officer");
+                  onSwitchRole?.("officer");
+                }}
               >
                 Cán bộ
               </button>
               <button
                 className={role === "clerk" ? "is-active" : ""}
                 type="button"
-                onClick={() => setRole("clerk")}
+                onClick={() => {
+                  setRole("clerk");
+                  onSwitchRole?.("clerk");
+                }}
               >
                 Văn thư
               </button>
               <button
                 className={role === "leader" ? "is-active" : ""}
                 type="button"
-                onClick={() => setRole("leader")}
+                onClick={() => {
+                  setRole("leader");
+                  onSwitchRole?.("leader");
+                }}
               >
                 Lãnh đạo
               </button>
@@ -1256,7 +1271,14 @@ export function WorkPage({
               ＋ Thêm lượt nhận
             </Button>
           </div>
-        ) : null}
+        ) : (
+          <div className="header-actions">
+            <div className="work-user-status" style={{ background: '#eef2ff', borderColor: '#c7d2fe', color: '#3730a3' }}>
+              <i style={{ background: '#4f46e5' }} />
+              Lãnh đạo: <strong>Trần Trọng Giáp</strong>
+            </div>
+          </div>
+        )}
       </header>
 
       <section className="work-content">
@@ -1270,8 +1292,8 @@ export function WorkPage({
                 role === "clerk"
                   ? "Tìm kiếm theo mã lượt nhận, người nộp, người nhận..."
                   : role === "officer"
-                  ? "Tìm kiếm theo mã lượt nhận, mã đơn, người đứng đơn, bị đơn..."
-                  : "Tìm kiếm theo mã đơn, người trình..."
+                    ? "Tìm kiếm theo mã lượt nhận, mã đơn, người đứng đơn, bị đơn..."
+                    : "Tìm kiếm theo mã đơn, người trình..."
               }
             />
           </label>
@@ -2634,12 +2656,12 @@ export function OfficerCaseDetail({
     },
     documentGroupMode === "folder"
       ? Object.fromEntries(
-          [
-            "Hồ sơ ban đầu",
-            "Văn bản và quyết định xử lý",
-            ...additionalFolderNames,
-          ].map((folder) => [folder, [] as DocumentRow[]]),
-        )
+        [
+          "Hồ sơ ban đầu",
+          "Văn bản và quyết định xử lý",
+          ...additionalFolderNames,
+        ].map((folder) => [folder, [] as DocumentRow[]]),
+      )
       : {},
   )
   const signingHistory = [
@@ -3159,68 +3181,67 @@ export function OfficerCaseDetail({
                   </strong>
                   <small>{caseDocuments.length} tài liệu</small>
                 </div>
-              {Object.entries(groupedCaseDocuments).map(([groupName, group]) => (
-                <section className="case-document-group" key={groupName}>
-                  <header>
-                    <span>{documentGroupMode === "folder" ? "□" : "▦"}</span>
-                    <strong>
-                      {documentGroupMode === "date"
-                        ? groupName === "05/10/2026"
-                          ? <>Ngày&nbsp;&nbsp;{groupName}</>
-                          : groupName === "04/10/2026"
-                            ? `Ngày ${groupName}`
-                          : `Ngày tải ${groupName}`
-                        : groupName}
-                    </strong>
-                    <small>{group.length} tài liệu</small>
-                  </header>
-                  <div>
-                    {group.map((document) => {
-                      const isEffective = document.status === "Đã có hiệu lực"
-                      return (
-                        <div
-                          className={`case-document-card ${
-                            activeCaseDocument.code === document.code
+                {Object.entries(groupedCaseDocuments).map(([groupName, group]) => (
+                  <section className="case-document-group" key={groupName}>
+                    <header>
+                      <span>{documentGroupMode === "folder" ? "□" : "▦"}</span>
+                      <strong>
+                        {documentGroupMode === "date"
+                          ? groupName === "05/10/2026"
+                            ? <>Ngày&nbsp;&nbsp;{groupName}</>
+                            : groupName === "04/10/2026"
+                              ? `Ngày ${groupName}`
+                              : `Ngày tải ${groupName}`
+                          : groupName}
+                      </strong>
+                      <small>{group.length} tài liệu</small>
+                    </header>
+                    <div>
+                      {group.map((document) => {
+                        const isEffective = document.status === "Đã có hiệu lực"
+                        return (
+                          <div
+                            className={`case-document-card ${activeCaseDocument.code === document.code
                               ? "is-active"
                               : ""
-                          }`}
-                          key={document.code}
-                          onClick={() => setActiveCaseDocumentId(document.code)}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedDocumentIds.includes(document.code)}
-                            disabled={isEffective}
-                            onClick={(event) => event.stopPropagation()}
-                            onChange={() =>
-                              setSelectedDocumentIds((current) =>
-                                current.includes(document.code)
-                                  ? current.filter((id) => id !== document.code)
-                                  : [...current, document.code],
-                              )
-                            }
-                            aria-label={`Chọn ${document.title}`}
-                          />
-                          <span className="case-document-card__icon">PDF</span>
-                          <div>
-                            <strong>{document.title}</strong>
-                            <small>
-                              {document.code} · {document.date}
-                              {documentGroupMode === "date" && document.folder
-                                ? ` · ${document.folder}`
-                                : ""}
-                            </small>
+                              }`}
+                            key={document.code}
+                            onClick={() => setActiveCaseDocumentId(document.code)}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedDocumentIds.includes(document.code)}
+                              disabled={isEffective}
+                              onClick={(event) => event.stopPropagation()}
+                              onChange={() =>
+                                setSelectedDocumentIds((current) =>
+                                  current.includes(document.code)
+                                    ? current.filter((id) => id !== document.code)
+                                    : [...current, document.code],
+                                )
+                              }
+                              aria-label={`Chọn ${document.title}`}
+                            />
+                            <span className="case-document-card__icon">PDF</span>
                             <div>
-                              <span>Yêu cầu: {document.request}</span>
-                              <StatusBadge status={document.status} />
+                              <strong>{document.title}</strong>
+                              <small>
+                                {document.code} · {document.date}
+                                {documentGroupMode === "date" && document.folder
+                                  ? ` · ${document.folder}`
+                                  : ""}
+                              </small>
+                              <div>
+                                <span>Yêu cầu: {document.request}</span>
+                                <StatusBadge status={document.status} />
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </section>
-              ))}
+                        )
+                      })}
+                    </div>
+                  </section>
+                ))}
               </div>
             </div>
             <footer>
@@ -3251,11 +3272,11 @@ export function OfficerCaseDetail({
                 />
                 <kbd>Ctrl + K</kbd>
               </label>
-              <input 
-                type="date" 
-                aria-label="Ngày trình" 
-                className="signing-history-datepicker" 
-                defaultValue="2026-10-01" 
+              <input
+                type="date"
+                aria-label="Ngày trình"
+                className="signing-history-datepicker"
+                defaultValue="2026-10-01"
                 title="Ngày trình"
               />
               <select
@@ -3351,11 +3372,10 @@ export function OfficerCaseDetail({
                           </td>
                           <td>
                             <div
-                              className={`signing-progress-copy ${
-                                flowState.status === "Trả lại"
-                                  ? "is-returned"
-                                  : ""
-                              }`}
+                              className={`signing-progress-copy ${flowState.status === "Trả lại"
+                                ? "is-returned"
+                                : ""
+                                }`}
                             >
                               {flowState.progress}/{flowState.total} người
                               {flowState.status === "Trả lại"
@@ -3382,13 +3402,12 @@ export function OfficerCaseDetail({
                           </td>
                           <td>
                             <span
-                              className={`signing-result ${
-                                flowStatus === "Trả lại"
-                                  ? "is-returned"
-                                  : flowStatus === "Đang trình"
-                                    ? "is-processing"
-                                    : ""
-                              }`}
+                              className={`signing-result ${flowStatus === "Trả lại"
+                                ? "is-returned"
+                                : flowStatus === "Đang trình"
+                                  ? "is-processing"
+                                  : ""
+                                }`}
                             >
                               {flowStatus}
                             </span>
@@ -4226,6 +4245,7 @@ export function LeaderDocumentDetail({
   const [showCompleteApprovalModal, setShowCompleteApprovalModal] =
     useState(false)
   const [showProposeLeaderModal, setShowProposeLeaderModal] = useState(false)
+  const [showEditFlowModal, setShowEditFlowModal] = useState(false)
   const [proposedLeaderId, setProposedLeaderId] = useState("")
   const [selectedProposedDocumentIds, setSelectedProposedDocumentIds] =
     useState<string[]>([])
@@ -4254,7 +4274,7 @@ export function LeaderDocumentDetail({
     flow: `LT-${task.id}`,
     status:
       activeFlowDocument.requirement === "Xem" &&
-      viewedIds.includes(activeFlowDocument.id)
+        viewedIds.includes(activeFlowDocument.id)
         ? "Đã xem"
         : "Chờ xử lý",
     progress: "1/3 bước",
@@ -4312,52 +4332,55 @@ export function LeaderDocumentDetail({
   }
 
   return (
-    <main className="page detail-page leader-detail">
-      <header className="detail-header">
-        <div className="breadcrumbs">
-          <button type="button" onClick={onBack}>
+    <main
+      className="page detail-page leader-detail bg-[#f8fafc] w-full h-full flex flex-col overflow-hidden"
+      style={{ backgroundColor: '#f8fafc' }}
+    >
+      <header className="detail-header bg-white border-b border-slate-200 px-6 py-3 shrink-0">
+        <div className="breadcrumbs text-xs text-slate-400 mb-1.5 flex items-center gap-1.5 font-normal">
+          <button type="button" onClick={onBack} className="hover:text-blue-600 transition cursor-pointer bg-transparent border-none p-0 text-slate-400">
             Công việc của tôi
           </button>
           <span>/</span>
-          <span>Lãnh đạo</span>
+          <button type="button" onClick={onBack} className="hover:text-blue-600 transition cursor-pointer bg-transparent border-none p-0 text-slate-400">
+            Lãnh đạo
+          </button>
           <span>/</span>
-          <strong>{activeFlowDocument.title}</strong>
+          <strong className="text-slate-600 font-medium">{activeFlowDocument.title}</strong>
         </div>
-        <div className="detail-title">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <button 
-              type="button" 
-              onClick={onBack} 
-              className="back-arrow-btn"
-              style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                width: 32, 
-                height: 32, 
-                border: 'none', 
-                background: 'transparent', 
-                cursor: 'pointer', 
-                color: 'var(--text-secondary)',
-                fontSize: 16
-              }}
+        <div className="detail-title flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={onBack}
+              className="back-arrow-btn flex items-center justify-center w-8 h-8 rounded-lg hover:bg-slate-100 text-slate-600 transition cursor-pointer border-none bg-transparent"
               aria-label="Quay lại"
             >
-              ←
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
             </button>
             <div className="leader-detail-heading">
               <div className="leader-title-line">
-                <h1>Nguyễn Văn An - Trần Hà - Tranh chấp đất đai</h1>
+                <h1 className="text-base font-bold text-slate-900 m-0">Nguyễn Văn An - Trần Hà - Tranh chấp đất đai</h1>
               </div>
-              <div className="leader-submitter">
-                Loại đơn: <strong>Đơn tố cáo</strong> ; Người trình: <strong>{task.submitter}</strong> ; Ngày trình: <strong>{task.date}</strong>
+              <div className="leader-submitter text-xs text-slate-500 mt-0.5">
+                Loại đơn: <strong className="text-slate-800 font-semibold">Đơn tố cáo</strong> ; Người trình: <strong className="text-slate-800 font-semibold">{task.submitter}</strong> ; Ngày trình: <strong className="text-slate-800 font-semibold">{task.date}</strong>
               </div>
             </div>
           </div>
-          <div className="header-actions">
-            <span className="role-badge leader-role-badge">
-              <i /> {readOnly ? "Chế độ: Xem lượt trình" : "Vai trò: Lãnh đạo"}
-            </span>
+          <div className="header-actions flex items-center gap-2">
+            {readOnly ? (
+              <div className="flex items-center gap-2 px-3 py-1 rounded-full border border-slate-200 bg-white text-xs text-slate-700 font-medium shadow-2xs">
+                <span className="w-2 h-2 rounded-full bg-[#2563eb]" />
+                <span>Chế độ: Xem lượt trình</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 px-3 py-1 rounded-full border border-indigo-200 bg-indigo-50 text-xs text-indigo-700 font-medium shadow-2xs">
+                <span className="w-2 h-2 rounded-full bg-indigo-600" />
+                <span>Vai trò: Lãnh đạo</span>
+              </div>
+            )}
             {!readOnly && (
               <>
                 <Button onClick={() => setShowProposeLeaderModal(true)}>
@@ -4381,241 +4404,384 @@ export function LeaderDocumentDetail({
         </div>
       </header>
 
-      <div className="workspace">
-        <section className="document-list">
-          <div className="panel-title">
-            <strong>VĂN BẢN TRONG LƯỢT TRÌNH</strong>
-            <span>{flowDocuments.length}</span>
+      <div
+        className="workspace flex-1 overflow-hidden"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: readOnly ? '260px minmax(460px, 1fr) 280px' : '260px 1fr',
+          height: 'calc(100% - 68px)',
+        }}
+      >
+        <section className="document-list bg-white border-r border-slate-200 flex flex-col h-full overflow-hidden">
+          <div className="panel-title flex items-center justify-between px-3.5 py-3 border-b border-slate-100 shrink-0">
+            <strong className="text-xs font-bold text-slate-800 tracking-wider uppercase">VĂN BẢN TRONG LƯỢT TRÌNH</strong>
+            <span className="text-xs font-medium text-slate-400">{flowDocuments.length}</span>
           </div>
-          <label className="search-field compact">
-            <Icon name="4d108" />
-            <input placeholder="Tìm theo tên văn bản..." />
-          </label>
-          {flowDocuments.map((document) => (
-            <button
-              className={`file-card ${
-                document.id === activeId ? "is-active" : ""
-              }`}
-              type="button"
-              key={document.id}
-              onClick={() => setActiveId(document.id)}
-            >
-              <strong>{document.title}</strong>
-              <span>
-                <b>Yêu cầu: {document.requirement}</b>
+          <div className="p-2.5 pb-2 shrink-0">
+            <label className="relative flex items-center w-full">
+              <span className="absolute left-2.5 text-slate-400">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
               </span>
-            </button>
-          ))}
+              <input
+                className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg placeholder-slate-400 focus:bg-white focus:outline-none focus:border-blue-500 transition"
+                placeholder="Tìm theo tên văn bản..."
+              />
+            </label>
+          </div>
+          <div className="flex-1 overflow-y-auto p-2.5 space-y-2">
+            {flowDocuments.map((document) => {
+              const isActive = document.id === activeId;
+              const isWord = document.title.endsWith('.docx') || document.id === flowDocuments[0].id;
+              return (
+                <button
+                  key={document.id}
+                  type="button"
+                  onClick={() => setActiveId(document.id)}
+                  className={`w-full text-left p-3 rounded-lg transition-all cursor-pointer relative bg-white block ${
+                    isActive
+                      ? 'border-2 border-red-500 shadow-2xs'
+                      : 'border border-slate-200 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-start gap-2.5">
+                    <div className="mt-0.5 shrink-0">
+                      {isWord ? (
+                        <span className="w-5 h-5 rounded flex items-center justify-center bg-blue-600 text-white font-bold text-[10px] shadow-2xs">
+                          W
+                        </span>
+                      ) : (
+                        <span className="w-5 h-5 rounded flex items-center justify-center bg-slate-100 text-slate-500 text-[12px]">
+                          📄
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <strong className="block text-xs font-bold text-slate-800 leading-snug">
+                        {document.title}
+                      </strong>
+                      <div className="mt-2">
+                        <span
+                          className={`inline-block text-[11px] font-medium px-2 py-0.5 rounded-md border ${
+                            document.requirement === 'Xem'
+                              ? 'bg-slate-50 text-slate-600 border-slate-200'
+                              : 'bg-blue-50 text-blue-600 border-blue-200'
+                          }`}
+                        >
+                          Yêu cầu: {document.requirement}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </section>
 
-        <section className="viewer">
-          <div className="viewer__toolbar">
-            <strong>{activeFlowDocument.title}.docx</strong>
-            <div>
-              <Button variant="ghost">−&nbsp;&nbsp; 100% &nbsp;&nbsp;+</Button>
-              <Button
-                variant="ghost"
+        <section className="viewer flex flex-col h-full bg-[#f1f5f9] overflow-hidden">
+          <div className="viewer__toolbar flex items-center justify-between px-4 py-2 border-b border-slate-200 bg-white text-xs shrink-0">
+            <strong className="font-medium text-slate-700">{activeFlowDocument.title}.docx</strong>
+            <div className="flex items-center gap-2 text-slate-500">
+              <div className="flex items-center gap-1.5">
+                <button type="button" className="hover:text-slate-800 px-1 font-bold cursor-pointer">−</button>
+                <span className="text-slate-600">100%</span>
+                <button type="button" className="hover:text-slate-800 px-1 font-bold cursor-pointer">＋</button>
+              </div>
+              <span className="text-slate-300">|</span>
+              <button
+                type="button"
                 onClick={() => onNotify("Đã tải xuống văn bản mẫu")}
+                className="hover:text-slate-800 p-1 cursor-pointer"
+                title="Tải xuống"
               >
-                ↓
-              </Button>
-              <Button variant="ghost">⛶</Button>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                className="hover:text-slate-800 p-1 cursor-pointer"
+                title="Toàn màn hình"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
+                </svg>
+              </button>
             </div>
           </div>
-          <div className="paper-canvas">
+          <div className="paper-canvas flex-1 overflow-y-auto p-6 flex justify-center">
             <DocumentPaper document={paperDocument} />
           </div>
-          <div className="sync-bar">
-            <span>
-              <i /> Đã đồng bộ dữ liệu thời gian thực
+          <div className="sync-bar flex items-center justify-between px-4 py-2 border-t border-slate-200 bg-white text-xs text-slate-500 shrink-0">
+            <span className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+              <span>Đã đồng bộ dữ liệu thời gian thực</span>
             </span>
-            <span>
-              Yêu cầu được cán bộ xác định:{" "}
-              <strong>{activeFlowDocument.requirement}</strong>
+            <span className="flex items-center gap-1.5 text-slate-600">
+              <span>Yêu cầu được cán bộ xác định: <strong className="text-slate-800 font-semibold">{activeFlowDocument.requirement}</strong></span>
+              <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full border border-slate-400 text-[10px] text-slate-500 font-bold ml-1">?</span>
             </span>
           </div>
         </section>
 
-        <aside className="leader-action-panel">
-          <div className="leader-timeline">
-            <div className="panel-title">
-              <strong>LỊCH SỬ TRÌNH KÝ</strong>
-              <span>4 cấp xử lý</span>
-            </div>
-            <div className="timeline-step is-done">
-              <span className="timeline-step__dot">✓</span>
-              <div>
-                <div className="timeline-person">
-                  <strong>Trần Thị B - Lãnh đạo</strong>
-                  {documentOpinions[0] && (
-                    <button
-                      type="button"
-                      onClick={() => setViewingOpinion(documentOpinions[0])}
-                      aria-label="Xem ý kiến của Trần Thị B"
-                      title="Xem ý kiến"
-                    >
-                      <Icon name="8d024" size={13} />
-                    </button>
-                  )}
+        {readOnly && (
+          <aside className="leader-action-panel bg-white border-l border-slate-200 p-4 flex flex-col justify-between h-full overflow-hidden shrink-0">
+            <div className="leader-timeline flex-1 overflow-y-auto">
+              <div className="panel-title flex items-center justify-between pb-3 mb-2 border-b border-slate-100">
+                <strong className="text-xs font-bold text-slate-800 tracking-wider">QUÁ TRÌNH TRÌNH KÝ</strong>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-400 font-normal">4 cấp xử lý</span>
+                  <div className="w-5 h-5 rounded-full bg-[#f59e0b] text-white font-bold text-[11px] flex items-center justify-center shadow-xs">
+                    T
+                  </div>
                 </div>
-                <small>Chuyển trình văn bản</small>
-              </div>
-              <time>02/10&nbsp; 08:15</time>
-            </div>
-            <div className="timeline-step is-done">
-              <span className="timeline-step__dot">✓</span>
-              <div>
-                <div className="timeline-person">
-                  <strong>Nguyễn Văn B - Phó Giám đốc</strong>
-                </div>
-                <div className="timeline-proposed-by">
-                  Đề xuất Trần Thị B – Lãnh đạo
-                </div>
-              </div>
-              <time>02/10&nbsp; 09:30</time>
-            </div>
-            <div
-              className={`timeline-step ${
-                returnedReason ? "is-done is-returned" : "is-current"
-              }`}
-            >
-              <span className="timeline-step__dot">
-                {returnedReason ? "✓" : "3"}
-              </span>
-              <div>
-                <div className="timeline-person">
-                  <strong>Nguyễn Minh Anh - Lãnh đạo đơn vị</strong>
-                  {documentOpinions.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setViewingOpinion(
-                          documentOpinions[documentOpinions.length - 1],
-                        )
-                      }
-                      aria-label="Xem ý kiến đã gửi"
-                      title="Xem ý kiến"
-                    >
-                      <Icon name="8d024" size={13} />
-                    </button>
-                  )}
-                </div>
-                <small>
-                  {returnedReason
-                    ? "Trả lại văn bản · 02/10 10:30"
-                    : "Lãnh đạo đang xử lý"}
-                </small>
-              </div>
-            </div>
-            <div className="timeline-step is-pending">
-              <span className="timeline-step__dot">4</span>
-              <div>
-                <strong>Văn thư đơn vị</strong>
-              </div>
-            </div>
-          </div>
-
-          {!readOnly && !returnedReason && (
-            <>
-              <div className="leader-opinion-box">
-                <strong>Cho ý kiến</strong>
-                <textarea
-                  value={opinion}
-                  onChange={(event) => setOpinion(event.target.value)}
-                  placeholder="Nhập ý kiến của bạn..."
-                  rows={3}
-                />
-                <Button
-                  variant="primary"
-                  onClick={() => {
-                    if (!opinion.trim()) return
-                    setSavedOpinions((current) => [
-                      ...current,
-                      {
-                        documentId: activeFlowDocument.id,
-                        author: "Nguyễn Minh Anh",
-                        title: "Lãnh đạo đơn vị",
-                        time: "02/10/2026 · 10:15",
-                        content: opinion.trim(),
-                      },
-                    ])
-                    setOpinion("")
-                    onNotify("Đã lưu ý kiến vào lịch sử trình ký")
-                  }}
-                >
-                  Gửi ý kiến
-                </Button>
               </div>
 
-              <div className="leader-actions">
-                {activeFlowDocument.requirement === "Xem" && (
+              <div className="space-y-0 text-xs mt-3">
+                <div className="flex gap-3 relative pb-5">
+                  <div className="flex flex-col items-center shrink-0">
+                    <div className="w-6 h-6 rounded-full bg-[#059669] text-white font-bold text-xs flex items-center justify-center shrink-0 z-10 shadow-2xs">
+                      1
+                    </div>
+                    <div className="w-0.5 grow bg-[#059669] mt-1" />
+                  </div>
+                  <div className="flex-1 min-w-0 pt-0.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <strong className="text-xs font-bold text-slate-900 truncate">
+                        Trần Thị B - Lãnh đạo
+                      </strong>
+                      <span className="shrink-0 px-2 py-0.5 text-[11px] font-medium rounded bg-[#e6f4ea] text-[#137333] border border-[#ceead6] inline-flex items-center gap-1 shadow-2xs">
+                        ✓ Đã duyệt
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between mt-1 text-[11px]">
+                      <time className="text-slate-400 font-normal">02/10/2026 08:15</time>
+                      {documentOpinions[0] && (
+                        <button
+                          type="button"
+                          onClick={() => setViewingOpinion(documentOpinions[0])}
+                          className="text-slate-500 hover:text-blue-600 inline-flex items-center gap-1 font-normal cursor-pointer bg-transparent border-none p-0 transition"
+                          title="Xem ý kiến của Trần Thị B"
+                          aria-label="Xem ý kiến của Trần Thị B"
+                        >
+                          <svg className="w-3.5 h-3.5 text-slate-400 hover:text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                          <span>Ý kiến</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 relative pb-5">
+                  <div className="flex flex-col items-center shrink-0">
+                    <div className="w-6 h-6 rounded-full bg-[#059669] text-white font-bold text-xs flex items-center justify-center shrink-0 z-10 shadow-2xs">
+                      2
+                    </div>
+                    <div className="w-0.5 grow bg-[#059669] mt-1" />
+                  </div>
+                  <div className="flex-1 min-w-0 pt-0.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <strong className="text-xs font-bold text-slate-900 truncate">
+                        Nguyễn Văn B - Phó Giám
+                      </strong>
+                      <span className="shrink-0 px-2 py-0.5 text-[11px] font-medium rounded bg-[#e6f4ea] text-[#137333] border border-[#ceead6] inline-flex items-center gap-1 shadow-2xs">
+                        ✓ Đã ký
+                      </span>
+                    </div>
+                    <time className="block text-[11px] text-slate-400 font-normal mt-1">
+                      02/10 09:30
+                    </time>
+                    <p className="text-[11px] text-slate-400 font-normal leading-relaxed mt-1">
+                      Được đề xuất bởi - Trần Thị B - 02/10/2026 - 10:30:00
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 relative pb-5">
+                  <div className="flex flex-col items-center shrink-0">
+                    <div className="w-6 h-6 rounded-full bg-[#991b1b] text-white font-bold text-xs flex items-center justify-center shrink-0 z-10 shadow-2xs ring-4 ring-rose-50">
+                      3
+                    </div>
+                    <div className="w-0.5 grow bg-slate-200 mt-1" />
+                  </div>
+                  <div className="flex-1 min-w-0 pt-0.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <strong className="text-xs font-bold text-slate-900 truncate">
+                        Nguyễn Minh Anh - Lãnh đạ
+                      </strong>
+                      <span className="shrink-0 px-2.5 py-0.5 text-[11px] font-medium rounded bg-[#fce8e6] text-[#c5221f] border border-[#fad2cf] inline-flex items-center gap-1 shadow-2xs">
+                        Trả lại
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between mt-1 text-[11px]">
+                      <time className="text-slate-400 font-normal">
+                        03/10/2026
+                      </time>
+                      {documentOpinions.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setViewingOpinion(
+                              documentOpinions[documentOpinions.length - 1]
+                            )
+                          }
+                          className="text-slate-500 hover:text-blue-600 inline-flex items-center gap-1 font-normal cursor-pointer bg-transparent border-none p-0 transition"
+                          title="Xem ý kiến"
+                          aria-label="Xem ý kiến"
+                        >
+                          <svg className="w-3.5 h-3.5 text-slate-400 hover:text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                          <span>Ý kiến</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 relative">
+                  <div className="flex flex-col items-center shrink-0">
+                    <div className="w-6 h-6 rounded-full bg-white border border-slate-300 text-slate-400 font-bold text-xs flex items-center justify-center shrink-0 z-10 shadow-2xs">
+                      4
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0 pt-0.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <strong className="text-xs font-semibold text-slate-700 truncate">
+                        Đào Minh Anh - Lãnh đạo
+                      </strong>
+                      <span className="shrink-0 px-2.5 py-0.5 text-[11px] font-medium rounded bg-[#f1f3f4] text-[#5f6368] border border-[#dadce0] inline-flex items-center shadow-2xs">
+                        Chờ ký
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-400 font-normal mt-1">
+                      Phát hành văn bản
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 pt-2 shrink-0">
+              <button
+                type="button"
+                className="w-full py-2.5 px-4 rounded-lg bg-[#fef2f2] text-[#c5221f] border border-[#fad2cf] hover:bg-[#fee2e2] text-xs font-semibold text-center transition cursor-pointer shadow-2xs"
+                onClick={() => {
+                  if (onEditFlow) {
+                    onEditFlow(flowDocuments);
+                  } else {
+                    setShowEditFlowModal(true);
+                  }
+                }}
+              >
+                Chỉnh sửa lượt trình
+              </button>
+            </div>
+          </aside>
+        )}
+
+        {!readOnly && (
+          <aside className="leader-action-panel bg-white border-l border-slate-200 p-4 flex flex-col justify-between h-full overflow-y-auto shrink-0 w-[280px]">
+            {!returnedReason && (
+              <>
+                <div className="leader-opinion-box space-y-2">
+                  <strong className="block text-xs font-bold text-slate-800">Cho ý kiến</strong>
+                  <textarea
+                    value={opinion}
+                    onChange={(event) => setOpinion(event.target.value)}
+                    placeholder="Nhập ý kiến của bạn..."
+                    rows={4}
+                    className="w-full p-2.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:border-blue-500 transition"
+                  />
                   <Button
-                    variant={hasViewed ? "secondary" : "primary"}
+                    variant="primary"
                     onClick={() => {
-                      if (!hasViewed) {
-                        setViewedIds((current) => [
-                          ...current,
-                          activeFlowDocument.id,
-                        ])
-                        completeAction("Đã ghi nhận xem văn bản")
-                      }
+                      if (!opinion.trim()) return
+                      setSavedOpinions((current) => [
+                        ...current,
+                        {
+                          documentId: activeFlowDocument.id,
+                          author: "Nguyễn Minh Anh",
+                          title: "Lãnh đạo đơn vị",
+                          time: "02/10/2026 · 10:15",
+                          content: opinion.trim(),
+                        },
+                      ])
+                      setOpinion("")
+                      onNotify("Đã lưu ý kiến vào lịch sử trình ký")
                     }}
                   >
-                    {hasViewed ? "✓ Đã xem" : "Đã xem"}
+                    Gửi ý kiến
                   </Button>
-                )}
-                {activeFlowDocument.requirement === "Duyệt" && (
-                  <>
+                </div>
+
+                <div className="leader-actions space-y-2 mt-4 pt-4 border-t border-slate-100">
+                  {activeFlowDocument.requirement === "Xem" && (
                     <Button
-                      variant={
-                        activeDocumentCompleted ? "secondary" : "primary"
-                      }
+                      variant={hasViewed ? "secondary" : "primary"}
                       onClick={() => {
-                        if (!activeDocumentCompleted) {
-                          completeAction("Đã duyệt văn bản")
+                        if (!hasViewed) {
+                          setViewedIds((current) => [
+                            ...current,
+                            activeFlowDocument.id,
+                          ])
+                          completeAction("Đã ghi nhận xem văn bản")
                         }
                       }}
                     >
-                      {activeDocumentCompleted ? "✓ Đã duyệt" : "Duyệt"}
+                      {hasViewed ? "✓ Đã xem" : "Đã xem"}
                     </Button>
-                    <Button onClick={() => setShowReturnModal(true)}>
-                      Trả lại
-                    </Button>
-                    <Button className="is-disabled">Ký số không áp dụng</Button>
-                  </>
-                )}
-                {activeFlowDocument.requirement === "Ký" && (
-                  <>
-                    <Button
-                      variant={
-                        activeDocumentCompleted ? "secondary" : "primary"
-                      }
-                      onClick={() => {
-                        if (!activeDocumentCompleted) {
-                          completeAction("Đã ký số văn bản")
+                  )}
+                  {activeFlowDocument.requirement === "Duyệt" && (
+                    <>
+                      <Button
+                        variant={
+                          activeDocumentCompleted ? "secondary" : "primary"
                         }
-                      }}
-                    >
-                      {activeDocumentCompleted ? "✓ Đã ký số" : "Ký số"}
-                    </Button>
-                    <Button onClick={() => setShowReturnModal(true)}>
-                      Trả lại
-                    </Button>
-                  </>
-                )}
-              </div>
-            </>
-          )}
-          {readOnly && (
-            <Button
-              variant="primary"
-              className="edit-flow"
-              onClick={() => onEditFlow?.(flowDocuments)}
-            >
-              Chỉnh sửa lượt trình
-            </Button>
-          )}
-        </aside>
+                        onClick={() => {
+                          if (!activeDocumentCompleted) {
+                            completeAction("Đã duyệt văn bản")
+                          }
+                        }}
+                      >
+                        {activeDocumentCompleted ? "✓ Đã duyệt" : "Duyệt"}
+                      </Button>
+                      <Button onClick={() => setShowReturnModal(true)}>
+                        Trả lại
+                      </Button>
+                      <Button className="is-disabled">Ký số không áp dụng</Button>
+                    </>
+                  )}
+                  {activeFlowDocument.requirement === "Ký" && (
+                    <>
+                      <Button
+                        variant={
+                          activeDocumentCompleted ? "secondary" : "primary"
+                        }
+                        onClick={() => {
+                          if (!activeDocumentCompleted) {
+                            completeAction("Đã ký số văn bản")
+                          }
+                        }}
+                      >
+                        {activeDocumentCompleted ? "✓ Đã ký số" : "Ký số"}
+                      </Button>
+                      <Button onClick={() => setShowReturnModal(true)}>
+                        Trả lại
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </>
+            )}
+          </aside>
+        )}
       </div>
       {viewingOpinion && (
         <div className="modal-backdrop" role="presentation">
@@ -4917,6 +5083,18 @@ export function LeaderDocumentDetail({
           </section>
         </div>
       )}
+      {showEditFlowModal && (
+        <ChinhSuaLuotTrinhModal
+          isOpen={showEditFlowModal}
+          onClose={() => setShowEditFlowModal(false)}
+          onSave={() => {
+            setShowEditFlowModal(false);
+            onNotify("Đã cập nhật lượt trình ký thành công");
+            onEditFlow?.(flowDocuments);
+          }}
+          documents={flowDocuments}
+        />
+      )}
     </main>
   )
 }
@@ -4980,275 +5158,15 @@ export function FlowModal({
   onClose: () => void
   onSave: () => void
 }) {
-  const [selectedLeaderId, setSelectedLeaderId] = useState("")
-  const [approvers, setApprovers] = useState(fakeLeaders.slice(0, 3))
-  const [viewingOpinion, setViewingOpinion] =
-    useState<typeof fakeLeaders[number] | null>(null)
-  const [permissions, setPermissions] = useState<Record<string, Permission>>({
-    "document-1:lanh-dao-1": "Xem",
-    "document-1:lanh-dao-2": "Ký số",
-    "document-1:lanh-dao-3": "Ký số",
-    "document-2:lanh-dao-1": "Xem",
-    "document-2:lanh-dao-2": "Duyệt",
-    "document-2:lanh-dao-3": "Bỏ qua",
-    "document-3:lanh-dao-1": "Xem",
-    "document-3:lanh-dao-2": "Xem",
-    "document-3:lanh-dao-3": "Xem",
-  })
-  const availableLeaders = fakeLeaders.filter(
-    (leader) => !approvers.some((approver) => approver.id === leader.id),
-  )
-
-  function addLeader() {
-    const leader = fakeLeaders.find((item) => item.id === selectedLeaderId)
-    if (!leader || approvers.some((approver) => approver.id === leader.id))
-      return
-
-    setApprovers((current) => [...current, leader])
-    setPermissions((current) => {
-      const next = { ...current }
-      matrixDocuments.forEach((document) => {
-        next[`${document.id}:${leader.id}`] = "Xem"
-      })
-      return next
-    })
-    setSelectedLeaderId("")
-  }
-
-  function removeLeader(leaderId: string) {
-    setApprovers((current) =>
-      current.filter((leader) => leader.id !== leaderId),
-    )
-  }
-
-  function updatePermission(
-    documentId: string,
-    leaderId: string,
-    value: Permission,
-  ) {
-    setPermissions((current) => ({
-      ...current,
-      [`${documentId}:${leaderId}`]: value,
-    }))
-  }
-
   return (
-    <div className="modal-backdrop" role="presentation">
-      <section
-        className="modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="modal-title"
-      >
-        <header className="modal__header">
-          <span className="modal__icon">⌘</span>
-          <div>
-            <h2 id="modal-title">
-              Chỉnh sửa lượt trình & Ma trận phân quyền văn bản
-            </h2>
-            <p>
-              Mã hồ sơ: LT-125/2026 · Cấu hình thứ tự trình ký và quyền hạn từng
-              văn bản
-            </p>
-          </div>
-          <button
-            className="modal__close"
-            type="button"
-            onClick={onClose}
-            aria-label="Đóng"
-          >
-            ×
-          </button>
-        </header>
-        <div className="modal__body">
-          <div className="matrix-toolbar">
-            <select
-              className="select-box leader-select"
-              value={selectedLeaderId}
-              onChange={(event) => setSelectedLeaderId(event.target.value)}
-              aria-label="Chọn lãnh đạo phê duyệt"
-            >
-              <option value="">-- Chọn lãnh đạo phê duyệt --</option>
-              {availableLeaders.map((leader) => (
-                <option value={leader.id} key={leader.id}>
-                  {leader.name} - {leader.title}
-                </option>
-              ))}
-            </select>
-            <Button
-              variant="primary"
-              onClick={addLeader}
-              className={!selectedLeaderId ? "is-disabled" : ""}
-            >
-              ＋ Thêm lãnh đạo
-            </Button>
-          </div>
-          <div className="matrix-scroll">
-            <table className="matrix">
-              <thead>
-                <tr>
-                  <th>DANH SÁCH VĂN BẢN TRONG LƯỢT</th>
-                  {approvers.map((leader, index) => (
-                    <th key={leader.id}>
-                      <div className="approver">
-                        <i
-                          className={
-                            index === 0 ? "green" : index > 1 ? "gray" : ""
-                          }
-                        >
-                          {index === 0 ? "✓" : index + 1}
-                        </i>
-                        <span>
-                          <strong>
-                            {index + 1}. {leader.name}
-                          </strong>
-                          <small>{leader.title}</small>
-                          {index === 0 && (
-                            <em className="approver__status">Đã cho ý kiến</em>
-                          )}
-                        </span>
-                        <div className="approver__actions">
-                          {index === 0 && (
-                            <button
-                              className="approver__view"
-                              type="button"
-                              onClick={() => setViewingOpinion(leader)}
-                              aria-label={`Xem ý kiến của ${leader.name}`}
-                              title="Xem ý kiến lãnh đạo"
-                            >
-                              <Icon name="8d024" size={14} />
-                            </button>
-                          )}
-                          {index !== 0 && (
-                            <button
-                              className="approver__remove"
-                              type="button"
-                              onClick={() => removeLeader(leader.id)}
-                              aria-label={`Xóa ${leader.name} khỏi lượt trình`}
-                            >
-                              ×
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {matrixDocuments.map((document, documentIndex) => (
-                  <tr key={document.id}>
-                    <td>
-                      ▧ &nbsp; {documentIndex + 1}. {document.name}
-                    </td>
-                    {approvers.map((leader, leaderIndex) => {
-                      const key = `${document.id}:${leader.id}`
-                      return (
-                        <td key={key}>
-                          <MatrixSelect
-                            value={permissions[key] ?? "Xem"}
-                            danger={documentIndex === 0 && leaderIndex === 1}
-                            disabled={leaderIndex === 0}
-                            onChange={(value) =>
-                              updatePermission(document.id, leader.id, value)
-                            }
-                          />
-                          {documentIndex === 0 && leaderIndex === 1 && (
-                            <small className="matrix-note">
-                              Thẩm quyền chính <b>• Đang chờ xử lý</b>
-                            </small>
-                          )}
-                        </td>
-                      )
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr>
-                  <td colSpan={approvers.length + 1}>
-                    ＋ Thêm văn bản vào ma trận{" "}
-                    <span>
-                      Nhấp vào từng ô để thay đổi quyền xử lý tương ứng
-                    </span>
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        </div>
-        <footer className="modal__footer">
-          <Button onClick={onClose}>Đóng</Button>
-          <Button variant="primary" onClick={onSave}>
-            ✓ &nbsp; Lưu thay đổi ma trận
-          </Button>
-        </footer>
-        {viewingOpinion && (
-          <div className="opinion-backdrop" role="presentation">
-            <section
-              className="opinion-dialog"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="opinion-title"
-            >
-              <header className="opinion-dialog__header">
-                <span className="opinion-dialog__icon">✓</span>
-                <div>
-                  <h3 id="opinion-title">Ý kiến của lãnh đạo</h3>
-                  <p>
-                    {viewingOpinion.name} · {viewingOpinion.title}
-                  </p>
-                </div>
-                <button
-                  className="modal__close"
-                  type="button"
-                  onClick={() => setViewingOpinion(null)}
-                  aria-label="Đóng nội dung ý kiến"
-                >
-                  ×
-                </button>
-              </header>
-              <div className="opinion-dialog__meta">
-                <span className="status status--da-duyet">✓ Đã cho ý kiến</span>
-                <time>02/10/2026 · 09:20</time>
-              </div>
-              <div className="opinion-list">
-                <article>
-                  <div>
-                    <strong>Phiếu đề xuất hướng xử lý.docx</strong>
-                    <span>Duyệt</span>
-                  </div>
-                  <p>
-                    Đồng ý với nội dung đề xuất. Chuyển lãnh đạo tiếp theo xem
-                    xét và ký số theo quy định.
-                  </p>
-                </article>
-                <article>
-                  <div>
-                    <strong>Tờ trình lãnh đạo.doc</strong>
-                    <span>Đã xem</span>
-                  </div>
-                  <p>
-                    Hồ sơ đã được rà soát, nội dung và căn cứ pháp lý phù hợp.
-                  </p>
-                </article>
-                <article>
-                  <div>
-                    <strong>Báo cáo xác minh.pdf</strong>
-                    <span>Đã xem</span>
-                  </div>
-                  <p>Không có ý kiến bổ sung.</p>
-                </article>
-              </div>
-              <footer className="opinion-dialog__footer">
-                <Button onClick={() => setViewingOpinion(null)}>Đóng</Button>
-              </footer>
-            </section>
-          </div>
-        )}
-      </section>
-    </div>
-  )
+    <ChinhSuaLuotTrinhModal
+      isOpen={true}
+      onClose={onClose}
+      onSave={() => {
+        onSave();
+      }}
+    />
+  );
 }
 
 function CreateDocumentModal({
@@ -5420,9 +5338,8 @@ function TransferModal({
                 const checked = selectedIds.includes(document.id)
                 return (
                   <div
-                    className={`transfer-document ${
-                      checked ? "is-selected" : ""
-                    }`}
+                    className={`transfer-document ${checked ? "is-selected" : ""
+                      }`}
                     key={document.id}
                   >
                     <label>
@@ -5767,17 +5684,19 @@ export interface TrinhKyFigmaAppProps {
   onNav?: (s: Screen) => void;
   initialRole?: "officer" | "leader" | "clerk";
   initialView?:
-    | "work"
-    | "list"
-    | "detail"
-    | "leader-detail"
-    | "officer-case"
-    | "signing-detail"
-    | "add-receipt"
-    | "add-case";
+  | "work"
+  | "list"
+  | "detail"
+  | "leader-detail"
+  | "officer-case"
+  | "signing-detail"
+  | "add-receipt"
+  | "add-case";
   initialDocId?: string;
   onBackToKanban?: () => void;
   hideSidebar?: boolean;
+  hideTopNav?: boolean;
+  onSwitchAccount?: (account: CurrentUserAccount) => void;
 }
 
 export default function TrinhKyFigmaApp({
@@ -5788,6 +5707,8 @@ export default function TrinhKyFigmaApp({
   initialDocId,
   onBackToKanban,
   hideSidebar = true,
+  hideTopNav = false,
+  onSwitchAccount,
 }: TrinhKyFigmaAppProps) {
   const isLeaderRole = currentAccount?.role === "lanh_dao" || initialRole === "leader";
   const defaultRole: WorkRole = isLeaderRole ? "leader" : (initialRole || "officer");
@@ -5873,6 +5794,16 @@ export default function TrinhKyFigmaApp({
   }
 
   const handleBackNavigation = () => {
+    if (
+      view === "leader-detail" ||
+      view === "officer-case" ||
+      view === "signing-detail" ||
+      view === "add-receipt" ||
+      view === "add-case"
+    ) {
+      setView("work");
+      return;
+    }
     if (onBackToKanban) {
       onBackToKanban();
     } else if (onNav) {
@@ -5884,7 +5815,7 @@ export default function TrinhKyFigmaApp({
 
   return (
     <div className="app-shell trinh-ky-figma-scope" style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflow: 'hidden' }}>
-      {hideSidebar && (
+      {hideSidebar && !hideTopNav && (
         <div
           style={{
             display: 'flex',
@@ -5919,22 +5850,6 @@ export default function TrinhKyFigmaApp({
               }}
             >
               Bàn làm việc
-            </button>
-            <button
-              type="button"
-              onClick={() => setView('list')}
-              style={{
-                padding: '4px 10px',
-                borderRadius: '6px',
-                border: (view === 'list' || view === 'detail') ? '1px solid #bfdbfe' : '1px solid transparent',
-                cursor: 'pointer',
-                fontWeight: 600,
-                fontSize: '12.5px',
-                background: (view === 'list' || view === 'detail') ? '#eff6ff' : 'transparent',
-                color: (view === 'list' || view === 'detail') ? '#004ac6' : '#64748b',
-              }}
-            >
-              Danh mục văn bản ({managementDocuments.length})
             </button>
             <button
               type="button"
@@ -6006,11 +5921,11 @@ export default function TrinhKyFigmaApp({
           <Sidebar
             active={
               view === "work" ||
-              view === "leader-detail" ||
-              view === "officer-case" ||
-              view === "signing-detail" ||
-              view === "add-receipt" ||
-              view === "add-case"
+                view === "leader-detail" ||
+                view === "officer-case" ||
+                view === "signing-detail" ||
+                view === "add-receipt" ||
+                view === "add-case"
                 ? "work"
                 : "documents"
             }
@@ -6031,6 +5946,20 @@ export default function TrinhKyFigmaApp({
             }}
             onAddReceipt={() => setView("add-receipt")}
             onAddCase={() => setView("add-case")}
+            onSwitchRole={(newRole) => {
+              if (onSwitchAccount) {
+                if (newRole === 'officer') {
+                  const canBo = DEMO_ACCOUNTS.find((a) => a.role === 'can_bo');
+                  if (canBo) onSwitchAccount(canBo);
+                } else if (newRole === 'clerk') {
+                  const vanThu = DEMO_ACCOUNTS.find((a) => a.role === 'van_thu');
+                  if (vanThu) onSwitchAccount(vanThu);
+                } else if (newRole === 'leader') {
+                  const lanhDao = DEMO_ACCOUNTS.find((a) => a.role === 'lanh_dao');
+                  if (lanhDao) onSwitchAccount(lanhDao);
+                }
+              }
+            }}
           />
         ) : view === "add-receipt" ? (
           <AddReceiptPage onBack={() => setView("work")} onNotify={notify} />
@@ -6081,25 +6010,25 @@ export default function TrinhKyFigmaApp({
             onBack={handleBackNavigation}
             onNotify={notify}
           />
-      ) : view === "list" ? (
-        <ListView
-          data={managementDocuments.map((document) => ({
-            ...document,
-            status: normalizeManagementStatus(document.status),
-          }))}
-          onOpenDetail={openDetail}
-          onAddDocument={() => setShowCreateModal(true)}
-          onStartFlow={setFlowSetupDocuments}
-          onNotify={notify}
-        />
-      ) : (
-        <DetailView
-          document={activeDocument}
-          onBack={() => setView("list")}
-          onEditFlow={() => setShowModal(true)}
-          onNotify={notify}
-        />
-      )}
+        ) : view === "list" ? (
+          <ListView
+            data={managementDocuments.map((document) => ({
+              ...document,
+              status: normalizeManagementStatus(document.status),
+            }))}
+            onOpenDetail={openDetail}
+            onAddDocument={() => setShowCreateModal(true)}
+            onStartFlow={setFlowSetupDocuments}
+            onNotify={notify}
+          />
+        ) : (
+          <DetailView
+            document={activeDocument}
+            onBack={() => setView("list")}
+            onEditFlow={() => setShowModal(true)}
+            onNotify={notify}
+          />
+        )}
       </div>
       {showModal && (
         <FlowModal
@@ -6132,14 +6061,14 @@ export default function TrinhKyFigmaApp({
               managementDocuments.map((document) =>
                 submittedCodes.has(document.code)
                   ? {
-                      ...document,
-                      date: "02/10/2026 15:20",
-                      flow: "LT-MỚI/2026",
-                      status: "Đã trình",
-                      progress: "0/3 người",
-                      handler: "Lê Văn A",
-                      role: "Trưởng phòng",
-                    }
+                    ...document,
+                    date: "02/10/2026 15:20",
+                    flow: "LT-MỚI/2026",
+                    status: "Đã trình",
+                    progress: "0/3 người",
+                    handler: "Lê Văn A",
+                    role: "Trưởng phòng",
+                  }
                   : document,
               ),
             )

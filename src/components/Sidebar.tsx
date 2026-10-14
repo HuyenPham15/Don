@@ -126,7 +126,7 @@ export default function Sidebar({ screen, onNav, currentAccount, signingCounts }
           </button> */}
 
           {/* Quản lý trình ký (Điều hướng trực tiếp vào tab Trình ký trong Công việc của tôi) */}
-          <button
+          {/* <button
             type="button"
             onClick={() => onNav('quan-ly-trinh-ky')}
             className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer ${screen === 'quan-ly-trinh-ky'
@@ -151,7 +151,7 @@ export default function Sidebar({ screen, onNav, currentAccount, signingCounts }
               )}
               {screen === 'quan-ly-trinh-ky' && <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>}
             </div>
-          </button>
+          </button> */}
 
           {/* AI Tiếp nhận đơn (Chat) */}
           <button
@@ -445,13 +445,12 @@ export default function Sidebar({ screen, onNav, currentAccount, signingCounts }
                 <span className="text-xs font-bold text-slate-900 truncate">
                   {currentAccount.name}
                 </span>
-                <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold ${
-                  currentAccount.role === 'lanh_dao'
-                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                    : currentAccount.role === 'van_thu'
-                      ? 'bg-rose-100 text-rose-800 border border-rose-200'
-                      : 'bg-blue-100 text-[#004ac6] border border-blue-200'
-                }`}>
+                <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold ${currentAccount.role === 'lanh_dao'
+                  ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                  : currentAccount.role === 'van_thu'
+                    ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                    : 'bg-blue-100 text-[#004ac6] border border-blue-200'
+                  }`}>
                   {currentAccount.role === 'lanh_dao' ? 'LÃNH ĐẠO' : currentAccount.role === 'van_thu' ? 'VĂN THƯ' : 'CÁN BỘ'}
                 </span>
               </div>
