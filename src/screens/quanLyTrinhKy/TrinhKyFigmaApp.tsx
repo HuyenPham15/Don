@@ -4673,11 +4673,7 @@ export function LeaderDocumentDetail({
                 type="button"
                 className="w-full py-2.5 px-4 rounded-lg bg-[#fef2f2] text-[#c5221f] border border-[#fad2cf] hover:bg-[#fee2e2] text-xs font-semibold text-center transition cursor-pointer shadow-2xs"
                 onClick={() => {
-                  if (onEditFlow) {
-                    onEditFlow(flowDocuments);
-                  } else {
-                    setShowEditFlowModal(true);
-                  }
+                  setShowEditFlowModal(true);
                 }}
               >
                 Chỉnh sửa lượt trình
@@ -5092,7 +5088,6 @@ export function LeaderDocumentDetail({
             onNotify("Đã cập nhật lượt trình ký thành công");
             onEditFlow?.(flowDocuments);
           }}
-          documents={flowDocuments}
         />
       )}
     </main>

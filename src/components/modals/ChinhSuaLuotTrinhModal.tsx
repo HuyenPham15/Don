@@ -183,7 +183,7 @@ export default function ChinhSuaLuotTrinhModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-900/50 backdrop-blur-xs font-sans animate-fade-in"
+      className="fixed inset-0 z-[100000] flex items-center justify-center p-3 sm:p-5 bg-slate-900/60 backdrop-blur-xs font-sans animate-fade-in"
       role="dialog"
       aria-modal="true"
       aria-labelledby="chinh-sua-luot-trinh-title"
@@ -234,8 +234,7 @@ export default function ChinhSuaLuotTrinhModal({
             <button
               type="button"
               onClick={handleAddLeader}
-              disabled={!selectedLeaderId}
-              className="h-9 px-3.5 text-xs font-semibold text-white bg-[#80182a] hover:bg-[#6b1423] rounded-lg transition disabled:opacity-50 flex items-center gap-1 cursor-pointer shadow-2xs"
+              className="h-9 px-3.5 text-xs font-semibold text-white bg-[#80182a] hover:bg-[#6b1423] rounded-lg transition active:scale-95 flex items-center gap-1 cursor-pointer shadow-2xs"
             >
               <span>+</span>
               <span>Thêm lãnh đạo</span>
@@ -244,11 +243,17 @@ export default function ChinhSuaLuotTrinhModal({
 
           {/* Bảng ma trận phân quyền văn bản */}
           <div className="border border-slate-200 rounded-xl overflow-x-auto shadow-2xs bg-white">
-            <table className="w-full border-collapse text-xs">
+            <table className="w-full border-collapse text-xs table-fixed">
+              <colgroup>
+                <col className="w-[280px]" />
+                {leaders.map((leader) => (
+                  <col key={leader.id} className="w-[170px]" />
+                ))}
+              </colgroup>
               <thead>
                 <tr className="bg-[#f8fafc] border-b border-slate-200">
                   {/* Cột 1: DANH SÁCH VĂN BẢN */}
-                  <th className="w-[260px] min-w-[240px] px-4 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider border-r border-slate-200 align-middle">
+                  <th className="w-[280px] px-4 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider border-r border-slate-200 align-middle">
                     DANH SÁCH VĂN BẢN
                   </th>
 
@@ -258,9 +263,9 @@ export default function ChinhSuaLuotTrinhModal({
                     return (
                       <th
                         key={leader.id}
-                        className="w-[185px] min-w-[170px] px-3.5 py-3 text-left border-r border-slate-200 bg-[#f8fafc] align-top relative"
+                        className="w-[170px] px-3.5 py-3 text-left border-r border-slate-200 bg-[#f8fafc] align-top relative"
                       >
-                        <div className="flex items-start gap-2 pr-5">
+                        <div className="flex items-start gap-2 pr-4">
                           <span
                             className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 mt-0.5 shadow-2xs ${leader.badgeColor}`}
                           >
@@ -268,13 +273,13 @@ export default function ChinhSuaLuotTrinhModal({
                           </span>
                           <div className="min-w-0 flex-1">
                             <strong
-                              className="block text-xs font-bold text-slate-900 leading-snug truncate"
+                              className="block text-xs font-bold text-slate-900 leading-snug whitespace-nowrap overflow-hidden text-ellipsis"
                               title={`${leader.badgeNumber}. ${leader.name}`}
                             >
                               {leader.badgeNumber}. {leader.name}
                             </strong>
                             <span
-                              className="block text-[11px] text-slate-500 font-normal mt-0.5 truncate"
+                              className="block text-[11px] text-slate-500 font-normal mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis"
                               title={leader.title}
                             >
                               {leader.title}
@@ -282,9 +287,9 @@ export default function ChinhSuaLuotTrinhModal({
 
                             {/* Huy hiệu Được đề xuất */}
                             {leader.isProposed && (
-                              <div className="flex items-center gap-1 mt-1 text-[#b45309] text-[10.5px] font-medium leading-tight">
+                              <div className="flex items-center gap-1 mt-1 text-[#b45309] text-[10.5px] font-medium leading-tight whitespace-nowrap">
                                 <span>Được đề xuất</span>
-                                <span className="w-4 h-4 rounded-full bg-[#f59e0b] text-white text-[9px] font-bold flex items-center justify-center shadow-2xs shrink-0">
+                                <span className="w-3.5 h-3.5 rounded-full bg-[#f59e0b] text-white text-[9px] font-bold flex items-center justify-center shadow-2xs shrink-0">
                                   T
                                 </span>
                               </div>
@@ -314,17 +319,17 @@ export default function ChinhSuaLuotTrinhModal({
                 {docs.map((doc) => (
                   <tr key={doc.id} className="hover:bg-slate-50/60 transition-colors">
                     {/* Cột 1: Thông tin văn bản */}
-                    <td className="w-[260px] min-w-[240px] px-4 py-3.5 border-r border-slate-200 align-middle">
+                    <td className="w-[280px] px-4 py-3.5 border-r border-slate-200 align-middle">
                       <div className="flex items-start gap-2.5">
                         <span className="material-symbols-outlined text-slate-500 text-base leading-none shrink-0 mt-0.5">
                           description
                         </span>
-                        <strong
-                          className="block text-xs font-semibold text-slate-900 leading-snug break-words"
+                        <span
+                          className="block text-xs font-semibold text-slate-900 leading-relaxed break-normal"
                           title={doc.name}
                         >
                           {doc.name}
-                        </strong>
+                        </span>
                       </div>
                     </td>
 
@@ -338,7 +343,7 @@ export default function ChinhSuaLuotTrinhModal({
                       return (
                         <td
                           key={key}
-                          className="w-[185px] min-w-[170px] px-3.5 py-3 border-r border-slate-200 align-middle"
+                          className="w-[170px] px-3.5 py-3 border-r border-slate-200 align-middle"
                         >
                           <div className="relative w-full">
                             <select
@@ -355,7 +360,7 @@ export default function ChinhSuaLuotTrinhModal({
                                 isDisabled
                                   ? 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed'
                                   : isMainSigner
-                                    ? 'bg-white border-rose-300 ring-1 ring-rose-200 text-slate-900 shadow-2xs'
+                                    ? 'bg-white border-[#fca5a5] text-[#c5221f] font-semibold ring-1 ring-[#fee2e2] shadow-2xs'
                                     : 'bg-white border-slate-300 text-slate-700 hover:border-slate-400 focus:border-blue-400 cursor-pointer'
                               }`}
                               aria-label={`Quyền của ${leader.name} với ${doc.name}`}

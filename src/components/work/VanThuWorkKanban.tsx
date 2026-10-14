@@ -22,7 +22,6 @@ interface VanThuWorkItem {
 }
 
 const INITIAL_VAN_THU_ITEMS: VanThuWorkItem[] = [
-  // Cột 1: Chưa chuyển xử lý
   {
     id: 'LN-305',
     code: 'LN-305/2026-CATPHN',
@@ -211,8 +210,6 @@ const INITIAL_VAN_THU_ITEMS: VanThuWorkItem[] = [
       { time: '12/10/2026 15:10:00', action: 'Chuyển cán bộ thụ lý', actor: 'Lê Ngọc Mai', note: 'Đã giao chuyên viên Nguyễn Minh Anh phụ trách' },
     ],
   },
-
-  // Cột 3: Đã chuyển về đơn vị
   {
     id: 'LN-310',
     code: 'LN-310/2026-CATPHN',

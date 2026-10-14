@@ -368,27 +368,89 @@ export default function DonTiepNhan({
     }
   }, [donDetail]);
 
-  // Kiểm tra văn bản báo cáo đề xuất đã có cho hồ sơ đơn này (chỉ loại báo cáo đề xuất, không tính tờ trình thụ lý)
+  // Kiểm tra văn bản báo cáo đề xuất / tờ trình đề xuất / văn bản trình ký đã có cho hồ sơ đơn này
   const existingSigningDoc = useMemo(() => {
     return (
       signingDocuments?.find(
         (d) =>
-          d.hoSoCode === currentDon.code &&
-          d.loaiVanBan === 'bao_cao_de_xuat'
-      ) || null
+          (d.hoSoCode === currentDon.code || d.hoSoCode === currentDon.id || (currentDon.luotNhanId && d.luotNhanId === currentDon.luotNhanId)) &&
+          (d.loaiVanBan === 'bao_cao_de_xuat' ||
+            d.loaiVanBan === 'to_trinh_thu_ly' ||
+            d.loaiVanBanLabel?.toLowerCase().includes('đề xuất') ||
+            d.tenVanBan?.toLowerCase().includes('đề xuất') ||
+            d.tenVanBan?.toLowerCase().includes('báo cáo') ||
+            d.tenVanBan?.toLowerCase().includes('tờ trình'))
+      ) ||
+      signingDocuments?.find(
+        (d) =>
+          d.hoSoCode === currentDon.code ||
+          d.hoSoCode === currentDon.id ||
+          (currentDon.luotNhanId && d.luotNhanId === currentDon.luotNhanId)
+      ) ||
+      null
     );
-  }, [signingDocuments, currentDon.code]);
+  }, [signingDocuments, currentDon.code, currentDon.id, currentDon.luotNhanId]);
 
-  // Kiểm tra báo cáo đề xuất đã được lập và trình ký xong chưa (khác null và status !== 'nhap')
+  // Kiểm tra báo cáo đề xuất / văn bản trình ký đã được lập và trình ký xong chưa (khác null và status !== 'nhap')
   const isBaoCaoDaTrinhKy = Boolean(
-    existingSigningDoc && existingSigningDoc.status !== 'nhap'
+    (existingSigningDoc && existingSigningDoc.status !== 'nhap') ||
+    currentDon.statusBadge === 'Chờ phê duyệt' ||
+    currentDon.statusBadge === 'Đang trình ký' ||
+    currentDon.statusBadge === 'Đã trình ký' ||
+    currentDon.statusBadge === 'Chờ duyệt ký' ||
+    trangThaiXacMinh === 'da_xac_minh' ||
+    (currentDon.currentStep && currentDon.currentStep >= 2) ||
+    (signingDocuments &&
+      signingDocuments.some(
+        (d) =>
+          (d.hoSoCode === currentDon.code ||
+            d.hoSoCode === currentDon.id ||
+            (currentDon.luotNhanId && d.luotNhanId === currentDon.luotNhanId)) &&
+          d.status !== 'nhap'
+      ))
   );
+
+  // Kiểm tra đã có báo cáo đề xuất (kể cả bản nháp hoặc đã trình ký)
+  const hasBaoCaoDeXuat = Boolean(
+    existingSigningDoc ||
+    isBaoCaoDaTrinhKy ||
+    trangThaiXacMinh === 'da_xac_minh' ||
+    (currentDon.currentStep && currentDon.currentStep >= 2)
+  );
+
+  // Tự động đồng bộ hướng xử lý theo phương án đề xuất trong Báo cáo đề xuất
+  useEffect(() => {
+    if (existingSigningDoc) {
+      const pa = (existingSigningDoc as any).formData?.phuongAnDeXuat;
+      if (pa === 1) {
+        setHuongXuLyDaChon('thu_ly');
+      } else if (pa === 2) {
+        setHuongXuLyDaChon('ban_giao');
+      } else if (pa === 3) {
+        setHuongXuLyDaChon('khong_thu_ly');
+      } else if (pa === 4) {
+        setHuongXuLyDaChon('yeu_cau_bo_sung');
+      } else if (existingSigningDoc.noiDungChiTiet || existingSigningDoc.trichYeu || existingSigningDoc.tenVanBan) {
+        const text = `${existingSigningDoc.tenVanBan} ${existingSigningDoc.trichYeu} ${existingSigningDoc.noiDungChiTiet}`.toLowerCase();
+        if (text.includes('thụ lý giải quyết') || text.includes('đề xuất thụ lý') || text.includes('thụ lý')) {
+          setHuongXuLyDaChon('thu_ly');
+        } else if (text.includes('chuyển đơn') || text.includes('bàn giao') || text.includes('chuyển thẩm quyền')) {
+          setHuongXuLyDaChon('ban_giao');
+        } else if (text.includes('không thụ lý') || text.includes('lưu đơn')) {
+          setHuongXuLyDaChon('khong_thu_ly');
+        } else if (text.includes('bổ sung')) {
+          setHuongXuLyDaChon('yeu_cau_bo_sung');
+        }
+      }
+    }
+  }, [existingSigningDoc]);
 
   // Kiểm tra báo cáo đề xuất đã được ký duyệt chính thức chưa (đã ký / hoàn tất)
   const isBaoCaoDaKy = Boolean(
     (existingSigningDoc &&
       (existingSigningDoc.status === 'da_ky' || existingSigningDoc.status === 'hoan_tat')) ||
-    currentDon?.statusBadge?.includes('Đã ký')
+    currentDon?.statusBadge?.includes('Đã ký') ||
+    currentDon?.statusBadge?.includes('Đã thụ lý')
   );
 
   // Kiểm tra văn bản trả lại đơn của hồ sơ này
@@ -416,46 +478,35 @@ export default function DonTiepNhan({
     }
   }, [existingTraLaiSigningDoc, currentDon.statusBadge]);
 
-  // 1. Nhấn vào "Tạo báo cáo đề xuất" -> Hiển thị popup/modal "Tạo báo cáo đề xuất"
-  const handleTaoBaoCaoDeXuat = () => {
-    if (isBaoCaoDaTrinhKy) {
-      // Nếu đã trình ký, bấm "Xem báo cáo đề xuất" -> mở xem văn bản tại Tab Hồ sơ & Văn bản
-      if (existingSigningDoc) {
-        const docItem: DocItem = {
-          id: existingSigningDoc.id,
-          name: `Bao_cao_ket_qua_xac_minh_${currentDon.code}.pdf`,
-          tenVanBan: existingSigningDoc.tenVanBan || 'Báo cáo kết quả xác minh',
-          category: 'Báo cáo đề xuất',
-          soHieu: existingSigningDoc.soKyHieu,
-          size: '380 KB',
-          pages: 2,
-          uploadDate: existingSigningDoc.ngayTao,
-          signer: `${existingSigningDoc.nguoiLap} (${existingSigningDoc.donViNguoiLap || 'Điều tra viên'})`,
-          coQuanBanHanh: existingSigningDoc.donViNguoiLap || 'Cơ quan Cảnh sát điều tra',
-          stepBelongsTo: 'Bước 2: Xác minh thông tin & Đề xuất',
-          ocrStatus: 'Hoàn tất',
-          isProcessDoc: true,
-          isEditable: true,
-          loaiVanBan: 'bao_cao_de_xuat',
-          nguoiNhan: existingSigningDoc.lanhDaoName || 'Thủ trưởng Cơ quan Điều tra',
-          trichYeu: existingSigningDoc.trichYeu,
-          noiDungChiTiet: existingSigningDoc.noiDungChiTiet,
-          previewExcerpt: existingSigningDoc.noiDungChiTiet,
-          trangThai: existingSigningDoc.status === 'da_ky' ? 'da_ban_hanh' : 'du_thao',
-          fromXacMinh: true,
-          signingStatus: existingSigningDoc.status,
-        };
-        setEditingDocInTab(docItem);
+  // Tự động đồng bộ trạng thái hồ sơ khi văn bản đề xuất / báo cáo đã được trình ký
+  useEffect(() => {
+    if (
+      existingSigningDoc &&
+      existingSigningDoc.status !== 'nhap' &&
+      currentDon.statusBadge !== 'Chờ phê duyệt' &&
+      currentDon.statusBadge !== 'Đã thụ lý' &&
+      currentDon.statusBadge !== 'Đã giải quyết' &&
+      currentDon.statusBadge !== 'Đã trả lại đơn'
+    ) {
+      setTrangThaiXacMinh('da_xac_minh');
+      if ((currentDon.currentStep || 1) < 2) {
+        setActiveStepNumber(2);
       }
-      setActiveTab('tai-lieu');
-      return;
+      setCurrentDon((prev) => ({
+        ...prev,
+        currentStep: Math.max(prev.currentStep || 1, 2),
+        statusBadge:
+          existingSigningDoc.status === 'da_ky' || existingSigningDoc.status === 'hoan_tat'
+            ? 'Đã ký duyệt'
+            : 'Chờ phê duyệt',
+      }));
     }
+  }, [existingSigningDoc]);
 
-    // Mở popup/modal "Tạo báo cáo đề xuất"
+  // 1. Nhấn vào "Tạo báo cáo đề xuất"
+  const handleTaoBaoCaoDeXuat = () => {
     setShowTaoBaoCaoDeXuatModal(true);
   };
-
-  // Xử lý khi cán bộ nhấn Tiếp nhận đơn (đặc biệt khi chuyển từ Lượt nhận không có file)
   const handleTiepNhanDon = () => {
     setCurrentDon((prev) => ({
       ...prev,
@@ -489,7 +540,12 @@ export default function DonTiepNhan({
 
     if (updatedDoc && onUpdateSigningDocuments) {
       onUpdateSigningDocuments((prev) => {
-        const idx = prev.findIndex((d) => d.id === updatedDoc.id || (d.hoSoCode === currentDon.code && d.loaiVanBan === 'bao_cao_de_xuat'));
+        const idx = prev.findIndex(
+          (d) =>
+            d.id === updatedDoc.id ||
+            ((d.hoSoCode === currentDon.code || d.hoSoCode === currentDon.id) &&
+              (d.loaiVanBan === updatedDoc.loaiVanBan || d.soKyHieu === updatedDoc.soKyHieu))
+        );
         if (idx >= 0) {
           const next = [...prev];
           next[idx] = updatedDoc;
@@ -773,31 +829,33 @@ export default function DonTiepNhan({
         <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-3.5 gap-4">
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
+              {currentDon.type === 'VỤ VIỆC' || currentDon.code.startsWith('VV') ? (
+                <span className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-900 border border-purple-300 shadow-2xs">
+                  <span className="material-symbols-outlined text-[15px] text-purple-700">folder_special</span>
+                  <span>VỤ VIỆC</span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-900 border border-blue-200 shadow-2xs">
+                  <span className="material-symbols-outlined text-[15px] text-blue-600">description</span>
+                  <span>HỒ SƠ ĐƠN</span>
+                </span>
+              )}
               <h1 className="text-[19px] font-bold text-slate-900 tracking-tight font-headline-md leading-tight">
                 {currentDon.code}: {currentDon.title ? (currentDon.title.startsWith(currentDon.code) ? currentDon.title.replace(`${currentDon.code}: `, '') : currentDon.title) : (currentDon.noiDung || 'Đơn tiếp nhận & xử lý')}
               </h1>
-
-              {/* Status Badge: Hướng xử lý hiện tại */}
-              {/* <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-bold shadow-2xs border ${
-                huongXuLyDaChon === 'yeu_cau_bo_sung'
-                  ? 'bg-blue-50 text-blue-800 border-blue-300'
-                  : huongXuLyDaChon === 'khong_thu_ly'
-                    ? 'bg-rose-50 text-rose-800 border-rose-300'
-                    : huongXuLyDaChon === 'tra_lai'
-                      ? 'bg-amber-50 text-amber-900 border-amber-300'
-                      : huongXuLyDaChon === 'ban_giao'
-                        ? 'bg-purple-50 text-purple-800 border-purple-300'
-                        : 'bg-emerald-50 text-emerald-800 border-emerald-300'
-              }`}>
-                <span className="material-symbols-outlined text-[16px]">
-                  {HUONG_XU_LY_CONFIG[huongXuLyDaChon]?.icon || 'verified'}
+              {currentDon.statusBadge && (
+                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold shadow-2xs border ${currentDon.statusBadge.includes('Đã thụ lý')
+                  ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                  : currentDon.statusBadge.includes('Chờ')
+                    ? 'bg-blue-50 text-blue-800 border-blue-200'
+                    : 'bg-slate-100 text-slate-800 border-slate-200'
+                  }`}>
+                  <span className="material-symbols-outlined text-[14px]">
+                    {currentDon.statusBadge.includes('Đã thụ lý') ? 'verified' : 'schedule'}
+                  </span>
+                  <span>{currentDon.statusBadge}</span>
                 </span>
-                <span>
-                  {huongXuLyDaChon === 'yeu_cau_bo_sung' && isAiNeedsMissingDocs
-                    ? 'AI đề xuất: Yêu cầu bổ sung tài liệu'
-                    : `Hướng xử lý: ${HUONG_XU_LY_CONFIG[huongXuLyDaChon]?.label || huongXuLyDaChon}`}
-                </span>
-              </span> */}
+              )}
             </div>
 
             <div className="flex items-center gap-2 text-[12.5px] text-slate-500 font-medium mt-1.5 flex-wrap">
@@ -850,26 +908,17 @@ export default function DonTiepNhan({
               </button>
             )}
 
-            {/* Nút Tạo / Xem báo cáo đề xuất (nghiệp vụ Quản lý Đơn): Sau khi đã ký báo cáo đề xuất thì không hiển thị nút này nữa */}
-            {!isBaoCaoDaKy && (
+            {!hasBaoCaoDeXuat && !isBaoCaoDaKy && (
               <button
                 type="button"
                 onClick={handleTaoBaoCaoDeXuat}
-                className={`inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border transition-all cursor-pointer shadow-2xs active:scale-95 text-[13px] font-bold ${isBaoCaoDaTrinhKy
-                  ? 'border-blue-300 bg-blue-50/90 hover:bg-blue-100 text-[#004ac6]'
-                  : 'border-blue-600 bg-[#004ac6] hover:bg-[#003ea8] text-white shadow-md ring-2 ring-blue-300/40'
-                  }`}
-                title={
-                  isBaoCaoDaTrinhKy
-                    ? 'Xem văn bản Báo cáo đề xuất tại tab Hồ sơ & Văn bản'
-                    : 'Khởi tạo văn bản Báo cáo đề xuất chi tiết tại tab Hồ sơ & Văn bản để chỉnh sửa và trình ký'
-                }
+                className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-blue-600 bg-[#004ac6] hover:bg-[#003ea8] text-white shadow-md ring-2 ring-blue-300/40 transition-all cursor-pointer active:scale-95 text-[13px] font-bold"
+                title="Khởi tạo văn bản Báo cáo đề xuất chi tiết tại tab Hồ sơ & Văn bản để chỉnh sửa và trình ký"
               >
                 <span className="material-symbols-outlined text-[18px]">rate_review</span>
-                <span>{isBaoCaoDaTrinhKy ? 'Xem báo cáo đề xuất' : 'Tạo báo cáo đề xuất'}</span>
+                <span>Tạo báo cáo đề xuất</span>
               </button>
             )}
-            {/* Dropdown Thao tác khác: Ghép hồ sơ đơn, Tải bổ sung file, Phân công xử lý, Chỉnh sửa thông tin đơn */}
             <div className="relative inline-flex items-center">
               <button
                 type="button"
@@ -1016,36 +1065,33 @@ export default function DonTiepNhan({
               )}
             </div>
 
-            {/* Sau khi lập và trình ký văn bản báo cáo xong mới hiển thị nút Thụ lý / Hướng xử lý chính */}
-            {isBaoCaoDaTrinhKy && (
+            {/* Sau khi có báo cáo đề xuất thì hiển thị nút hành động chính theo đúng đề xuất (vd: Thụ lý, Bàn giao, Không thụ lý) */}
+            {hasBaoCaoDeXuat && (
               <div className="relative inline-flex items-center">
-                {/* 1. NÚT CHÍNH (PRIMARY ACTION BUTTON) */}
+                {/* 1. NÚT CHÍNH (PRIMARY ACTION BUTTON - HIỂN THỊ THEO ĐỀ XUẤT) */}
                 <button
                   type="button"
                   onClick={handleExecutePrimaryAction}
-                  className={`inline-flex items-center gap-2 px-4.5 py-2.5 rounded-l-xl rounded-r-none border-r border-white/20 active:scale-98 text-white text-[13px] font-semibold transition-all cursor-pointer shadow-md ${huongXuLyDaChon === 'thu_ly'
-                    ? 'bg-emerald-600 hover:bg-emerald-700'
+                  className={`inline-flex items-center gap-2 px-4.5 py-2.5 rounded-l-xl rounded-r-none border-r border-white/20 active:scale-98 text-white text-[13px] font-bold transition-all cursor-pointer shadow-md ${huongXuLyDaChon === 'thu_ly'
+                    ? 'bg-emerald-600 hover:bg-emerald-700 ring-2 ring-emerald-300/40'
                     : huongXuLyDaChon === 'khong_thu_ly'
-                      ? 'bg-rose-600 hover:bg-rose-700'
+                      ? 'bg-rose-600 hover:bg-rose-700 ring-2 ring-rose-300/40'
                       : huongXuLyDaChon === 'yeu_cau_bo_sung'
-                        ? 'bg-blue-600 hover:bg-blue-700'
+                        ? 'bg-blue-600 hover:bg-blue-700 ring-2 ring-blue-300/40'
                         : huongXuLyDaChon === 'tra_lai'
-                          ? 'bg-amber-600 hover:bg-amber-700'
+                          ? 'bg-amber-600 hover:bg-amber-700 ring-2 ring-amber-300/40'
                           : huongXuLyDaChon === 'ban_giao'
-                            ? 'bg-purple-600 hover:bg-purple-700'
-                            : 'bg-teal-600 hover:bg-teal-700'
+                            ? 'bg-purple-600 hover:bg-purple-700 ring-2 ring-purple-300/40'
+                            : 'bg-teal-600 hover:bg-teal-700 ring-2 ring-teal-300/40'
                     }`}
-                  title="Bấm để thực hiện ngay hướng xử lý chính"
+                  title={`Bấm để thực hiện ngay: ${HUONG_XU_LY_CONFIG[huongXuLyDaChon]?.buttonText || 'Thụ lý'}`}
                 >
                   <span className="material-symbols-outlined text-[18px]">
                     {HUONG_XU_LY_CONFIG[huongXuLyDaChon]?.icon || 'gavel'}
                   </span>
-                  <span>{HUONG_XU_LY_CONFIG[huongXuLyDaChon]?.buttonText || 'Thụ lý'}</span>
-                  {/* {huongXuLyDaChon === 'yeu_cau_bo_sung' && isAiNeedsMissingDocs && (
-                    <span className="px-1.5 py-0.2 rounded bg-white/20 text-[10px] font-bold text-white uppercase tracking-wider">
-                      AI đề xuất
-                    </span>
-                  )} */}
+                  <span>
+                    {HUONG_XU_LY_CONFIG[huongXuLyDaChon]?.buttonText || 'Thụ lý'}
+                  </span>
                 </button>
                 <button
                   type="button"
@@ -1617,24 +1663,37 @@ export default function DonTiepNhan({
             ...prev,
           ]);
 
-          // 2. Thêm vào signingDocuments phục vụ luồng trình ký Lãnh đạo
+          // 2. Chuyển đổi hồ sơ đơn thành VỤ VIỆC khi trình ký Quyết định thụ lý
+          const vuViecCode = currentDon.code.startsWith('Đ-')
+            ? currentDon.code.replace('Đ-', 'VV-')
+            : currentDon.code.startsWith('VV-')
+              ? currentDon.code
+              : `VV-${currentDon.code}`;
+
+          if (isTrinhKy) {
+            setCurrentDon((prev) => ({
+              ...prev,
+              id: vuViecCode,
+              code: vuViecCode,
+              type: 'VỤ VIỆC',
+              statusBadge: 'Đã thụ lý',
+              currentStep: 3,
+            }));
+          }
+
+          // 3. Thêm vào signingDocuments phục vụ luồng trình ký Lãnh đạo
           const signingDoc: SigningDocument = {
             id: newDocItem.id,
             soKyHieu: targetSoHieu,
-            hoSoCode: currentDon.code,
+            hoSoCode: isTrinhKy ? vuViecCode : currentDon.code,
             luotNhanId: currentDon.luotNhanId,
             loaiDon: currentDon.loaiDon || 'Đơn khiếu nại',
             nguoiGuiDon: currentDon.nguoiNop,
             noiDungDon: currentDon.title,
             tenVanBan: targetDocTitle,
-            loaiVanBan:
-              loaiVanBan === 'quyet_dinh'
-                ? 'quyet_dinh_thu_ly'
-                : targetDocTitle.toLowerCase().includes('đề xuất')
-                  ? 'bao_cao_de_xuat'
-                  : 'to_trinh_thu_ly',
-            loaiVanBanLabel: targetDocTitle,
-            trichYeu: newDocItem.trichYeu,
+            loaiVanBan: 'quyet_dinh_thu_ly',
+            loaiVanBanLabel: 'Quyết định thụ lý',
+            trichYeu: `Quyết định thụ lý giải quyết: ${currentDon.title}`,
             noiDungChiTiet: fullDocText,
             nguoiLap: currentAccount?.name || targetAssignee,
             donViNguoiLap: coQuan,
@@ -1674,7 +1733,7 @@ export default function DonTiepNhan({
                 thoiGian: `${todayStr} 10:00`,
                 nguoiTao: currentAccount?.name || targetAssignee,
                 trangThaiLucDo: isTrinhKy ? 'Chờ trình ký' : 'Bản nháp',
-                ghiChu: `Đề xuất thụ lý đơn: ${targetDocTitle}`,
+                ghiChu: `Quyết định thụ lý đơn: ${targetDocTitle}`,
                 noiDungSnapshot: fullDocText,
               },
             ],
@@ -1684,8 +1743,8 @@ export default function DonTiepNhan({
                 time: `${todayStr} 10:00`,
                 actor: currentAccount?.name || targetAssignee,
                 action: isTrinhKy
-                  ? `Trình Lãnh đạo (${targetLanhDao}) phê duyệt đề xuất thụ lý`
-                  : 'Lưu bản nháp đề xuất thụ lý',
+                  ? `Trình Lãnh đạo (${targetLanhDao}) ký ban hành Quyết định thụ lý giải quyết`
+                  : 'Lưu bản nháp Quyết định thụ lý giải quyết',
               },
             ],
             auditLogs: [
@@ -1707,7 +1766,7 @@ export default function DonTiepNhan({
             onUpdateSigningDocuments((prev) => [signingDoc, ...prev]);
           }
 
-          // 3. Chuyển sang tab Hồ sơ & Văn bản và hiển thị văn bản vừa tạo
+          // 4. Chuyển sang tab Hồ sơ & Văn bản và hiển thị văn bản vừa tạo
           setDocCount((c) => c + 1);
           setDaHoanThanhBuoc(true);
           if (activeStepNumber < workflow.steps.length) {
@@ -1717,29 +1776,31 @@ export default function DonTiepNhan({
           setActiveTab('tai-lieu');
 
           if (isTrinhKy) {
-            showToast(`✓ Đã lưu đề xuất thụ lý và chuyển trình ký Lãnh đạo (${targetLanhDao}) văn bản "${targetDocTitle}"!`);
+            showToast(
+              `✓ Đã trình ký Quyết định thụ lý (${targetSoHieu})! Hồ sơ [${currentDon.code}] đã chính thức được thụ lý và chuyển thành VỤ VIỆC [${vuViecCode}].`
+            );
           } else {
-            showToast(`✓ Đã lưu bản nháp đề xuất thụ lý và tạo văn bản "${targetDocTitle}" tại tab Hồ sơ & Văn bản!`);
+            showToast(`✓ Đã lưu bản nháp Quyết định thụ lý "${targetDocTitle}" tại tab Hồ sơ & Văn bản!`);
           }
 
-          // 4. Ghi lịch sử xử lý
+          // 5. Ghi lịch sử xử lý
           addHistoryLog({
             title: isTrinhKy
-              ? `Trình Lãnh đạo phê duyệt Đề xuất thụ lý: ${targetDocTitle}`
-              : `Lập bản nháp Đề xuất thụ lý: ${targetDocTitle}`,
+              ? `Trình Lãnh đạo ký Quyết định thụ lý - Chuyển thành VỤ VIỆC (${vuViecCode})`
+              : `Lập bản nháp Quyết định thụ lý: ${targetDocTitle}`,
             actor: targetAssignee,
             actorRole: currentDon.chucVuCanBo || 'Cán bộ thụ lý',
             actorDept: coQuan,
             category: 'quy_trinh',
             statusBadge: {
-              text: isTrinhKy ? 'Chờ ký duyệt' : 'Bản nháp',
-              bgClass: isTrinhKy ? 'bg-blue-50' : 'bg-slate-100',
-              textClass: isTrinhKy ? 'text-blue-800' : 'text-slate-800',
-              borderClass: isTrinhKy ? 'border-blue-200' : 'border-slate-200',
+              text: isTrinhKy ? 'Đã thụ lý (Vụ việc)' : 'Bản nháp',
+              bgClass: isTrinhKy ? 'bg-purple-50' : 'bg-slate-100',
+              textClass: isTrinhKy ? 'text-purple-800' : 'text-slate-800',
+              borderClass: isTrinhKy ? 'border-purple-200' : 'border-slate-200',
             },
             description: isTrinhKy
-              ? `Cán bộ thụ lý đã lập xong Đề xuất thụ lý đơn và chuyển trình ký Lãnh đạo (${targetLanhDao}) xem xét, ký số phê duyệt theo quy định. Văn bản lưu trữ tại tab Hồ sơ & Văn bản.`
-              : `Đã lưu bản nháp đề xuất thụ lý đơn. Hệ thống tự động tạo văn bản "${targetDocTitle}" (Số hiệu: ${targetSoHieu}) và lưu trữ tại tab Hồ sơ & Văn bản.`,
+              ? `Cán bộ thụ lý đã lập xong Quyết định thụ lý giải quyết số ${targetSoHieu} và chuyển trình Lãnh đạo (${targetLanhDao}) ký số phê duyệt. Hồ sơ ${currentDon.code} chính thức chuyển thành VỤ VIỆC mang mã ${vuViecCode}. Cán bộ thụ lý chính: ${targetAssignee}.`
+              : `Đã lưu bản nháp Quyết định thụ lý giải quyết số ${targetSoHieu}. Hệ thống tự động tạo văn bản "${targetDocTitle}" và lưu trữ tại tab Hồ sơ & Văn bản.`,
             docInfo: {
               name: targetDocTitle,
               code: targetSoHieu,

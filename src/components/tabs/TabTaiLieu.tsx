@@ -320,8 +320,15 @@ export default function TabTaiLieu({
       const isBaoCao =
         doc.category === 'Báo cáo đề xuất' ||
         doc.loaiVanBan === 'bao_cao_de_xuat' ||
+        doc.loaiVanBan === 'bao_cao_xac_minh' ||
         doc.name.toLowerCase().includes('báo cáo') ||
-        doc.name.toLowerCase().includes('bao_cao');
+        doc.name.toLowerCase().includes('bao_cao') ||
+        doc.name.toLowerCase().includes('tờ trình') ||
+        doc.name.toLowerCase().includes('to_trinh') ||
+        doc.name.toLowerCase().includes('đề xuất') ||
+        doc.name.toLowerCase().includes('xác minh') ||
+        doc.id === 'DOC-2026-001' ||
+        doc.id === 'DOC-2026-002';
 
       const newSd: SigningDocument = {
         id: doc.id,

@@ -496,6 +496,121 @@ export default function TaoBaoCaoDeXuatModal({
     onClose();
   };
 
+  const handleSubmitToLeader = () => {
+    if (!validateForm()) {
+      showToast('⚠️ Vui lòng điền đầy đủ các thông tin bắt buộc được đánh dấu đỏ!');
+      return;
+    }
+
+    const formData = getCurrentFormData();
+    const docText = buildBaoCaoXacMinhDocumentText(formData);
+
+    const docId = existingSigningDoc?.id || `VB-BC-${Date.now().toString().slice(-4)}`;
+    const defaultSigner: SignerItem = {
+      id: existingSigningDoc?.lanhDaoId || 'ld-01',
+      name: existingSigningDoc?.lanhDaoName || 'Đ/c Trần Văn Hùng',
+      chucVu: existingSigningDoc?.lanhDaoChucVu || 'Thủ trưởng / Phó Thủ trưởng Cơ quan Điều tra',
+      coQuan: formData.coQuanLap || 'Cơ quan Cảnh sát điều tra',
+      vaiTro: 'duyet',
+      thuTu: 1,
+      status: 'cho_ky',
+    };
+
+    const actorName = formData.nguoiLap || currentOfficer?.name || 'Nguyễn Minh Anh';
+    const actorRole = formData.chucVuNguoiLap || currentOfficer?.chucVu || 'Cán bộ thụ lý';
+    const coQuan = formData.coQuanLap || donInfo?.donViXuLy || 'Cơ quan Cảnh sát điều tra';
+    const now = new Date();
+    const todayStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+    const timeStr = `${todayStr} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+    const updatedDoc: SigningDocument = {
+      id: docId,
+      soKyHieu: formData.soBaoCao || '24/BC-CQĐT',
+      hoSoCode: maDon,
+      luotNhanId: donInfo?.luotNhanId || 'LN-2025-0105',
+      loaiDon: formData.loaiDon || loaiDon,
+      nguoiGuiDon: formData.nguoiGuiDon || nguoiGuiDonDefault,
+      noiDungDon: formData.tomTatNoiDungToCao,
+
+      tenVanBan: formData.tieuDeBaoCao || 'Báo cáo đề xuất hướng xử lý đơn',
+      loaiVanBan: 'bao_cao_de_xuat',
+      loaiVanBanLabel: 'Báo cáo đề xuất',
+      trichYeu: `V/v Đề xuất xử lý đơn của ${formData.nguoiGuiDon || nguoiGuiDonDefault}`,
+      noiDungChiTiet: docText,
+
+      nguoiLap: actorName,
+      donViNguoiLap: coQuan,
+      ngayTao: `${formData.ngayLap || todayFormatted} 09:00`,
+
+      status: 'cho_trinh',
+      thoiGianTrinh: timeStr,
+      nguoiTrinh: actorName,
+      mucDoUuTien: 'thuong',
+      hanXuLy: '24 giờ',
+
+      signers: existingSigningDoc?.signers?.length ? existingSigningDoc.signers : [defaultSigner],
+      currentSignerIndex: 0,
+      lanhDaoId: existingSigningDoc?.lanhDaoId || defaultSigner.id,
+      lanhDaoName: existingSigningDoc?.lanhDaoName || defaultSigner.name,
+      lanhDaoChucVu: existingSigningDoc?.lanhDaoChucVu || defaultSigner.chucVu,
+
+      tepDinhKem: existingSigningDoc?.tepDinhKem || [
+        {
+          id: `att-bc-${Date.now()}`,
+          tenTep: `Bao_cao_de_xuat_${maDon}.pdf`,
+          dungLuong: '380 KB',
+          loai: 'du_thao',
+        },
+      ],
+
+      phienBanHienTai: existingSigningDoc?.phienBanHienTai || 'V1',
+      versionHistory: [
+        ...(existingSigningDoc?.versionHistory || []),
+        {
+          version: existingSigningDoc?.phienBanHienTai || 'V1',
+          thoiGian: timeStr,
+          nguoiTao: actorName,
+          trangThaiLucDo: 'Chờ trình ký',
+          ghiChu: 'Lập và chuyển trình Lãnh đạo Báo cáo đề xuất',
+          noiDungSnapshot: docText,
+        },
+      ],
+      history: [
+        ...(existingSigningDoc?.history || []),
+        {
+          id: `hist-${Date.now()}`,
+          time: timeStr,
+          actor: actorName,
+          action: 'Trình Lãnh đạo phê duyệt Báo cáo đề xuất hướng xử lý đơn',
+        },
+      ],
+      auditLogs: [
+        ...(existingSigningDoc?.auditLogs || []),
+        {
+          id: `al-${Date.now()}`,
+          time: timeStr,
+          actor: actorName,
+          actorRole: actorRole,
+          action: 'Trình văn bản',
+          statusBefore: existingSigningDoc?.status || 'chua_tao',
+          statusAfter: 'cho_trinh',
+          version: 'V1',
+          note: `Phương án đề xuất: ${formData.phuongAnDeXuat}`,
+        },
+      ],
+      stepId: 'STEP-02',
+    };
+
+    (updatedDoc as any).formData = formData;
+
+    if (onSubmitToLeader) {
+      onSubmitToLeader(formData, updatedDoc);
+    } else {
+      onSaveDraft?.(formData, updatedDoc);
+    }
+    onClose();
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in font-body-md">
       {/* Toast thông báo */}
@@ -708,15 +823,24 @@ export default function TaoBaoCaoDeXuatModal({
             Hủy
           </button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <button
               type="button"
               onClick={handleSave}
-              className="inline-flex items-center gap-2 px-6 py-2 rounded-xl bg-[#004ac6] hover:bg-[#003ea8] active:scale-98 text-white text-xs font-bold shadow-md cursor-pointer transition"
-              title="Kiểm tra thông tin và Lưu báo cáo vào Hồ sơ & Văn bản (Trạng thái: Bản nháp)"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold cursor-pointer transition shadow-2xs"
+              title="Lưu báo cáo vào Hồ sơ & Văn bản (Trạng thái: Bản nháp)"
             >
-              <span className="material-symbols-outlined text-[17px]">save</span>
-              <span>Lưu</span>
+              <span className="material-symbols-outlined text-[17px] text-slate-500">save</span>
+              <span>Lưu nháp</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmitToLeader}
+              className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 active:scale-98 text-white text-xs font-bold shadow-md cursor-pointer transition ring-2 ring-emerald-300/30"
+              title="Chuyển Báo cáo đề xuất sang luồng trình ký Lãnh đạo phê duyệt ngay"
+            >
+              <span className="material-symbols-outlined text-[17px]">send</span>
+              <span>Trình Lãnh đạo</span>
             </button>
           </div>
         </div>
