@@ -141,6 +141,10 @@ export interface SigningDocument {
   
   // Thông tin chữ ký khi đã ký
   chuKyInfo?: ChuKyInfo;
+  chuKy?: ChuKyInfo;
+  thoiGianKy?: string;
+  signatureCert?: string;
+  yKienLanhDao?: string;
   
   // Lý do trả lại / từ chối
   lyDoTraLai?: string;

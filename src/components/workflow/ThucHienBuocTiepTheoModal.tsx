@@ -153,15 +153,15 @@ export default function ThucHienBuocTiepTheoModal({
         {/* Form Body */}
         <form onSubmit={(e) => handleFormSubmit(e, 'trinh_ky')} className="flex-1 overflow-y-auto p-5 space-y-3.5 text-xs">
           {/* Thông báo chuyển đổi */}
-          <div className="p-3 bg-purple-50/80 rounded-xl border border-purple-200 text-purple-900 flex items-start gap-2.5">
+          {/* <div className="p-3 bg-purple-50/80 rounded-xl border border-purple-200 text-purple-900 flex items-start gap-2.5">
             <span className="material-symbols-outlined text-purple-700 text-[18px] shrink-0 mt-0.5">info</span>
             <div className="text-[11.5px] leading-relaxed">
               Sau khi <strong>Trình ký Quyết định thụ lý</strong>, hồ sơ đơn <strong className="text-purple-950 font-bold">{donCode}</strong> sẽ chính thức được chuyển đổi thành <strong>VỤ VIỆC (Mã: {donCode.replace(/^Đ-/, 'VV-')})</strong> và bước vào giai đoạn xác minh giải quyết vụ việc.
             </div>
-          </div>
+          </div> */}
 
           {/* Tiêu đề quyết định thụ lý */}
-          <div>
+          {/* <div>
             <label className="block font-bold text-slate-800 mb-1">
               Tiêu đề văn bản Quyết định <span className="text-rose-600">*</span>
             </label>
@@ -172,7 +172,7 @@ export default function ThucHienBuocTiepTheoModal({
               onChange={(e) => setDocTitle(e.target.value)}
               className="w-full px-3 py-2 text-xs font-semibold text-slate-800 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-emerald-600"
             />
-          </div>
+          </div> */}
 
           {/* Số / Ký hiệu và Thời hạn giải quyết */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -256,15 +256,7 @@ export default function ThucHienBuocTiepTheoModal({
               Hủy
             </button>
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={(e) => handleFormSubmit(e, 'save')}
-                className="px-3.5 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-semibold transition-colors cursor-pointer text-xs flex items-center gap-1"
-                title="Lưu văn bản Quyết định dưới dạng bản nháp"
-              >
-                <span className="material-symbols-outlined text-[15px]">save</span>
-                <span>Lưu nháp</span>
-              </button>
+
               <button
                 type="button"
                 onClick={(e) => handleFormSubmit(e, 'trinh_ky')}
@@ -272,7 +264,7 @@ export default function ThucHienBuocTiepTheoModal({
                 title="Trình ký Lãnh đạo ban hành Quyết định thụ lý và chính thức chuyển thành Vụ việc"
               >
                 <span className="material-symbols-outlined text-[15px]">send</span>
-                <span>Trình ký Quyết định thụ lý</span>
+                <span>Lưu văn bản</span>
               </button>
             </div>
           </div>

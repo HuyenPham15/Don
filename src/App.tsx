@@ -852,6 +852,12 @@ export default function App() {
                 onUpdateSigningDocuments={setSigningDocuments}
                 onSelectSigningDoc={setSelectedSigningDocId}
                 currentAccount={currentAccount}
+                onUpdateDon={(updatedDon) => {
+                  setSelectedDon(updatedDon);
+                  setAcceptedDons((prev) =>
+                    prev.map((d) => (d.id === updatedDon.id || d.code === updatedDon.code ? updatedDon : d))
+                  );
+                }}
               />
             )}
             {screen === "quy-trinh-xu-ly" && (

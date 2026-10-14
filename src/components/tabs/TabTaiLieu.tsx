@@ -49,7 +49,7 @@ export interface DocItem {
   previewExcerpt: string;
   isProcessDoc?: boolean;
   isEditable?: boolean;
-  loaiVanBan?: 'giay_moi' | 'bien_ban' | 'cong_van' | 'quyet_dinh' | 'thong_bao' | 'khac' | 'bao_cao_de_xuat' | 'bao_cao_xac_minh';
+  loaiVanBan?: 'giay_moi' | 'bien_ban' | 'cong_van' | 'quyet_dinh' | 'thong_bao' | 'khac' | 'bao_cao_de_xuat' | 'bao_cao_xac_minh' | 'quyet_dinh_thu_ly';
   tenVanBan?: string;
   nguoiNhan?: string;
   diaDiem?: string;
@@ -190,10 +190,18 @@ export default function TabTaiLieu({
         setActiveDocId(exists.id);
         setSelectedDocIds([exists.id]);
       } else {
+        const isQd = Boolean(
+          initialEditingDoc.category?.toLowerCase().includes('quyết định') ||
+          (initialEditingDoc as any).tenVanBan?.toLowerCase().includes('quyết định') ||
+          (initialEditingDoc as any).loaiVanBan === 'quyet_dinh' ||
+          (initialEditingDoc as any).loaiVanBan === 'quyet_dinh_thu_ly' ||
+          initialEditingDoc.category?.toLowerCase().includes('thụ lý')
+        );
         const docToAdd: DocItem = {
           id: initialEditingDoc.id || `DOC-INIT-${Date.now()}`,
           name: (initialEditingDoc as any).name || initialEditingDoc.tenVanBan || 'Văn bản',
-          category: initialEditingDoc.category || 'Báo cáo đề xuất',
+          category: initialEditingDoc.category || (isQd ? 'Quyết định thụ lý' : 'Báo cáo đề xuất'),
+          folder: (initialEditingDoc as any).folder || (isQd ? 'van_ban_quyet_dinh' : 'ho_so_ban_dau'),
           soHieu: initialEditingDoc.soHieu,
           size: (initialEditingDoc as any).size || '380 KB',
           pages: (initialEditingDoc as any).pages || 2,
@@ -203,7 +211,7 @@ export default function TabTaiLieu({
           ocrStatus: 'Hoàn tất',
           previewExcerpt: initialEditingDoc.noiDungChiTiet || '',
           noiDungChiTiet: initialEditingDoc.noiDungChiTiet || '',
-          loaiVanBan: (initialEditingDoc.loai as any) || 'bao_cao_de_xuat',
+          loaiVanBan: (initialEditingDoc as any).loaiVanBan || (initialEditingDoc.loai as any) || (isQd ? 'quyet_dinh' : 'bao_cao_de_xuat'),
           tenVanBan: initialEditingDoc.tenVanBan,
           trichYeu: initialEditingDoc.trichYeu,
           trangThaiTrinhKy: 'chua_trinh',
@@ -264,6 +272,31 @@ export default function TabTaiLieu({
     }
   };
 
+  // Checkbox nhóm "Văn bản và quyết định xử lý"
+  const quyetDinhDocs = documents.filter(
+    (d) =>
+      d.folder === 'van_ban_quyet_dinh' ||
+      d.category?.toLowerCase().includes('quyết định') ||
+      d.loaiVanBan === 'quyet_dinh' ||
+      (d.loaiVanBan as string) === 'quyet_dinh_thu_ly'
+  );
+  const selectableDocsInQuyetDinh = quyetDinhDocs.filter(
+    (d) => d.trangThaiTrinhKy !== 'da_co_hieu_luc'
+  );
+  const isAllQuyetDinhSelected =
+    selectableDocsInQuyetDinh.length > 0 &&
+    selectableDocsInQuyetDinh.every((d) => selectedDocIds.includes(d.id));
+
+  const handleToggleSelectAllQuyetDinh = () => {
+    if (isAllQuyetDinhSelected) {
+      const qdIds = selectableDocsInQuyetDinh.map((d) => d.id);
+      setSelectedDocIds((prev) => prev.filter((id) => !qdIds.includes(id)));
+    } else {
+      const qdIds = selectableDocsInQuyetDinh.map((d) => d.id);
+      setSelectedDocIds((prev) => Array.from(new Set([...prev, ...qdIds])));
+    }
+  };
+
   // Mở popup Ma trận phân quyền & thêm lãnh đạo khi bấm nút "Trình ký"
   const handleOpenTrinhKyModal = () => {
     if (selectedDocIds.length === 0) {
@@ -317,30 +350,48 @@ export default function TabTaiLieu({
       });
 
       const primarySigner = signers.find((s) => s.vaiTro === 'ky') || signers[0];
+      const isQuyetDinhThuLy = Boolean(
+        doc.loaiVanBan === 'quyet_dinh' ||
+        (doc.loaiVanBan as string) === 'quyet_dinh_thu_ly' ||
+        doc.folder === 'van_ban_quyet_dinh' ||
+        doc.category?.toLowerCase().includes('quyết định') ||
+        doc.category?.toLowerCase().includes('thụ lý') ||
+        doc.tenVanBan?.toLowerCase().includes('quyết định') ||
+        doc.tenVanBan?.toLowerCase().includes('thụ lý') ||
+        doc.name.toLowerCase().includes('quyết định') ||
+        doc.name.toLowerCase().includes('quyet_dinh') ||
+        doc.name.toLowerCase().includes('thụ lý') ||
+        doc.name.toLowerCase().includes('thu_ly')
+      );
       const isBaoCao =
-        doc.category === 'Báo cáo đề xuất' ||
-        doc.loaiVanBan === 'bao_cao_de_xuat' ||
-        doc.loaiVanBan === 'bao_cao_xac_minh' ||
-        doc.name.toLowerCase().includes('báo cáo') ||
-        doc.name.toLowerCase().includes('bao_cao') ||
-        doc.name.toLowerCase().includes('tờ trình') ||
-        doc.name.toLowerCase().includes('to_trinh') ||
-        doc.name.toLowerCase().includes('đề xuất') ||
-        doc.name.toLowerCase().includes('xác minh') ||
-        doc.id === 'DOC-2026-001' ||
-        doc.id === 'DOC-2026-002';
+        !isQuyetDinhThuLy &&
+        (doc.category === 'Báo cáo đề xuất' ||
+          doc.loaiVanBan === 'bao_cao_de_xuat' ||
+          doc.loaiVanBan === 'bao_cao_xac_minh' ||
+          doc.name.toLowerCase().includes('báo cáo') ||
+          doc.name.toLowerCase().includes('bao_cao') ||
+          doc.name.toLowerCase().includes('tờ trình') ||
+          doc.name.toLowerCase().includes('to_trinh') ||
+          doc.name.toLowerCase().includes('đề xuất') ||
+          doc.name.toLowerCase().includes('xác minh') ||
+          doc.id === 'DOC-2026-001' ||
+          doc.id === 'DOC-2026-002');
 
       const newSd: SigningDocument = {
         id: doc.id,
         soKyHieu: doc.soHieu || 'VB-2026',
         hoSoCode: currentDon.code,
         luotNhanId: currentDon.luotNhanId,
-        loaiDon: currentDon.loaiDon || 'Đơn tố giác',
+        loaiDon: currentDon.loaiDon || 'Đơn khiếu nại',
         nguoiGuiDon: currentDon.nguoiNop,
         noiDungDon: currentDon.title,
         tenVanBan: doc.name,
-        loaiVanBan: isBaoCao ? 'bao_cao_de_xuat' : 'to_trinh_thu_ly',
-        loaiVanBanLabel: doc.category || (isBaoCao ? 'Báo cáo đề xuất' : 'Tờ trình thụ lý'),
+        loaiVanBan: isQuyetDinhThuLy
+          ? 'quyet_dinh_thu_ly'
+          : isBaoCao
+            ? 'bao_cao_de_xuat'
+            : 'to_trinh_thu_ly',
+        loaiVanBanLabel: doc.category || (isQuyetDinhThuLy ? 'Quyết định thụ lý' : isBaoCao ? 'Báo cáo đề xuất' : 'Tờ trình thụ lý'),
         trichYeu: doc.trichYeu || doc.name,
         noiDungChiTiet: doc.noiDungChiTiet || '',
         nguoiLap: doc.signer,
@@ -567,111 +618,136 @@ export default function TabTaiLieu({
                   {/* Mã FORM ID & Nguồn mẫu góc trên */}
                   <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 pb-3 border-b border-slate-200 mb-6">
                     <span className="border border-dashed border-slate-300 px-1.5 py-0.5 rounded">
-                      FORM_ID: OCR_CRIME_REPORT_2026_01
+                      {currentActiveDoc.soHieu || 'VB-2026/UBND'}
                     </span>
                     <span className="italic font-sans">
-                      Mẫu tố tụng hình sự (Bộ Công an)
+                      {currentActiveDoc.category || 'Văn bản hành chính'}
                     </span>
                   </div>
 
-                  {/* Quốc hiệu Tiêu ngữ */}
-                  <div className="text-center space-y-1 mb-8">
-                    <h3 className="font-bold text-xs uppercase tracking-wider text-slate-900">
-                      CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
-                    </h3>
-                    <p className="font-bold text-xs text-slate-900">
-                      Độc lập - Tự do - Hạnh phúc
-                    </p>
-                    <div className="w-36 h-px bg-slate-800 mx-auto mt-1"></div>
-                  </div>
-
-                  {/* Tiêu đề văn bản */}
-                  <div className="text-center mb-6">
-                    <h1 className="font-bold text-base uppercase text-slate-900 tracking-wide">
-                      {currentActiveDoc.name.toUpperCase()}
-                    </h1>
-                    <p className="italic text-xs text-slate-700 mt-1">
-                      (Về hành vi có dấu hiệu "Lừa đảo chiếm đoạt tài sản" qua mạng xã hội)
-                    </p>
-                  </div>
-
-                  {/* Kính gửi */}
-                  <div className="mb-6 text-xs leading-relaxed space-y-0.5">
-                    <p>
-                      <strong className="font-bold">Kính gửi:</strong> Cơ quan Cảnh sát điều tra - Công an Quận Cầu Giấy, TP. Hà Nội
-                    </p>
-                    <p className="pl-14">
-                      Viện kiểm sát nhân dân Quận Cầu Giấy, TP. Hà Nội
-                    </p>
-                  </div>
-
-                  {/* Mục I: Thông tin người tố giác */}
-                  <div className="mb-6 space-y-2 text-xs leading-relaxed">
-                    <h4 className="font-bold uppercase text-slate-900 border-b border-slate-200 pb-0.5">
-                      I. THÔNG TIN NGƯỜI TỐ GIÁC (DENOUNCER INFORMATION)
-                    </h4>
-                    <div className="space-y-1 pt-1">
-                      <p>
-                        <strong>1. Họ và tên:</strong> {currentDon.nguoiNop?.toUpperCase() || 'NGUYỄN THỊ MINH PHƯƠNG'}
-                      </p>
-                      <div className="grid grid-cols-2 gap-4">
-                        <p><strong>2. Ngày sinh:</strong> 24/11/1989</p>
-                        <p><strong>3. Giới tính:</strong> Nữ</p>
+                  {currentActiveDoc.noiDungChiTiet ? (
+                    <div className="space-y-4">
+                      <div className="text-[12.5px] leading-relaxed font-serif whitespace-pre-wrap text-slate-900 selection:bg-blue-100">
+                        {currentActiveDoc.noiDungChiTiet}
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <p><strong>4. Số CCCD/CMND:</strong> {currentDon.cccd || '001189012345'}</p>
-                        <p><strong>5. Ngày cấp:</strong> 12/03/2021</p>
-                      </div>
-                      <p>
-                        <strong>6. Thường trú:</strong> {currentDon.diaChi || 'Số 45, Đường Xuân Thủy, Phường Dịch Vọng Hậu, Quận Cầu Giấy, TP. Hà Nội'}
-                      </p>
-                      <p>
-                        <strong>7. Số điện thoại:</strong> {(currentDon as any).phone || (currentDon as any).sdt || '0912 888 999'}
-                      </p>
-                    </div>
-                  </div>
 
-                  {/* Mục II: Thông tin người bị tố giác / Nội dung */}
-                  <div className="mb-6 space-y-2 text-xs leading-relaxed">
-                    <h4 className="font-bold uppercase text-slate-900 border-b border-slate-200 pb-0.5">
-                      II. THÔNG TIN NGƯỜI BỊ TỐ GIÁC (ACCUSED INFORMATION)
-                    </h4>
-                    <div className="space-y-1 pt-1">
-                      <p>
-                        <strong>1. Họ và tên đối tượng:</strong> TRẦN VĂN HÙNG (Sử dụng tài khoản "Hùng Đầu Tư")
-                      </p>
-                      <p>
-                        <strong>2. Nội dung tóm tắt vụ việc:</strong> {currentDon.title || 'Hành vi kêu gọi góp vốn đầu tư sau đó chiếm đoạt số tiền 3.500.000.000 VNĐ thông qua giao dịch chuyển khoản ngân hàng.'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Phần chữ ký hoặc con dấu */}
-                  <div className="pt-8 border-t border-slate-200 grid grid-cols-2 gap-6 text-xs text-center font-sans">
-                    <div className="space-y-1 text-slate-500">
-                      <p className="font-bold text-slate-700">NGƯỜI XÁC NHẬN</p>
-                      <p className="italic text-[10px]">(Ký, ghi rõ họ tên)</p>
-                      <div className="h-12"></div>
-                      <p className="font-semibold text-slate-800">Cán bộ thụ lý hồ sơ</p>
-                    </div>
-
-                    <div className="space-y-1">
-                      <p className="font-bold text-slate-800">NGƯỜI LÀM ĐƠN</p>
-                      <p className="italic text-[10px] text-slate-500">(Ký, ghi rõ họ tên)</p>
-                      {currentActiveDoc.trangThaiTrinhKy === 'da_co_hieu_luc' ? (
-                        <div className="my-2 p-1.5 rounded border border-emerald-500 bg-emerald-50 text-emerald-800 text-[9px] font-mono inline-block">
-                          <p className="font-bold">✓ ĐÃ KÝ SỐ ĐIỆN TỬ VGCA</p>
-                          <p>Ký bởi: {currentActiveDoc.signer}</p>
-                          <p>Thời gian: {currentActiveDoc.uploadDate}</p>
+                      {/* Hiển thị con dấu / chữ ký số nếu đã có hiệu lực */}
+                      {currentActiveDoc.trangThaiTrinhKy === 'da_co_hieu_luc' && (
+                        <div className="mt-8 pt-4 border-t border-slate-200 flex justify-end">
+                          <div className="p-3 rounded-lg border-2 border-emerald-600 bg-emerald-50 text-emerald-900 text-xs font-mono inline-block shadow-xs">
+                            <p className="font-bold flex items-center gap-1">
+                              <span className="material-symbols-outlined text-[16px] text-emerald-700">verified</span>
+                              <span>KÝ SỐ BỞI: {currentActiveDoc.signer || 'LÃNH ĐẠO'}</span>
+                            </p>
+                            <p className="text-[11px] text-emerald-800 mt-0.5">Cơ quan: {currentActiveDoc.coQuanBanHanh || 'UBND Quận Cầu Giấy'}</p>
+                            <p className="text-[11px] text-emerald-700">Thời gian: {currentActiveDoc.uploadDate}</p>
+                            <p className="text-[10px] text-emerald-600 italic">Chứng thư số Ban Cơ yếu Chính phủ VGCA cấp</p>
+                          </div>
                         </div>
-                      ) : (
-                        <div className="h-12"></div>
                       )}
-                      <p className="font-bold text-slate-900">
-                        {currentDon.nguoiNop || 'Nguyễn Thị Minh Phương'}
-                      </p>
                     </div>
-                  </div>
+                  ) : (
+                    <>
+                      {/* Quốc hiệu Tiêu ngữ */}
+                      <div className="text-center space-y-1 mb-8">
+                        <h3 className="font-bold text-xs uppercase tracking-wider text-slate-900">
+                          CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+                        </h3>
+                        <p className="font-bold text-xs text-slate-900">
+                          Độc lập - Tự do - Hạnh phúc
+                        </p>
+                        <div className="w-36 h-px bg-slate-800 mx-auto mt-1"></div>
+                      </div>
+
+                      {/* Tiêu đề văn bản */}
+                      <div className="text-center mb-6">
+                        <h1 className="font-bold text-base uppercase text-slate-900 tracking-wide">
+                          {currentActiveDoc.name.toUpperCase()}
+                        </h1>
+                        <p className="italic text-xs text-slate-700 mt-1">
+                          (Về hành vi có dấu hiệu "Lừa đảo chiếm đoạt tài sản" qua mạng xã hội)
+                        </p>
+                      </div>
+
+                      {/* Kính gửi */}
+                      <div className="mb-6 text-xs leading-relaxed space-y-0.5">
+                        <p>
+                          <strong className="font-bold">Kính gửi:</strong> Cơ quan Cảnh sát điều tra - Công an Quận Cầu Giấy, TP. Hà Nội
+                        </p>
+                        <p className="pl-14">
+                          Viện kiểm sát nhân dân Quận Cầu Giấy, TP. Hà Nội
+                        </p>
+                      </div>
+
+                      {/* Mục I: Thông tin người tố giác */}
+                      <div className="mb-6 space-y-2 text-xs leading-relaxed">
+                        <h4 className="font-bold uppercase text-slate-900 border-b border-slate-200 pb-0.5">
+                          I. THÔNG TIN NGƯỜI TỐ GIÁC (DENOUNCER INFORMATION)
+                        </h4>
+                        <div className="space-y-1 pt-1">
+                          <p>
+                            <strong>1. Họ và tên:</strong> {currentDon.nguoiNop?.toUpperCase() || 'NGUYỄN THỊ MINH PHƯƠNG'}
+                          </p>
+                          <div className="grid grid-cols-2 gap-4">
+                            <p><strong>2. Ngày sinh:</strong> 24/11/1989</p>
+                            <p><strong>3. Giới tính:</strong> Nữ</p>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <p><strong>4. Số CCCD/CMND:</strong> {currentDon.cccd || '001189012345'}</p>
+                            <p><strong>5. Ngày cấp:</strong> 12/03/2021</p>
+                          </div>
+                          <p>
+                            <strong>6. Thường trú:</strong> {currentDon.diaChi || 'Số 45, Đường Xuân Thủy, Phường Dịch Vọng Hậu, Quận Cầu Giấy, TP. Hà Nội'}
+                          </p>
+                          <p>
+                            <strong>7. Số điện thoại:</strong> {(currentDon as any).phone || (currentDon as any).sdt || '0912 888 999'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Mục II: Thông tin người bị tố giác / Nội dung */}
+                      <div className="mb-6 space-y-2 text-xs leading-relaxed">
+                        <h4 className="font-bold uppercase text-slate-900 border-b border-slate-200 pb-0.5">
+                          II. THÔNG TIN NGƯỜI BỊ TỐ GIÁC (ACCUSED INFORMATION)
+                        </h4>
+                        <div className="space-y-1 pt-1">
+                          <p>
+                            <strong>1. Họ và tên đối tượng:</strong> TRẦN VĂN HÙNG (Sử dụng tài khoản "Hùng Đầu Tư")
+                          </p>
+                          <p>
+                            <strong>2. Nội dung tóm tắt vụ việc:</strong> {currentDon.title || 'Hành vi kêu gọi góp vốn đầu tư sau đó chiếm đoạt số tiền 3.500.000.000 VNĐ thông qua giao dịch chuyển khoản ngân hàng.'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Phần chữ ký hoặc con dấu */}
+                      <div className="pt-8 border-t border-slate-200 grid grid-cols-2 gap-6 text-xs text-center font-sans">
+                        <div className="space-y-1 text-slate-500">
+                          <p className="font-bold text-slate-700">NGƯỜI XÁC NHẬN</p>
+                          <p className="italic text-[10px]">(Ký, ghi rõ họ tên)</p>
+                          <div className="h-12"></div>
+                          <p className="font-semibold text-slate-800">Cán bộ thụ lý hồ sơ</p>
+                        </div>
+
+                        <div className="space-y-1">
+                          <p className="font-bold text-slate-800">NGƯỜI LÀM ĐƠN</p>
+                          <p className="italic text-[10px] text-slate-500">(Ký, ghi rõ họ tên)</p>
+                          {currentActiveDoc.trangThaiTrinhKy === 'da_co_hieu_luc' ? (
+                            <div className="my-2 p-1.5 rounded border border-emerald-500 bg-emerald-50 text-emerald-800 text-[9px] font-mono inline-block">
+                              <p className="font-bold">✓ ĐÃ KÝ SỐ ĐIỆN TỬ VGCA</p>
+                              <p>Ký bởi: {currentActiveDoc.signer}</p>
+                              <p>Thời gian: {currentActiveDoc.uploadDate}</p>
+                            </div>
+                          ) : (
+                            <div className="h-12"></div>
+                          )}
+                          <p className="font-bold text-slate-900">
+                            {currentDon.nguoiNop || 'Nguyễn Thị Minh Phương'}
+                          </p>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -905,17 +981,116 @@ export default function TabTaiLieu({
                   <div className="space-y-2 pt-1">
                     <div className="flex items-center justify-between text-xs font-semibold text-slate-800 select-none py-0.5">
                       <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          disabled
-                          className="w-4 h-4 rounded text-slate-400 border-slate-200 cursor-not-allowed opacity-50"
-                        />
+                        {quyetDinhDocs.length === 0 ? (
+                          <input
+                            type="checkbox"
+                            disabled
+                            className="w-4 h-4 rounded text-slate-400 border-slate-200 cursor-not-allowed opacity-50"
+                          />
+                        ) : (
+                          <input
+                            type="checkbox"
+                            checked={isAllQuyetDinhSelected}
+                            onChange={handleToggleSelectAllQuyetDinh}
+                            className="w-4 h-4 rounded text-[#881337] focus:ring-[#881337] border-slate-300 cursor-pointer"
+                          />
+                        )}
                         <span>Văn bản và quyết định xử lý</span>
                       </div>
-                      <span className="text-[11px] text-slate-400 font-normal">
-                        0 tài liệu
+                      <span className="text-[11px] text-slate-500 font-normal">
+                        {quyetDinhDocs.length} tài liệu
                       </span>
                     </div>
+
+                    {/* Danh sách các văn bản Quyết định xử lý */}
+                    {quyetDinhDocs.length > 0 && (
+                      <div className="space-y-2 pl-4">
+                        {quyetDinhDocs.map((doc) => {
+                          const isSelected = selectedDocIds.includes(doc.id);
+                          const isActiveView = activeDocId === doc.id;
+                          const isLocked = doc.trangThaiTrinhKy === 'da_co_hieu_luc';
+
+                          return (
+                            <div
+                              key={doc.id}
+                              onClick={() => setActiveDocId(doc.id)}
+                              className={`p-3 rounded-lg border transition-all cursor-pointer relative ${
+                                isSelected
+                                  ? 'border-red-400 bg-red-50/50 shadow-xs'
+                                  : isActiveView
+                                    ? 'border-slate-300 bg-slate-50/80'
+                                    : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/40'
+                              }`}
+                            >
+                              <div className="flex items-start gap-2.5">
+                                {/* Checkbox chọn */}
+                                <div className="pt-0.5">
+                                  {isLocked ? (
+                                    <input
+                                      type="checkbox"
+                                      disabled
+                                      className="w-4 h-4 rounded text-slate-400 border-slate-200 cursor-not-allowed opacity-50"
+                                    />
+                                  ) : (
+                                    <input
+                                      type="checkbox"
+                                      checked={isSelected}
+                                      onClick={(e) => handleToggleDocSelect(doc, e)}
+                                      onChange={() => {}}
+                                      className="w-4 h-4 rounded text-red-600 focus:ring-red-500 border-slate-300 cursor-pointer"
+                                    />
+                                  )}
+                                </div>
+
+                                {/* Icon PDF */}
+                                <div className="w-7 h-7 rounded bg-red-50 border border-red-200 text-red-600 flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">
+                                  PDF
+                                </div>
+
+                                {/* Thông tin văn bản */}
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <h4 className="text-xs font-bold text-slate-900 leading-snug line-clamp-2">
+                                      {doc.tenVanBan || doc.name}
+                                    </h4>
+
+                                    {/* Trạng thái Badge bên phải */}
+                                    <div className="shrink-0">
+                                      {doc.trangThaiTrinhKy === 'da_co_hieu_luc' ? (
+                                        <span className="px-2 py-0.5 rounded-full text-[10.5px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-300">
+                                          Đã có hiệu lực
+                                        </span>
+                                      ) : doc.trangThaiTrinhKy === 'dang_trinh' || doc.trangThaiTrinhKy === 'da_trinh' ? (
+                                        <span className="px-2 py-0.5 rounded-full text-[10.5px] font-semibold bg-blue-50 text-blue-700 border border-blue-300">
+                                          Đang trình ký
+                                        </span>
+                                      ) : (
+                                        <span className="px-2 py-0.5 rounded-full text-[10.5px] font-medium bg-amber-50 text-amber-800 border border-amber-200">
+                                          Bản nháp
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Mã số & Ngày */}
+                                  <div className="text-[11px] text-slate-500 mt-0.5 font-mono">
+                                    {doc.soHieu || 'Chưa cấp số'} • {doc.uploadDate}
+                                  </div>
+
+                                  {/* Dòng Yêu cầu */}
+                                  <div className="text-[11px] text-slate-600 mt-1 font-medium flex items-center justify-between">
+                                    <span>Yêu cầu: <span className="text-slate-800">{doc.yeuCau || 'Ký'}</span></span>
+                                    <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                                      Quyết định thụ lý
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
