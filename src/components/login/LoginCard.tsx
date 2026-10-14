@@ -119,11 +119,10 @@ export default function LoginCard({
             Tên đăng nhập
           </label>
           <div
-            className={`w-full h-[48px] flex items-center px-3.5 rounded-[8px] border bg-white transition-all duration-200 ${
-              usernameError
-                ? "border-rose-400 ring-2 ring-rose-100"
-                : "border-[#DCE6F2] hover:border-slate-300 focus-within:border-[#1557A6] focus-within:ring-2 focus-within:ring-[#1557A6]/15"
-            }`}
+            className={`w-full h-[48px] flex items-center px-3.5 rounded-[8px] border bg-white transition-all duration-200 ${usernameError
+              ? "border-rose-400 ring-2 ring-rose-100"
+              : "border-[#DCE6F2] hover:border-slate-300 focus-within:border-[#1557A6] focus-within:ring-2 focus-within:ring-[#1557A6]/15"
+              }`}
           >
             {/* Icon User bên trái */}
             <User className="w-4.5 h-4.5 text-[#64748B] shrink-0 mr-3" strokeWidth={1.8} aria-hidden="true" />
@@ -167,11 +166,10 @@ export default function LoginCard({
             Mật khẩu
           </label>
           <div
-            className={`w-full h-[48px] flex items-center px-3.5 rounded-[8px] border bg-white transition-all duration-200 ${
-              passwordError
-                ? "border-rose-400 ring-2 ring-rose-100"
-                : "border-[#DCE6F2] hover:border-slate-300 focus-within:border-[#1557A6] focus-within:ring-2 focus-within:ring-[#1557A6]/15"
-            }`}
+            className={`w-full h-[48px] flex items-center px-3.5 rounded-[8px] border bg-white transition-all duration-200 ${passwordError
+              ? "border-rose-400 ring-2 ring-rose-100"
+              : "border-[#DCE6F2] hover:border-slate-300 focus-within:border-[#1557A6] focus-within:ring-2 focus-within:ring-[#1557A6]/15"
+              }`}
           >
             {/* Icon Lock bên trái */}
             <Lock className="w-4.5 h-4.5 text-[#64748B] shrink-0 mr-3" strokeWidth={1.8} aria-hidden="true" />
@@ -252,11 +250,10 @@ export default function LoginCard({
         <button
           type="submit"
           disabled={isLoading}
-          className={`w-full h-[48px] rounded-[8px] text-white font-semibold text-[14.5px] flex items-center justify-center relative transition-all duration-150 cursor-pointer ${
-            isLoading
-              ? "bg-[#1557A6]/80 cursor-wait"
-              : "bg-[#1557A6] hover:bg-[#0F3B78] active:bg-[#0C3063] shadow-xs hover:shadow-md"
-          }`}
+          className={`w-full h-[48px] rounded-[8px] text-white font-semibold text-[14.5px] flex items-center justify-center relative transition-all duration-150 cursor-pointer ${isLoading
+            ? "bg-[#1557A6]/80 cursor-wait"
+            : "bg-[#1557A6] hover:bg-[#0F3B78] active:bg-[#0C3063] shadow-xs hover:shadow-md"
+            }`}
         >
           {isLoading ? (
             <div className="flex items-center gap-2">
@@ -270,6 +267,62 @@ export default function LoginCard({
             </>
           )}
         </button>
+
+        {/* ── 12. TÙY CHỌN ĐĂNG NHẬP NHANH THEO VAI TRÒ DEMO ── */}
+        {/* <div className="pt-4 border-t border-slate-100 w-full">
+          <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2 text-center">
+            Đăng nhập nhanh theo vai trò
+          </p>
+          <div className="grid grid-cols-3 gap-1.5 w-full">
+            <button
+              type="button"
+              disabled={isLoading}
+              onClick={() => {
+                setUsername("minhanh");
+                setPassword("123456");
+                onSubmit({ username: "minhanh", password: "123456", autoLogin });
+              }}
+              className="flex flex-col items-center justify-center p-2 rounded-xl border border-blue-200 bg-blue-50/70 hover:bg-blue-100/80 hover:border-blue-400 hover:shadow-xs transition-all text-center cursor-pointer group"
+              title="Đăng nhập với vai trò Cán bộ thụ lý (Nguyễn Minh Anh)"
+            >
+              <span className="w-2 h-2 rounded-full bg-blue-600 mb-1 group-hover:scale-125 transition-transform" />
+              <span className="text-[11.5px] font-bold text-blue-900 leading-tight">Cán bộ</span>
+              <span className="text-[10px] text-blue-600 truncate max-w-full">Minh Anh</span>
+            </button>
+
+            <button
+              type="button"
+              disabled={isLoading}
+              onClick={() => {
+                setUsername("cuong");
+                setPassword("123456");
+                onSubmit({ username: "cuong", password: "123456", autoLogin });
+              }}
+              className="flex flex-col items-center justify-center p-2 rounded-xl border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100/80 hover:border-indigo-400 hover:shadow-xs transition-all text-center cursor-pointer group"
+              title="Đăng nhập với vai trò Lãnh đạo phê duyệt (Trần Văn Cường)"
+            >
+              <span className="w-2 h-2 rounded-full bg-indigo-600 mb-1 group-hover:scale-125 transition-transform" />
+              <span className="text-[11.5px] font-bold text-indigo-900 leading-tight">Lãnh đạo</span>
+              <span className="text-[10px] text-indigo-600 truncate max-w-full">Văn Cường</span>
+            </button>
+
+            <button
+              type="button"
+              disabled={isLoading}
+              onClick={() => {
+                setUsername("nga");
+                setPassword("123456");
+                onSubmit({ username: "nga", password: "123456", autoLogin });
+              }}
+              className="flex flex-col items-center justify-center p-2 rounded-xl border border-rose-200 bg-rose-50/70 hover:bg-rose-100/80 hover:border-rose-400 hover:shadow-xs transition-all text-center cursor-pointer group"
+              title="Đăng nhập với vai trò Văn thư Một cửa (Lê Thúy Nga)"
+            >
+              <span className="w-2 h-2 rounded-full bg-rose-600 mb-1 group-hover:scale-125 transition-transform" />
+              <span className="text-[11.5px] font-bold text-rose-900 leading-tight">Văn thư</span>
+              <span className="text-[10px] text-rose-600 truncate max-w-full">Thúy Nga</span>
+            </button>
+          </div>
+        </div> */}
       </form>
     </div>
   );

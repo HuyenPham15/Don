@@ -3,6 +3,7 @@ export type Screen =
   | "cong-viec" 
   | "nhan-don-list" 
   | "nhan-don-them" 
+  | "tao-don-moi"
   | "chi-tiet-luot-nhan"
   | "ban-phan-tich" 
   | "don-tiep-nhan" 
@@ -90,7 +91,8 @@ export interface LuotNhan {
   sdt?: string;
   diaChi?: string;
   loaiDon?: string;
-  status?: 'cho_chuyen' | 'da_chuyen' | 'da_ban_giao' | 'da_tra_lai' | 'da_ghep' | 'da_thu_ly' | 'khong_thu_ly' | 'cho_bo_sung';
+  status?: 'cho_chuyen' | 'da_chuyen' | 'da_ban_giao' | 'da_tra_lai' | 'da_ghep' | 'da_thu_ly' | 'khong_thu_ly' | 'cho_bo_sung' | 'da_tiep_nhan';
+  ghepVaoDonCode?: string;
   ngayChuyenXuLy?: string;
   nguoiThaoTacGanNhat?: string;
   hasFile?: boolean;
@@ -174,6 +176,10 @@ export interface DonDetail {
     stepName: string;
     steps?: string[];
   };
+  isAwaitingAcceptance?: boolean;
+  isNoFileTransfer?: boolean;
+  hasFile?: boolean;
+  isNew?: boolean;
 }
 
 export interface UploadedFile { name: string; size: string; category: "main" | "attach" | "extra"; }

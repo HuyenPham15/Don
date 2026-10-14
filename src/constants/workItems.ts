@@ -7,6 +7,52 @@ export const INITIAL_WORK_ITEMS: WorkItem[] = [
   // Bị trả lại, Cần xác nhận, Cần trình ký...
   // =========================================================================
 
+  // 0. Lượt nhận không có tài liệu - Tiếp nhận trực tiếp (Chuyển sang màn chi tiết đơn)
+  {
+    id: 'LN-2026-GOVEX_008',
+    code: 'LN-2026-GOVEX_008',
+    title: 'Đến nộp trực tiếp trình bày yêu cầu giải quyết tranh chấp ranh giới đất đai (Chưa có tài liệu số hóa)',
+    sender: 'Hoàng Văn Nam',
+    source: 'Bộ phận Một cửa chuyển đến',
+    sourceType: 'luot_nhan',
+    timeReceived: '16/09/2026 14:30',
+    priority: 'urgent',
+    deadlineType: 'today',
+    deadlineText: 'Hôm nay 17:00',
+    deadlineFull: 'Hôm nay - 17:00',
+    column: 'action_required',
+    actionTitle: 'Tiếp nhận trực tiếp (Không có tài liệu)',
+    subStatus: 'chua_xu_ly',
+    nextAction: 'Chuyển thẳng sang Màn chi tiết đơn để cán bộ tiếp nhận & nhập thông tin cơ bản',
+    holder: {
+      role: 'Đang xử lý',
+      name: 'Tôi (Nguyễn Minh Anh)',
+      department: 'Phòng Tiếp công dân & Xử lý đơn',
+    },
+    departmentId: 'tiep-dan',
+    departmentName: 'Phòng Tiếp công dân & Xử lý đơn',
+    progress: {
+      currentStep: 1,
+      totalSteps: 4,
+      stepName: 'Chờ tiếp nhận đơn',
+      steps: ['Tiếp nhận', 'Nhập thông tin', 'Xác minh', 'Trình đề xuất'],
+    },
+    docCount: 0,
+    cta: {
+      label: 'Tiếp nhận trực tiếp',
+      actionType: 'handle_now',
+      variant: 'urgent',
+    },
+    category: 'Đất đai',
+    tags: ['Không có tài liệu', 'Tiếp nhận trực tiếp', 'Đã chuyển đến'],
+    loaiDon: 'Đơn phản ánh kiến nghị',
+    luotNhanId: 'LN-2026-GOVEX_008',
+    aiStatus: 'none',
+    hasFile: false,
+    nguonXuLy: 'ghi_chu_thu_cong',
+    taskReadiness: 'action_required',
+  },
+
   // 1. [Đơn] Đ-2026-0098 - Kiểm tra kết quả AI (Khớp ví dụ người dùng)
   {
     id: 'Đ-2026-0098',

@@ -45,14 +45,25 @@ export default function LoginScreen({
       }
 
       // Tìm tài khoản phù hợp trong hệ thống hoặc dùng tài khoản cán bộ mặc định
-      const matchedAccount =
-        DEMO_ACCOUNTS.find(
-          (a) =>
-            data.username.toLowerCase().includes("cuong") ||
-            data.username.toLowerCase().includes("lanhdao") ||
-            a.id.toLowerCase().includes(data.username.toLowerCase()) ||
-            a.name.toLowerCase().includes(data.username.toLowerCase())
-        ) || DEMO_ACCOUNTS[0];
+      const u = data.username.toLowerCase();
+      let matchedAccount = DEMO_ACCOUNTS.find((a) => a.id.toLowerCase() === u);
+      if (!matchedAccount) {
+        matchedAccount = DEMO_ACCOUNTS.find((a) =>
+          a.id.toLowerCase().includes(u) ||
+          a.name.toLowerCase().includes(u) ||
+          (u.includes('lanhdao') && a.role === 'lanh_dao') ||
+          (u.includes('vanthu') && a.role === 'van_thu') ||
+          (u.includes('canbo') && a.role === 'can_bo') ||
+          (u.includes('cuong') && a.id.includes('cuong')) ||
+          (u.includes('hung') && a.id.includes('hung')) ||
+          (u.includes('bao') && a.id.includes('bao')) ||
+          (u.includes('nga') && a.id.includes('nga')) ||
+          (u.includes('minh') && a.id.includes('minhanh'))
+        );
+      }
+      if (!matchedAccount) {
+        matchedAccount = DEMO_ACCOUNTS.find((a) => a.role === 'can_bo') || DEMO_ACCOUNTS[0];
+      }
 
       // Đăng nhập thành công -> chuyển vào hệ thống
       onLoginSuccess(matchedAccount);

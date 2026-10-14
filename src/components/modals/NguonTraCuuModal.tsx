@@ -107,8 +107,8 @@ export default function NguonTraCuuModal({
               type="button"
               onClick={() => setActiveTab('nguoi-gui')}
               className={`pb-3 px-3 text-xs font-bold transition-all border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${activeTab === 'nguoi-gui'
-                  ? 'border-[#004ac6] text-[#004ac6]'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+                ? 'border-[#004ac6] text-[#004ac6]'
+                : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
                 }`}
             >
               <span className="material-symbols-outlined text-[17px]">badge</span>
@@ -126,8 +126,8 @@ export default function NguonTraCuuModal({
               type="button"
               onClick={() => setActiveTab('don-tuong-tu')}
               className={`pb-3 px-3 text-xs font-bold transition-all border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${activeTab === 'don-tuong-tu'
-                  ? 'border-amber-600 text-amber-800'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+                ? 'border-amber-600 text-amber-800'
+                : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
                 }`}
             >
               <span className="material-symbols-outlined text-[17px]">compare_arrows</span>
@@ -142,8 +142,8 @@ export default function NguonTraCuuModal({
               type="button"
               onClick={() => setActiveTab('vu-viec')}
               className={`pb-3 px-3 text-xs font-bold transition-all border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${activeTab === 'vu-viec'
-                  ? 'border-purple-600 text-purple-800'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+                ? 'border-purple-600 text-purple-800'
+                : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
                 }`}
             >
               <span className="material-symbols-outlined text-[17px]">folder_shared</span>
@@ -336,42 +336,6 @@ export default function NguonTraCuuModal({
             {/* ───────────────────────────────────────────────────────────────── */}
             {activeTab === 'don-tuong-tu' && (
               <div className="space-y-4">
-                {/* Alert Callout */}
-                <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200/80 space-y-2">
-                  <div className="flex items-start gap-2.5">
-                    <span className="material-symbols-outlined text-amber-600 text-xl mt-0.5 shrink-0">warning</span>
-                    <div>
-                      <h4 className="text-xs font-bold text-amber-950 uppercase tracking-tight">
-                        CẢNH BÁO PHÁT HIỆN ĐƠN TƯƠNG TỰ CAO (86%) VỚI ĐƠN ĐÃ THỤ LÝ
-                      </h4>
-                      <p className="text-xs text-amber-900 leading-relaxed mt-0.5">
-                        Hệ thống AI đối soát phát hiện đơn hiện tại có cùng <strong>Người gửi</strong>, cùng <strong>Đối tượng tố giác (Công ty X)</strong> và cùng <strong>Dự án Khu đô thị Y</strong> so với đơn <strong>Đ-2025-00341</strong> đã thụ lý ngày 15/06/2026. Đơn hiện tại bổ sung thêm tài liệu đợt nộp tiền mới (3.5 tỷ VNĐ).
-                      </p>
-                    </div>
-                  </div>
-
-                  {onApplyRecommendation && (
-                    <div className="pt-2 border-t border-amber-200/60 flex items-center justify-between flex-wrap gap-2">
-                      <span className="text-[11.5px] font-semibold text-amber-900">
-                        Đề xuất: Nhập đơn này dưới dạng bổ sung tài liệu vào hồ sơ Đ-2025-00341.
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onApplyRecommendation(
-                            'Qua đối soát phát hiện đơn Đ-2026-00125 trùng đối tượng và nội dung với đơn Đ-2025-00341 (ngày 15/06/2026). Đề xuất tiếp nhận dưới dạng tài liệu bổ sung và chuyển gộp về Đội CSĐT kinh tế (PC03) để giải quyết chung.'
-                          );
-                          onClose();
-                        }}
-                        className="px-3 py-1.5 rounded-lg bg-amber-700 hover:bg-amber-800 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
-                      >
-                        Áp dụng đề xuất này vào Ý kiến cán bộ
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Side-by-side comparison table */}
                 <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
                   <div className="px-4 py-3 bg-slate-100 border-b border-slate-200 flex items-center justify-between">
                     <span className="text-xs font-bold text-slate-800 uppercase tracking-tight flex items-center gap-1.5">
@@ -438,37 +402,6 @@ export default function NguonTraCuuModal({
                         </tr>
                       </tbody>
                     </table>
-                  </div>
-                </div>
-
-                {/* Nguyên văn đoạn trích đơn gốc Đ-2025-00341 */}
-                <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-800 uppercase tracking-tight flex items-center gap-1.5">
-                      <span className="material-symbols-outlined text-[16px] text-amber-600">document_scanner</span>
-                      Trích lục toàn văn văn bản lưu trữ của đơn Đ-2025-00341:
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => copyToClipboard('CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM...', 'copy-don-goc')}
-                      className="text-xs text-blue-600 hover:underline flex items-center gap-1 cursor-pointer font-semibold"
-                    >
-                      <span className="material-symbols-outlined text-[14px]">
-                        {copiedId === 'copy-don-goc' ? 'check' : 'content_copy'}
-                      </span>
-                      <span>{copiedId === 'copy-don-goc' ? 'Đã sao chép' : 'Sao chép trích lục'}</span>
-                    </button>
-                  </div>
-
-                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 font-mono text-xs text-slate-800 space-y-2 leading-relaxed max-h-52 overflow-y-auto">
-                    <p className="font-bold text-center">ĐƠN TỐ GIÁC VỀ HÀNH VI LỪA ĐẢO CHIẾM ĐOẠT TÀI SẢN</p>
-                    <p className="text-slate-500 italic text-center text-[11px]">(Lưu tại Hồ sơ lưu trữ số 341/2026/CSĐT - PC03 Công an TP. Hà Nội)</p>
-                    <p>Kính gửi: Cơ quan Cảnh sát điều tra - Công an Thành phố Hà Nội</p>
-                    <p>Tôi tên là: <strong>Nguyễn Văn A</strong>, sinh năm 1988, CCCD số: 001088012345 cấp ngày 12/04/2021.</p>
-                    <p className="bg-amber-100/70 p-1.5 rounded border border-amber-200">
-                      <strong className="text-amber-900">[ĐOẠN TRÙNG KHỚP VỚI ĐƠN MỚI]:</strong> Vào tháng 03/2024, qua tìm hiểu thông tin quảng cáo dự án Khu đô thị Y tại quận Hà Đông do Công ty Cổ phần Đầu tư Bất động sản X làm chủ đầu tư, tôi đã ký hợp đồng hợp tác và nộp tiền vào tài khoản công ty. Tuy nhiên đến nay dự án vẫn là bãi đất trống, công ty không triển khai thi công và né tránh tiếp công dân...
-                    </p>
-                    <p>Kính đề nghị Quý Cơ quan tiến hành khởi tố điều tra hành vi của Ban Lãnh đạo Công ty CP X để bảo vệ quyền lợi hợp pháp cho người dân.</p>
                   </div>
                 </div>
               </div>

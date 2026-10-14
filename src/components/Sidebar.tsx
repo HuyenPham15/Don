@@ -15,7 +15,7 @@ interface SidebarProps {
 
 export default function Sidebar({ screen, onNav, currentAccount, signingCounts }: SidebarProps) {
   const isNhanDon = ["nhan-don-list", "nhan-don-them", "ban-phan-tich"].includes(screen);
-  const isCongViec = screen === "cong-viec" || screen === "don-tiep-nhan" || screen === "quy-trinh-xu-ly";
+  const isCongViec = screen === "cong-viec" || screen === "don-tiep-nhan" || screen === "quy-trinh-xu-ly" || screen === "tao-don-moi";
   const isQuanTri = [
     "quan-tri-quy-trinh",
     "quan-tri-loai-don",
@@ -60,7 +60,7 @@ export default function Sidebar({ screen, onNav, currentAccount, signingCounts }
           </button>
 
           {/* Hàng đợi tiếp nhận (Trước đây là Nhận đơn) */}
-          <button
+          {/* <button
             type="button"
             onClick={() => onNav('nhan-don-list')}
             className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer ${isNhanDon
@@ -80,7 +80,7 @@ export default function Sidebar({ screen, onNav, currentAccount, signingCounts }
             <div className="flex items-center gap-1.5">
               {isNhanDon && <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>}
             </div>
-          </button>
+          </button> */}
 
           {/* Tiếp nhận tin báo, tố giác (Mục chuyên biệt cho nghiệp vụ tố tụng hình sự) - Tạm ẩn theo yêu cầu */}
           {/* <button
@@ -103,7 +103,7 @@ export default function Sidebar({ screen, onNav, currentAccount, signingCounts }
           </button> */}
 
           {/* Quản lý đơn */}
-          <button
+          {/* <button
             type="button"
             onClick={() => onNav('don-tiep-nhan')}
             className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer ${screen === 'don-tiep-nhan'
@@ -123,15 +123,15 @@ export default function Sidebar({ screen, onNav, currentAccount, signingCounts }
             <div className="flex items-center gap-1.5">
               {screen === 'don-tiep-nhan' && <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>}
             </div>
-          </button>
+          </button> */}
 
-          {/* Quản lý trình ký (Menu độc lập theo yêu cầu) */}
+          {/* Quản lý trình ký (Điều hướng trực tiếp vào tab Trình ký trong Công việc của tôi) */}
           <button
             type="button"
             onClick={() => onNav('quan-ly-trinh-ky')}
             className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer ${screen === 'quan-ly-trinh-ky'
-                ? 'bg-blue-50 text-[#004ac6] font-semibold border border-blue-100/60 shadow-2xs'
-                : 'text-slate-700 hover:bg-slate-50'
+              ? 'bg-blue-50 text-[#004ac6] font-semibold border border-blue-100/60 shadow-2xs'
+              : 'text-slate-700 hover:bg-slate-50'
               }`}
           >
             <div className="flex items-center gap-2.5">
@@ -144,9 +144,11 @@ export default function Sidebar({ screen, onNav, currentAccount, signingCounts }
               <span className="text-[13.5px] font-medium">Quản lý trình ký</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="px-1.5 py-0.5 rounded-md bg-purple-100 text-purple-800 text-[10px] font-bold">
-                Tập trung
-              </span>
+              {((signingCounts?.daTrinh || 0) > 0 || (signingCounts?.choTrinh || 0) > 0) && (
+                <span className="px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-700 text-[10.5px] font-bold font-mono">
+                  {(signingCounts?.daTrinh || 0) + (signingCounts?.choTrinh || 0)}
+                </span>
+              )}
               {screen === 'quan-ly-trinh-ky' && <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>}
             </div>
           </button>
@@ -431,8 +433,43 @@ export default function Sidebar({ screen, onNav, currentAccount, signingCounts }
         </div>
       </div>
 
-      {/* Bottom Action: Màn hình Đăng nhập (UI/UX) */}
-
+      {/* Bottom Account Card */}
+      {currentAccount && (
+        <div className="p-3 border-t border-slate-200/90 bg-slate-50/60">
+          <div className="flex items-center gap-2.5 p-2 rounded-xl bg-white border border-slate-200/80 shadow-2xs">
+            <div className={`w-8 h-8 rounded-full ${currentAccount.avatarBg} text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs ring-2 ring-white`}>
+              {currentAccount.shortName}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-xs font-bold text-slate-900 truncate">
+                  {currentAccount.name}
+                </span>
+                <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold ${
+                  currentAccount.role === 'lanh_dao'
+                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                    : currentAccount.role === 'van_thu'
+                      ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                      : 'bg-blue-100 text-[#004ac6] border border-blue-200'
+                }`}>
+                  {currentAccount.role === 'lanh_dao' ? 'LÃNH ĐẠO' : currentAccount.role === 'van_thu' ? 'VĂN THƯ' : 'CÁN BỘ'}
+                </span>
+              </div>
+              <p className="text-[10px] text-slate-500 truncate mt-0.5">
+                {currentAccount.chucVu}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => onNav('login')}
+              className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer shrink-0"
+              title="Đăng xuất / Chuyển tài khoản"
+            >
+              <span className="material-symbols-outlined text-[16px]">logout</span>
+            </button>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }

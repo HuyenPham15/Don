@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { DonDetail } from '../../types';
 import { VanBanXacMinhItem } from '../modals/XacMinhVaDeXuatModal';
-import { SigningDocument, SigningStatus } from '../../types/signing';
+import { SigningDocument, SigningStatus, SignerItem, SignerRole } from '../../types/signing';
+import TaoLuotTrinhModal, { LeaderOption, Permission } from '../modals/TaoLuotTrinhModal';
 
 export interface TabTaiLieuProps {
   currentDon: DonDetail;
@@ -153,6 +154,8 @@ export default function TabTaiLieu({
   });
   // Toast thông báo
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  // Trạng thái mở modal Tạo lượt trình & Ma trận phân quyền văn bản
+  const [isTrinhKyModalOpen, setIsTrinhKyModalOpen] = useState<boolean>(false);
 
   // Sync count to parent
   useEffect(() => {
@@ -236,26 +239,31 @@ export default function TabTaiLieu({
     }
   };
 
-  // Xử lý bấm nút "Trình ký"
-  const handleTrinhKy = () => {
+  // Mở popup Ma trận phân quyền & thêm lãnh đạo khi bấm nút "Trình ký"
+  const handleOpenTrinhKyModal = () => {
     if (selectedDocIds.length === 0) {
       showToast('⚠️ Vui lòng chọn ít nhất 01 văn bản để đi trình ký!');
       return;
     }
+    setIsTrinhKyModalOpen(true);
+  };
 
+  // Xác nhận trình ký từ modal Tạo lượt trình & Ma trận phân quyền
+  const handleConfirmTrinhKy = (
+    configuredLeaders: LeaderOption[],
+    permissions: Record<string, Permission>
+  ) => {
     const docsToSubmit = documents.filter((d) => selectedDocIds.includes(d.id));
-    const confirmMsg = `Xác nhận chuyển ${docsToSubmit.length} văn bản đã chọn sang luồng Trình ký Lãnh đạo phê duyệt?`;
-    if (!window.confirm(confirmMsg)) return;
 
     // Cập nhật trạng thái các văn bản được chọn
     setDocuments((prev) =>
       prev.map((d) =>
         selectedDocIds.includes(d.id)
           ? {
-              ...d,
-              trangThaiTrinhKy: 'dang_trinh',
-              signingStatus: 'cho_trinh',
-            }
+            ...d,
+            trangThaiTrinhKy: 'dang_trinh',
+            signingStatus: 'cho_trinh',
+          }
           : d
       )
     );
@@ -264,10 +272,30 @@ export default function TabTaiLieu({
     if (onUpdateSigningDocuments) {
       const now = new Date();
       const todayStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
-      
+
       onUpdateSigningDocuments((prevDocs) => {
         let next = [...prevDocs];
         docsToSubmit.forEach((doc) => {
+          // Xây dựng danh sách signers theo ma trận phân quyền đã cấu hình
+          const signers: SignerItem[] = configuredLeaders.map((ldr, idx) => {
+            const perm = permissions[`${doc.id}:${ldr.id}`] || 'Xem';
+            let vaiTro: SignerRole = 'cho_y_kien';
+            if (perm === 'Ký số') vaiTro = 'ky';
+            else if (perm === 'Duyệt') vaiTro = 'duyet';
+
+            return {
+              id: ldr.id,
+              name: ldr.name,
+              chucVu: ldr.title,
+              coQuan: 'Sở Tài nguyên & Môi trường',
+              vaiTro,
+              thuTu: idx + 1,
+              status: idx === 0 ? 'cho_ky' : 'chua_den_luot',
+            };
+          });
+
+          const primarySigner = signers.find((s) => s.vaiTro === 'ky') || signers[0];
+
           const newSd: SigningDocument = {
             id: doc.id,
             soKyHieu: doc.soHieu || 'VB-2026',
@@ -289,7 +317,7 @@ export default function TabTaiLieu({
             nguoiTrinh: currentDon.canBoXuLy || 'Nguyễn Minh Anh',
             mucDoUuTien: 'thuong',
             hanXuLy: '24 giờ',
-            signers: [
+            signers: signers.length > 0 ? signers : [
               {
                 id: 'ld-01',
                 name: 'Đ/c Trần Văn Hùng',
@@ -301,9 +329,9 @@ export default function TabTaiLieu({
               },
             ],
             currentSignerIndex: 0,
-            lanhDaoId: 'ld-01',
-            lanhDaoName: 'Đ/c Trần Văn Hùng',
-            lanhDaoChucVu: 'Thủ trưởng / Phó Thủ trưởng Cơ quan Điều tra',
+            lanhDaoId: primarySigner?.id || 'ld-01',
+            lanhDaoName: primarySigner?.name || 'Đ/c Trần Văn Hùng',
+            lanhDaoChucVu: primarySigner?.chucVu || 'Thủ trưởng / Phó Thủ trưởng Cơ quan Điều tra',
             tepDinhKem: [
               {
                 id: `att-${doc.id}`,
@@ -361,7 +389,8 @@ export default function TabTaiLieu({
       });
     }
 
-    showToast(`✓ Đã chuyển ${docsToSubmit.length} văn bản sang luồng Trình ký Lãnh đạo thành công!`);
+    setIsTrinhKyModalOpen(false);
+    showToast(`✓ Đã tạo lượt trình và chuyển ${docsToSubmit.length} văn bản sang luồng Trình ký Lãnh đạo thành công!`);
     setSelectedDocIds([]);
   };
 
@@ -646,22 +675,20 @@ export default function TabTaiLieu({
                 <button
                   type="button"
                   onClick={() => setGroupMode('folder')}
-                  className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
-                    groupMode === 'folder'
+                  className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${groupMode === 'folder'
                       ? 'bg-[#881337] text-white shadow-xs'
                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
+                    }`}
                 >
                   Theo thư mục
                 </button>
                 <button
                   type="button"
                   onClick={() => setGroupMode('date')}
-                  className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
-                    groupMode === 'date'
+                  className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${groupMode === 'date'
                       ? 'bg-[#881337] text-white shadow-xs'
                       : 'text-slate-600 hover:bg-slate-100'
-                  }`}
+                    }`}
                 >
                   Theo ngày tải
                 </button>
@@ -697,7 +724,7 @@ export default function TabTaiLieu({
             {/* Nút TRÌNH KÝ màu xanh dương chuẩn ảnh */}
             <button
               type="button"
-              onClick={handleTrinhKy}
+              onClick={handleOpenTrinhKyModal}
               className="px-4 py-1.5 rounded-lg bg-[#1d4ed8] hover:bg-blue-700 active:scale-95 text-white text-xs font-bold shadow-sm transition-all cursor-pointer flex items-center gap-1.5"
             >
               <span>Trình ký</span>
@@ -755,13 +782,12 @@ export default function TabTaiLieu({
                             <div
                               key={doc.id}
                               onClick={() => setActiveDocId(doc.id)}
-                              className={`p-3 rounded-lg border transition-all cursor-pointer relative ${
-                                isSelected
+                              className={`p-3 rounded-lg border transition-all cursor-pointer relative ${isSelected
                                   ? 'border-red-400 bg-red-50/50 shadow-xs'
                                   : isActiveView
-                                  ? 'border-slate-300 bg-slate-50/80'
-                                  : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/40'
-                              }`}
+                                    ? 'border-slate-300 bg-slate-50/80'
+                                    : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/40'
+                                }`}
                             >
                               <div className="flex items-start gap-2.5">
                                 {/* Checkbox chọn */}
@@ -777,7 +803,7 @@ export default function TabTaiLieu({
                                       type="checkbox"
                                       checked={isSelected}
                                       onClick={(e) => handleToggleDocSelect(doc, e)}
-                                      onChange={() => {}}
+                                      onChange={() => { }}
                                       className="w-4 h-4 rounded text-red-600 focus:ring-red-500 border-slate-300 cursor-pointer"
                                     />
                                   )}
@@ -859,6 +885,14 @@ export default function TabTaiLieu({
           </div>
         </div>
       </div>
+
+      {/* Modal Tạo lượt trình & Ma trận phân quyền văn bản */}
+      <TaoLuotTrinhModal
+        isOpen={isTrinhKyModalOpen}
+        onClose={() => setIsTrinhKyModalOpen(false)}
+        documents={documents.filter((d) => selectedDocIds.includes(d.id))}
+        onSubmit={handleConfirmTrinhKy}
+      />
     </div>
   );
 }

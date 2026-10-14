@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Screen, UploadedFile, LuotNhan, LoaiNghiepVuTiepNhan, TruongHopTrinhDien, AIAnalysisState } from '../types';
 
 interface NhanDonThemProps {
@@ -18,6 +18,26 @@ export interface TaiLieuChungMinhItem {
   ngayTai: string;
   nguoiTai: string;
 }
+
+export interface PendingUploadFile {
+  id: string;
+  originalName: string;
+  displayName: string;
+  size: string;
+  category: 'main' | 'attach' | 'extra';
+  isExistingIndex?: number;
+}
+
+const QUICK_DOC_NAME_SUGGESTIONS = [
+  'Đơn khiếu nại bản chính',
+  'Đơn tố cáo viết tay',
+  'Đơn kiến nghị, phản ánh',
+  'Bản sao CCCD / Giấy tờ nhân thân',
+  'Biên bản tiếp nhận / làm việc',
+  'Giấy chứng nhận QSDĐ / Trích lục bản đồ',
+  'Hợp đồng / Giấy tờ pháp lý liên quan',
+  'Tài liệu, chứng cứ kèm theo',
+];
 
 const VIETNAMESE_PROVINCES = [
   'Thành phố Hà Nội',
@@ -508,6 +528,8 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
   // ─── 6. TÀI LIỆU KÈM THEO ──────────────────────────────────────
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [pendingUploadFiles, setPendingUploadFiles] = useState<PendingUploadFile[] | null>(null);
 
   // ─── 7. VALIDATION & FEEDBACK ─────────────────────────────────
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -568,29 +590,93 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
 
   // Quét tài liệu từ máy scan
   const handleScanDocument = () => {
-    const newDoc: UploadedFile = {
-      name: `Scan_Don_tiep_nhan_${Date.now().toString().slice(-4)}.pdf`,
-      size: '2.4 MB',
-      category: 'main',
-    };
-    setFiles((prev) => [...prev, newDoc]);
-    showToast('Đã quét tài liệu thành công từ máy scan!');
+    const scanId = Date.now().toString().slice(-4);
+    const mockName = `Scan_Don_tiep_nhan_${scanId}.pdf`;
+    setPendingUploadFiles([
+      {
+        id: `scan-${Date.now()}`,
+        originalName: mockName,
+        displayName: `Bản quét Đơn tiếp nhận số ${scanId}`,
+        size: '2.4 MB',
+        category: files.length === 0 ? 'main' : 'attach',
+      },
+    ]);
   };
 
-  // Thêm tệp tải lên
-  const handleAddFiles = (fileList: FileList | null) => {
-    if (!fileList) return;
-    const added: UploadedFile[] = Array.from(fileList).map((f) => {
+  // Thêm tệp tải lên - Mở popup đặt tên tệp
+  const handleAddFiles = (fileList: FileList | null | File[]) => {
+    if (!fileList || (fileList as any).length === 0) return;
+    const list = Array.from(fileList as any) as File[];
+    const newPending: PendingUploadFile[] = list.map((f, idx) => {
       const kb = f.size / 1024;
       const sizeStr = kb > 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${Math.round(kb)} KB`;
+      const baseName = f.name.replace(/\.[^/.]+$/, '').replace(/[-_]+/g, ' ').trim();
+      const formattedName = baseName ? baseName.charAt(0).toUpperCase() + baseName.slice(1) : f.name;
+
       return {
-        name: f.name,
+        id: `pending-${Date.now()}-${idx}`,
+        originalName: f.name,
+        displayName: formattedName || f.name,
         size: sizeStr,
-        category: files.length === 0 ? 'main' : 'attach',
+        category: (files.length === 0 && idx === 0) ? 'main' : 'attach',
       };
     });
+    setPendingUploadFiles(newPending);
+  };
+
+  // Mở popup đổi tên tài liệu đã có trong danh sách
+  const handleEditExistingFile = (index: number) => {
+    const file = files[index];
+    if (!file) return;
+    setPendingUploadFiles([
+      {
+        id: `edit-${index}`,
+        originalName: file.name,
+        displayName: file.name,
+        size: file.size,
+        category: file.category || 'attach',
+        isExistingIndex: index,
+      },
+    ]);
+  };
+
+  // Xác nhận lưu tài liệu từ popup đặt tên
+  const handleConfirmPendingFiles = () => {
+    if (!pendingUploadFiles || pendingUploadFiles.length === 0) return;
+
+    for (let i = 0; i < pendingUploadFiles.length; i++) {
+      if (!pendingUploadFiles[i].displayName.trim()) {
+        showToast(`Vui lòng nhập tên cho tài liệu số #${i + 1}`);
+        return;
+      }
+    }
+
+    // Nếu đang sửa 1 tài liệu có sẵn
+    if (pendingUploadFiles.length === 1 && pendingUploadFiles[0].isExistingIndex !== undefined) {
+      const targetIdx = pendingUploadFiles[0].isExistingIndex;
+      const updated = [...files];
+      const newName = pendingUploadFiles[0].displayName.trim();
+      updated[targetIdx] = {
+        ...updated[targetIdx],
+        name: newName,
+        category: pendingUploadFiles[0].category,
+      };
+      setFiles(updated);
+      showToast(`Đã cập nhật tên tài liệu thành: "${newName}"`);
+      setPendingUploadFiles(null);
+      return;
+    }
+
+    // Thêm các tệp mới với tên đã đặt
+    const added: UploadedFile[] = pendingUploadFiles.map((item) => ({
+      name: item.displayName.trim() || item.originalName,
+      size: item.size,
+      category: item.category,
+    }));
+
     setFiles((prev) => [...prev, ...added]);
-    showToast(`Đã thêm ${added.length} tệp tài liệu.`);
+    showToast(`Đã thêm thành công ${added.length} tệp tài liệu vào hồ sơ.`);
+    setPendingUploadFiles(null);
   };
 
   const handleRemoveFile = (index: number) => {
@@ -1095,18 +1181,18 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
             type="button"
             onClick={handleSave}
             className={`inline-flex items-center gap-1.5 px-5 py-2 rounded-xl text-white font-semibold text-[13px] shadow-xs hover:shadow-md transition-all cursor-pointer ${loaiNghiepVu === 'nguoi_tu_thu'
-                ? 'bg-indigo-700 hover:bg-indigo-800'
-                : loaiNghiepVu === 'nguoi_dau_thu'
-                  ? 'bg-amber-700 hover:bg-amber-800'
-                  : loaiNghiepVu === 'bat_qua_tang'
-                    ? 'bg-rose-700 hover:bg-rose-800'
-                    : loaiNghiepVu === 'can_bo_phat_hien'
-                      ? 'bg-teal-700 hover:bg-teal-800'
-                      : loaiNghiepVu === 'tin_bao_to_giac' || loaiNghiepVu === 'tin_bao_toi_pham' || loaiNghiepVu === 'to_giac_toi_pham'
-                        ? 'bg-[#b91c1c] hover:bg-[#991b1b]'
-                        : loaiNghiepVu === 'tai_lieu_bo_sung'
-                          ? 'bg-purple-700 hover:bg-purple-800'
-                          : 'bg-[#004ac6] hover:bg-[#003ea8]'
+              ? 'bg-indigo-700 hover:bg-indigo-800'
+              : loaiNghiepVu === 'nguoi_dau_thu'
+                ? 'bg-amber-700 hover:bg-amber-800'
+                : loaiNghiepVu === 'bat_qua_tang'
+                  ? 'bg-rose-700 hover:bg-rose-800'
+                  : loaiNghiepVu === 'can_bo_phat_hien'
+                    ? 'bg-teal-700 hover:bg-teal-800'
+                    : loaiNghiepVu === 'tin_bao_to_giac' || loaiNghiepVu === 'tin_bao_toi_pham' || loaiNghiepVu === 'to_giac_toi_pham'
+                      ? 'bg-[#b91c1c] hover:bg-[#991b1b]'
+                      : loaiNghiepVu === 'tai_lieu_bo_sung'
+                        ? 'bg-purple-700 hover:bg-purple-800'
+                        : 'bg-[#004ac6] hover:bg-[#003ea8]'
               }`}
           >
             <span className="material-symbols-outlined text-[18px]">verified</span>
@@ -1119,312 +1205,20 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
                     ? 'Tiếp nhận Bắt quả tang & Hình thành Đơn'
                     : loaiNghiepVu === 'can_bo_phat_hien'
                       ? 'Tiếp nhận CB phát hiện & Hình thành Đơn'
-                        /* Tạm ẩn tiếp nhận tin tố giác theo yêu cầu
-                        : loaiNghiepVu === 'tin_bao_to_giac' || loaiNghiepVu === 'tin_bao_toi_pham' || loaiNghiepVu === 'to_giac_toi_pham'
-                          ? 'Tiếp nhận tin tố giác & Hình thành Đơn'
-                        */
-                        : loaiNghiepVu === 'tai_lieu_bo_sung'
-                          ? 'Tiếp nhận tài liệu & Hình thành Đơn'
-                          : 'Tiếp nhận & Hình thành Đơn'}
+                      /* Tạm ẩn tiếp nhận tin tố giác theo yêu cầu
+                      : loaiNghiepVu === 'tin_bao_to_giac' || loaiNghiepVu === 'tin_bao_toi_pham' || loaiNghiepVu === 'to_giac_toi_pham'
+                        ? 'Tiếp nhận tin tố giác & Hình thành Đơn'
+                      */
+                      : loaiNghiepVu === 'tai_lieu_bo_sung'
+                        ? 'Tiếp nhận tài liệu'
+                        : 'Thêm mới lượt nhận'}
             </span>
           </button>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 sm:px-10 py-6 space-y-8 w-full">
-        {/* ─── 0. CHỌN LOẠI NGHIỆP VỤ TIẾP NHẬN GOVEX (DẠNG DROPDOWN) ───────────────── */}
-        <section className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs space-y-3">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-[20px] text-blue-700">category</span>
-              <h2 className="text-[14px] font-bold text-slate-900 font-headline-md">
-                Loại nghiệp vụ tiếp nhận
-              </h2>
-              <span className="text-red-500 font-bold">*</span>
-            </div>
-            <span className="text-[12px] text-slate-500">
-              Chọn luồng nghiệp vụ để tự động tải biểu mẫu &amp; thẩm quyền thụ lý tương ứng
-            </span>
-          </div>
 
-          {/* DROPDOWN SELECTOR */}
-          {(() => {
-            const NGHIEP_VU_OPTIONS: {
-              value: LoaiNghiepVuTiepNhan;
-              aliases?: LoaiNghiepVuTiepNhan[];
-              label: string;
-              subtitle: string;
-              badge: string;
-              badgeColor: string;
-              icon: string;
-              iconColor: string;
-              canCu: string;
-              donViDefault: string;
-              handler: () => void;
-            }[] = [
-              {
-                value: 'tiep_nhan_don',
-                label: '1. Tiếp nhận đơn',
-                subtitle: 'Đơn khiếu nại, tố cáo hành chính, phản ánh kiến nghị theo Luật Khiếu nại, Luật Tố cáo',
-                badge: 'Hành chính',
-                badgeColor: 'bg-blue-100 text-[#004ac6] border-blue-200',
-                icon: 'description',
-                iconColor: 'text-[#004ac6] bg-blue-50',
-                canCu: 'Luật Khiếu nại 2011 & Luật Tố cáo 2018',
-                donViDefault: 'Phòng Tiếp công dân & Xử lý đơn',
-                handler: () => {
-                  setLoaiNghiepVu('tiep_nhan_don');
-                  setDonViNhan('Phòng Tiếp công dân & Xử lý đơn');
-                },
-              },
-              /* Tạm ẩn các tùy chọn tiếp nhận tin báo, tố giác tội phạm theo yêu cầu
-              {
-                value: 'tin_bao_toi_pham',
-                label: '2. Tiếp nhận tin báo về tội phạm',
-                subtitle: 'Thông tin về hành vi có dấu hiệu tội phạm do cơ quan, tổ chức, cá nhân thông báo hoặc phản ánh',
-                badge: 'Hình sự',
-                badgeColor: 'bg-rose-100 text-[#b91c1c] border-rose-200',
-                icon: 'campaign',
-                iconColor: 'text-[#b91c1c] bg-rose-50',
-                canCu: 'Điều 144, 145, 146 BLTTHS',
-                donViDefault: 'Công an thành phố Hà Nội',
-                handler: () => {
-                  setLoaiNghiepVu('tin_bao_toi_pham');
-                  setHinhThucNhan('Trực tiếp');
-                  setDonViNhan('Công an thành phố Hà Nội');
-                  setLoaiDonToGiac('Tin báo về tội phạm');
-                },
-              },
-              {
-                value: 'to_giac_toi_pham',
-                aliases: ['tin_bao_to_giac'],
-                label: '3. Tiếp nhận tố giác về tội phạm',
-                subtitle: 'Cá nhân phát hiện và tố cáo hành vi có dấu hiệu tội phạm của đối tượng cụ thể với cơ quan có thẩm quyền',
-                badge: 'Hình sự',
-                badgeColor: 'bg-rose-100 text-[#b91c1c] border-rose-200',
-                icon: 'local_police',
-                iconColor: 'text-[#b91c1c] bg-rose-50',
-                canCu: 'Điều 144, 145, 146 BLTTHS & TTLT 01/2017',
-                donViDefault: 'Công an thành phố Hà Nội',
-                handler: () => {
-                  setLoaiNghiepVu('to_giac_toi_pham');
-                  setHinhThucNhan('Trực tiếp');
-                  setDonViNhan('Công an thành phố Hà Nội');
-                  setLoaiDonToGiac('Đơn tố giác về tội phạm');
-                },
-              },
-              */
-              {
-                value: 'nguoi_tu_thu',
-                label: '4. Tiếp nhận người tự thú',
-                subtitle: 'Người phạm tội tự nguyện khai báo với cơ quan có thẩm quyền trước khi hành vi phạm tội bị phát hiện',
-                badge: 'Khoản 1 Điều 4 BLTTHS',
-                badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-200',
-                icon: 'front_hand',
-                iconColor: 'text-indigo-700 bg-indigo-50',
-                canCu: 'Khoản 1 Điều 4, Điều 145, Điều 146 BLTTHS',
-                donViDefault: 'Công an TP. Hà Nội (Trực ban hình sự)',
-                handler: () => {
-                  setLoaiNghiepVu('nguoi_tu_thu');
-                  setTruongHopTrinhDien('tu_thu');
-                  setHinhThucTrinhDien('Tự đến trực tiếp trình diện');
-                  setDonViNhan('Công an thành phố Hà Nội');
-                  setDiaDiemTiepNhan('Phòng Trực ban hình sự - Công an TP. Hà Nội');
-                  setLyDoPhanLoai('Công dân tự nguyện đến cơ quan Công an khai nhận hành vi phạm tội trước khi bị cơ quan có thẩm quyền phát hiện.');
-                },
-              },
-              {
-                value: 'nguoi_dau_thu',
-                label: '5. Tiếp nhận người đầu thú',
-                subtitle: 'Người phạm tội đến trình diện sau khi hành vi phạm tội đã bị phát hiện hoặc đang bị truy nã',
-                badge: 'Khoản 1 Điều 4 BLTTHS',
-                badgeColor: 'bg-amber-100 text-amber-900 border-amber-200',
-                icon: 'security',
-                iconColor: 'text-amber-700 bg-amber-50',
-                canCu: 'Khoản 1 Điều 4, Điều 145, Điều 146 BLTTHS',
-                donViDefault: 'Công an TP. Hà Nội (Trực ban hình sự)',
-                handler: () => {
-                  setLoaiNghiepVu('nguoi_dau_thu');
-                  setTruongHopTrinhDien('dau_thu');
-                  setHinhThucTrinhDien('Tự đến trực tiếp trình diện');
-                  setDonViNhan('Công an thành phố Hà Nội');
-                  setDiaDiemTiepNhan('Phòng Trực ban hình sự - Công an TP. Hà Nội');
-                  setLyDoPhanLoai('Người phạm tội đến trình diện sau khi hành vi phạm tội đã bị cơ quan có thẩm quyền phát hiện hoặc đang bị truy nã.');
-                },
-              },
-              {
-                value: 'tai_lieu_bo_sung',
-                label: '6. Tiếp nhận tài liệu bổ sung',
-                subtitle: 'Bổ sung chứng cứ, văn bản hoặc giải trình gắn trực tiếp vào Hồ sơ / Đơn đang mở (không sinh đơn mới)',
-                badge: 'Bổ sung hồ sơ',
-                badgeColor: 'bg-purple-100 text-purple-800 border-purple-200',
-                icon: 'note_add',
-                iconColor: 'text-purple-700 bg-purple-50',
-                canCu: 'Quy chế tiếp nhận & quản lý hồ sơ GOVEX',
-                donViDefault: 'Phòng Tiếp công dân & Xử lý đơn',
-                handler: () => {
-                  setLoaiNghiepVu('tai_lieu_bo_sung');
-                },
-              },
-              {
-                value: 'bat_qua_tang',
-                label: '7. Bắt người phạm tội quả tang',
-                subtitle: 'Bắt người khi đang thực hiện hành vi phạm tội hoặc ngay sau khi phạm tội thì bị phát hiện, đuổi bắt (không cần đơn)',
-                badge: 'Điều 111 BLTTHS',
-                badgeColor: 'bg-red-100 text-red-900 border-red-300',
-                icon: 'crisis_alert',
-                iconColor: 'text-red-700 bg-red-50',
-                canCu: 'Điều 111, Điều 115 BLTTHS',
-                donViDefault: 'Công an thành phố Hà Nội',
-                handler: () => {
-                  setLoaiNghiepVu('bat_qua_tang');
-                  setHinhThucNhan('Bắt quả tang tại hiện trường');
-                  setDonViNhan('Công an thành phố Hà Nội');
-                  setDiaDiemTiepNhan('Khu vực bãi đỗ xe số 2, Bến xe Giáp Bát, Hoàng Mai, Hà Nội');
-                },
-              },
-              {
-                value: 'can_bo_phat_hien',
-                label: '8. Cán bộ trực tiếp phát hiện',
-                subtitle: 'Cơ quan, cán bộ có thẩm quyền trực tiếp phát hiện dấu hiệu tội phạm qua công tác quản lý, tuần tra kiểm soát',
-                badge: 'Khoản 3 Điều 143 BLTTHS',
-                badgeColor: 'bg-teal-100 text-teal-900 border-teal-300',
-                icon: 'radar',
-                iconColor: 'text-teal-700 bg-teal-50',
-                canCu: 'Khoản 3 Điều 143 BLTTHS',
-                donViDefault: 'Công an thành phố Hà Nội',
-                handler: () => {
-                  setLoaiNghiepVu('can_bo_phat_hien');
-                  setHinhThucNhan('Tuần tra phát hiện');
-                  setDonViNhan('Công an thành phố Hà Nội');
-                  setDiaDiemTiepNhan('Kho bãi ngõ 250 đường Lĩnh Nam, Hoàng Mai, Hà Nội');
-                },
-              },
-            ];
-
-            const currentOption =
-              NGHIEP_VU_OPTIONS.find(
-                (opt) => opt.value === loaiNghiepVu || (opt.aliases && opt.aliases.includes(loaiNghiepVu))
-              ) || NGHIEP_VU_OPTIONS[0];
-
-            return (
-              <div className="space-y-2.5">
-                <div className="relative">
-                  {/* Trigger Button */}
-                  <button
-                    type="button"
-                    onClick={() => setIsLoaiNghiepVuDropdownOpen((prev) => !prev)}
-                    className="w-full flex items-center justify-between p-3 sm:p-3.5 bg-slate-50 hover:bg-slate-100/90 border-2 border-slate-300 hover:border-blue-500 rounded-xl transition-all cursor-pointer text-left shadow-2xs group focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border border-slate-200/80 shadow-2xs ${currentOption.iconColor}`}>
-                        <span className="material-symbols-outlined text-[22px]">{currentOption.icon}</span>
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-[13.5px] font-bold text-slate-900 group-hover:text-blue-700 transition-colors">
-                            {currentOption.label}
-                          </span>
-                          <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold border ${currentOption.badgeColor}`}>
-                            {currentOption.badge}
-                          </span>
-                        </div>
-                        <p className="text-[12px] text-slate-500 truncate mt-0.5 max-w-[650px]">
-                          {currentOption.subtitle}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0 ml-3">
-                      <span className="text-[11.5px] font-medium text-slate-400 hidden sm:inline">Nhấn để đổi</span>
-                      <span className={`material-symbols-outlined text-[22px] text-slate-500 transition-transform duration-200 ${isLoaiNghiepVuDropdownOpen ? 'rotate-180 text-blue-600' : ''}`}>
-                        expand_more
-                      </span>
-                    </div>
-                  </button>
-
-                  {/* Dropdown Menu Panel */}
-                  {isLoaiNghiepVuDropdownOpen && (
-                    <>
-                      {/* Invisible backdrop to dismiss */}
-                      <div
-                        className="fixed inset-0 z-40"
-                        onClick={() => setIsLoaiNghiepVuDropdownOpen(false)}
-                      />
-
-                      <div className="absolute left-0 right-0 top-full mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 overflow-hidden divide-y divide-slate-100 max-h-[460px] overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-150">
-                        <div className="p-2.5 bg-slate-50/90 border-b border-slate-100 flex items-center justify-between text-[11.5px] text-slate-500 font-semibold px-3">
-                          <span>DANH SÁCH LOẠI NGHIỆP VỤ TIẾP NHẬN THEO QUY ĐỊNH</span>
-                          <span>Bấm để chọn</span>
-                        </div>
-                        {NGHIEP_VU_OPTIONS.map((opt) => {
-                          const isSelected =
-                            opt.value === loaiNghiepVu || (opt.aliases && opt.aliases.includes(loaiNghiepVu));
-                          return (
-                            <div
-                              key={opt.value}
-                              onClick={() => {
-                                opt.handler();
-                                setIsLoaiNghiepVuDropdownOpen(false);
-                              }}
-                              className={`p-3 sm:p-3.5 flex items-start gap-3 transition-colors cursor-pointer ${
-                                isSelected
-                                  ? 'bg-blue-50/80 text-blue-900 border-l-4 border-l-[#004ac6]'
-                                  : 'hover:bg-slate-50 text-slate-800'
-                              }`}
-                            >
-                              <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 border border-slate-200/60 ${opt.iconColor}`}>
-                                <span className="material-symbols-outlined text-[20px]">{opt.icon}</span>
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between gap-2">
-                                  <div className="flex items-center gap-2">
-                                    <span className={`text-[13px] font-bold ${isSelected ? 'text-[#004ac6]' : 'text-slate-900'}`}>
-                                      {opt.label}
-                                    </span>
-                                    <span className={`px-2 py-0.2 rounded-full text-[10.5px] font-semibold border ${opt.badgeColor}`}>
-                                      {opt.badge}
-                                    </span>
-                                  </div>
-                                  {isSelected && (
-                                    <span className="material-symbols-outlined text-[18px] text-[#004ac6] shrink-0">
-                                      check_circle
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="text-[12px] text-slate-600 mt-0.5 leading-snug">
-                                  {opt.subtitle}
-                                </p>
-                                <div className="flex items-center gap-3 mt-1 text-[11px] text-slate-500 flex-wrap">
-                                  <span>Căn cứ: <strong className="text-slate-700">{opt.canCu}</strong></span>
-                                  <span>•</span>
-                                  <span>Đơn vị mặc định: <strong className="text-slate-700">{opt.donViDefault}</strong></span>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                {/* Banner tóm tắt nghiệp vụ & căn cứ pháp lý của loại đang chọn */}
-                <div className="flex items-center justify-between flex-wrap gap-2 pt-1 px-1 text-[12px] text-slate-600 border-t border-slate-100">
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[16px] text-slate-400">gavel</span>
-                    <span>Căn cứ pháp lý: <strong className="text-slate-800">{currentOption.canCu}</strong></span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[16px] text-slate-400">account_balance</span>
-                    <span>Đơn vị tiếp nhận mặc định: <strong className="text-slate-800">{currentOption.donViDefault}</strong></span>
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
-        </section>
-
-        {/* ─── SECTION 1: THÔNG TIN TIẾP NHẬN ─────────────────── */}
         <section className="space-y-4">
           <div className="flex items-center justify-between border-b border-slate-200/80 pb-2">
             <div className="flex items-center gap-2.5">
@@ -1448,7 +1242,7 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
                 Ngày nhận <span className="text-red-500">*</span>
               </label>
               <input
-                type="date"
+                type="datetime"
                 value={ngayNhan}
                 onChange={(e) => {
                   setNgayNhan(e.target.value);
@@ -1462,20 +1256,7 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
               )}
             </div>
 
-            {/* Giờ nhận (Quan trọng xác định thời điểm tính hạn giải quyết) */}
-            <div>
-              <label className="block text-[12px] font-semibold text-slate-700 mb-1.5">
-                Thời điểm tiếp nhận (Giờ)
-              </label>
-              <input
-                type="time"
-                value={gioNhan}
-                onChange={(e) => setGioNhan(e.target.value)}
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[13px] text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all font-mono"
-              />
-            </div>
 
-            {/* Nguồn tin / Hình thức nhận * */}
             <div className="lg:col-span-2">
               <label className="block text-[12px] font-semibold text-slate-700 mb-1.5">
                 {loaiNghiepVu === 'nguoi_tu_thu' || loaiNghiepVu === 'nguoi_dau_thu'
@@ -1515,23 +1296,25 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
                     <option value="Cơ quan, đơn vị nơi làm việc / Đơn vị quân đội đưa đến">Cơ quan, đơn vị nơi làm việc / Đơn vị quân đội đưa đến</option>
                     <option value="Cơ quan khác bàn giao (Viện kiểm sát, Tòa án, Báo chí)">Cơ quan khác bàn giao (Viện kiểm sát, Tòa án, Báo chí)</option>
                   </>
-                /* Tạm ẩn các lựa chọn hình thức nhận tin báo, tố giác theo yêu cầu
-                ) : loaiNghiepVu === 'tin_bao_to_giac' || loaiNghiepVu === 'tin_bao_toi_pham' || loaiNghiepVu === 'to_giac_toi_pham' ? (
-                  <>
-                    <option value="Trực tiếp bằng văn bản (Đơn tố giác)">Trực tiếp bằng văn bản (Đơn tố giác có chữ ký)</option>
-                    <option value="Trực tiếp bằng lời nói (Lập Biên bản tiếp nhận)">Trực tiếp bằng lời nói (Lập Biên bản tiếp nhận tin báo)</option>
-                    <option value="Dịch vụ bưu chính / Chuyển phát">Dịch vụ bưu chính / Chuyển phát</option>
-                    <option value="Cổng DVC / Ứng dụng VNeID">Cổng DVC / Ứng dụng định danh VNeID</option>
-                    <option value="Đường dây nóng (Hotline 113 / Trực ban)">Đường dây nóng (Hotline 113 / Trực ban hình sự)</option>
-                    <option value="Cơ quan khác chuyển giao (VKS, Tòa án, Báo chí)">Cơ quan khác chuyển giao (VKS, Tòa án, Báo chí)</option>
-                  </>
-                */
+                  /* Tạm ẩn các lựa chọn hình thức nhận tin báo, tố giác theo yêu cầu
+                  ) : loaiNghiepVu === 'tin_bao_to_giac' || loaiNghiepVu === 'tin_bao_toi_pham' || loaiNghiepVu === 'to_giac_toi_pham' ? (
+                    <>
+                      <option value="Trực tiếp bằng văn bản (Đơn tố giác)">Trực tiếp bằng văn bản (Đơn tố giác có chữ ký)</option>
+                      <option value="Trực tiếp bằng lời nói (Lập Biên bản tiếp nhận)">Trực tiếp bằng lời nói (Lập Biên bản tiếp nhận tin báo)</option>
+                      <option value="Dịch vụ bưu chính / Chuyển phát">Dịch vụ bưu chính / Chuyển phát</option>
+                      <option value="Cổng DVC / Ứng dụng VNeID">Cổng DVC / Ứng dụng định danh VNeID</option>
+                      <option value="Đường dây nóng (Hotline 113 / Trực ban)">Đường dây nóng (Hotline 113 / Trực ban hình sự)</option>
+                      <option value="Cơ quan khác chuyển giao (VKS, Tòa án, Báo chí)">Cơ quan khác chuyển giao (VKS, Tòa án, Báo chí)</option>
+                    </>
+                  */
                 ) : (
                   <>
-                    <option value="Trực tiếp">Trực tiếp tại Một cửa</option>
-                    <option value="Bưu điện">Dịch vụ bưu chính</option>
-                    <option value="Trực tuyến">Trực tuyến (Cổng DVC)</option>
-                    <option value="Chuyển phát">Chuyển phát cơ quan khác</option>
+                    <option value="Trực tiếp">Trực tiếp</option>
+                    <option value="Bưu điện">Bưu điện</option>
+                    <option value="Trực tuyến">Trực tuyến</option>
+                    <option value="Chuyển phát">Email</option>
+                    <option value="Liên thông">Liên thông</option>
+                    <option value="Nội bộ">Nội bộ</option>
                   </>
                 )}
               </select>
@@ -4327,7 +4110,7 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
             </div>
 
             {/* Cảnh báo quy tắc: Không bắt buộc có tệp đính kèm */}
-            <div className="p-3.5 bg-emerald-50/80 border border-emerald-300 rounded-xl flex items-center justify-between flex-wrap gap-2 text-xs">
+            {/* <div className="p-3.5 bg-emerald-50/80 border border-emerald-300 rounded-xl flex items-center justify-between flex-wrap gap-2 text-xs">
               <div className="flex items-center gap-2.5">
                 <span className="material-symbols-outlined text-emerald-700 text-[20px]">verified</span>
                 <div>
@@ -4340,7 +4123,7 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
               <span className="text-[11px] font-bold text-emerald-900 bg-white px-2.5 py-1 rounded-lg border border-emerald-300 shadow-2xs">
                 Mô hình Đa nguồn dữ liệu • Không ép buộc OCR
               </span>
-            </div>
+            </div> */}
 
             <div className="flex items-center gap-2 flex-wrap">
               {/* Tạm ẩn nút mẫu biên bản 01-BCA tiếp nhận tin báo tố giác theo yêu cầu
@@ -4379,9 +4162,10 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
               )}
 
               <label className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#004ac6] hover:bg-blue-700 text-white font-semibold text-xs shadow-xs transition-all cursor-pointer">
-                <span className="material-symbols-outlined text-[16px]">upload_file</span>
-                <span>Tải tệp lên</span>
+                <span className="material-symbols-outlined text-[16px] text-white">upload_file</span>
+                <span className="text-white">Tải tệp lên</span>
                 <input
+                  ref={fileInputRef}
                   type="file"
                   multiple
                   accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.rar,.zip"
@@ -4406,53 +4190,105 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
 
 
           {files.length === 0 ? (
-            <div className="p-6 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 flex flex-col items-center justify-center text-center">
-              <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 mb-2">
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsDragging(true);
+              }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setIsDragging(false);
+                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                  handleAddFiles(e.dataTransfer.files);
+                }
+              }}
+              onClick={() => {
+                fileInputRef.current?.click();
+              }}
+              className={`p-6 rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center text-center cursor-pointer ${isDragging
+                ? 'border-blue-500 bg-blue-50/60 scale-[1.01]'
+                : 'border-slate-200 bg-slate-50/50 hover:bg-blue-50/30 hover:border-blue-300'
+                }`}
+            >
+              <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-2 shadow-2xs">
                 <span className="material-symbols-outlined text-2xl">upload_file</span>
               </div>
               <p className="text-xs font-semibold text-slate-700">Chưa có tài liệu số hóa hoặc tệp đính kèm</p>
               <p className="text-[11px] text-slate-400 mt-0.5 max-w-md">
-                Tải tệp PDF/ảnh hoặc bấm &quot;Quét tài liệu từ máy scan&quot;. Khi có tài liệu đính kèm, hệ thống sẽ tự động kích hoạt tiến trình AI phân tích bóc tách 6 bước ngay khi ghi nhận lượt nhận.
+                Nhấp chuột vào đây hoặc kéo thả tệp PDF/Word/Ảnh để tải lên và đặt tên. Khi có tài liệu đính kèm, hệ thống sẽ tự động kích hoạt tiến trình AI phân tích bóc tách.
               </p>
+              <span className="mt-2.5 inline-flex items-center gap-1.5 text-[11.5px] font-semibold text-blue-600 bg-white px-3 py-1 rounded-lg border border-blue-200 shadow-2xs hover:bg-blue-50 transition-colors">
+                <span className="material-symbols-outlined text-[15px]">add_circle</span>
+                <span>Chọn tệp từ máy tính để tải lên &amp; đặt tên</span>
+              </span>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {files.map((file, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 shadow-2xs hover:bg-slate-100/60 transition-colors"
+                  className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 shadow-2xs hover:bg-slate-100/60 transition-colors group"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <span className="material-symbols-outlined text-[22px] text-red-600 shrink-0">
-                      description
-                    </span>
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${file.category === 'main' ? 'bg-blue-100 text-blue-700' : 'bg-slate-200/70 text-slate-600'
+                      }`}>
+                      <span className="material-symbols-outlined text-[20px]">
+                        {file.name.toLowerCase().endsWith('.pdf') ? 'picture_as_pdf' : 'description'}
+                      </span>
+                    </div>
                     <div className="min-w-0">
-                      <p className="text-[13px] font-semibold text-slate-800 truncate" title={file.name}>
-                        {file.name}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-[13px] font-semibold text-slate-800 truncate" title={file.name}>
+                          {file.name}
+                        </p>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0 ${file.category === 'main'
+                          ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                          : 'bg-slate-200 text-slate-700 border border-slate-300'
+                          }`}>
+                          {file.category === 'main' ? 'Tài liệu chính' : 'Tài liệu kèm theo'}
+                        </span>
+                      </div>
                       <span className="text-[11.5px] text-slate-500 font-medium">
-                        {file.size} • {file.category === 'main' ? 'Tài liệu chính' : 'Tài liệu kèm theo'}
+                        Dung lượng: {file.size}
                       </span>
                     </div>
                   </div>
 
                   <div className="flex flex-col items-end justify-between shrink-0 self-stretch pl-2 py-0.5">
-                    <span className="text-[11.5px] font-bold text-slate-500 bg-slate-200/80 px-1.5 py-0.5 rounded leading-none">
+                    <span className="text-[11px] font-bold text-slate-500 bg-slate-200/80 px-1.5 py-0.5 rounded leading-none">
                       #{idx + 1}
                     </span>
                     <div className="flex items-center gap-1 mt-1.5">
                       <button
                         type="button"
-                        onClick={() => showToast(`Đang xem tài liệu: ${file.name}`)}
-                        className="p-1 text-slate-400 hover:text-blue-600 rounded-lg transition-colors cursor-pointer"
-                        title="Xem tài liệu"
+                        onClick={() => handleEditExistingFile(idx)}
+                        className="p-1 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
+                        title="Đổi tên tài liệu"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">edit</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPreviewDoc({
+                            id: `DOC-${idx}`,
+                            name: file.name,
+                            loai: file.category === 'main' ? ('Tài liệu chính' as any) : 'Tài liệu khác',
+                            size: file.size,
+                            ngayTai: new Date().toLocaleDateString('vi-VN'),
+                            nguoiTai: canBoNhan || 'Cán bộ tiếp nhận',
+                          });
+                        }}
+                        className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                        title="Xem chi tiết tài liệu"
                       >
                         <span className="material-symbols-outlined text-[18px]">visibility</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => handleRemoveFile(idx)}
-                        className="p-1 text-slate-400 hover:text-red-600 rounded-lg transition-colors cursor-pointer"
+                        className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                         title="Xóa tệp"
                       >
                         <span className="material-symbols-outlined text-[18px]">close</span>
@@ -4509,6 +4345,172 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
               >
                 Đóng
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── MODAL ĐẶT TÊN & THIẾT LẬP TÀI LIỆU TẢI LÊN ─── */}
+      {pendingUploadFiles && pendingUploadFiles.length > 0 && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-3 sm:p-5 backdrop-blur-xs animate-in fade-in select-none">
+          <div
+            className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden border border-slate-200 animate-in zoom-in-95 flex flex-col max-h-[92vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="px-6 py-4 bg-white border-b border-slate-200 text-slate-900 flex items-center justify-between shadow-xs">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center text-slate-900 shrink-0 shadow-inner">
+                  <span className="material-symbols-outlined text-[24px]">
+                    {pendingUploadFiles[0]?.isExistingIndex !== undefined ? "edit_note" : "drive_file_rename_outline"}
+                  </span>
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded text-[10.5px] font-bold bg-white/20 text-slate-900 uppercase tracking-wider">
+                      {pendingUploadFiles[0]?.isExistingIndex !== undefined ? "ĐỔI TÊN TÀI LIỆU" : "SỐ HÓA HỒ SƠ"}
+                    </span>
+                    <span className="text-slate-600 text-[11.5px]">
+                      {pendingUploadFiles.length} tệp tài liệu
+                    </span>
+                  </div>
+                  <h3 className="text-base font-bold text-slate-900 truncate font-headline-md mt-0.5">
+                    {pendingUploadFiles[0]?.isExistingIndex !== undefined
+                      ? "Chỉnh sửa tên & thông tin tài liệu"
+                      : "Đặt tên & phân loại tài liệu tải lên"}
+                  </h3>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPendingUploadFiles(null)}
+                className="text-white/70 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+                title="Đóng"
+              >
+                <span className="material-symbols-outlined text-[22px]">close</span>
+              </button>
+            </div>
+
+            {/* Modal Body - File List */}
+            <div className="p-6 overflow-y-auto space-y-5 max-h-[calc(92vh-200px)]">
+              {pendingUploadFiles.map((item, idx) => (
+                <div
+                  key={item.id}
+                  className="p-4 rounded-xl bg-slate-50 border border-slate-200/90 shadow-2xs space-y-3.5 relative"
+                >
+                  {/* File original header */}
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                        <span className="material-symbols-outlined text-[20px]">
+                          {item.originalName.toLowerCase().endsWith(".pdf") ? "picture_as_pdf" : "description"}
+                        </span>
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+
+                          <span className="text-[12px] font-semibold text-slate-700 truncate max-w-[280px]" title={item.originalName}>
+                            {item.originalName}
+                          </span>
+                          <span className="text-[11px] font-bold text-slate-500 bg-slate-200 px-1.5 py-0.5 rounded">
+                            Tệp #{idx + 1}
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-slate-400">Dung lượng: {item.size}</span>
+                      </div>
+                    </div>
+
+                    {pendingUploadFiles.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPendingUploadFiles((prev) => (prev ? prev.filter((p) => p.id !== item.id) : null));
+                        }}
+                        className="text-slate-400 hover:text-red-600 p-1 rounded-md transition-colors cursor-pointer text-xs flex items-center gap-1"
+                        title="Bỏ tệp này"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">delete</span>
+                        <span className="hidden sm:inline">Bỏ tệp</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Input Tên tài liệu */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-[12.5px] font-bold text-slate-800 flex items-center gap-1">
+                        Tên hiển thị tài liệu / văn bản <span className="text-red-500">*</span>
+                      </label>
+                      <span className="text-[11px] text-slate-400">
+                        {item.displayName.length}/150 ký tự
+                      </span>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={item.displayName}
+                        maxLength={150}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setPendingUploadFiles((prev) =>
+                            prev ? prev.map((p) => (p.id === item.id ? { ...p, displayName: val } : p)) : null
+                          );
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleConfirmPendingFiles();
+                          }
+                        }}
+                        placeholder="Nhập tên tài liệu (VD: Đơn khiếu nại gốc về bồi thường đất đai...)"
+                        className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-[13px] text-slate-800 font-medium placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-600 transition-all shadow-2xs pr-9"
+                      />
+                      {item.displayName && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPendingUploadFiles((prev) =>
+                              prev ? prev.map((p) => (p.id === item.id ? { ...p, displayName: "" } : p)) : null
+                            );
+                          }}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 rounded-md cursor-pointer"
+                          title="Xóa nhanh tên"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">cancel</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+
+                </div>
+              ))}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3">
+
+              <div className="flex items-center gap-2 ml-auto">
+                <button
+                  type="button"
+                  onClick={() => setPendingUploadFiles(null)}
+                  className="px-4 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-semibold text-xs transition-colors cursor-pointer"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmPendingFiles}
+                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-[#004ac6] hover:bg-blue-700 text-white font-semibold text-xs shadow-md shadow-blue-600/20 transition-all cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                  <span>
+                    {pendingUploadFiles[0]?.isExistingIndex !== undefined
+                      ? "Cập nhật tên tài liệu"
+                      : `Lưu `}
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

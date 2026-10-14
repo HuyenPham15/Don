@@ -205,8 +205,8 @@ Kính trình Lãnh đạo Thanh tra Thành phố:
   {
     id: 'VB-2026-0072',
     soKyHieu: '72/TTr-UBND',
-    hoSoCode: 'Đ-2025-0105',
-    luotNhanId: 'LN-2025-0105',
+    hoSoCode: 'Đ-2025-0072',
+    luotNhanId: 'LN-2025-0072',
     loaiDon: 'Đơn khiếu nại đất đai',
     nguoiGuiDon: 'Vũ Thị Thanh',
     noiDungDon: 'Khiếu nại Quyết định thu hồi đất số 45/QĐ-UBND và phương án bồi thường giá 18.5 triệu/m2 chưa thỏa đáng so với giá thị trường.',

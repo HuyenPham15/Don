@@ -5,15 +5,14 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import BanPhanTich from "./screens/BanPhanTich";
 import CongViecCuaToi from "./screens/CongViecCuaToi";
 import DonTiepNhan from "./screens/DonTiepNhan";
-import NhanDonList from "./screens/NhanDonList";
 import NhanDonThem from "./screens/NhanDonThem";
+import TaoDonMoiScreen from "./screens/TaoDonMoiScreen";
 import ChiTietLuotNhan from "./screens/ChiTietLuotNhan";
 import TroChuyenScreen from "./screens/TroChuyenScreen";
 import AITiepNhanChatScreen from "./screens/AITiepNhanChatScreen";
 import TiepNhanVaXuLyScreen from "./screens/TiepNhanVaXuLyScreen";
 import TrinhKyScreen from "./screens/TrinhKyScreen";
 import VanBanChoKyScreen from "./screens/VanBanChoKyScreen";
-import QuanLyTrinhKyScreen from "./screens/quanLyTrinhKy/QuanLyTrinhKyScreen";
 import { LN19, ALL_LUOT_NHAN } from "./constants";
 import { LuotNhan, Screen, DonDetail } from "./types";
 import { SigningDocument, CurrentUserAccount, DEMO_ACCOUNTS } from "./types/signing";
@@ -25,6 +24,7 @@ import { INITIAL_TIEP_NHAN_ITEMS, TiepNhanDonItem } from "./constants/department
 import { PhanCongSubmitData } from "./components/modals/PhanCongModal";
 import ProcessWorkflowModule from "./screens/workflowAdmin/ProcessWorkflowModule";
 import QuanTriNghiepVuScreen from "./screens/workflowAdmin/QuanTriNghiepVuScreen";
+import QuanLyTrinhKyScreen from "./screens/quanLyTrinhKy/QuanLyTrinhKyScreen";
 import LoginScreen from "./screens/LoginScreen";
 
 export default function App() {
@@ -242,6 +242,12 @@ export default function App() {
     });
 
     // 7. Chuyển ngay sang màn "Công việc của tôi" để cán bộ thấy Đơn vừa hình thành
+    setScreen("cong-viec");
+  }, []);
+
+  const handleAddDirectDon = useCallback((newDon: DonDetail) => {
+    setAcceptedDons((prev) => [newDon, ...prev.filter((d) => d.code !== newDon.code && d.id !== newDon.id)]);
+    setSelectedDon(newDon);
     setScreen("cong-viec");
   }, []);
 
@@ -694,13 +700,24 @@ export default function App() {
                             <span className="text-xs font-bold text-slate-900 truncate">
                               {acc.name}
                             </span>
-                            {isSelected && (
-                              <span className="material-symbols-outlined text-[16px] text-blue-600 shrink-0">
-                                check_circle
+                            <div className="flex items-center gap-1 shrink-0">
+                              <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold ${acc.role === 'lanh_dao'
+                                ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                                : acc.role === 'van_thu'
+                                  ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                                  : 'bg-blue-100 text-[#004ac6] border border-blue-200'
+                                }`}>
+                                {acc.role === 'lanh_dao' ? 'LÃNH ĐẠO' : acc.role === 'van_thu' ? 'VĂN THƯ' : 'CÁN BỘ'}
                               </span>
-                            )}
+                              {isSelected && (
+                                <span className="material-symbols-outlined text-[16px] text-blue-600 shrink-0">
+                                  check_circle
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          <div className="text-[11px] font-semibold text-blue-700 leading-tight mt-0.5">
+                          <div className={`text-[11px] font-semibold leading-tight mt-0.5 ${acc.role === 'lanh_dao' ? 'text-indigo-700' : acc.role === 'van_thu' ? 'text-rose-700' : 'text-blue-700'
+                            }`}>
                             {acc.chucVu}
                           </div>
                           <div className="text-[10.5px] text-slate-400 truncate mt-0.5">
@@ -769,6 +786,19 @@ export default function App() {
                 onSelectSigningDoc={setSelectedSigningDocId}
               />
             )}
+            {screen === "quan-ly-trinh-ky" && (
+              <QuanLyTrinhKyScreen
+                onNav={setScreen}
+                currentAccount={currentAccount}
+                onSwitchAccount={(role) => {
+                  const target = DEMO_ACCOUNTS.find((a) => a.role === role);
+                  if (target) {
+                    setCurrentAccount(target);
+                  }
+                }}
+                initialLuotTrinhId={selectedSigningDocId || selectedQuanLyTrinhKyId}
+              />
+            )}
             {screen === "nhan-don-list" && (
               <NhanDonList
                 onNav={setScreen}
@@ -778,8 +808,15 @@ export default function App() {
               />
             )}
             {screen === "nhan-don-them" && <NhanDonThem onNav={setScreen} onSubmit={handleSubmit} />}
+            {screen === "tao-don-moi" && (
+              <TaoDonMoiScreen
+                onNav={setScreen}
+                onAddDirectDon={handleAddDirectDon}
+              />
+            )}
             {screen === "chi-tiet-luot-nhan" && (
               <ChiTietLuotNhan
+                key={selected.id}
                 luotNhan={selected}
                 onNav={setScreen}
                 onUpdateLuotNhan={handleUpdateLuotNhan}
@@ -863,23 +900,6 @@ export default function App() {
                     setScreen("cong-viec");
                   }
                 }}
-              />
-            )}
-            {screen === "quan-ly-trinh-ky" && (
-              <QuanLyTrinhKyScreen
-                onNav={setScreen}
-                currentAccount={currentAccount}
-                onSwitchAccount={(role) => {
-                  const target = DEMO_ACCOUNTS.find((a) => a.role === role);
-                  if (target) {
-                    setCurrentAccount(target);
-                  }
-                }}
-                onSelectHoSo={(hoSoCode) => {
-                  const matched = acceptedDons.find((d) => d.code === hoSoCode || d.id === hoSoCode);
-                  if (matched) setSelectedDon(matched);
-                }}
-                initialLuotTrinhId={selectedQuanLyTrinhKyId}
               />
             )}
             {screen === "quan-tri-quy-trinh" && (

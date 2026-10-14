@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { LuotNhan, Screen, UploadedFile } from '../types';
+import { LuotNhan, Screen, UploadedFile, DonDetail } from '../types';
 import { matchWorkflowByLoaiDon } from '../constants/workflows';
 import { ActiveWorkflowState } from '../types/workflow';
 import { DON_VI_OPTIONS } from '../constants';
@@ -772,14 +772,18 @@ export default function BanPhanTich({
   };
 
   // Chuyển sang màn hình chi tiết đơn (don-tiep-nhan)
-  const handleGoToChiTietDon = () => {
-    const dynamicCode = luotNhan?.id
-      ? luotNhan.id.startsWith('LN-')
-        ? `Đ-${luotNhan.id.replace('LN-', '')}`
-        : luotNhan.id
-      : 'Đ-2026-00125';
+  const handleGoToChiTietDon = (targetCode?: string) => {
+    const isGhep = luotNhan?.status === 'da_ghep' || currentLuotNhanStatus === 'da_ghep';
+    const dynamicCode =
+      targetCode ||
+      (isGhep ? (luotNhan as any)?.ghepVaoDonCode || selectedGhepDonCode : undefined) ||
+      (luotNhan?.id
+        ? luotNhan.id.startsWith('LN-')
+          ? `Đ-${luotNhan.id.replace('LN-', '')}`
+          : luotNhan.id
+        : 'Đ-2026-00125');
 
-    const donObj = {
+    const donObj: DonDetail = {
       id: dynamicCode,
       code: dynamicCode,
       title: extractData.noiDungTomTat || luotNhan?.noiDung || `Hồ sơ ${dynamicCode}`,
@@ -788,12 +792,28 @@ export default function BanPhanTich({
       ngayNhan: luotNhan?.ngayNhan || 'Hôm nay',
       loaiDon: extractData.loaiNoiDung || luotNhan?.loaiDon || 'Đơn phản ánh kiến nghị',
       type: (dynamicCode.startsWith('VV') ? 'VỤ VIỆC' : 'ĐƠN TIẾP NHẬN') as 'VỤ VIỆC' | 'ĐƠN TIẾP NHẬN',
-      statusBadge: 'Đang xác minh thông tin',
+      statusBadge: isGhep ? 'Đang thụ lý giải quyết' : 'Đang xác minh thông tin',
       isNew: true,
+      currentStep: 2,
+      stepName: 'Xác minh thông tin & Đề xuất hướng xử lý',
     };
     onAcceptAndProcess?.(donObj);
     onNav('don-tiep-nhan');
   };
+
+  // Nếu đơn đã được tiếp nhận hay ghép thì không ở màn Bàn phân tích AI này nữa -> Chuyển ngay sang màn chi tiết đơn
+  useEffect(() => {
+    const isAlreadyProcessed =
+      luotNhan?.status === 'da_chuyen' ||
+      luotNhan?.status === 'da_ghep' ||
+      luotNhan?.status === 'da_tiep_nhan' ||
+      currentLuotNhanStatus === 'da_chuyen' ||
+      currentLuotNhanStatus === 'da_ghep';
+
+    if (isAlreadyProcessed) {
+      handleGoToChiTietDon();
+    }
+  }, [luotNhan?.id, luotNhan?.status, currentLuotNhanStatus]);
 
   // BR-06, BR-07, BR-08, BR-09: Xử lý submit chuyển tiếp nhận
   const handleChuyenTiepNhanSubmit = (data: ChuyenTiepNhanSubmitData) => {
@@ -863,7 +883,7 @@ export default function BanPhanTich({
     setTimeout(() => onNav('don-tiep-nhan'), 350);
   };
 
-  // BR-16, BR-17, BR-18: Xác nhận Tiếp nhận (Tự xử lý vs Phân công)
+  // BR-16, BR-17, BR-18: Xác nhận Tiếp nhận (Chuyển trực tiếp sang màn chi tiết đơn, không cần popup)
   const handleConfirmTiepNhan = () => {
     const dynamicCode = luotNhan?.id
       ? luotNhan.id.startsWith('LN-')
@@ -871,14 +891,9 @@ export default function BanPhanTich({
         : luotNhan.id
       : 'Đ-2026-00125';
 
-    if (tiepNhanHuong === 'phan_cong' && !selectedOfficerForPhanCong) {
-      showToast('Vui lòng chọn cán bộ nhận phân công xử lý (BR-18).');
-      return;
-    }
-
     setShowSubmitModal(false);
 
-    const donObj = {
+    const donObj: DonDetail = {
       id: dynamicCode,
       code: dynamicCode,
       title: extractData.noiDungTomTat || luotNhan?.noiDung || `Hồ sơ ${dynamicCode}`,
@@ -888,66 +903,75 @@ export default function BanPhanTich({
       loaiDon: extractData.loaiNoiDung || luotNhan?.loaiDon || 'Đơn tiếp nhận hành chính',
       type: (dynamicCode.startsWith('VV') ? 'VỤ VIỆC' : 'ĐƠN TIẾP NHẬN') as 'VỤ VIỆC' | 'ĐƠN TIẾP NHẬN',
       statusBadge: 'Đang xác minh thông tin',
-      isNew: true,
+      currentStep: 2,
+      stepName: 'Xác minh thông tin & Đề xuất hướng xử lý',
     };
 
-    if (tiepNhanHuong === 'tu_xu_ly') {
-      setCurrentLuotNhanStatus('da_chuyen');
-      onUpdateLuotNhan?.({ ...luotNhan, status: 'da_chuyen' });
-      showToast(`✓ Đã tiếp nhận đơn ${dynamicCode}. Đang chuyển sang màn hình chi tiết đơn...`);
-      onAcceptAndProcess?.(donObj);
-      setTimeout(() => onNav('don-tiep-nhan'), 350);
-    } else {
-      const assignedOfficer = OFFICERS.find((o) => o.id === selectedOfficerForPhanCong);
-      showToast(`✓ Đã tiếp nhận và phân công cho cán bộ ${assignedOfficer?.name || 'được chọn'} xử lý (BR-18). Đang chuyển sang màn hình chi tiết đơn...`);
-      const newItem: TiepNhanDonItem = {
-        id: `TN-${dynamicCode.replace('Đ-', '')}`,
-        code: dynamicCode,
-        luotNhanId: luotNhan?.id || dynamicCode,
-        nguoiNop: extractData.nguoiGui || luotNhan?.nguoiNop || 'Người nộp đơn',
-        loaiDon: extractData.loaiNoiDung || 'Đơn tiếp nhận hành chính',
-        ngayNhan: luotNhan?.ngayNhan || '16/09/2026 09:30',
-        ngayChuyenDen: 'Vừa xong',
-        donViHienTai: 'Phòng Tiếp công dân & Xử lý đơn',
-        donViTiepNhanId: 'tiep-dan',
-        donViTiepNhan: 'Phòng Tiếp công dân & Xử lý đơn',
-        hanXuLy: 'Còn 3 ngày',
-        hanXuLyFull: '19/09/2026 - 17:00',
-        trangThai: 'dang_xu_ly',
-        noiDungTomTat: extractData.noiDungTomTat || luotNhan?.noiDung || `Hồ sơ ${dynamicCode}`,
-        canBoXuLy: assignedOfficer?.name,
-        canBoXuLyId: assignedOfficer?.id,
-        chucVuCanBo: assignedOfficer?.role,
-        ngayPhanCong: '16/09/2026',
-        nguoiPhanCong: 'Nguyễn Minh Anh (Cán bộ thụ lý)',
-        ghiChuPhanCong: ghiChuPhanCong,
-        hinhThucChuyen: 'truc_tiep',
-        lichSuPhanCong: [
-          {
-            time: '16/09/2026 10:45',
-            nguoiGiao: 'Nguyễn Minh Anh',
-            nguoiNhan: assignedOfficer?.name || 'Cán bộ',
-            ghiChu: ghiChuPhanCong || 'Phân công thụ lý giải quyết đơn',
-          },
-        ],
-      };
-      onChuyenTiepNhan?.(newItem, true, assignedOfficer?.name);
-      onAcceptAndProcess?.(donObj);
-      setTimeout(() => onNav('don-tiep-nhan'), 350);
-    }
+    setCurrentLuotNhanStatus('da_chuyen');
+    onUpdateLuotNhan?.({ ...luotNhan, status: 'da_chuyen' });
+
+    const newItem: TiepNhanDonItem = {
+      id: `TN-${dynamicCode.replace('Đ-', '')}`,
+      code: dynamicCode,
+      luotNhanId: luotNhan?.id || dynamicCode,
+      nguoiNop: extractData.nguoiGui || luotNhan?.nguoiNop || 'Người nộp đơn',
+      loaiDon: extractData.loaiNoiDung || 'Đơn tiếp nhận hành chính',
+      ngayNhan: luotNhan?.ngayNhan || '16/09/2026 09:30',
+      ngayChuyenDen: 'Vừa xong',
+      donViHienTai: 'Phòng Tiếp công dân & Xử lý đơn',
+      donViTiepNhanId: 'tiep-dan',
+      donViTiepNhan: 'Phòng Tiếp công dân & Xử lý đơn',
+      hanXuLy: 'Còn 3 ngày',
+      hanXuLyFull: '19/09/2026 - 17:00',
+      trangThai: 'dang_xu_ly',
+      noiDungTomTat: extractData.noiDungTomTat || luotNhan?.noiDung || `Hồ sơ ${dynamicCode}`,
+      canBoXuLy: 'Nguyễn Minh Anh',
+      chucVuCanBo: 'Cán bộ thụ lý',
+      ngayPhanCong: '16/09/2026',
+      nguoiPhanCong: 'Nguyễn Minh Anh (Cán bộ thụ lý)',
+      ghiChuPhanCong: officerNote || 'Tiếp nhận trực tiếp và chuyển vào quy trình xử lý',
+      hinhThucChuyen: 'truc_tiep',
+      lichSuPhanCong: [
+        {
+          time: '16/09/2026 10:45',
+          nguoiGiao: 'Nguyễn Minh Anh',
+          nguoiNhan: 'Nguyễn Minh Anh',
+          ghiChu: officerNote || 'Tiếp nhận trực tiếp và chuyển vào quy trình xử lý',
+        },
+      ],
+    };
+    onChuyenTiepNhan?.(newItem, true, 'Nguyễn Minh Anh');
+
+    onAcceptAndProcess?.(donObj);
+    showToast(`✓ Đã tiếp nhận đơn ${dynamicCode}. Đang chuyển sang màn hình chi tiết đơn...`);
+    onNav('don-tiep-nhan');
   };
 
   // Xử lý xác nhận Ghép lượt nhận vào hồ sơ Đơn đã có (Không sinh mã đơn mới)
   const handleConfirmGhep = () => {
     setShowGhepModal(false);
     setCurrentLuotNhanStatus('da_ghep');
-    onUpdateLuotNhan?.({ ...luotNhan, status: 'da_ghep' });
+    onUpdateLuotNhan?.({ ...luotNhan, status: 'da_ghep', ghepVaoDonCode: selectedGhepDonCode });
+
+    const targetGhepDonObj: DonDetail = {
+      id: selectedGhepDonCode,
+      code: selectedGhepDonCode,
+      title: luotNhan?.noiDung || `Hồ sơ ${selectedGhepDonCode} (Đã ghép hồ sơ)`,
+      luotNhanId: luotNhan?.id || selectedGhepDonCode,
+      nguoiNop: luotNhan?.nguoiNop || 'Người nộp đơn',
+      ngayNhan: luotNhan?.ngayNhan || 'Hôm nay',
+      loaiDon: luotNhan?.loaiDon || 'Đơn tiếp nhận hành chính',
+      type: (selectedGhepDonCode.startsWith('VV') ? 'VỤ VIỆC' : 'ĐƠN TIẾP NHẬN') as 'VỤ VIỆC' | 'ĐƠN TIẾP NHẬN',
+      statusBadge: 'Đang thụ lý giải quyết',
+      currentStep: 2,
+      stepName: 'Xác minh thông tin & Đề xuất hướng xử lý',
+    };
+
+    onAcceptAndProcess?.(targetGhepDonObj);
     showToast(
-      `✓ Đã ghép thành công lượt nhận ${luotNhan?.id || 'LN-56/2026-GOVEX'} vào hồ sơ đơn ${selectedGhepDonCode}!`
+      `✓ Đã ghép thành công lượt nhận ${luotNhan?.id || 'LN-56/2026-GOVEX'} vào hồ sơ đơn ${selectedGhepDonCode}. Đang chuyển sang màn chi tiết đơn...`
     );
-    setTimeout(() => {
-      onNav('don-tiep-nhan');
-    }, 1000);
+    onNav('don-tiep-nhan');
   };
 
   // BR-19, BR-20, BR-21, BR-22: Xác nhận Bàn giao (Đơn vị khác vs Cán bộ trong phòng)
@@ -1227,11 +1251,11 @@ Kính trình Lãnh đạo phê duyệt:
           <span>{toastMsg}</span>
         </div>
       )}
-      <div className="bg-[#1e293b] text-white px-5 py-2 border-b border-slate-700 flex items-center justify-between text-xs shrink-0 shadow-sm">
+      <div className="bg-slate-100/90 backdrop-blur-xs border-b border-slate-200 px-5 py-2 flex items-center justify-between text-xs text-slate-700 shrink-0 shadow-2xs">
         <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-amber-400 text-[18px]">tune</span>
-          <span className="font-semibold text-slate-300">Chế độ hiển thị:</span>
-          <div className="flex items-center p-0.5 bg-slate-800 rounded-lg border border-slate-600">
+          <span className="material-symbols-outlined text-[#004ac6] text-[18px]">tune</span>
+          <span className="font-semibold text-slate-700">Chế độ hiển thị:</span>
+          <div className="flex items-center p-0.5 bg-slate-200/90 rounded-lg border border-slate-300">
             <button
               type="button"
               onClick={() => {
@@ -1241,8 +1265,8 @@ Kính trình Lãnh đạo phê duyệt:
                 showToast('Chuyển sang: Trạng thái 1 - AI đang đọc thông tin.');
               }}
               className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${aiState === 'reading'
-                ? 'bg-amber-500 text-white shadow-xs'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-amber-600 text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
                 }`}
             >
               <span className="material-symbols-outlined text-[14px]">sync</span>
@@ -1257,50 +1281,13 @@ Kính trình Lãnh đạo phê duyệt:
                 showToast('Chuyển sang: Trạng thái 2 - AI đã đọc xong thông tin (Khớp 100% ảnh mẫu).');
               }}
               className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${aiState === 'done'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-[#004ac6] text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
                 }`}
             >
               <span className="material-symbols-outlined text-[14px]">check_circle</span>
               <span>2. AI đã đọc xong (Ảnh mẫu)</span>
             </button>
-          </div>
-
-          <div className="hidden sm:flex items-center gap-1.5 ml-2 pl-3 border-l border-slate-600">
-            <span className="font-semibold text-slate-300">Hướng xử lý:</span>
-            <div className="flex items-center p-0.5 bg-slate-800 rounded-lg border border-slate-600">
-              <button
-                type="button"
-                onClick={() => {
-                  setCurrentLuotNhanStatus('cho_chuyen');
-                  showToast('Chuyển sang: Chưa có hướng xử lý (Hiển thị các nút Ghép đơn & Tiếp nhận đơn).');
-                }}
-                className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 ${!hasDeterminedHuongXuLy
-                  ? 'bg-amber-600 text-white shadow-xs'
-                  : 'text-slate-400 hover:text-white'
-                  }`}
-                title="Hồ sơ chưa có hướng xử lý: Hiển thị các nút để cán bộ thao tác"
-              >
-                <span className="material-symbols-outlined text-[13px]">pending</span>
-                <span>Chưa có hướng</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setCurrentLuotNhanStatus('da_chuyen');
-                  showToast('Đã tiếp nhận tạo đơn thành công. Đang chuyển sang màn chi tiết đơn...');
-                  setTimeout(() => handleGoToChiTietDon(), 350);
-                }}
-                className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 ${hasDeterminedHuongXuLy
-                  ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'text-slate-400 hover:text-white'
-                  }`}
-                title="Hồ sơ đã xác định hướng xử lý: Tiếp nhận và chuyển sang màn chi tiết đơn"
-              >
-                <span className="material-symbols-outlined text-[13px]">task_alt</span>
-                <span>Đã xác định hướng</span>
-              </button>
-            </div>
           </div>
         </div>
 
@@ -1309,7 +1296,7 @@ Kính trình Lãnh đạo phê duyệt:
             type="button"
             onClick={handleStartSimulation}
             disabled={isSimulating}
-            className="px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1 shadow-2xs disabled:opacity-50"
+            className="px-3 py-1 rounded-lg bg-[#004ac6] hover:bg-[#003da6] text-white text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1 shadow-xs disabled:opacity-50"
           >
             <span className="material-symbols-outlined text-[15px]">play_arrow</span>
             <span>{isSimulating ? `Đang quét OCR (${readingProgress}%)...` : 'Phát lại quá trình AI quét đọc'}</span>
@@ -1352,10 +1339,7 @@ Kính trình Lãnh đạo phê duyệt:
             </h1>
 
             {luotNhan?.id?.includes('LN-58') || extractData.dauHieu?.includes('OCR báo lỗi') ? (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-800 border border-rose-300 text-[11.5px] font-semibold font-label-technical">
-                <span className="material-symbols-outlined text-[14px] text-rose-600">error</span>
-                <span>Module OCR bị lỗi (Tài liệu scan mờ/nghiêng)</span>
-              </span>
+              <></>
             ) : aiState === 'none' ? (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-300 text-[11.5px] font-semibold font-label-technical">
                 <span className="material-symbols-outlined text-[14px] text-slate-500">edit_note</span>
@@ -1400,7 +1384,7 @@ Kính trình Lãnh đạo phê duyệt:
           {currentLuotNhanStatus === 'da_chuyen' ? (
             <div className="flex items-center gap-2 flex-wrap">
               {/* NÚT VỀ MÀN HÌNH CHI TIẾT ĐƠN */}
-              <button
+              {/* <button
                 type="button"
                 onClick={handleGoToChiTietDon}
                 className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-all cursor-pointer border border-slate-300 shadow-2xs"
@@ -1408,10 +1392,10 @@ Kính trình Lãnh đạo phê duyệt:
               >
                 <span className="material-symbols-outlined text-[17px] text-[#004ac6]">description</span>
                 <span>Màn chi tiết đơn</span>
-              </button>
+              </button> */}
 
               {/* NÚT CHÍNH: BƯỚC TIẾP THEO THEO QUY TRÌNH: XÁC MINH THÔNG TIN & ĐỀ XUẤT HƯỚNG XỬ LÝ */}
-              <button
+              {/* <button
                 type="button"
                 onClick={handleGoToChiTietDon}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#004ac6] hover:bg-[#003da6] active:scale-95 text-white text-xs font-bold shadow-md shadow-blue-200 transition-all cursor-pointer"
@@ -1419,7 +1403,7 @@ Kính trình Lãnh đạo phê duyệt:
               >
                 <span className="material-symbols-outlined text-[18px]">fact_check</span>
                 <span>Xác minh thông tin &amp; Đề xuất hướng xử lý ➔</span>
-              </button>
+              </button> */}
             </div>
           ) : currentLuotNhanStatus === 'da_thu_ly' ? (
             <div className="flex items-center gap-2 flex-wrap">
@@ -1487,18 +1471,7 @@ Kính trình Lãnh đạo phê duyệt:
                 <span>Xem văn bản trả lại</span>
               </button>
             </div>
-          ) : (
-            <button
-              type="button"
-              onClick={handleOpenChuyenModal}
-              disabled={aiState === 'reading'}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#C62828] hover:bg-[#b71c1c] active:scale-95 text-white text-xs font-bold shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Chuyển tiếp nhận và xử lý (BR-03, BR-04, BR-05)"
-            >
-              <span className="material-symbols-outlined text-[17px]">forward_to_inbox</span>
-              <span>Chuyển tiếp nhận và xử lý</span>
-            </button>
-          )}
+          ) : null}
 
           {/* <button
             type="button"
@@ -1853,11 +1826,10 @@ Kính trình Lãnh đạo phê duyệt:
                     setSelectedFileIndex(idx);
                     showToast(`Đang mở: ${f.name}`);
                   }}
-                  className={`flex items-center justify-between p-2.5 rounded-xl border text-left cursor-pointer transition-all ${
-                    selectedFileIndex === idx
-                      ? 'bg-blue-50/80 border-blue-400 ring-1 ring-blue-300'
-                      : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
-                  }`}
+                  className={`flex items-center justify-between p-2.5 rounded-xl border text-left cursor-pointer transition-all ${selectedFileIndex === idx
+                    ? 'bg-blue-50/80 border-blue-400 ring-1 ring-blue-300'
+                    : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
+                    }`}
                 >
                   <div className="flex items-center gap-2 min-w-0 flex-1">
                     <span className="material-symbols-outlined text-[20px] text-rose-600 shrink-0">
@@ -2473,95 +2445,148 @@ Kính trình Lãnh đạo phê duyệt:
           {/* =================================================================== */}
           {/* GỢI Ý HƯỚNG XỬ LÝ (2 ĐỀ XUẤT: GHÉP VÀO ĐƠN HOẶC TIẾP NHẬN)          */}
           {/* =================================================================== */}
-          <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <div className="flex items-center gap-1.5">
-                <span className="text-base">💡</span>
-                <h3 className="text-[14px] font-bold text-slate-900 tracking-tight font-headline-md">
-                  Gợi ý hướng xử lý
-                </h3>
-              </div>
-              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${hasDeterminedHuongXuLy
-                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold'
-                : 'text-slate-500'
-                }`}>
-                {hasDeterminedHuongXuLy ? '✓ Đã xác định hướng xử lý' : '2 đề xuất: Ghép đơn hoặc Tiếp nhận'}
-              </span>
-            </div>
+          {/* =================================================================== */}
+          {/* GỢI Ý HƯỚNG XỬ LÝ (2 ĐỀ XUẤT: GHÉP VÀO ĐƠN HOẶC TIẾP NHẬN)          */}
+          {/* =================================================================== */}
+          {(() => {
+            const ghepMatchPercent = selectedGhepItem?.matchPercent ?? 96;
+            const tiepNhanPercent = Math.max(4, 100 - ghepMatchPercent);
+            const matchedCriteriaCount = selectedGhepItem?.tieuChiSoSanh
+              ? selectedGhepItem.tieuChiSoSanh.filter((t) => t.match).length
+              : 4;
+            const totalCriteriaCount = selectedGhepItem?.tieuChiSoSanh
+              ? selectedGhepItem.tieuChiSoSanh.length
+              : 5;
 
-            <div className="space-y-3">
-              {/* Card 1: Ghép vào đơn */}
-              <div
-                onClick={() => {
-                  if (hasDeterminedHuongXuLy) return;
-                  setHuongXuLy('ghep');
-                  setOfficerNote(
-                    `Gói này giống hồ sơ ${selectedGhepDonCode} đang mở – ghép vào đó không sinh đơn mới, không tốn số`
-                  );
-                }}
-                className={`p-3.5 sm:p-4 rounded-2xl border-2 transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 ${hasDeterminedHuongXuLy
-                  ? currentLuotNhanStatus === 'da_ghep'
-                    ? 'border-[#a61c1c] bg-[#fffaf9] shadow-2xs ring-1 ring-[#a61c1c]/30 cursor-default'
-                    : 'border-slate-200 bg-slate-50/50 opacity-60 cursor-default'
-                  : huongXuLy === 'ghep'
-                    ? 'border-[#a61c1c] bg-[#fffaf9] shadow-2xs ring-1 ring-[#a61c1c]/30 cursor-pointer'
-                    : 'border-[#a61c1c]/60 bg-white hover:border-[#a61c1c] cursor-pointer'
-                  }`}
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <h4 className="text-xs sm:text-sm font-bold text-slate-900">
-                      Ghép vào đơn
-                    </h4>
-                    {hasDeterminedHuongXuLy && currentLuotNhanStatus === 'da_ghep' && (
-                      <span className="px-2 py-0.5 rounded-full bg-[#a61c1c] text-white text-[10px] font-bold">
-                        ✓ Hướng đã chọn
-                      </span>
-                    )}
+            return (
+              <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-base">💡</span>
+                    <h3 className="text-[14px] font-bold text-slate-900 tracking-tight font-headline-md">
+                      Gợi ý hướng xử lý
+                    </h3>
                   </div>
-                  <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                    Gói này giống hồ sơ {selectedGhepDonCode} đang mở – ghép vào đó không sinh đơn mới, không tốn số
-                  </p>
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${hasDeterminedHuongXuLy
+                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold'
+                    : 'text-slate-500'
+                    }`}>
+                    {hasDeterminedHuongXuLy ? '✓ Đã xác định hướng xử lý' : '2 đề xuất: Ghép đơn hoặc Tiếp nhận'}
+                  </span>
                 </div>
 
-              </div>
+                <div className="space-y-3">
+                  {/* Card 1: Ghép vào đơn */}
+                  <div
+                    onClick={() => {
+                      if (hasDeterminedHuongXuLy) return;
+                      setHuongXuLy('ghep');
+                      setOfficerNote(
+                        `Gói này giống hồ sơ ${selectedGhepDonCode} đang mở – ghép vào đó không sinh đơn mới, không tốn số`
+                      );
+                    }}
+                    className={`p-4 rounded-2xl border-2 transition-all space-y-3 ${hasDeterminedHuongXuLy
+                      ? currentLuotNhanStatus === 'da_ghep'
+                        ? 'border-[#a61c1c] bg-[#fffaf9] shadow-2xs ring-1 ring-[#a61c1c]/30 cursor-default'
+                        : 'border-slate-200 bg-slate-50/50 opacity-60 cursor-default'
+                      : huongXuLy === 'ghep'
+                        ? 'border-[#a61c1c] bg-[#fffaf9] shadow-2xs ring-1 ring-[#a61c1c]/30 cursor-pointer'
+                        : 'border-[#a61c1c]/40 bg-white hover:border-[#a61c1c] hover:bg-[#fffdfd] cursor-pointer'
+                      }`}
+                  >
+                    {/* Header row: Radio/Title/Badges + Right Percent Gauge */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                        <div className="mt-0.5 shrink-0">
+                          {huongXuLy === 'ghep' || currentLuotNhanStatus === 'da_ghep' ? (
+                            <div className="w-5 h-5 rounded-full border-2 border-[#a61c1c] bg-[#a61c1c] text-white flex items-center justify-center">
+                              <span className="material-symbols-outlined text-[14px]">check</span>
+                            </div>
+                          ) : (
+                            <div className="w-5 h-5 rounded-full border-2 border-slate-300 bg-white" />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h4 className="text-sm sm:text-[15px] font-bold text-slate-900">
+                              Ghép vào đơn
+                            </h4>
 
-              {/* Card 2: Tiếp nhận — chạy workflow theo loại đơn */}
-              <div
-                onClick={() => {
-                  if (hasDeterminedHuongXuLy) return;
-                  setHuongXuLy('tiep-nhan');
-                  setOfficerNote(
-                    'Hồ sơ phát sinh mới, không trùng lặp. Đề xuất tiếp nhận tạo Đơn mới để chuyển tiếp sang quy trình thụ lý giải quyết theo quy định.'
-                  );
-                }}
-                className={`p-3.5 sm:p-4 rounded-2xl border-2 transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 ${hasDeterminedHuongXuLy
-                  ? currentLuotNhanStatus === 'da_chuyen' || currentLuotNhanStatus === 'da_thu_ly'
-                    ? 'border-[#004ac6] bg-blue-50/50 shadow-2xs ring-1 ring-[#004ac6]/30 cursor-default'
-                    : 'border-slate-200 bg-slate-50/50 opacity-60 cursor-default'
-                  : huongXuLy === 'tiep-nhan'
-                    ? 'border-[#004ac6] bg-blue-50/50 shadow-2xs ring-1 ring-[#004ac6]/30 cursor-pointer'
-                    : 'border-slate-200 bg-white hover:border-[#004ac6] cursor-pointer'
-                  }`}
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <h4 className="text-xs sm:text-sm font-bold text-slate-900">
-                      Tiếp nhận — {extractData.loaiNoiDung || 'Đơn phản ánh kiến nghị'}
-                    </h4>
-                    {hasDeterminedHuongXuLy && (currentLuotNhanStatus === 'da_chuyen' || currentLuotNhanStatus === 'da_thu_ly') && (
-                      <span className="px-2 py-0.5 rounded-full bg-[#004ac6] text-white text-[10px] font-bold">
-                        ✓ Hướng đã chọn
-                      </span>
-                    )}
+                          </div>
+
+                        </div>
+                      </div>
+
+                      {/* Phần trăm độ phù hợp */}
+                      <div className="flex items-center gap-2.5 sm:self-center shrink-0 pl-7 sm:pl-0">
+                        <div className="text-left sm:text-right">
+                          <div className="flex items-baseline sm:justify-end gap-1">
+                            <span className="text-2xl font-black text-[#a61c1c] font-headline-md leading-none">
+                              {ghepMatchPercent}%
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                    Hồ sơ đủ điều kiện tiếp nhận ban đầu theo thẩm quyền; lập mã đơn điện tử và chạy workflow theo loại đơn.
-                  </p>
+
+                  {/* Card 2: Tiếp nhận — chạy workflow theo loại đơn */}
+                  <div
+                    onClick={() => {
+                      if (hasDeterminedHuongXuLy) return;
+                      setHuongXuLy('tiep-nhan');
+                      setOfficerNote(
+                        'Hồ sơ phát sinh mới, không trùng lặp. Đề xuất tiếp nhận tạo Đơn mới để chuyển tiếp sang quy trình thụ lý giải quyết theo quy định.'
+                      );
+                    }}
+                    className={`p-4 rounded-2xl border-2 transition-all space-y-3 ${hasDeterminedHuongXuLy
+                      ? currentLuotNhanStatus === 'da_chuyen' || currentLuotNhanStatus === 'da_thu_ly'
+                        ? 'border-[#004ac6] bg-blue-50/50 shadow-2xs ring-1 ring-[#004ac6]/30 cursor-default'
+                        : 'border-slate-200 bg-slate-50/50 opacity-60 cursor-default'
+                      : huongXuLy === 'tiep-nhan'
+                        ? 'border-[#004ac6] bg-blue-50/50 shadow-2xs ring-1 ring-[#004ac6]/30 cursor-pointer'
+                        : 'border-slate-200 bg-white hover:border-[#004ac6] hover:bg-slate-50/60 cursor-pointer'
+                      }`}
+                  >
+                    {/* Header row: Radio/Title/Badges + Right Percent Gauge */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                        <div className="mt-0.5 shrink-0">
+                          {huongXuLy === 'tiep-nhan' || currentLuotNhanStatus === 'da_chuyen' || currentLuotNhanStatus === 'da_thu_ly' ? (
+                            <div className="w-5 h-5 rounded-full border-2 border-[#004ac6] bg-[#004ac6] text-white flex items-center justify-center">
+                              <span className="material-symbols-outlined text-[14px]">check</span>
+                            </div>
+                          ) : (
+                            <div className="w-5 h-5 rounded-full border-2 border-slate-300 bg-white" />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h4 className="text-sm sm:text-[15px] font-bold text-slate-900">
+                              Tiếp nhận đơn
+                            </h4>
+                          </div>
+
+                        </div>
+                      </div>
+
+                      {/* Phần trăm độ phù hợp */}
+                      <div className="flex items-center gap-2.5 sm:self-center shrink-0 pl-7 sm:pl-0">
+                        <div className="text-left sm:text-right">
+                          <div className="flex items-baseline sm:justify-end gap-1">
+                            <span className="text-2xl font-black text-slate-600 font-headline-md leading-none">
+                              {tiepNhanPercent}%
+                            </span>
+                          </div>
+                        </div>
+
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
+            );
+          })()}
 
           <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs space-y-3">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
@@ -2606,118 +2631,54 @@ Kính trình Lãnh đạo phê duyệt:
               </button>
 
               <div className="flex flex-wrap items-center gap-2">
-                {!hasDeterminedHuongXuLy ? (
+                {huongXuLy === 'ghep' ? (
                   <>
-                    {huongXuLy === 'ghep' ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setHuongXuLy('tiep-nhan');
-                            setOfficerNote('Hồ sơ phát sinh mới, không trùng lặp. Đề xuất tiếp nhận tạo Đơn mới để chuyển tiếp sang quy trình thụ lý giải quyết theo quy định.');
-                          }}
-                          className="px-3 py-2 rounded-xl border border-slate-200 hover:border-slate-300 bg-white text-slate-700 active:scale-95 text-[13.5px] font-medium flex items-center gap-1.5 transition-all cursor-pointer"
-                          title="Chuyển sang hướng Tiếp nhận (Tạo Đơn mới)"
-                        >
-                          <span className="material-symbols-outlined text-[15px] text-emerald-600">add_circle</span>
-                          <span>Đổi sang Tiếp nhận</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setShowGhepModal(true)}
-                          className="px-4.5 py-2.5 rounded-xl bg-[#a61c1c] hover:bg-[#8b1414] active:scale-95 text-white text-[13.5px] font-semibold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
-                        >
-                          <span className="material-symbols-outlined text-[16px]">merge_type</span>
-                          <span>Xác nhận ghép vào {selectedGhepDonCode}</span>
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setHuongXuLy('ghep');
-                            setOfficerNote(`Gói này giống hồ sơ ${selectedGhepDonCode} đang mở – ghép vào đó không sinh đơn mới, không tốn số`);
-                          }}
-                          className="px-3 py-2 rounded-xl border border-slate-200 hover:border-slate-300 bg-white text-slate-700 active:scale-95 text-[13.5px] font-medium flex items-center gap-1.5 transition-all cursor-pointer"
-                          title="Chuyển sang hướng Ghép đơn đã có"
-                        >
-                          <span className="material-symbols-outlined text-[15px] text-indigo-600">merge_type</span>
-                          <span>Đổi sang Ghép đơn</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setShowSubmitModal(true)}
-                          className="px-4.5 py-2.5 rounded-xl bg-[#a61c1c] hover:bg-[#8b1414] active:scale-95 text-white text-[13.5px] font-semibold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
-                        >
-                          <span className="material-symbols-outlined text-[16px]">task_alt</span>
-                          <span>Tiếp nhận (Tạo Đơn mới)</span>
-                        </button>
-                      </>
-                    )}
-                  </>
-                ) : (
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <button
-                      type="button"
-                      onClick={handleGoToChiTietDon}
-                      className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer hover:shadow-xs active:scale-95 ${currentLuotNhanStatus === 'da_chuyen'
-                        ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
-                        : currentLuotNhanStatus === 'da_ghep'
-                          ? 'bg-indigo-50 text-indigo-800 border-indigo-300 hover:bg-indigo-100'
-                          : currentLuotNhanStatus === 'da_ban_giao'
-                            ? 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
-                            : 'bg-rose-50 text-rose-800 border-rose-300 hover:bg-rose-100'
-                        }`}
-                      title="Bấm để mở màn chi tiết đơn"
-                    >
-                      <span className="material-symbols-outlined text-[16px]">
-                        {currentLuotNhanStatus === 'da_chuyen'
-                          ? 'check_circle'
-                          : currentLuotNhanStatus === 'da_ghep'
-                            ? 'merge_type'
-                            : currentLuotNhanStatus === 'da_ban_giao'
-                              ? 'swap_horiz'
-                              : 'assignment_return'}
-                      </span>
-                      <span>
-                        {currentLuotNhanStatus === 'da_chuyen'
-                          ? 'Đã tiếp nhận tạo Đơn'
-                          : currentLuotNhanStatus === 'da_ghep'
-                            ? `Đã ghép vào ${selectedGhepDonCode}`
-                            : currentLuotNhanStatus === 'da_ban_giao'
-                              ? 'Đã bàn giao'
-                              : 'Đã trả lại'}
-                      </span>
-                    </button>
-
-                    {currentLuotNhanStatus === 'da_chuyen' && (
-                      <button
-                        type="button"
-                        onClick={handleGoToChiTietDon}
-                        className="px-3.5 py-2 rounded-xl bg-[#004ac6] hover:bg-[#003da6] text-white text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95 transition-all"
-                        title="Chuyển sang màn hình chi tiết đơn"
-                      >
-                        <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
-                        <span>Màn chi tiết đơn</span>
-                      </button>
-                    )}
-
                     <button
                       type="button"
                       onClick={() => {
-                        setCurrentLuotNhanStatus('cho_chuyen');
-                        showToast('Đã mở lại chế độ để cán bộ chọn lại hướng xử lý.');
+                        setHuongXuLy('tiep-nhan');
+                        setOfficerNote('Hồ sơ phát sinh mới, không trùng lặp. Đề xuất tiếp nhận tạo Đơn mới để chuyển tiếp sang quy trình thụ lý giải quyết theo quy định.');
                       }}
-                      className="px-2.5 py-1.5 text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer flex items-center gap-1 border border-slate-200"
-                      title="Mở lại chế độ chọn hướng xử lý"
+                      className="px-3 py-2 rounded-xl border border-slate-200 hover:border-slate-300 bg-white text-slate-700 active:scale-95 text-[13.5px] font-medium flex items-center gap-1.5 transition-all cursor-pointer"
+                      title="Chuyển sang hướng Tiếp nhận (Tạo Đơn mới)"
                     >
-                      <span className="material-symbols-outlined text-[14px]">edit</span>
-                      <span>Đổi hướng</span>
+                      <span className="material-symbols-outlined text-[15px] text-emerald-600">add_circle</span>
+                      <span>Đổi sang Tiếp nhận</span>
                     </button>
-                  </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowGhepModal(true)}
+                      className="px-4.5 py-2.5 rounded-xl bg-[#a61c1c] hover:bg-[#8b1414] active:scale-95 text-white text-[13.5px] font-semibold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">merge_type</span>
+                      <span>Xác nhận ghép đơn</span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHuongXuLy('ghep');
+                        setOfficerNote(`Gói này giống hồ sơ ${selectedGhepDonCode} đang mở – ghép vào đó không sinh đơn mới, không tốn số`);
+                      }}
+                      className="px-3 py-2 rounded-xl border border-slate-200 hover:border-slate-300 bg-white text-slate-700 active:scale-95 text-[13.5px] font-medium flex items-center gap-1.5 transition-all cursor-pointer"
+                      title="Chuyển sang hướng Ghép đơn đã có"
+                    >
+                      <span className="material-symbols-outlined text-[15px] text-indigo-600">merge_type</span>
+                      <span>Đổi sang Ghép đơn</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleConfirmTiepNhan}
+                      className="px-4.5 py-2.5 rounded-xl bg-[#a61c1c] hover:bg-[#8b1414] active:scale-95 text-white text-[13.5px] font-semibold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">task_alt</span>
+                      <span>Tiếp nhận đơn</span>
+                    </button>
+                  </>
                 )}
               </div>
             </div>
@@ -2892,158 +2853,7 @@ Kính trình Lãnh đạo phê duyệt:
         loaiDon={extractData.loaiNoiDung || 'Đơn tố cáo'}
       />
 
-      {/* ========================================================================= */}
-      {/* MODAL TIẾP NHẬN ĐƠN (BR-16, BR-17, BR-18)                                 */}
-      {/* ========================================================================= */}
-      {showSubmitModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full p-6 space-y-4 animate-scale-up">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-blue-50 border border-blue-200 text-[#004ac6] flex items-center justify-center shrink-0 shadow-2xs">
-                <span className="material-symbols-outlined text-2xl">task_alt</span>
-              </div>
-              <div>
-                <h3 className="font-bold text-slate-900 text-base">Xác nhận tiếp nhận đơn</h3>
-                <p className="text-xs text-slate-500 font-mono">
-                  Mã đơn: {luotNhan?.id ? (luotNhan.id.startsWith('LN-') ? `Đ-${luotNhan.id.replace('LN-', '')}` : luotNhan.id) : 'Đ-2026-00125'} • Lượt nhận: {luotNhan?.id || 'LN-2025-0819'}
-                </p>
-              </div>
-            </div>
 
-            {/* BR-16: Lựa chọn phương thức xử lý */}
-            <div className="space-y-2">
-              <label className="block text-xs font-bold text-slate-800 uppercase tracking-wide">
-                Phương thức xử lý (BR-16):
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <div
-                  onClick={() => setTiepNhanHuong('tu_xu_ly')}
-                  className={`p-3 rounded-xl border cursor-pointer transition-all ${tiepNhanHuong === 'tu_xu_ly'
-                    ? 'bg-blue-50/80 border-blue-500 ring-2 ring-blue-200 shadow-2xs'
-                    : 'bg-slate-50 hover:bg-slate-100 border-slate-200'
-                    }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="tiepNhanHuong"
-                      checked={tiepNhanHuong === 'tu_xu_ly'}
-                      onChange={() => setTiepNhanHuong('tu_xu_ly')}
-                      className="text-blue-600"
-                    />
-                    <span className="font-bold text-xs text-slate-900">Tự xử lý (BR-17)</span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 mt-1 pl-5">
-                    Thụ lý trực tiếp và chuyển vào workflow nghiệp vụ loại đơn
-                  </p>
-                </div>
-
-                <div
-                  onClick={() => setTiepNhanHuong('phan_cong')}
-                  className={`p-3 rounded-xl border cursor-pointer transition-all ${tiepNhanHuong === 'phan_cong'
-                    ? 'bg-blue-50/80 border-blue-500 ring-2 ring-blue-200 shadow-2xs'
-                    : 'bg-slate-50 hover:bg-slate-100 border-slate-200'
-                    }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="tiepNhanHuong"
-                      checked={tiepNhanHuong === 'phan_cong'}
-                      onChange={() => setTiepNhanHuong('phan_cong')}
-                      className="text-blue-600"
-                    />
-                    <span className="font-bold text-xs text-slate-900">Phân công (BR-18)</span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 mt-1 pl-5">
-                    Giao Task cho cán bộ chuyên môn khác thụ lý
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {tiepNhanHuong === 'phan_cong' && (
-              <div className="space-y-3 p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Cán bộ nhận xử lý <span className="text-red-500">*</span> (BR-18):
-                  </label>
-                  <select
-                    value={selectedOfficerForPhanCong}
-                    onChange={(e) => setSelectedOfficerForPhanCong(e.target.value)}
-                    className="w-full p-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600"
-                  >
-                    <option value="">-- Chọn cán bộ thụ lý --</option>
-                    {OFFICERS.filter((o) => o.departmentId === 'tiep-dan').map((o) => (
-                      <option key={o.id} value={o.id}>
-                        {o.name} - {o.role} (Đang xử lý: {o.workloadCount} đơn)
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Chỉ đạo / Ghi chú phân công:
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={ghiChuPhanCong}
-                    onChange={(e) => setGhiChuPhanCong(e.target.value)}
-                    placeholder="Chỉ đạo tiến độ hoặc định hướng thụ lý..."
-                    className="w-full p-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-blue-600 resize-none"
-                  />
-                </div>
-              </div>
-            )}
-
-            <div className="p-3.5 bg-slate-50/80 rounded-xl border border-slate-200/80 text-xs text-slate-700 space-y-2">
-              <div className="flex items-start justify-between gap-2">
-                <span className="text-slate-500 shrink-0">Người gửi:</span>
-                <strong className="text-slate-900 text-right">{extractData.nguoiGui || luotNhan?.nguoiNop || 'Công dân'}</strong>
-              </div>
-              <div className="flex items-start justify-between gap-2">
-                <span className="text-slate-500 shrink-0">Phân loại đơn:</span>
-                <strong className="text-slate-900 text-right">{extractData.loaiNoiDung || 'Đơn tiếp nhận hành chính'}</strong>
-              </div>
-              {officerNote && (
-                <div className="pt-2 border-t border-slate-200/80 text-slate-600">
-                  <span className="text-slate-500 block mb-0.5 font-medium">Ý kiến cán bộ tiếp nhận:</span>
-                  <p className="italic text-slate-700 leading-relaxed bg-white p-2 rounded-lg border border-slate-200/60">
-                    "{officerNote}"
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 flex-wrap">
-              <button
-                type="button"
-                onClick={() => setShowSubmitModal(false)}
-                className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer transition-colors"
-              >
-                Hủy
-              </button>
-
-              <button
-                type="button"
-                onClick={handleConfirmTiepNhan}
-                className="px-5 py-2 rounded-xl bg-[#004ac6] hover:bg-[#003da8] active:scale-95 text-white text-xs font-bold shadow-xs cursor-pointer flex items-center gap-1.5 transition-all"
-              >
-                <span className="material-symbols-outlined text-[16px]">task_alt</span>
-                <span>
-                  {tiepNhanHuong === 'tu_xu_ly'
-                    ? 'Xác nhận tiếp nhận & Vào Workflow ➔'
-                    : 'Xác nhận phân công cán bộ ➔'}
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* MODAL CẢNH BÁO THIẾU ĐIỀU KIỆN CHUYỂN TIẾP NHẬN (BR-04, BR-05)            */}
-      {/* ========================================================================= */}
       {validationErrorModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
           <div className="bg-white rounded-2xl shadow-2xl border border-red-200 max-w-md w-full p-6 space-y-4 animate-scale-up">
@@ -3140,11 +2950,10 @@ Kính trình Lãnh đạo phê duyệt:
                 <button
                   type="button"
                   onClick={() => setIsGhepComboboxOpen(!isGhepComboboxOpen)}
-                  className={`w-full flex items-center justify-between p-3 bg-white border rounded-xl text-left transition-all cursor-pointer shadow-2xs ${
-                    isGhepComboboxOpen
-                      ? 'border-indigo-600 ring-2 ring-indigo-100'
-                      : 'border-slate-300 hover:border-slate-400'
-                  }`}
+                  className={`w-full flex items-center justify-between p-3 bg-white border rounded-xl text-left transition-all cursor-pointer shadow-2xs ${isGhepComboboxOpen
+                    ? 'border-indigo-600 ring-2 ring-indigo-100'
+                    : 'border-slate-300 hover:border-slate-400'
+                    }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
                     <span className="material-symbols-outlined text-[20px] text-indigo-600 shrink-0">
@@ -3160,11 +2969,10 @@ Kính trình Lãnh đạo phê duyệt:
                             {selectedGhepItem.status}
                           </span>
                           <span
-                            className={`px-2 py-0.2 rounded-full text-[10.5px] font-bold border ${
-                              selectedGhepItem.matchPercent >= 90
-                                ? 'bg-rose-50 text-rose-700 border-rose-200'
-                                : 'bg-amber-50 text-amber-700 border-amber-200'
-                            }`}
+                            className={`px-2 py-0.2 rounded-full text-[10.5px] font-bold border ${selectedGhepItem.matchPercent >= 90
+                              ? 'bg-rose-50 text-rose-700 border-rose-200'
+                              : 'bg-amber-50 text-amber-700 border-amber-200'
+                              }`}
                           >
                             Trùng {selectedGhepItem.matchPercent}%
                           </span>
@@ -3180,9 +2988,8 @@ Kính trình Lãnh đạo phê duyệt:
                     )}
                   </div>
                   <span
-                    className={`material-symbols-outlined text-[20px] text-slate-400 transition-transform ${
-                      isGhepComboboxOpen ? 'rotate-180 text-indigo-600' : ''
-                    }`}
+                    className={`material-symbols-outlined text-[20px] text-slate-400 transition-transform ${isGhepComboboxOpen ? 'rotate-180 text-indigo-600' : ''
+                      }`}
                   >
                     expand_more
                   </span>
@@ -3235,9 +3042,8 @@ Kính trình Lãnh đạo phê duyệt:
                                 );
                                 setIsGhepComboboxOpen(false);
                               }}
-                              className={`p-2.5 hover:bg-indigo-50/60 cursor-pointer transition-colors flex items-start gap-2.5 ${
-                                isSelected ? 'bg-indigo-50/80' : ''
-                              }`}
+                              className={`p-2.5 hover:bg-indigo-50/60 cursor-pointer transition-colors flex items-start gap-2.5 ${isSelected ? 'bg-indigo-50/80' : ''
+                                }`}
                             >
                               <div className="pt-0.5">
                                 {isSelected ? (
@@ -3259,11 +3065,10 @@ Kính trình Lãnh đạo phê duyệt:
                                     </span>
                                   </div>
                                   <span
-                                    className={`px-2 py-0.5 rounded-full text-[10.5px] font-bold border shrink-0 ${
-                                      item.matchPercent >= 90
-                                        ? 'bg-rose-100/90 text-rose-800 border-rose-200'
-                                        : 'bg-amber-100/90 text-amber-800 border-amber-200'
-                                    }`}
+                                    className={`px-2 py-0.5 rounded-full text-[10.5px] font-bold border shrink-0 ${item.matchPercent >= 90
+                                      ? 'bg-rose-100/90 text-rose-800 border-rose-200'
+                                      : 'bg-amber-100/90 text-amber-800 border-amber-200'
+                                      }`}
                                   >
                                     Trùng {item.matchPercent}%
                                   </span>
@@ -3290,7 +3095,7 @@ Kính trình Lãnh đạo phê duyệt:
               </div>
 
               {/* Thẻ xem tóm tắt & chi tiết đơn đã chọn */}
-              {selectedGhepItem && (
+              {/* {selectedGhepItem && (
                 <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/90 flex items-center justify-between gap-2.5">
                   <div className="min-w-0 flex-1 text-xs">
                     <div className="flex items-center gap-2">
@@ -3315,7 +3120,7 @@ Kính trình Lãnh đạo phê duyệt:
                     <span>Xem chi tiết</span>
                   </button>
                 </div>
-              )}
+              )} */}
             </div>
 
             <div className="space-y-3">

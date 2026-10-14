@@ -1,35 +1,44 @@
 // src/components/modals/TaoBaoCaoDeXuatModal.tsx
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { SigningDocument, SignerItem } from '../../types/signing';
 
 export interface BaoCaoDeXuatFormData {
-  // 1. Thông tin cơ quan & Hành chính
-  soBaoCao: string;
-  ngayLap: string;
-  coQuanCapTren: string;
-  coQuanLap: string;
-  nguoiLap: string;
-  chucVuNguoiLap: string;
-  nguoiNhan: string;
+  // 1. Thông tin tổng quan (Nhập phần hành chính)
+  tieuDeBaoCao: string;
+  nguoiDonViBaoCao: string;
+  nguoiCoQuanNhan: string;
+  soBaoCao?: string;
+  ngayLap?: string;
+  coQuanCapTren?: string;
+  coQuanLap?: string;
+  nguoiLap?: string;
+  chucVuNguoiLap?: string;
+  nguoiNhan?: string;
+  soPhanCong?: string;
+  ngayPhanCong?: string;
+  maDon?: string;
+  loaiDon?: string;
 
-  // 2. Thông tin phân công & Đơn
-  soPhanCong: string;
-  ngayPhanCong: string;
-  maDon: string;
-  loaiDon: string;
-  nguoiGuiDon: string;
-  diaChiNguoiGui: string;
-  ngayTiepNhan: string;
-  noiDungDon: string;
+  // 2. Thông tin tóm tắt vụ việc (Nhập phần nội dung)
+  tomTatNoiDungToCao: string;
+  taiLieuChungCuKemTheo: string;
+  ketQuaXacMinhSoBo: string;
+  nguoiGuiDon?: string;
+  diaChiNguoiGui?: string;
+  ngayTiepNhan?: string;
+  noiDungDon?: string;
+  taiLieuThuThap?: string;
+  noiDungXacMinh?: string;
 
-  // 3. I. Kết quả xác minh
-  taiLieuThuThap: string;
-  noiDungXacMinh: string;
+  // 3. Nhận xét và Căn cứ pháp lý (Nhập phần phân tích)
+  dieuKienThuLy: string;
+  canCuPhapLyApDung: string;
+  danhGiaNhanXet?: string;
+  canCuPhapLy?: string;
 
-  // 4. II. Nhận xét và đề xuất
-  danhGiaNhanXet: string;
-  canCuPhapLy: string;
-  phuongAnDeXuat: number; // 1 | 2 | 3 | 4
+  // 4. Đề xuất hướng xử lý cụ thể (Nhập phần kiến nghị)
+  phuongAnDeXuat: number; // 1 | 2 | 3
+  kienNghiChiTiet?: string;
   chiTietPhuongAn?: string;
   vanBanKemTheo?: string;
 }
@@ -66,33 +75,27 @@ export interface TaoBaoCaoDeXuatModalProps {
 export const DANH_SACH_PHUONG_AN = [
   {
     id: 1,
-    title: 'Phương án 1: Thụ lý đơn',
-    desc: 'Đơn đủ điều kiện thụ lý giải quyết theo quy định của pháp luật.',
+    title: 'Thụ lý giải quyết',
+    desc: 'Nếu đơn đủ điều kiện và thuộc thẩm quyền giải quyết của cơ quan.',
     badgeClass: 'bg-emerald-50 text-emerald-800 border-emerald-300',
   },
   {
     id: 2,
-    title: 'Phương án 2: Chuyển thẩm quyền',
-    desc: 'Chuyển đơn, hồ sơ đến cơ quan, đơn vị có đúng thẩm quyền để giải quyết.',
+    title: 'Chuyển đơn đến cơ quan có thẩm quyền',
+    desc: 'Nếu không thuộc thẩm quyền giải quyết của cơ quan mình.',
     badgeClass: 'bg-purple-50 text-purple-800 border-purple-300',
   },
   {
     id: 3,
-    title: 'Phương án 3: Trả lời đơn',
-    desc: 'Lập văn bản trả lời, hướng dẫn hoặc giải thích cho công dân/người nộp đơn.',
-    badgeClass: 'bg-teal-50 text-teal-800 border-teal-300',
-  },
-  {
-    id: 4,
-    title: 'Phương án 4: Yêu cầu bổ sung',
-    desc: 'Yêu cầu người nộp bổ sung tài liệu, chứng cứ hoặc giải trình làm rõ nội dung.',
-    badgeClass: 'bg-blue-50 text-blue-800 border-blue-300',
+    title: 'Không thụ lý / Lưu đơn',
+    desc: 'Nếu đơn nặc danh không có căn cứ, đơn trùng lặp, hoặc đã có kết luận giải quyết đúng pháp luật trước đó.',
+    badgeClass: 'bg-rose-50 text-rose-800 border-rose-300',
   },
 ];
 
 /**
- * Hàm ánh xạ toàn bộ dữ liệu người dùng nhập vào biểu mẫu chuẩn:
- * “Báo cáo kết quả xác minh về việc giải quyết đơn (tố giác/tin báo/kiến nghị khởi tố)”
+ * Hàm ánh xạ toàn bộ dữ liệu người dùng nhập vào biểu mẫu văn bản chuẩn:
+ * “BÁO CÁO ĐỀ XUẤT HƯỚNG XỬ LÝ ĐƠN”
  */
 export const buildBaoCaoXacMinhDocumentText = (data: BaoCaoDeXuatFormData): string => {
   const parts = (data.ngayLap || '16/09/2026').split('/');
@@ -105,58 +108,54 @@ export const buildBaoCaoXacMinhDocumentText = (data: BaoCaoDeXuatFormData): stri
 
   return `${coQuanCapTren}
 ${coQuanLap}
-Số: ${data.soBaoCao}
+Số: ${data.soBaoCao || '24/BC-CQĐT'}
 
 CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
 Độc lập - Tự do - Hạnh phúc
 Hà Nội, ngày ${ngayStr} tháng ${thangStr} năm ${namStr}
 
-BÁO CÁO KẾT QUẢ XÁC MINH
-Về việc giải quyết đơn (tố giác/tin báo/kiến nghị khởi tố) của ông/bà ${data.nguoiGuiDon}
+${(data.tieuDeBaoCao || 'BÁO CÁO ĐỀ XUẤT HƯỚNG XỬ LÝ ĐƠN').toUpperCase()}
 
-Kính gửi: ${data.nguoiNhan}
+${data.nguoiCoQuanNhan || data.nguoiNhan || 'Kính gửi: Thủ trưởng (Phó Thủ trưởng) Cơ quan'}
 
-Thực hiện Phân công giải quyết nguồn tin về tội phạm số: ${data.soPhanCong || '24/QĐ-CQĐT'} ngày ${data.ngayPhanCong || `${ngayStr}/${thangStr}/${namStr}`} của Thủ trưởng/Phó Thủ trưởng Cơ quan Điều tra;
-Hôm nay, ngày ${ngayStr} tháng ${thangStr} năm ${namStr}, Điều tra viên / Cán bộ điều tra: ${data.nguoiLap}
+Người / Đơn vị báo cáo: ${data.nguoiDonViBaoCao || data.nguoiLap || 'Cán bộ thụ lý'}
 Đơn vị công tác: ${coQuanLap}
-Tiến hành báo cáo kết quả xác minh đơn của: ${data.nguoiGuiDon}
-Cư trú / Địa chỉ: ${data.diaChiNguoiGui || 'Quận Cầu Giấy, TP. Hà Nội'}
-Nội dung đơn phản ánh / tố giác: ${data.noiDungDon}
+Mã hồ sơ: ${data.maDon || 'Đ-2025-0105'}
 
-I. KẾT QUẢ XÁC MINH
-1. Các tài liệu, chứng cứ đã thu thập:
-${data.taiLieuThuThap}
+1. THÔNG TIN TỔNG QUAN
+- Tiêu đề báo cáo: ${data.tieuDeBaoCao}
+- Người/Đơn vị báo cáo: ${data.nguoiDonViBaoCao}
+- Người/Cơ quan nhận báo cáo: ${data.nguoiCoQuanNhan}
 
-2. Nội dung diễn biến sự việc được xác minh:
-${data.noiDungXacMinh}
+2. THÔNG TIN TÓM TẮT VỤ VIỆC
+- Tóm tắt nội dung tố cáo:
+${data.tomTatNoiDungToCao || data.noiDungDon || ''}
 
-II. NHẬN XÉT VÀ ĐỀ XUẤT
-1. Đánh giá, nhận xét:
-${data.danhGiaNhanXet}
-- Căn cứ pháp lý: ${data.canCuPhapLy}
+- Tài liệu, chứng cứ kèm theo:
+${data.taiLieuChungCuKemTheo || data.taiLieuThuThap || ''}
 
-2. Đề xuất xử lý:
-Kính đề nghị Thủ trưởng (Phó Thủ trưởng) Cơ quan Điều tra xem xét, phê duyệt các nội dung sau:
-[${data.phuongAnDeXuat === 1 ? 'X' : '  '}] Phương án 1: Thụ lý đơn (Đủ điều kiện thụ lý giải quyết theo quy định của pháp luật).
-[${data.phuongAnDeXuat === 2 ? 'X' : '  '}] Phương án 2: Chuyển thẩm quyền (Chuyển đơn, hồ sơ đến cơ quan, đơn vị có đúng thẩm quyền để giải quyết).
-[${data.phuongAnDeXuat === 3 ? 'X' : '  '}] Phương án 3: Trả lời đơn (Lập văn bản trả lời, hướng dẫn hoặc giải thích cho công dân/người nộp đơn).
-[${data.phuongAnDeXuat === 4 ? 'X' : '  '}] Phương án 4: Yêu cầu bổ sung (Yêu cầu người nộp bổ sung tài liệu, chứng cứ hoặc giải trình làm rõ nội dung).
-${data.chiTietPhuongAn ? `\n(Ghi chú phương án đề xuất: ${data.chiTietPhuongAn})` : ''}
+- Kết quả xác minh sơ bộ (nếu có):
+${data.ketQuaXacMinhSoBo || data.noiDungXacMinh || '(Chưa có)'}
 
-Dự thảo các văn bản tố tụng kèm theo bao gồm: ${data.vanBanKemTheo || '(Liệt kê các quyết định, thông báo, bản kết luận... kèm theo).'}
+3. NHẬN XÉT VÀ CĂN CỨ PHÁP LÝ
+- Điều kiện thụ lý:
+${data.dieuKienThuLy || data.danhGiaNhanXet || ''}
+
+- Căn cứ pháp lý áp dụng:
+${data.canCuPhapLyApDung || data.canCuPhapLy || ''}
+
+4. ĐỀ XUẤT HƯỚNG XỬ LÝ CỤ THỂ
+Lựa chọn phương án:
+[${data.phuongAnDeXuat === 1 ? 'X' : '  '}] Phương án 1: Thụ lý giải quyết (Nếu đơn đủ điều kiện và thuộc thẩm quyền).
+[${data.phuongAnDeXuat === 2 ? 'X' : '  '}] Phương án 2: Chuyển đơn đến cơ quan có thẩm quyền (Nếu không thuộc thẩm quyền của mình).
+[${data.phuongAnDeXuat === 3 ? 'X' : '  '}] Phương án 3: Không thụ lý / Lưu đơn (Nếu đơn nặc danh không có căn cứ, đơn trùng lặp, hoặc đã có kết luận giải quyết đúng pháp luật trước đó).
+
+${data.kienNghiChiTiet || data.chiTietPhuongAn ? `Nội dung kiến nghị cụ thể: ${data.kienNghiChiTiet || data.chiTietPhuongAn}\n` : ''}${data.vanBanKemTheo ? `Dự thảo văn bản kèm theo: ${data.vanBanKemTheo}\n` : ''}
 Kính trình Đồng chí phê duyệt./.
 
-Ý KIẾN PHÊ DUYỆT CỦA THỦ TRƯỞNG
-(PHÓ THỦ TRƯỞNG)
-(Ký, ghi rõ họ tên, ngày... tháng... năm...)
-
-
-
-
 	NGƯỜI LẬP BÁO CÁO
-(Điều tra viên / Cán bộ điều tra)
-(Ký, ghi rõ họ tên)
-${data.nguoiLap}
+	(Ký, ghi rõ họ tên)
+	${data.nguoiDonViBaoCao?.split('-')[0]?.trim() || data.nguoiLap || 'Nguyễn Minh Anh'}
 `;
 };
 
@@ -175,7 +174,6 @@ export default function TaoBaoCaoDeXuatModal({
   const nguoiGuiDonDefault = donInfo?.nguoiNop || 'Vũ Thị Thanh';
   const diaChiNguoiGuiDefault = donInfo?.diaChi || 'Số 15 đường Cầu Giấy, phường Quan Hoa, quận Cầu Giấy, Hà Nội';
   const ngayTiepNhanDefault = donInfo?.ngayNhan || '16/09/2026 09:30';
-  const noiDungDonDefault = donInfo?.title || donInfo?.noiDung || 'Tố cáo hành vi vi phạm quy định pháp luật trong quản lý đất đai và trật tự xây dựng';
 
   const todayFormatted = useMemo(() => {
     const now = new Date();
@@ -185,43 +183,55 @@ export default function TaoBaoCaoDeXuatModal({
     return `${day}/${month}/${year}`;
   }, []);
 
-  // 1. Các trường thông tin lập báo cáo
+  // 1. Thông tin tổng quan (Nhập phần hành chính)
+  const defaultTieuDe = donInfo?.loaiDon
+    ? `Báo cáo đề xuất hướng xử lý ${donInfo.loaiDon.toLowerCase()} của công dân ${donInfo.nguoiNop || ''}`.trim()
+    : `Báo cáo đề xuất hướng xử lý đơn tố cáo của công dân ${donInfo?.nguoiNop || 'Vũ Thị Thanh'}`;
+  const defaultNguoiDonVi = `${currentOfficer?.name || donInfo?.canBoTiepNhan || 'Nguyễn Minh Anh'} - ${donInfo?.donViXuLy || currentOfficer?.phongBan || 'Phòng Tiếp công dân & Xử lý đơn'}`;
+  const defaultNguoiNhan = 'Kính gửi: Thủ trưởng (Phó Thủ trưởng) Cơ quan Cảnh sát điều tra';
+
+  const [tieuDeBaoCao, setTieuDeBaoCao] = useState<string>(defaultTieuDe);
+  const [nguoiDonViBaoCao, setNguoiDonViBaoCao] = useState<string>(defaultNguoiDonVi);
+  const [nguoiCoQuanNhan, setNguoiCoQuanNhan] = useState<string>(defaultNguoiNhan);
+
+  // Administrative metadata
   const [soBaoCao, setSoBaoCao] = useState<string>('24/BC-CQĐT');
   const [ngayLap, setNgayLap] = useState<string>(todayFormatted);
   const [coQuanCapTren, setCoQuanCapTren] = useState<string>('CÔNG AN TP. HÀ NỘI');
   const [coQuanLap, setCoQuanLap] = useState<string>('CƠ QUAN CẢNH SÁT ĐIỀU TRA');
-  const [nguoiLap, setNguoiLap] = useState<string>('Nguyễn Minh Anh');
-  const [chucVuNguoiLap, setChucVuNguoiLap] = useState<string>('Điều tra viên / Cán bộ điều tra');
-  const [nguoiNhan, setNguoiNhan] = useState<string>('Thủ trưởng (Phó Thủ trưởng) Cơ quan Điều tra');
 
-  // Phân công & Đơn
-  const [soPhanCong, setSoPhanCong] = useState<string>('24/QĐ-CQĐT');
-  const [ngayPhanCong, setNgayPhanCong] = useState<string>(todayFormatted);
-  const [nguoiGuiDon, setNguoiGuiDon] = useState<string>(nguoiGuiDonDefault);
-  const [diaChiNguoiGui, setDiaChiNguoiGui] = useState<string>(diaChiNguoiGuiDefault);
-  const [noiDungDon, setNoiDungDon] = useState<string>(noiDungDonDefault);
+  // 2. Thông tin tóm tắt vụ việc (Nhập phần nội dung)
+  const defaultTomTat = donInfo?.title || donInfo?.noiDung
+    ? `Công dân ${donInfo?.nguoiNop || 'Vũ Thị Thanh'} (địa chỉ: ${donInfo?.diaChi || 'quận Cầu Giấy, TP. Hà Nội'}) tố cáo ông/bà đại diện Công ty Cổ phần Đầu tư & Phát triển Đô thị X có hành vi vi phạm: ${donInfo?.title || donInfo?.noiDung}.`
+    : `Công dân ${nguoiGuiDonDefault} tố cáo đại diện Công ty Cổ phần Đầu tư & Phát triển Đô thị X có hành vi vi phạm quy định pháp luật trong quản lý đất đai và trật tự xây dựng, có dấu hiệu chiếm đoạt tài sản.`;
 
-  // I. Kết quả xác minh
-  const [taiLieuThuThap, setTaiLieuThuThap] = useState<string>(
-    `- Tài liệu, chứng cứ do người nộp đơn cung cấp: Đơn tố giác tội phạm (Bản chính); Bản sao CCCD; Bảng kê chứng từ giao dịch chuyển tiền và các tài liệu, vi bằng, tệp tin ghi âm/ghi hình liên quan đến hành vi bị tố giác.\n- Tài liệu, chứng cứ do Cơ quan Điều tra thu thập: Biên bản tiếp nhận nguồn tin về tội phạm; Biên bản ghi lời khai người tố giác; Báo cáo xác minh hiện trường, nhân thân đối tượng bị tố giác; Công văn xác minh tại cơ quan quản lý chuyên ngành và tổ chức tín dụng.`
-  );
-  const [noiDungXacMinh, setNoiDungXacMinh] = useState<string>(
-    `Tóm tắt trung thực, khách quan diễn biến sự việc: Qua công tác xác minh ban đầu, các nội dung tố giác của công dân có căn cứ thực tế. Đã làm rõ diễn biến hành vi, các giao dịch và tài liệu liên quan đến việc chiếm đoạt tài sản/dấu hiệu vi phạm pháp luật hình sự; các đối tượng liên quan đã được triệu tập, lấy lời khai bước đầu.`
-  );
+  const defaultChungCu =
+    `- Các tài liệu chứng cứ do người tố cáo cung cấp: Đơn tố cáo bản chính; Bản sao CCCD; Hợp đồng giao dịch, phiếu thu và chứng từ sao kê ngân hàng; tệp ghi âm, hình ảnh vi bằng ghi nhận diễn biến vi phạm.\n- Mức độ xác thực ban đầu: Đã đối chiếu giấy tờ tùy thân và tài liệu nộp kèm, các văn bản có chữ ký, con dấu của pháp nhân và chứng từ sao kê qua ngân hàng thương mại có giá trị chứng minh ban đầu.`;
 
-  // II. Nhận xét và đề xuất
-  const [danhGiaNhanXet, setDanhGiaNhanXet] = useState<string>(
-    `- Về tính chất, mức độ của sự việc: Vụ việc có tính chất nghiêm trọng, gây thiệt hại tài sản lớn, ảnh hưởng đến quyền lợi hợp pháp của công dân và tình hình an ninh trật tự trên địa bàn quản lý.\n- Về dấu hiệu tội phạm: Đã phát hiện đủ căn cứ dấu hiệu tội phạm theo quy định của Bộ luật Hình sự; vụ việc thuộc thẩm quyền thụ lý, giải quyết của Cơ quan Cảnh sát điều tra Công an quận.`
-  );
-  const [canCuPhapLy, setCanCuPhapLy] = useState<string>(
-    `Căn cứ Điều 145, 146, 147 Bộ luật Tố tụng hình sự năm 2015 (sửa đổi, bổ sung 2021); Điều 174 Bộ luật Hình sự 2015.`
-  );
+  const defaultXacMinhSoBo =
+    `Đã kiểm tra nhanh trên Cơ sở dữ liệu quốc gia về dân cư và hệ thống quản lý đơn thư: Người tố cáo có nhân thân rõ ràng, đúng địa chỉ cư trú; tổ chức bị tố cáo đang hoạt động theo Giấy chứng nhận ĐKKD số 0108293847; chưa phát hiện đơn trùng lặp đã được cơ quan có thẩm quyền giải quyết trước đó.`;
+
+  const [tomTatNoiDungToCao, setTomTatNoiDungToCao] = useState<string>(defaultTomTat);
+  const [taiLieuChungCuKemTheo, setTaiLieuChungCuKemTheo] = useState<string>(defaultChungCu);
+  const [ketQuaXacMinhSoBo, setKetQuaXacMinhSoBo] = useState<string>(defaultXacMinhSoBo);
+
+  // 3. Nhận xét và Căn cứ pháp lý (Nhập phần phân tích)
+  const defaultDieuKien =
+    `- Về điều kiện thụ lý: Đơn có họ tên, địa chỉ, chữ ký của người tố cáo; nội dung tố cáo rõ ràng, có căn cứ, người và hành vi vi phạm cụ thể, kèm theo tài liệu chứng cứ xác thực ban đầu.\n- Về thẩm quyền: Vụ việc phát sinh trên địa bàn quản lý, thuộc thẩm quyền xem xét, giải quyết của cơ quan.\n- Về tính trùng lặp: Đơn nộp lần đầu, không trùng lặp với đơn đang thụ lý hoặc đã có kết luận giải quyết trước đó.`;
+
+  const defaultCanCu =
+    `Căn cứ Điều 145, 146, 147 Bộ luật Tố tụng hình sự năm 2015 (sửa đổi, bổ sung 2021); Điều 174 Bộ luật Hình sự năm 2015; Luật Tố cáo năm 2018; Thông tư liên tịch số 01/2017/TTLT-BCA-BQP-BTC-BNN&PTNT-VKSNDTC.`;
+
+  const [dieuKienThuLy, setDieuKienThuLy] = useState<string>(defaultDieuKien);
+  const [canCuPhapLyApDung, setCanCuPhapLyApDung] = useState<string>(defaultCanCu);
+
+  // 4. Đề xuất hướng xử lý cụ thể (Nhập phần kiến nghị)
   const [phuongAnDeXuat, setPhuongAnDeXuat] = useState<number>(1);
-  const [chiTietPhuongAn, setChiTietPhuongAn] = useState<string>(
-    `Đơn đủ điều kiện giải quyết theo quy định; đề xuất thụ lý và ban hành thông báo thụ lý giải quyết đơn theo đúng trình tự.`
+  const [kienNghiChiTiet, setKienNghiChiTiet] = useState<string>(
+    `Đơn đủ điều kiện thụ lý và thuộc thẩm quyền giải quyết của cơ quan. Đề xuất Thủ trưởng Cơ quan phê duyệt thụ lý giải quyết theo quy định, giao cán bộ thụ lý lập kế hoạch xác minh chi tiết.`
   );
   const [vanBanKemTheo, setVanBanKemTheo] = useState<string>(
-    `Dự thảo Thông báo thụ lý giải quyết đơn; Bản kết luận xác minh bước đầu; Bảng kê danh mục tài liệu hồ sơ.`
+    `Dự thảo Thông báo thụ lý giải quyết đơn; Kế hoạch xác minh; Danh mục tài liệu chứng cứ kèm theo.`
   );
 
   // Validation errors
@@ -235,40 +245,39 @@ export default function TaoBaoCaoDeXuatModal({
     if (existingSigningDoc) {
       const savedFormData = (existingSigningDoc as any).formData as BaoCaoDeXuatFormData | undefined;
       if (savedFormData) {
+        setTieuDeBaoCao(savedFormData.tieuDeBaoCao || defaultTieuDe);
+        setNguoiDonViBaoCao(savedFormData.nguoiDonViBaoCao || defaultNguoiDonVi);
+        setNguoiCoQuanNhan(savedFormData.nguoiCoQuanNhan || defaultNguoiNhan);
+
         setSoBaoCao(savedFormData.soBaoCao || existingSigningDoc.soKyHieu || '24/BC-CQĐT');
         setNgayLap(savedFormData.ngayLap || todayFormatted);
         setCoQuanCapTren(savedFormData.coQuanCapTren || 'CÔNG AN TP. HÀ NỘI');
         setCoQuanLap(savedFormData.coQuanLap || 'CƠ QUAN CẢNH SÁT ĐIỀU TRA');
-        setNguoiLap(savedFormData.nguoiLap || 'Nguyễn Minh Anh');
-        setChucVuNguoiLap(savedFormData.chucVuNguoiLap || 'Điều tra viên / Cán bộ điều tra');
-        setNguoiNhan(savedFormData.nguoiNhan || 'Thủ trưởng (Phó Thủ trưởng) Cơ quan Điều tra');
-        setSoPhanCong(savedFormData.soPhanCong || '24/QĐ-CQĐT');
-        setNgayPhanCong(savedFormData.ngayPhanCong || todayFormatted);
-        setNguoiGuiDon(savedFormData.nguoiGuiDon || nguoiGuiDonDefault);
-        setDiaChiNguoiGui(savedFormData.diaChiNguoiGui || diaChiNguoiGuiDefault);
-        setNoiDungDon(savedFormData.noiDungDon || noiDungDonDefault);
-        setTaiLieuThuThap(savedFormData.taiLieuThuThap || '');
-        setNoiDungXacMinh(savedFormData.noiDungXacMinh || '');
-        setDanhGiaNhanXet(savedFormData.danhGiaNhanXet || '');
-        setCanCuPhapLy(savedFormData.canCuPhapLy || '');
+
+        setTomTatNoiDungToCao(savedFormData.tomTatNoiDungToCao || savedFormData.noiDungDon || defaultTomTat);
+        setTaiLieuChungCuKemTheo(savedFormData.taiLieuChungCuKemTheo || savedFormData.taiLieuThuThap || defaultChungCu);
+        setKetQuaXacMinhSoBo(savedFormData.ketQuaXacMinhSoBo || savedFormData.noiDungXacMinh || defaultXacMinhSoBo);
+
+        setDieuKienThuLy(savedFormData.dieuKienThuLy || savedFormData.danhGiaNhanXet || defaultDieuKien);
+        setCanCuPhapLyApDung(savedFormData.canCuPhapLyApDung || savedFormData.canCuPhapLy || defaultCanCu);
+
         setPhuongAnDeXuat(savedFormData.phuongAnDeXuat || 1);
-        setChiTietPhuongAn(savedFormData.chiTietPhuongAn || '');
+        setKienNghiChiTiet(savedFormData.kienNghiChiTiet || savedFormData.chiTietPhuongAn || '');
         setVanBanKemTheo(savedFormData.vanBanKemTheo || '');
       } else {
         setSoBaoCao(existingSigningDoc.soKyHieu || '24/BC-CQĐT');
         setNgayLap(existingSigningDoc.ngayTao ? existingSigningDoc.ngayTao.split(' ')[0] : todayFormatted);
         setCoQuanLap(existingSigningDoc.donViNguoiLap || 'CƠ QUAN CẢNH SÁT ĐIỀU TRA');
-        setNguoiLap(existingSigningDoc.nguoiLap || currentOfficer?.name || 'Nguyễn Minh Anh');
         if (existingSigningDoc.lanhDaoName) {
-          setNguoiNhan(`${existingSigningDoc.lanhDaoName} (${existingSigningDoc.lanhDaoChucVu || 'Thủ trưởng CQĐT'})`);
+          setNguoiCoQuanNhan(`Kính gửi: ${existingSigningDoc.lanhDaoName} (${existingSigningDoc.lanhDaoChucVu || 'Thủ trưởng CQĐT'})`);
         }
-
-        // Trích xuất phương án nếu có trong nội dung
+        if (existingSigningDoc.tenVanBan) {
+          setTieuDeBaoCao(existingSigningDoc.tenVanBan);
+        }
         if (existingSigningDoc.noiDungChiTiet) {
           if (/\[X\]\s*Phương án 1|Thụ lý/i.test(existingSigningDoc.noiDungChiTiet)) setPhuongAnDeXuat(1);
           else if (/\[X\]\s*Phương án 2|Chuyển thẩm quyền/i.test(existingSigningDoc.noiDungChiTiet)) setPhuongAnDeXuat(2);
-          else if (/\[X\]\s*Phương án 3|Trả lời đơn/i.test(existingSigningDoc.noiDungChiTiet)) setPhuongAnDeXuat(3);
-          else if (/\[X\]\s*Phương án 4|Yêu cầu bổ sung/i.test(existingSigningDoc.noiDungChiTiet)) setPhuongAnDeXuat(4);
+          else if (/\[X\]\s*Phương án 3|Không thụ lý|Lưu đơn/i.test(existingSigningDoc.noiDungChiTiet)) setPhuongAnDeXuat(3);
         }
       }
     } else {
@@ -277,21 +286,21 @@ export default function TaoBaoCaoDeXuatModal({
       setNgayLap(todayFormatted);
       setCoQuanCapTren('CÔNG AN TP. HÀ NỘI');
       setCoQuanLap(donInfo?.donViXuLy || currentOfficer?.phongBan || 'CƠ QUAN CẢNH SÁT ĐIỀU TRA');
-      setNguoiLap(currentOfficer?.name || donInfo?.canBoTiepNhan || 'Nguyễn Minh Anh');
-      setChucVuNguoiLap(currentOfficer?.chucVu || 'Điều tra viên / Cán bộ điều tra');
-      setNguoiNhan('Thủ trưởng (Phó Thủ trưởng) Cơ quan Điều tra');
 
-      setSoPhanCong(`${maDon.replace(/\D/g, '') || '24'}/QĐ-CQĐT`);
-      setNgayPhanCong(todayFormatted);
-      setNguoiGuiDon(nguoiGuiDonDefault);
-      setDiaChiNguoiGui(diaChiNguoiGuiDefault);
-      setNoiDungDon(noiDungDonDefault);
+      setTieuDeBaoCao(defaultTieuDe);
+      setNguoiDonViBaoCao(defaultNguoiDonVi);
+      setNguoiCoQuanNhan(defaultNguoiNhan);
 
-      // Khởi tạo phương án theo hướng xử lý hiện tại nếu có
+      setTomTatNoiDungToCao(defaultTomTat);
+      setTaiLieuChungCuKemTheo(defaultChungCu);
+      setKetQuaXacMinhSoBo(defaultXacMinhSoBo);
+
+      setDieuKienThuLy(defaultDieuKien);
+      setCanCuPhapLyApDung(defaultCanCu);
+
       if (initialHuongXuLy === 'thu_ly') setPhuongAnDeXuat(1);
       else if (initialHuongXuLy === 'ban_giao') setPhuongAnDeXuat(2);
-      else if (initialHuongXuLy === 'tra_loi_don') setPhuongAnDeXuat(3);
-      else if (initialHuongXuLy === 'yeu_cau_bo_sung') setPhuongAnDeXuat(4);
+      else if (initialHuongXuLy === 'tra_loi_don' || initialHuongXuLy === 'luu_don') setPhuongAnDeXuat(3);
       else setPhuongAnDeXuat(1);
     }
 
@@ -305,29 +314,62 @@ export default function TaoBaoCaoDeXuatModal({
     setTimeout(() => setToastMessage(null), 3500);
   };
 
+  const handleSelectPhuongAn = (paId: number) => {
+    setPhuongAnDeXuat(paId);
+    if (paId === 1) {
+      setKienNghiChiTiet(
+        'Đơn đủ điều kiện thụ lý và thuộc thẩm quyền giải quyết của cơ quan. Đề xuất Thủ trưởng Cơ quan phê duyệt thụ lý giải quyết theo quy định, giao cán bộ thụ lý lập kế hoạch xác minh chi tiết.'
+      );
+    } else if (paId === 2) {
+      setKienNghiChiTiet(
+        'Vụ việc không thuộc thẩm quyền giải quyết của cơ quan. Đề xuất chuyển toàn bộ đơn và tài liệu chứng cứ kèm theo đến Cơ quan có đúng thẩm quyền để thụ lý, giải quyết; đồng thời ban hành văn bản thông báo chuyển đơn cho công dân.'
+      );
+    } else if (paId === 3) {
+      setKienNghiChiTiet(
+        'Đơn không đủ điều kiện thụ lý giải quyết (nặc danh / không có căn cứ xác thực / trùng lặp / đã có kết luận giải quyết đúng pháp luật trước đó). Đề xuất không thụ lý giải quyết và thực hiện lưu đơn theo đúng quy định pháp luật.'
+      );
+    }
+  };
+
   const getCurrentFormData = (): BaoCaoDeXuatFormData => {
     return {
+      // 1. Tổng quan
+      tieuDeBaoCao: tieuDeBaoCao.trim(),
+      nguoiDonViBaoCao: nguoiDonViBaoCao.trim(),
+      nguoiCoQuanNhan: nguoiCoQuanNhan.trim(),
       soBaoCao: soBaoCao.trim(),
       ngayLap: ngayLap.trim(),
       coQuanCapTren: coQuanCapTren.trim(),
       coQuanLap: coQuanLap.trim(),
-      nguoiLap: nguoiLap.trim(),
-      chucVuNguoiLap: chucVuNguoiLap.trim(),
-      nguoiNhan: nguoiNhan.trim(),
-      soPhanCong: soPhanCong.trim(),
-      ngayPhanCong: ngayPhanCong.trim(),
+      nguoiLap: nguoiDonViBaoCao.split('-')[0]?.trim() || 'Nguyễn Minh Anh',
+      chucVuNguoiLap: currentOfficer?.chucVu || 'Cán bộ thụ lý',
+      nguoiNhan: nguoiCoQuanNhan.trim(),
+      soPhanCong: `${maDon.replace(/\D/g, '') || '24'}/QĐ-CQĐT`,
+      ngayPhanCong: ngayLap.trim(),
       maDon,
       loaiDon,
-      nguoiGuiDon: nguoiGuiDon.trim(),
-      diaChiNguoiGui: diaChiNguoiGui.trim(),
+
+      // 2. Tóm tắt vụ việc
+      tomTatNoiDungToCao: tomTatNoiDungToCao.trim(),
+      taiLieuChungCuKemTheo: taiLieuChungCuKemTheo.trim(),
+      ketQuaXacMinhSoBo: ketQuaXacMinhSoBo.trim(),
+      nguoiGuiDon: nguoiGuiDonDefault,
+      diaChiNguoiGui: diaChiNguoiGuiDefault,
       ngayTiepNhan: ngayTiepNhanDefault,
-      noiDungDon: noiDungDon.trim(),
-      taiLieuThuThap: taiLieuThuThap.trim(),
-      noiDungXacMinh: noiDungXacMinh.trim(),
-      danhGiaNhanXet: danhGiaNhanXet.trim(),
-      canCuPhapLy: canCuPhapLy.trim(),
+      noiDungDon: tomTatNoiDungToCao.trim(),
+      taiLieuThuThap: taiLieuChungCuKemTheo.trim(),
+      noiDungXacMinh: ketQuaXacMinhSoBo.trim(),
+
+      // 3. Nhận xét & căn cứ pháp lý
+      dieuKienThuLy: dieuKienThuLy.trim(),
+      canCuPhapLyApDung: canCuPhapLyApDung.trim(),
+      danhGiaNhanXet: dieuKienThuLy.trim(),
+      canCuPhapLy: canCuPhapLyApDung.trim(),
+
+      // 4. Đề xuất
       phuongAnDeXuat,
-      chiTietPhuongAn: chiTietPhuongAn.trim(),
+      kienNghiChiTiet: kienNghiChiTiet.trim(),
+      chiTietPhuongAn: kienNghiChiTiet.trim(),
       vanBanKemTheo: vanBanKemTheo.trim(),
     };
   };
@@ -336,16 +378,11 @@ export default function TaoBaoCaoDeXuatModal({
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (!soBaoCao.trim()) newErrors.soBaoCao = 'Vui lòng nhập Số báo cáo.';
-    if (!ngayLap.trim()) newErrors.ngayLap = 'Vui lòng nhập Ngày lập báo cáo.';
-    if (!coQuanLap.trim()) newErrors.coQuanLap = 'Vui lòng nhập Cơ quan/đơn vị lập báo cáo.';
-    if (!nguoiLap.trim()) newErrors.nguoiLap = 'Vui lòng nhập Người lập báo cáo.';
-    if (!nguoiNhan.trim()) newErrors.nguoiNhan = 'Vui lòng nhập Người nhận báo cáo (Thủ trưởng/Phó Thủ trưởng).';
-    if (!noiDungDon.trim()) newErrors.noiDungDon = 'Vui lòng nhập Nội dung phản ánh / tố giác.';
-    if (!taiLieuThuThap.trim()) newErrors.taiLieuThuThap = 'Vui lòng nhập Tài liệu, chứng cứ đã thu thập.';
-    if (!noiDungXacMinh.trim()) newErrors.noiDungXacMinh = 'Vui lòng nhập Nội dung, diễn biến sự việc được xác minh.';
-    if (!danhGiaNhanXet.trim()) newErrors.danhGiaNhanXet = 'Vui lòng nhập Đánh giá, nhận xét tính chất và dấu hiệu tội phạm.';
-    if (!canCuPhapLy.trim()) newErrors.canCuPhapLy = 'Vui lòng nhập Căn cứ pháp lý.';
+    if (!tieuDeBaoCao.trim()) newErrors.tieuDeBaoCao = 'Vui lòng nhập Tiêu đề báo cáo.';
+    if (!nguoiDonViBaoCao.trim()) newErrors.nguoiDonViBaoCao = 'Vui lòng nhập Người/Đơn vị báo cáo.';
+    if (!nguoiCoQuanNhan.trim()) newErrors.nguoiCoQuanNhan = 'Vui lòng nhập Người/Cơ quan nhận báo cáo.';
+    if (!tomTatNoiDungToCao.trim()) newErrors.tomTatNoiDungToCao = 'Vui lòng nhập Tóm tắt nội dung tố cáo.';
+    if (!dieuKienThuLy.trim()) newErrors.dieuKienThuLy = 'Vui lòng nhập Đánh giá điều kiện thụ lý.';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -372,24 +409,29 @@ export default function TaoBaoCaoDeXuatModal({
       status: 'chua_den_luot',
     };
 
+    const actorName = formData.nguoiLap || currentOfficer?.name || 'Nguyễn Minh Anh';
+    const actorRole = formData.chucVuNguoiLap || currentOfficer?.chucVu || 'Cán bộ thụ lý';
+    const coQuan = formData.coQuanLap || donInfo?.donViXuLy || 'Cơ quan Cảnh sát điều tra';
+    const ngayGioTao = `${formData.ngayLap || todayFormatted} 09:00`;
+
     const updatedDoc: SigningDocument = {
       id: docId,
-      soKyHieu: formData.soBaoCao,
+      soKyHieu: formData.soBaoCao || '24/BC-CQĐT',
       hoSoCode: maDon,
       luotNhanId: donInfo?.luotNhanId || 'LN-2025-0105',
-      loaiDon: formData.loaiDon,
-      nguoiGuiDon: formData.nguoiGuiDon,
-      noiDungDon: formData.noiDungDon,
+      loaiDon: formData.loaiDon || loaiDon,
+      nguoiGuiDon: formData.nguoiGuiDon || nguoiGuiDonDefault,
+      noiDungDon: formData.tomTatNoiDungToCao,
 
-      tenVanBan: 'Báo cáo kết quả xác minh',
+      tenVanBan: formData.tieuDeBaoCao || 'Báo cáo đề xuất hướng xử lý đơn',
       loaiVanBan: 'bao_cao_de_xuat',
       loaiVanBanLabel: 'Báo cáo đề xuất',
-      trichYeu: `V/v Xác minh đơn của ông/bà ${formData.nguoiGuiDon}`,
+      trichYeu: `V/v Đề xuất xử lý đơn của ${formData.nguoiGuiDon || nguoiGuiDonDefault}`,
       noiDungChiTiet: docText,
 
-      nguoiLap: formData.nguoiLap,
-      donViNguoiLap: formData.coQuanLap,
-      ngayTao: `${formData.ngayLap} 09:00`,
+      nguoiLap: actorName,
+      donViNguoiLap: coQuan,
+      ngayTao: ngayGioTao,
 
       status: 'nhap', // Trạng thái ban đầu: Bản nháp
       mucDoUuTien: 'thuong',
@@ -404,7 +446,7 @@ export default function TaoBaoCaoDeXuatModal({
       tepDinhKem: existingSigningDoc?.tepDinhKem || [
         {
           id: `att-bc-${Date.now()}`,
-          tenTep: `Bao_cao_ket_qua_xac_minh_${maDon}.pdf`,
+          tenTep: `Bao_cao_de_xuat_${maDon}.pdf`,
           dungLuong: '380 KB',
           loai: 'du_thao',
         },
@@ -415,10 +457,10 @@ export default function TaoBaoCaoDeXuatModal({
         ...(existingSigningDoc?.versionHistory || []),
         {
           version: existingSigningDoc?.phienBanHienTai || 'V1',
-          thoiGian: `${formData.ngayLap} 09:00`,
-          nguoiTao: formData.nguoiLap,
+          thoiGian: ngayGioTao,
+          nguoiTao: actorName,
           trangThaiLucDo: 'Bản nháp',
-          ghiChu: 'Lập Báo cáo kết quả xác minh về việc giải quyết đơn',
+          ghiChu: 'Lập Báo cáo đề xuất hướng xử lý đơn',
           noiDungSnapshot: docText,
         },
       ],
@@ -426,18 +468,18 @@ export default function TaoBaoCaoDeXuatModal({
         ...(existingSigningDoc?.history || []),
         {
           id: `hist-${Date.now()}`,
-          time: `${formData.ngayLap} 09:00`,
-          actor: formData.nguoiLap,
-          action: 'Lập báo cáo kết quả xác minh (Bản nháp)',
+          time: ngayGioTao,
+          actor: actorName,
+          action: 'Lập báo cáo đề xuất hướng xử lý đơn (Bản nháp)',
         },
       ],
       auditLogs: [
         ...(existingSigningDoc?.auditLogs || []),
         {
           id: `al-${Date.now()}`,
-          time: `${formData.ngayLap} 09:00`,
-          actor: formData.nguoiLap,
-          actorRole: formData.chucVuNguoiLap || 'Điều tra viên',
+          time: ngayGioTao,
+          actor: actorName,
+          actorRole: actorRole,
           action: 'Lập văn bản',
           statusBefore: existingSigningDoc?.status || 'chua_tao',
           statusAfter: 'nhap',
@@ -467,17 +509,17 @@ export default function TaoBaoCaoDeXuatModal({
       {/* Container modal chính */}
       <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden animate-scale-in">
         {/* ================= HEADER ================= */}
-        <div className="bg-[#004ac6] px-6 py-3.5 flex items-center justify-between shrink-0 border-b border-[#004ac6]">
+        <div className="bg-white px-6 py-3.5 flex items-center justify-between shrink-0 border-b border-slate-200">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-[#004ac6] shrink-0">
               <span className="material-symbols-outlined text-xl">assignment_turned_in</span>
             </div>
             <div>
-              <h2 className="text-base font-bold text-white tracking-tight">
+              <h2 className="text-base font-bold text-slate-900 tracking-tight">
                 Tạo Báo cáo đề xuất
               </h2>
-              <p className="text-[11px] text-blue-100 font-normal">
-                Báo cáo kết quả xác minh về việc giải quyết đơn (tố giác / tin báo / kiến nghị khởi tố) • Hồ sơ: <strong className="font-mono text-white">{maDon}</strong>
+              <p className="text-[11px] text-slate-500 font-normal">
+                Báo cáo đề xuất hướng xử lý đơn theo quy trình thụ lý • Hồ sơ: <strong className="font-mono text-slate-800">{maDon}</strong>
               </p>
             </div>
           </div>
@@ -485,7 +527,7 @@ export default function TaoBaoCaoDeXuatModal({
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white flex items-center justify-center transition cursor-pointer"
+            className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition cursor-pointer"
             title="Đóng (Hủy)"
           >
             <span className="material-symbols-outlined text-lg">close</span>
@@ -497,7 +539,7 @@ export default function TaoBaoCaoDeXuatModal({
 
           {/* Cảnh báo lỗi chung nếu có */}
           {Object.keys(errors).length > 0 && (
-            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
+            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs flex items-center gap-2">
               <span className="material-symbols-outlined text-rose-600 text-lg shrink-0">error</span>
               <span>
                 Vui lòng kiểm tra lại các trường đánh dấu <strong>*</strong> bắt buộc trước khi lưu báo cáo.
@@ -505,72 +547,157 @@ export default function TaoBaoCaoDeXuatModal({
             </div>
           )}
 
-          {/* NHÓM 4: II. NHẬN XÉT VÀ ĐỀ XUẤT */}
-          <div className="bg-slate-50/70 rounded-xl border border-slate-200 p-4 space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-200/80">
-              <span className="material-symbols-outlined text-emerald-600 text-[17px]">gavel</span>
-              <span>II. Nhận xét và đề xuất</span>
-            </h3>
+          {/* Tiêu đề báo cáo */}
+          <div>
+            <label className="block font-bold text-slate-800 mb-1">
+              Tiêu đề báo cáo <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={tieuDeBaoCao}
+              onChange={(e) => {
+                setTieuDeBaoCao(e.target.value);
+                if (errors.tieuDeBaoCao) setErrors((prev) => ({ ...prev, tieuDeBaoCao: '' }));
+              }}
+              className={`w-full p-2.5 text-slate-800 bg-white border rounded-xl leading-relaxed focus:ring-2 focus:ring-blue-500 focus:outline-none font-medium text-[12.5px] ${errors.tieuDeBaoCao ? 'border-rose-400 bg-rose-50/30' : 'border-slate-300'
+                }`}
+              placeholder="Ví dụ: Báo cáo đề xuất hướng xử lý đơn tố cáo của công dân..."
+            />
+            {errors.tieuDeBaoCao && <p className="text-[10.5px] text-rose-600 mt-1">{errors.tieuDeBaoCao}</p>}
+          </div>
+
+          {/* Grid 2 cột: Người/Đơn vị báo cáo & Người/Cơ quan nhận báo cáo */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div>
+              <label className="block font-bold text-slate-800 mb-1">
+                Người / Đơn vị báo cáo <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={nguoiDonViBaoCao}
+                onChange={(e) => {
+                  setNguoiDonViBaoCao(e.target.value);
+                  if (errors.nguoiDonViBaoCao) setErrors((prev) => ({ ...prev, nguoiDonViBaoCao: '' }));
+                }}
+                className={`w-full p-2.5 text-slate-800 bg-white border rounded-xl leading-relaxed focus:ring-2 focus:ring-blue-500 focus:outline-none ${errors.nguoiDonViBaoCao ? 'border-rose-400 bg-rose-50/30' : 'border-slate-300'
+                  }`}
+                placeholder="Tên cán bộ hoặc phòng/ban được giao nhiệm vụ xử lý đơn"
+              />
+              {errors.nguoiDonViBaoCao && <p className="text-[10.5px] text-rose-600 mt-1">{errors.nguoiDonViBaoCao}</p>}
+            </div>
 
             <div>
               <label className="block font-bold text-slate-800 mb-1">
-                1. Đánh giá, nhận xét (Tính chất mức độ, dấu hiệu tội phạm) <span className="text-rose-500">*</span>
+                Người / Cơ quan nhận báo cáo <span className="text-rose-500">*</span>
               </label>
-              <textarea
-                rows={3}
-                value={danhGiaNhanXet}
+              <input
+                type="text"
+                value={nguoiCoQuanNhan}
                 onChange={(e) => {
-                  setDanhGiaNhanXet(e.target.value);
-                  if (errors.danhGiaNhanXet) setErrors((prev) => ({ ...prev, danhGiaNhanXet: '' }));
+                  setNguoiCoQuanNhan(e.target.value);
+                  if (errors.nguoiCoQuanNhan) setErrors((prev) => ({ ...prev, nguoiCoQuanNhan: '' }));
                 }}
-                className={`w-full p-2.5 text-slate-800 bg-white border rounded-xl leading-relaxed focus:ring-2 focus:ring-blue-500 focus:outline-none ${errors.danhGiaNhanXet ? 'border-rose-400 bg-rose-50/30' : 'border-slate-300'
+                className={`w-full p-2.5 text-slate-800 bg-white border rounded-xl leading-relaxed focus:ring-2 focus:ring-blue-500 focus:outline-none ${errors.nguoiCoQuanNhan ? 'border-rose-400 bg-rose-50/30' : 'border-slate-300'
                   }`}
-                placeholder="- Về tính chất, mức độ của sự việc: ...\n- Về dấu hiệu tội phạm: ..."
+                placeholder="Ví dụ: Kính gửi: Giám đốc Sở / Thủ trưởng Cơ quan..."
               />
-              {errors.danhGiaNhanXet && <p className="text-[10.5px] text-rose-600 mt-1">{errors.danhGiaNhanXet}</p>}
+              {errors.nguoiCoQuanNhan && <p className="text-[10.5px] text-rose-600 mt-1">{errors.nguoiCoQuanNhan}</p>}
             </div>
-
-            {/* 2. Đề xuất xử lý: 4 phương án chuẩn */}
-            <div className="pt-2">
-              <label className="block font-bold text-slate-900 mb-1.5 flex items-center justify-between">
-                <span>2. Đề xuất xử lý (Chọn 1 trong 4 phương án chuẩn)</span>
-                <span className="text-[10.5px] font-normal text-blue-700">Tự động tích dấu [X] vào văn bản</span>
-              </label>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {DANH_SACH_PHUONG_AN.map((pa) => {
-                  const isChecked = phuongAnDeXuat === pa.id;
-                  return (
-                    <div
-                      key={pa.id}
-                      onClick={() => setPhuongAnDeXuat(pa.id)}
-                      className={`p-3 rounded-xl border transition-all cursor-pointer flex items-start gap-2.5 ${isChecked
-                        ? 'border-[#004ac6] bg-blue-50/80 shadow-xs ring-1 ring-[#004ac6]'
-                        : 'border-slate-200 bg-white hover:bg-slate-50'
-                        }`}
-                    >
-                      <input
-                        type="radio"
-                        name="phuongAnDeXuat"
-                        checked={isChecked}
-                        onChange={() => setPhuongAnDeXuat(pa.id)}
-                        className="w-4 h-4 mt-0.5 text-[#004ac6] focus:ring-0 cursor-pointer"
-                      />
-                      <div className="flex-1">
-                        <strong className={`block text-[11.5px] font-bold ${isChecked ? 'text-[#004ac6]' : 'text-slate-800'}`}>
-                          {pa.title}
-                        </strong>
-                        <p className="text-[10.5px] text-slate-500 mt-0.5 leading-snug">
-                          {pa.desc}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
           </div>
+
+          {/* Tóm tắt nội dung tố cáo */}
+          <div>
+            <label className="block font-bold text-slate-800 mb-1">
+              Tóm tắt nội dung tố cáo <span className="text-rose-500">*</span>
+            </label>
+            <p className="text-[11px] text-slate-500 mb-1.5">
+              Ghi rõ người tố cáo là ai, tố cáo ai (họ tên, chức vụ, cơ quan), và hành vi vi phạm cụ thể bị cáo buộc là gì.
+            </p>
+            <textarea
+              rows={3}
+              value={tomTatNoiDungToCao}
+              onChange={(e) => {
+                setTomTatNoiDungToCao(e.target.value);
+                if (errors.tomTatNoiDungToCao) setErrors((prev) => ({ ...prev, tomTatNoiDungToCao: '' }));
+              }}
+              className={`w-full p-2.5 text-slate-800 bg-white border rounded-xl leading-relaxed focus:ring-2 focus:ring-blue-500 focus:outline-none ${errors.tomTatNoiDungToCao ? 'border-rose-400 bg-rose-50/30' : 'border-slate-300'
+                }`}
+              placeholder="Ghi rõ người tố cáo là ai, tố cáo ai (họ tên, chức vụ, cơ quan), và hành vi vi phạm cụ thể..."
+            />
+            {errors.tomTatNoiDungToCao && <p className="text-[10.5px] text-rose-600 mt-1">{errors.tomTatNoiDungToCao}</p>}
+          </div>
+
+          {/* Đánh giá điều kiện thụ lý */}
+          {/* <div>
+            <label className="block font-bold text-slate-800 mb-1">
+              Đánh giá điều kiện thụ lý <span className="text-rose-500">*</span>
+            </label>
+            <textarea
+              rows={3}
+              value={dieuKienThuLy}
+              onChange={(e) => {
+                setDieuKienThuLy(e.target.value);
+                if (errors.dieuKienThuLy) setErrors((prev) => ({ ...prev, dieuKienThuLy: '' }));
+              }}
+              className={`w-full p-2.5 text-slate-800 bg-white border rounded-xl leading-relaxed focus:ring-2 focus:ring-blue-500 focus:outline-none ${errors.dieuKienThuLy ? 'border-rose-400 bg-rose-50/30' : 'border-slate-300'
+                }`}
+              placeholder="Đánh giá đơn có đủ điều kiện thụ lý, có đúng thẩm quyền, có bị trùng lặp không..."
+            />
+            {errors.dieuKienThuLy && <p className="text-[10.5px] text-rose-600 mt-1">{errors.dieuKienThuLy}</p>}
+          </div> */}
+
+          {/* Phương án đề xuất hướng xử lý */}
+          <div>
+            <label className="block font-bold text-slate-800 mb-1.5">
+              Phương án đề xuất hướng xử lý <span className="text-rose-500">*</span>
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {DANH_SACH_PHUONG_AN.map((pa) => {
+                const isChecked = phuongAnDeXuat === pa.id;
+                return (
+                  <div
+                    key={pa.id}
+                    onClick={() => handleSelectPhuongAn(pa.id)}
+                    className={`relative p-3.5 rounded-xl border transition-all cursor-pointer flex items-start gap-2.5 ${isChecked
+                      ? 'border-[#004ac6] bg-blue-50/90 shadow-xs ring-2 ring-[#004ac6]/30'
+                      : 'border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300'
+                      }`}
+                  >
+                    <input
+                      type="radio"
+                      name="phuongAnDeXuat"
+                      checked={isChecked}
+                      onChange={() => handleSelectPhuongAn(pa.id)}
+                      className="w-4 h-4 mt-0.5 text-[#004ac6] focus:ring-0 cursor-pointer shrink-0"
+                    />
+                    <div className="flex-1 min-w-0 pr-2">
+                      <strong className={`block text-[12.5px] font-bold leading-tight ${isChecked ? 'text-[#004ac6]' : 'text-slate-800'}`}>
+                        {pa.title}
+                      </strong>
+                      {/* <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                        {pa.desc}
+                      </p> */}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Kiến nghị, đề xuất cụ thể */}
+          <div>
+            <label className="block font-bold text-slate-800 mb-1">
+              Nội dung kiến nghị / Đề xuất chi tiết
+            </label>
+            <textarea
+              rows={3}
+              value={kienNghiChiTiet}
+              onChange={(e) => setKienNghiChiTiet(e.target.value)}
+              className="w-full p-2.5 text-slate-800 bg-white border border-slate-300 rounded-xl leading-relaxed focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              placeholder="Nhập nội dung kiến nghị cụ thể gửi lãnh đạo xem xét phê duyệt..."
+            />
+          </div>
+
         </div>
 
         {/* ================= FOOTER BUTTONS ================= */}

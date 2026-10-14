@@ -121,11 +121,11 @@ export default function QuyTrinhXuLyDon({
           <div className="flex items-center gap-1.5 text-slate-500 font-medium">
             <button
               type="button"
-              onClick={() => onNav('ban-phan-tich')}
+              onClick={() => onNav('don-tiep-nhan')}
               className="flex items-center gap-1 text-[#004ac6] hover:underline font-semibold cursor-pointer"
             >
               <span className="material-symbols-outlined text-[15px]">arrow_back</span>
-              <span>Bàn phân tích</span>
+              <span>Chi tiết đơn</span>
             </button>
             <span className="text-slate-300">/</span>
             <button

@@ -367,13 +367,13 @@ export default function DonTiepNhan({
     }
   }, [donDetail]);
 
-  // Kiểm tra văn bản báo cáo đề xuất / tờ trình đã có cho hồ sơ đơn này
+  // Kiểm tra văn bản báo cáo đề xuất đã có cho hồ sơ đơn này (chỉ loại báo cáo đề xuất, không tính tờ trình thụ lý)
   const existingSigningDoc = useMemo(() => {
     return (
       signingDocuments?.find(
         (d) =>
           d.hoSoCode === currentDon.code &&
-          (d.loaiVanBan === 'bao_cao_de_xuat' || d.loaiVanBan === 'to_trinh_thu_ly')
+          d.loaiVanBan === 'bao_cao_de_xuat'
       ) || null
     );
   }, [signingDocuments, currentDon.code]);
@@ -452,6 +452,33 @@ export default function DonTiepNhan({
 
     // Mở popup/modal "Tạo báo cáo đề xuất"
     setShowTaoBaoCaoDeXuatModal(true);
+  };
+
+  // Xử lý khi cán bộ nhấn Tiếp nhận đơn (đặc biệt khi chuyển từ Lượt nhận không có file)
+  const handleTiepNhanDon = () => {
+    setCurrentDon((prev) => ({
+      ...prev,
+      statusBadge: 'Đang xử lý',
+      isAwaitingAcceptance: false,
+      isNoFileTransfer: false,
+    }));
+    setActiveTab('thong-tin');
+    setIsEditingThongTinDon(true);
+    showToast('✓ Tiếp nhận đơn thành công! Vui lòng nhập và hoàn thiện thông tin chung của hồ sơ.');
+    addHistoryLog({
+      title: 'Cán bộ thụ lý tiếp nhận đơn & Cập nhật thông tin',
+      actor: currentAccount?.name || currentDon.canBoXuLy || 'Nguyễn Minh Anh',
+      actorRole: currentAccount?.role || currentDon.chucVuCanBo || 'Chuyên viên Tiếp nhận & Xử lý đơn',
+      actorDept: currentDon.donViXuLy || 'Phòng Tiếp công dân & Xử lý đơn',
+      category: 'tiep_nhan',
+      statusBadge: {
+        text: 'Tiếp nhận',
+        bgClass: 'bg-emerald-50',
+        textClass: 'text-emerald-800',
+        borderClass: 'border-emerald-200',
+      },
+      description: `Cán bộ ${currentAccount?.name || currentDon.canBoXuLy || 'Nguyễn Minh Anh'} đã chính thức tiếp nhận đơn ${currentDon.code} và bắt đầu cập nhật thông tin chung.`,
+    });
   };
 
   // 2. Nhận sự kiện Trình ký Báo cáo từ TabTaiLieu
@@ -784,6 +811,19 @@ export default function DonTiepNhan({
 
           {/* Action Buttons: Nút Chỉnh sửa thông tin + Split Button chính */}
           <div className="flex items-center gap-2.5 shrink-0">
+            {/* Nút Tiếp nhận đơn (hiển thị khi hồ sơ chuyển đến đang chờ tiếp nhận / không có file) */}
+            {(currentDon.isAwaitingAcceptance || currentDon.statusBadge === 'Chờ tiếp nhận' || currentDon.isNoFileTransfer) && (
+              <button
+                type="button"
+                onClick={handleTiepNhanDon}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-[13px] font-bold shadow-md ring-2 ring-emerald-300/40 transition-all cursor-pointer animate-pulse"
+                title="Bấm để chính thức tiếp nhận đơn và mở chế độ nhập thông tin cơ bản"
+              >
+                <span className="material-symbols-outlined text-[18px]">how_to_reg</span>
+                <span>Tiếp nhận đơn</span>
+              </button>
+            )}
+
             {/* Nút Tạo / Xem báo cáo đề xuất (nghiệp vụ Quản lý Đơn): Sau khi đã ký báo cáo đề xuất thì không hiển thị nút này nữa */}
             {!isBaoCaoDaKy && (
               <button
@@ -922,6 +962,28 @@ export default function DonTiepNhan({
                           </p>
                         </div>
                       </button>
+
+                      {/* 5. Bảng xác minh & Đề xuất (4 tiêu chí) */}
+                      {/* <button
+                        type="button"
+                        onClick={() => {
+                          setShowThaoTacKhacDropdown(false);
+                          setShowXacMinhModal(true);
+                        }}
+                        className="w-full flex items-start gap-2.5 p-2 rounded-xl text-left hover:bg-slate-50 text-slate-800 transition-colors cursor-pointer group"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 group-hover:bg-teal-100 flex items-center justify-center shrink-0 mt-0.5 transition-colors">
+                          <span className="material-symbols-outlined text-[18px]">fact_check</span>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-bold text-[13px] text-slate-900 group-hover:text-teal-700 transition-colors">
+                            Bảng xác minh (4 tiêu chí)
+                          </div>
+                          <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
+                            Kiểm tra tư cách, thẩm quyền, thời hiệu và hồ sơ tài liệu
+                          </p>
+                        </div>
+                      </button> */}
                     </div>
                   </div>
                 </>
@@ -1260,6 +1322,38 @@ export default function DonTiepNhan({
       {/* ========================================================================= */}
       <div className="flex-1 overflow-y-auto">
         <div className="w-full mx-auto space-y-6">
+          {/* Banner thông báo: Chờ cán bộ tiếp nhận đơn (trường hợp chuyển từ Lượt nhận không có file) */}
+          {/* {(currentDon.isAwaitingAcceptance || currentDon.statusBadge === 'Chờ tiếp nhận' || currentDon.isNoFileTransfer) && (
+            <div className="mx-6 mt-4 p-4 rounded-2xl bg-gradient-to-r from-blue-50 via-indigo-50 to-emerald-50 border border-blue-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <span className="material-symbols-outlined text-[22px]">how_to_reg</span>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-bold text-slate-900 text-sm">
+                      Đơn thư chuyển xử lý trực tiếp (Chưa có tệp đính kèm)
+                    </h4>
+                    <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                      Chờ tiếp nhận
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-600 mt-0.5">
+                    Lượt nhận này chưa có tài liệu scan/số hóa. Cán bộ nhấn <strong>Tiếp nhận đơn</strong> để nhận thụ lý và nhập các thông tin cơ bản tại tab Thông tin chung.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleTiepNhanDon}
+                className="inline-flex items-center gap-1.5 px-4.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold shadow-md transition-all cursor-pointer shrink-0"
+              >
+                <span className="material-symbols-outlined text-[16px]">how_to_reg</span>
+                <span>Tiếp nhận đơn &amp; Nhập thông tin</span>
+              </button>
+            </div>
+          )} */}
+
           {activeTab === 'thong-tin' && (
             <TabThongTinChung
               currentDon={currentDon}

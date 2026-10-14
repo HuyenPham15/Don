@@ -895,8 +895,8 @@ export default function TabThongTinChung({
         <div className="px-5 py-3 border-b border-slate-200/90 flex items-center justify-between bg-white flex-wrap gap-2.5">
           <div className="flex items-center gap-2.5">
             <span className="w-2 h-2 rounded-full bg-[#004ac6]"></span>
-            <h2 className="text-[14px] font-bold text-slate-900 tracking-tight font-headline-md uppercase">
-              1. THÔNG TIN TIẾP NHẬN &amp; NGƯỜI NỘP ĐƠN
+            <h2 className="text-[16px] font-bold text-slate-900 tracking-tight font-headline-md">
+              1. Thông tin tiếp nhận
             </h2>
             {isEditingMode && (
               <span className="px-2 py-0.5 rounded text-[10.5px] font-bold bg-blue-100 text-[#004ac6] border border-blue-200 uppercase tracking-wide">
@@ -919,7 +919,106 @@ export default function TabThongTinChung({
         </div>
 
         <div className="p-5 space-y-5">
+          {/* Thông tin cơ bản người nộp đơn */}
+          {/* <div className="p-4 rounded-xl border border-slate-200/90 bg-slate-50/50 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#004ac6]"></span>
+                <h3 className="text-[12.5px] font-bold text-slate-800 tracking-tight">
+                  Thông tin người nộp đơn / Chủ thể yêu cầu
+                </h3>
+              </div>
+              {isEditingMode ? (
+                <span className="text-[11px] font-semibold text-blue-700 bg-blue-100/70 px-2 py-0.5 rounded border border-blue-200">
+                  Nhập thông tin cơ bản
+                </span>
+              ) : (
+                <span className="text-[11px] text-slate-400">Hình thức tiếp nhận: Trực tiếp</span>
+              )}
+            </div>
 
+            {isEditingMode ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                <div>
+                  <label className="block text-[11.5px] font-semibold text-slate-700 mb-1">
+                    Họ và tên người nộp đơn <span className="text-rose-500 font-bold">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editFormData.nguoiNop}
+                    onChange={(e) => setEditFormData({ ...editFormData, nguoiNop: e.target.value })}
+                    placeholder="Nhập họ và tên..."
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6] transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11.5px] font-semibold text-slate-700 mb-1">
+                    Số CCCD / Mã định danh
+                  </label>
+                  <input
+                    type="text"
+                    value={editFormData.cccd || ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, cccd: e.target.value })}
+                    placeholder="VD: 001088012345..."
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6] transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11.5px] font-semibold text-slate-700 mb-1">
+                    Số điện thoại liên hệ
+                  </label>
+                  <input
+                    type="text"
+                    value={editFormData.sdt || ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, sdt: e.target.value })}
+                    placeholder="VD: 0912 345 678..."
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6] transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11.5px] font-semibold text-slate-700 mb-1">
+                    Địa chỉ thường trú / liên hệ
+                  </label>
+                  <input
+                    type="text"
+                    value={editFormData.diaChi || ''}
+                    onChange={(e) => setEditFormData({ ...editFormData, diaChi: e.target.value })}
+                    placeholder="Số nhà, đường, phường/xã, quận/huyện..."
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6] transition-all"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs bg-white p-3 rounded-lg border border-slate-200">
+                <div>
+                  <span className="text-[11px] text-slate-400 block">Họ và tên người nộp</span>
+                  <span className="font-bold text-slate-900 text-[13px]">
+                    {editFormData.nguoiNop || currentDon?.nguoiNop || 'Chưa rõ'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[11px] text-slate-400 block">Số CCCD / Mã định danh</span>
+                  <span className="font-semibold text-slate-800">
+                    {editFormData.cccd || currentDon?.cccd || 'Chưa cập nhật'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[11px] text-slate-400 block">Số điện thoại</span>
+                  <span className="font-semibold text-slate-800">
+                    {editFormData.sdt || currentDon?.sdt || 'Chưa cập nhật'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[11px] text-slate-400 block">Địa chỉ liên hệ</span>
+                  <span className="font-semibold text-slate-800 truncate block" title={editFormData.diaChi || currentDon?.diaChi}>
+                    {editFormData.diaChi || currentDon?.diaChi || 'Chưa cập nhật'}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div> */}
 
           <div className="space-y-3  border-slate-100">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1149,8 +1248,8 @@ export default function TabThongTinChung({
             <div className="px-5 py-3 border-b border-slate-200/90 flex items-center justify-between bg-white flex-wrap gap-2.5">
               <div className="flex items-center gap-2.5">
                 <span className="w-2 h-2 rounded-full bg-[#004ac6]"></span>
-                <h2 className="text-[14px] font-bold text-slate-900 tracking-tight font-headline-md uppercase">
-                  2. THÔNG TIN ĐƠN &amp; PHÂN LOẠI NGHIỆP VỤ
+                <h2 className="text-[16px] font-bold text-slate-900 tracking-tight font-headline-md ">
+                  2. Thông tin đơn &amp; phân loại nghiệp vụ
                 </h2>
                 {isEditingBlock2 && (
                   <span className="px-2 py-0.5 rounded text-[10.5px] font-bold bg-blue-100 text-[#004ac6] border border-blue-200 uppercase tracking-wide">
@@ -1183,13 +1282,12 @@ export default function TabThongTinChung({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {/* Thẻ 1: Loại đơn */}
                   <div className="p-3.5 rounded-lg bg-slate-50/80 border border-slate-200/80 flex flex-col justify-between">
-                    <span className="text-[10.5px] font-bold text-slate-500 uppercase tracking-tight flex items-center gap-1.5 mb-2">
+                    <span className="text-[10.5px] font-bold text-slate-500 tracking-tight flex items-center gap-1.5 mb-2">
                       <span className="material-symbols-outlined text-[15px] text-rose-600">gavel</span>
                       Phân loại đơn
                     </span>
                     <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold">
-                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-rose-700 text-xs font-bold">
                         {phanLoai.loaiDon || editFormData.loaiDon}
                       </span>
                     </div>
@@ -1197,7 +1295,7 @@ export default function TabThongTinChung({
 
                   {/* Thẻ 2: Lĩnh vực chuyên môn */}
                   <div className="p-3.5 rounded-lg bg-slate-50/80 border border-slate-200/80 flex flex-col justify-between">
-                    <span className="text-[10.5px] font-bold text-slate-500 uppercase tracking-tight flex items-center gap-1.5 mb-2">
+                    <span className="text-[10.5px] font-bold text-slate-500  tracking-tight flex items-center gap-1.5 mb-2">
                       <span className="material-symbols-outlined text-[15px] text-[#004ac6]">category</span>
                       Lĩnh vực chuyên môn
                     </span>
@@ -1208,7 +1306,7 @@ export default function TabThongTinChung({
 
                   {/* Thẻ 3: Cơ quan có thẩm quyền giải quyết */}
                   <div className="p-3.5 rounded-lg bg-slate-50/80 border border-slate-200/80 flex flex-col justify-between">
-                    <span className="text-[10.5px] font-bold text-slate-500 uppercase tracking-tight flex items-center gap-1.5 mb-2">
+                    <span className="text-[10.5px] font-bold text-slate-500  tracking-tight flex items-center gap-1.5 mb-2">
                       <span className="material-symbols-outlined text-[15px] text-indigo-600">account_balance</span>
                       Cơ quan có thẩm quyền giải quyết
                     </span>
@@ -1225,7 +1323,7 @@ export default function TabThongTinChung({
                   {/* Thẻ 1: Nội dung đơn */}
                   <div className="p-3.5 rounded-lg bg-slate-50/80 border border-slate-200/80">
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[10.5px] font-bold text-slate-500 uppercase tracking-tight flex items-center gap-1.5">
+                      <span className="text-[10.5px] font-bold text-slate-500  tracking-tight flex items-center gap-1.5">
                         <span className="material-symbols-outlined text-[15px] text-[#004ac6]">article</span>
                         Nội dung đơn
                       </span>
@@ -1239,7 +1337,7 @@ export default function TabThongTinChung({
                   {/* Thẻ 2: Tóm tắt yêu cầu của người nộp đơn */}
                   <div className="p-3.5 rounded-lg bg-slate-50/80 border border-slate-200/80">
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[10.5px] font-bold text-slate-500 uppercase tracking-tight flex items-center gap-1.5">
+                      <span className="text-[10.5px] font-bold text-slate-500 tracking-tight flex items-center gap-1.5">
                         <span className="material-symbols-outlined text-[15px] text-[#004ac6]">task_alt</span>
                         Tóm tắt yêu cầu của người nộp đơn
                       </span>
@@ -1495,7 +1593,7 @@ export default function TabThongTinChung({
                   </div>
 
                   {/* Hàng 3: Căn cứ pháp lý */}
-                  <div className="pt-2 border-t border-slate-100">
+                  {/* <div className="pt-2 border-t border-slate-100">
                     <div className="flex items-center justify-between mb-1.5 flex-wrap gap-2">
                       <label className="text-[12.5px] font-semibold text-slate-800">
                         6. Căn cứ pháp lý áp dụng
@@ -1548,7 +1646,7 @@ export default function TabThongTinChung({
                       className="w-full px-3 py-2 text-[13.5px] font-normal text-slate-800 placeholder:text-slate-400 placeholder:text-[12.5px] bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6] leading-relaxed transition-all"
                       placeholder="Nhập điều khoản luật, nghị định, thông tư căn cứ..."
                     />
-                  </div>
+                  </div> */}
 
                   {/* Hàng 4: Nội dung đơn & Tóm tắt yêu cầu */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
@@ -1583,7 +1681,7 @@ export default function TabThongTinChung({
                   </div>
 
                   {/* Hàng 5: Ghi chú điều chỉnh của cán bộ */}
-                  <div className="p-3 rounded-lg bg-amber-50/60 border border-amber-200/80">
+                  {/* <div className="p-3 rounded-lg bg-amber-50/60 border border-amber-200/80">
                     <div className="flex items-center gap-1.5 mb-1">
                       <span className="material-symbols-outlined text-[15px] text-amber-700">verified_user</span>
                       <label className="text-xs font-bold text-amber-900 uppercase tracking-tight">
@@ -1600,7 +1698,7 @@ export default function TabThongTinChung({
                       className="w-full px-3 py-1.5 text-xs text-slate-800 bg-white border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-600 transition-all placeholder:text-slate-400"
                       placeholder="VD: Điều chỉnh từ Tin báo sang Tố giác theo hồ sơ tài liệu xác minh bổ sung..."
                     />
-                  </div>
+                  </div> */}
                 </div>
 
                 {/* BOTTOM ACTION BAR KHỐI 2 */}

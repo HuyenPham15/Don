@@ -391,8 +391,11 @@ export default function NhanDonList({
                 const hasFiles = Boolean(ln.hasFile && (ln.fileCount || (ln.files && ln.files.length > 0)));
 
                 const handleItemClick = () => {
-                  if (ln.status === 'da_chuyen') {
-                    const dynamicCode = ln.id.startsWith('LN-') ? `Đ-${ln.id.replace('LN-', '')}` : ln.id;
+                  if (ln.status === 'da_chuyen' || ln.status === 'da_ghep' || ln.status === 'da_tiep_nhan') {
+                    const isGhep = ln.status === 'da_ghep';
+                    const dynamicCode = isGhep
+                      ? (ln as any).ghepVaoDonCode || 'Đ-2026-00088'
+                      : ln.id.startsWith('LN-') ? `Đ-${ln.id.replace('LN-', '')}` : ln.id;
                     const donObj: DonDetail = {
                       id: dynamicCode,
                       code: dynamicCode,
@@ -412,11 +415,11 @@ export default function NhanDonList({
                         isBatQuaTang ? 'BẮT QUẢ TANG' :
                           isCanBoPhatHien ? 'CÁN BỘ PHÁT HIỆN' :
                             'ĐƠN TIẾP NHẬN',
-                      statusBadge: 'Đang xác minh thông tin',
+                      statusBadge: isGhep ? 'Đã ghép hồ sơ' : 'Đang xác minh thông tin',
                     };
                     if (onSelectDon) onSelectDon(donObj);
                     onNav('don-tiep-nhan');
-                    showToast(`Mở màn chi tiết hồ sơ [${dynamicCode}] (Đã tiếp nhận)`);
+                    showToast(`Mở màn chi tiết hồ sơ [${dynamicCode}] (${isGhep ? 'Đã ghép' : 'Đã tiếp nhận'})`);
                   } else {
                     onSelect(ln);
                     onNav('chi-tiet-luot-nhan');
@@ -425,6 +428,39 @@ export default function NhanDonList({
 
                 const handleDirectAIAnalysis = (e: React.MouseEvent) => {
                   e.stopPropagation();
+                  if (ln.status === 'da_chuyen' || ln.status === 'da_ghep' || ln.status === 'da_tiep_nhan') {
+                    handleItemClick();
+                    return;
+                  }
+                  if (!hasFiles) {
+                    const dynamicCode = ln.id.startsWith('LN-') ? `Đ-${ln.id.replace('LN-', '')}` : ln.id;
+                    const donObj: DonDetail = {
+                      id: dynamicCode,
+                      code: dynamicCode,
+                      title: ln.noiDung || `Hồ sơ ${dynamicCode}`,
+                      luotNhanId: ln.id,
+                      nguoiNop: ln.nguoiNop || 'Chưa rõ',
+                      ngayNhan: ln.ngayNhan,
+                      loaiDon: ln.loaiDon || 'Đơn phản ánh kiến nghị',
+                      type: 'ĐƠN TIẾP NHẬN',
+                      statusBadge: 'Chờ tiếp nhận',
+                      noiDung: ln.noiDung || '',
+                      cccd: ln.cccd || '',
+                      sdt: ln.sdt || '',
+                      diaChi: ln.diaChi || '',
+                      canBoTiepNhan: 'Nguyễn Minh Anh',
+                      canBoXuLy: 'Nguyễn Minh Anh',
+                      donViXuLy: ln.donVi || 'Phòng Tiếp công dân & Xử lý đơn',
+                      hasFile: false,
+                      isAwaitingAcceptance: true,
+                      isNoFileTransfer: true,
+                    };
+                    if (onSelectDon) onSelectDon(donObj);
+                    onSelect(ln);
+                    onNav('don-tiep-nhan');
+                    showToast(`Lượt nhận [${ln.id}] không có tài liệu đính kèm → Chuyển thẳng đến màn chi tiết đơn để tiếp nhận!`);
+                    return;
+                  }
                   onSelect(ln);
                   onNav('ban-phan-tich');
                   showToast(`Mở Bàn phân tích AI cho hồ sơ [${ln.id}]`);
@@ -692,14 +728,25 @@ export default function NhanDonList({
 
                     <td className="py-3.5 px-4 text-center whitespace-nowrap">
                       <div className="flex items-center justify-center gap-1">
-                        <button
-                          type="button"
-                          onClick={handleDirectAIAnalysis}
-                          className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-[#004ac6] transition-colors cursor-pointer"
-                          title="Mở Bàn phân tích AI Đa Nguồn"
-                        >
-                          <span className="material-symbols-outlined text-[17px]">auto_awesome</span>
-                        </button>
+                        {hasFiles ? (
+                          <button
+                            type="button"
+                            onClick={handleDirectAIAnalysis}
+                            className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-[#004ac6] transition-colors cursor-pointer"
+                            title="Mở Bàn phân tích AI Đa Nguồn"
+                          >
+                            <span className="material-symbols-outlined text-[17px]">auto_awesome</span>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={handleDirectAIAnalysis}
+                            className="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition-colors cursor-pointer"
+                            title="Lượt nhận không có tệp số hóa → Chuyển thẳng đến màn chi tiết đơn để tiếp nhận"
+                          >
+                            <span className="material-symbols-outlined text-[17px]">how_to_reg</span>
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={(e) => {

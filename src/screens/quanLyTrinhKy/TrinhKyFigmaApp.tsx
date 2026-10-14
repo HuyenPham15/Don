@@ -1817,12 +1817,14 @@ const caseRelatedPeople: CaseRelatedPerson[] = [
   },
 ]
 
-function CreateCasePage({
+export function CreateCasePage({
   onBack,
   onNotify,
+  onSubmit,
 }: {
   onBack: () => void
   onNotify: (message: string) => void
+  onSubmit?: (data?: any) => void
 }) {
   const [relatedPeople, setRelatedPeople] = useState<CaseRelatedPerson[]>([])
   const [relatedQuery, setRelatedQuery] = useState("")
@@ -2006,6 +2008,12 @@ function CreateCasePage({
           variant="primary"
           onClick={() => {
             onNotify("Đã tạo mới đơn thành công")
+            if (onSubmit) {
+              onSubmit({
+                nguoiNop: visiblePeople[0]?.name || "Nguyễn Văn An",
+                content: "Người tố cáo đề nghị cơ quan có thẩm quyền kiểm tra việc tiếp nhận, lập biên bản, niêm phong và quản lý thiết bị điện thoại tại thời điểm giao nhận ngày 08/09/2026 để xác định quá trình xử lý có đúng quy định hay không.",
+              })
+            }
             onBack()
           }}
         >
@@ -2023,7 +2031,7 @@ function CreateCasePage({
   )
 }
 
-function RelatedPersonModal({
+export function RelatedPersonModal({
   onClose,
   onNotify,
   onAdd,
@@ -5891,7 +5899,7 @@ export default function TrinhKyFigmaApp({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            <span style={{ fontWeight: 700, color: '#991b1b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontWeight: 700, color: '#004ac6', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>approval</span>
               Quản lý Trình ký &amp; Ký số
             </span>
@@ -5902,12 +5910,12 @@ export default function TrinhKyFigmaApp({
               style={{
                 padding: '4px 10px',
                 borderRadius: '6px',
-                border: 'none',
+                border: view === 'work' ? '1px solid #bfdbfe' : '1px solid transparent',
                 cursor: 'pointer',
                 fontWeight: 600,
                 fontSize: '12.5px',
-                background: view === 'work' ? '#fee2e2' : 'transparent',
-                color: view === 'work' ? '#991b1b' : '#64748b',
+                background: view === 'work' ? '#eff6ff' : 'transparent',
+                color: view === 'work' ? '#004ac6' : '#64748b',
               }}
             >
               Bàn làm việc
@@ -5918,12 +5926,12 @@ export default function TrinhKyFigmaApp({
               style={{
                 padding: '4px 10px',
                 borderRadius: '6px',
-                border: 'none',
+                border: (view === 'list' || view === 'detail') ? '1px solid #bfdbfe' : '1px solid transparent',
                 cursor: 'pointer',
                 fontWeight: 600,
                 fontSize: '12.5px',
-                background: view === 'list' || view === 'detail' ? '#fee2e2' : 'transparent',
-                color: view === 'list' || view === 'detail' ? '#991b1b' : '#64748b',
+                background: (view === 'list' || view === 'detail') ? '#eff6ff' : 'transparent',
+                color: (view === 'list' || view === 'detail') ? '#004ac6' : '#64748b',
               }}
             >
               Danh mục văn bản ({managementDocuments.length})
@@ -5937,12 +5945,12 @@ export default function TrinhKyFigmaApp({
               style={{
                 padding: '4px 10px',
                 borderRadius: '6px',
-                border: 'none',
+                border: view === 'officer-case' ? '1px solid #bfdbfe' : '1px solid transparent',
                 cursor: 'pointer',
                 fontWeight: 600,
                 fontSize: '12.5px',
-                background: view === 'officer-case' ? '#fee2e2' : 'transparent',
-                color: view === 'officer-case' ? '#991b1b' : '#64748b',
+                background: view === 'officer-case' ? '#eff6ff' : 'transparent',
+                color: view === 'officer-case' ? '#004ac6' : '#64748b',
               }}
             >
               Hồ sơ cán bộ trình
@@ -5956,12 +5964,12 @@ export default function TrinhKyFigmaApp({
               style={{
                 padding: '4px 10px',
                 borderRadius: '6px',
-                border: 'none',
+                border: view === 'leader-detail' ? '1px solid #bfdbfe' : '1px solid transparent',
                 cursor: 'pointer',
                 fontWeight: 600,
                 fontSize: '12.5px',
-                background: view === 'leader-detail' ? '#fee2e2' : 'transparent',
-                color: view === 'leader-detail' ? '#991b1b' : '#64748b',
+                background: view === 'leader-detail' ? '#eff6ff' : 'transparent',
+                color: view === 'leader-detail' ? '#004ac6' : '#64748b',
               }}
             >
               Phê duyệt lãnh đạo

@@ -18,6 +18,28 @@ export const LN19: LuotNhan = {
 };
 
 export const ALL_LUOT_NHAN: LuotNhan[] = [
+  {
+    id: "LN-2026-GOVEX_008",
+    ngayNhan: "16/09/2026",
+    gioNhan: "14:30",
+    nguoiNop: "Hoàng Văn Nam",
+    hinhThuc: "Trực tiếp tại bộ phận Một cửa",
+    noiDung: "Đến nộp trực tiếp trình bày yêu cầu giải quyết tranh chấp ranh giới đất đai, chưa có tài liệu scan đính kèm - Đề nghị chuyển cán bộ tiếp nhận trực tiếp",
+    donVi: "Phòng Tiếp công dân & Xử lý đơn",
+    aiJob: 0,
+    status: 'cho_chuyen',
+    hasFile: false,
+    fileCount: 0,
+    files: [],
+    sourceType: 'ghi_chu',
+    loaiNghiepVu: 'tiep_nhan_don',
+    loaiDon: 'Đơn phản ánh kiến nghị',
+    cccd: '001085012399',
+    sdt: '0978 654 321',
+    diaChi: 'Số 28 ngõ 105 phố Doãn Kế Thiện, phường Mai Dịch, Cầu Giấy, Hà Nội',
+    ghiChu: 'Công dân đến trình bày trực tiếp bằng lời nói tại quầy Một cửa, chưa nộp kèm tài liệu scan. Chuyển thẳng đến màn chi tiết đơn để cán bộ tiếp nhận và nhập thông tin cơ bản.',
+    aiAnalysisState: 'phan_tich_so_bo',
+  },
   LN19,
   {
     id: "TB-2026-CATPHN_089",
@@ -147,7 +169,7 @@ export const ALL_LUOT_NHAN: LuotNhan[] = [
   },
   { id: "LN-18/2026-GOVEX_HC", ngayNhan: "14/09/2026", nguoiNop: "Trần Thị B", hinhThuc: "Bưu điện", noiDung: "Tố cáo vi phạm đất đai tại thửa 45, tờ bản đồ 12", donVi: "Thanh tra tỉnh", aiJob: 5, status: 'da_chuyen', hasFile: true, fileCount: 2, sourceType: 'both', loaiNghiepVu: 'tiep_nhan_don', loaiDon: 'Đơn tố cáo', aiAnalysisState: 'da_cap_nhat' },
   { id: "LN-17/2026-GOVEX_HC", ngayNhan: "13/09/2026", nguoiNop: "Cty TNHH Nam Phương", hinhThuc: "Trực tuyến", noiDung: "Phản ánh về chậm cấp phép xây dựng", donVi: "Sở Xây dựng", aiJob: 5, status: 'da_chuyen', hasFile: true, fileCount: 1, sourceType: 'file', loaiNghiepVu: 'tiep_nhan_don', loaiDon: 'Đơn phản ánh, kiến nghị', aiAnalysisState: 'da_cap_nhat' },
-  { id: "LN-16/2026-GOVEX_HC", ngayNhan: "12/09/2026", nguoiNop: "Lê Văn C", hinhThuc: "Trực tiếp", noiDung: "Khiếu nại quyết định xử phạt vi phạm hành chính", donVi: "Phòng Tiếp công dân & Xử lý đơn", aiJob: 0, status: 'cho_chuyen', hasFile: false, ghiChu: "Công dân đến phản ánh về việc nhận quyết định xử phạt chưa thỏa đáng tại UBND Phường", sourceType: 'ghi_chu', loaiNghiepVu: 'tiep_nhan_don', loaiDon: 'Đơn khiếu nại', aiAnalysisState: 'phan_tich_so_bo' },
+  { id: "LN-16/2026-GOVEX_HC", ngayNhan: "12/09/2026", nguoiNop: "Lê Văn C", hinhThuc: "Trực tiếp", noiDung: "Khiếu nại quyết định xử phạt vi phạm hành chính", donVi: "Phòng Tiếp công dân & Xử lý đơn", aiJob: 0, status: 'cho_chuyen', hasFile: false, fileCount: 0, files: [], ghiChu: "Công dân đến phản ánh về việc nhận quyết định xử phạt chưa thỏa đáng tại UBND Phường", sourceType: 'ghi_chu', loaiNghiepVu: 'tiep_nhan_don', loaiDon: 'Đơn khiếu nại', aiAnalysisState: 'phan_tich_so_bo' },
   // Trường hợp Bắt người phạm tội quả tang (Điều 111 BLTTHS - Không có đơn công dân, tiếp nhận trực tiếp)
   {
     id: "QT-2026-CATPHN_001",

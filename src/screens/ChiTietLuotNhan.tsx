@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { LuotNhan, Screen, UploadedFile, DonDetail } from '../types';
 import ChuyenTiepNhanModal, { ChuyenTiepNhanSubmitData } from '../components/modals/ChuyenTiepNhanModal';
 import { TiepNhanDonItem } from '../constants/departments';
@@ -29,6 +29,16 @@ export default function ChiTietLuotNhan({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isScanModalOpen, setIsScanModalOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  // Cập nhật state khi luotNhan prop thay đổi từ Kanban hoặc danh sách
+  useEffect(() => {
+    setCurrentLuotNhan(luotNhan);
+    setSelectedFile(luotNhan.files && luotNhan.files.length > 0 ? luotNhan.files[0] : null);
+    setEditNguoiNop(luotNhan.nguoiNop || '');
+    setEditDonVi(luotNhan.donVi || 'Công an thành phố Hà Nội');
+    setEditHinhThuc(luotNhan.hinhThuc || 'Trực tiếp');
+    setEditNoiDung(luotNhan.noiDung || '');
+  }, [luotNhan]);
 
   // Edit form state
   const [editNguoiNop, setEditNguoiNop] = useState(luotNhan.nguoiNop || '');
@@ -180,10 +190,22 @@ export default function ChiTietLuotNhan({
       onChuyenTiepNhan(item, data.hinhThuc === 'truc_tiep', data.canBoNhan?.name);
     }
 
-    setIsChuyenModalOpen(false);
-    showToast(`Đã chuyển xử lý thành công lượt nhận ${currentLuotNhan.id}!`);
+    const hasFiles = Boolean(
+      (currentLuotNhan.files && currentLuotNhan.files.length > 0) ||
+      currentLuotNhan.hasFile ||
+      (currentLuotNhan.fileCount && currentLuotNhan.fileCount > 0)
+    );
 
-    // Tự động chuyển tiếp sang Bàn phân tích hoặc Đơn tiếp nhận
+    setIsChuyenModalOpen(false);
+    if (hasFiles) {
+      showToast(`Đã chuyển xử lý lượt nhận ${currentLuotNhan.id}! Hồ sơ có tệp số hóa → Đang chuyển sang Bàn phân tích AI...`);
+    } else {
+      showToast(`Đã chuyển xử lý lượt nhận ${currentLuotNhan.id}! Chưa có tệp đính kèm → Chuyển sang Màn chi tiết đơn để tiếp nhận & nhập thông tin.`);
+    }
+
+    // Tự động chuyển tiếp theo 2 trường hợp:
+    // 1. Có file tải lên -> Màn phân tích AI (ban-phan-tich)
+    // 2. Không có file -> Màn chi tiết đơn (don-tiep-nhan), cán bộ nhấn Tiếp nhận đơn và nhập thông tin cơ bản
     setTimeout(() => {
       const dynamicCode = currentLuotNhan.id.startsWith('LN-') ? `Đ-${currentLuotNhan.id.replace('LN-', '')}` : currentLuotNhan.id;
       const donObj: DonDetail = {
@@ -191,18 +213,38 @@ export default function ChiTietLuotNhan({
         code: dynamicCode,
         title: currentLuotNhan.noiDung || `Hồ sơ ${dynamicCode}`,
         luotNhanId: currentLuotNhan.id,
-        nguoiNop: currentLuotNhan.nguoiNop,
+        nguoiNop: currentLuotNhan.nguoiNop || 'Chưa rõ',
         ngayNhan: currentLuotNhan.ngayNhan,
         loaiDon: currentLuotNhan.loaiDon || 'Đơn phản ánh kiến nghị',
         type: 'ĐƠN TIẾP NHẬN',
-        statusBadge: 'Đang xác minh thông tin',
+        statusBadge: hasFiles ? 'Đang xác minh thông tin' : 'Chờ tiếp nhận',
+        noiDung: currentLuotNhan.noiDung || '',
+        cccd: currentLuotNhan.cccd || '',
+        sdt: currentLuotNhan.sdt || '',
+        diaChi: currentLuotNhan.diaChi || '',
+        canBoTiepNhan: data.canBoNhan?.name || 'Nguyễn Minh Anh',
+        canBoXuLy: data.canBoNhan?.name || 'Nguyễn Minh Anh',
+        donViXuLy: data.donViTiepNhanName || currentLuotNhan.donVi || 'Phòng Tiếp công dân & Xử lý đơn',
+        hasFile: hasFiles,
+        isAwaitingAcceptance: !hasFiles,
+        isNoFileTransfer: !hasFiles,
       };
       if (onSelectDon) onSelectDon(donObj);
-      onNav('don-tiep-nhan');
+
+      if (hasFiles) {
+        onNav('ban-phan-tich');
+      } else {
+        onNav('don-tiep-nhan');
+      }
     }, 1200);
   };
 
   const isDaChuyen = currentLuotNhan.status === 'da_chuyen';
+  const hasFiles = Boolean(
+    (currentLuotNhan.files && currentLuotNhan.files.length > 0) ||
+    currentLuotNhan.hasFile ||
+    (currentLuotNhan.fileCount && currentLuotNhan.fileCount > 0)
+  );
   const ngayNhanFormatted = currentLuotNhan.ngayNhan.includes(':')
     ? currentLuotNhan.ngayNhan
     : `${currentLuotNhan.ngayNhan} ${currentLuotNhan.gioNhan || '19:41:00'}`;
@@ -237,18 +279,18 @@ export default function ChiTietLuotNhan({
             <div className="flex items-center gap-1.5 text-[12px] text-slate-500 font-normal">
               <button
                 type="button"
-                onClick={() => onNav('nhan-don-list')}
-                className="hover:text-blue-700 flex items-center gap-1 cursor-pointer transition-colors"
+                onClick={() => onNav(currentLuotNhan.ghiChu === 'cong-viec' ? 'cong-viec' : 'nhan-don-list')}
+                className="hover:text-blue-700 flex items-center gap-1 cursor-pointer transition-colors font-medium text-slate-600"
               >
                 <span>← Quay lại</span>
               </button>
               <span>/</span>
               <button
                 type="button"
-                onClick={() => onNav('nhan-don-list')}
+                onClick={() => onNav(currentLuotNhan.ghiChu === 'cong-viec' ? 'cong-viec' : 'nhan-don-list')}
                 className="hover:text-blue-700 cursor-pointer transition-colors"
               >
-                Nhận đơn
+                {currentLuotNhan.ghiChu === 'cong-viec' ? 'Công việc của tôi' : 'Hàng đợi tiếp nhận'}
               </button>
               <span>/</span>
               <span className="text-slate-400">Chi tiết lượt nhận</span>
@@ -275,6 +317,19 @@ export default function ChiTietLuotNhan({
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-[#f1f3f5] text-[#495057] border border-[#e9ecef]">
                 {currentLuotNhan.hinhThuc || 'Trực tiếp'}
               </span>
+
+              {/* Tag Nguồn tệp */}
+              {!hasFiles ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300">
+                  <span className="material-symbols-outlined text-[13px]">edit_note</span>
+                  <span>Chưa có tệp (Chuyển trực tiếp)</span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                  <span className="material-symbols-outlined text-[13px]">attach_file</span>
+                  <span>Có tệp đính kèm</span>
+                </span>
+              )}
             </div>
           </div>
 
@@ -306,6 +361,31 @@ export default function ChiTietLuotNhan({
           </div>
         </div>
       </div>
+
+      {/* Banner thông báo quy trình cho hồ sơ không tệp */}
+      {!hasFiles && !isDaChuyen && (
+        <div className="mx-6 mt-3 p-3 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border border-amber-200 rounded-xl flex items-center justify-between gap-3 text-xs text-amber-900 shadow-2xs animate-fade-in shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-700 flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-lg">info</span>
+            </div>
+            <div>
+              <div className="font-bold text-[12.5px]">Lượt nhận không có tệp đính kèm:</div>
+              <p className="text-[11.5px] text-amber-800 mt-0.5">
+                Khi thực hiện <strong>Chuyển xử lý</strong>, hồ sơ sẽ được chuyển thẳng đến <strong>Màn chi tiết đơn</strong> (không qua Bàn phân tích AI) để cán bộ thụ lý tiếp nhận và hoàn thiện thông tin cơ bản.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsChuyenModalOpen(true)}
+            className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-[12px] font-bold shadow-xs flex items-center gap-1.5 shrink-0 cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[15px]">how_to_reg</span>
+            <span>Chuyển tiếp nhận ngay</span>
+          </button>
+        </div>
+      )}
 
       {/* ─── 2. MAIN CONTENT (BỐ CỤC 2 CỘT NHƯ TRONG ẢNH) ─────────────────── */}
       <div className="flex-1 p-4 flex flex-col lg:flex-row gap-4 overflow-hidden">
@@ -348,7 +428,10 @@ export default function ChiTietLuotNhan({
                     <span className="text-slate-500 font-normal">Ngày nhận</span>
                     <span className="text-slate-900 font-medium text-right">{ngayNhanFormatted}</span>
                   </div>
-
+                  <div className="py-2.5 flex items-center justify-between">
+                    <span className="text-slate-500 font-normal">Người nhận</span>
+                    <span className="text-slate-900 font-medium text-right">{currentLuotNhan.canBoNhan || 'Nguyễn Văn A'}</span>
+                  </div>
                   <div className="py-2.5 flex items-center justify-between">
                     <span className="text-slate-500 font-normal">Đơn vị nhận</span>
                     <span className="text-slate-900 font-medium text-right">{currentLuotNhan.donVi || 'Công an thành phố Hà Nội'}</span>
@@ -362,6 +445,34 @@ export default function ChiTietLuotNhan({
                         : 'Chưa rõ'}
                     </span>
                   </div>
+
+                  {currentLuotNhan.cccd && (
+                    <div className="py-2.5 flex items-center justify-between">
+                      <span className="text-slate-500 font-normal">Số CCCD</span>
+                      <span className="text-slate-900 font-medium text-right font-mono">{currentLuotNhan.cccd}</span>
+                    </div>
+                  )}
+
+                  {currentLuotNhan.sdt && (
+                    <div className="py-2.5 flex items-center justify-between">
+                      <span className="text-slate-500 font-normal">Điện thoại</span>
+                      <span className="text-slate-900 font-medium text-right">{currentLuotNhan.sdt}</span>
+                    </div>
+                  )}
+
+                  {currentLuotNhan.diaChi && (
+                    <div className="py-2.5 flex items-start justify-between gap-4">
+                      <span className="text-slate-500 font-normal shrink-0">Địa chỉ</span>
+                      <span className="text-slate-900 font-medium text-right">{currentLuotNhan.diaChi}</span>
+                    </div>
+                  )}
+
+                  {currentLuotNhan.canBoNhan && (
+                    <div className="py-2.5 flex items-center justify-between">
+                      <span className="text-slate-500 font-normal">Cán bộ thụ lý</span>
+                      <span className="text-[#004ac6] font-bold text-right">{currentLuotNhan.canBoNhan}</span>
+                    </div>
+                  )}
 
                   {/* <div className="py-2.5 flex items-center justify-between">
                     <span className="text-slate-500 font-normal">Ngày chuyển xử lý</span>
@@ -567,14 +678,55 @@ export default function ChiTietLuotNhan({
                 </div>
               </div>
             ) : (
-              /* Trạng thái trống như ảnh đính kèm */
-              <div className="flex flex-col items-center justify-center text-center my-auto">
-                <span className="material-symbols-outlined text-[44px] text-slate-300 mb-2">
-                  inbox
-                </span>
-                <p className="text-[12px] text-slate-500 font-normal">
-                  Chưa có nội dung để xem
-                </p>
+              /* Hiển thị Văn bản tiếp nhận lượt nhận khi chưa có tệp hoặc chưa chọn tệp */
+              <div className="w-full h-full flex flex-col bg-slate-50 rounded-lg border border-slate-200 p-4 overflow-y-auto">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[#004ac6] text-xl">description</span>
+                    <span className="text-sm font-semibold text-slate-800">Biên nhận tiếp nhận hồ sơ [{currentLuotNhan.id}]</span>
+                  </div>
+                  <span className="text-xs text-slate-400">Trang 1 / 1</span>
+                </div>
+
+                <div className="bg-white p-6 shadow-xs border border-slate-200 rounded mx-auto max-w-2xl w-full text-slate-800 space-y-4 text-xs leading-relaxed font-sans">
+                  <div className="text-center font-bold text-sm tracking-wide uppercase">
+                    CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM<br />
+                    <span className="font-normal text-xs normal-case">Độc lập - Tự do - Hạnh phúc</span>
+                  </div>
+                  <div className="border-b border-slate-300 w-32 mx-auto my-2" />
+
+                  <div className="text-center font-bold text-base text-slate-900 mt-4 uppercase">
+                    {currentLuotNhan.loaiDon || 'BIÊN BẢN TIẾP NHẬN HỒ SƠ YÊU CẦU / PHẢN ÁNH'}
+                  </div>
+
+                  <div className="space-y-1.5 pt-2">
+                    <p><strong>Kính gửi:</strong> {currentLuotNhan.donVi || 'Công an thành phố Hà Nội'}</p>
+                    <p><strong>Người nộp hồ sơ:</strong> {currentLuotNhan.nguoiNop || 'Chưa rõ'}</p>
+                    {currentLuotNhan.cccd && <p><strong>Số CCCD:</strong> {currentLuotNhan.cccd}</p>}
+                    {currentLuotNhan.sdt && <p><strong>Số điện thoại:</strong> {currentLuotNhan.sdt}</p>}
+                    {currentLuotNhan.diaChi && <p><strong>Địa chỉ cư trú:</strong> {currentLuotNhan.diaChi}</p>}
+                    {currentLuotNhan.canBoNhan && <p><strong>Cán bộ thụ lý / nhận bàn giao:</strong> {currentLuotNhan.canBoNhan}</p>}
+                  </div>
+
+                  <div className="pt-2">
+                    <p className="font-bold mb-1">Nội dung ghi nhận tiếp nhận:</p>
+                    <p className="text-slate-700 bg-slate-50/80 p-3 rounded border border-slate-200 leading-relaxed">
+                      {currentLuotNhan.noiDung || 'Hồ sơ tài liệu tiếp nhận tại bộ phận một cửa. Đang chờ chuyển giao đơn vị chuyên môn thụ lý và thẩm tra theo đúng thẩm quyền quy định.'}
+                    </p>
+                  </div>
+
+                  <div className="flex justify-between items-end pt-8">
+                    <div className="text-slate-400 text-[11px] italic">
+                      Mã số biên nhận: {currentLuotNhan.id}<br />
+                      Thời điểm tiếp nhận: {ngayNhanFormatted}
+                    </div>
+                    <div className="text-center">
+                      <p className="font-medium">Người nộp đơn</p>
+                      <p className="text-[11px] text-slate-400 italic mb-10">(Ký và ghi rõ họ tên)</p>
+                      <p className="font-semibold text-slate-700">{currentLuotNhan.nguoiNop || 'Chưa rõ'}</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -595,6 +747,11 @@ export default function ChiTietLuotNhan({
             ngayNhan: ngayNhanFormatted,
             donViHienTai: currentLuotNhan.donVi || 'Công an thành phố Hà Nội',
             noiDungTomTat: currentLuotNhan.noiDung,
+            hasFiles: Boolean(
+              (currentLuotNhan.files && currentLuotNhan.files.length > 0) ||
+              currentLuotNhan.hasFile ||
+              (currentLuotNhan.fileCount && currentLuotNhan.fileCount > 0)
+            ),
           }}
         />
       )}

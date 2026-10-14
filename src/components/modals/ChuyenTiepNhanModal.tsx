@@ -24,6 +24,7 @@ interface ChuyenTiepNhanModalProps {
     noiDungTomTat?: string;
     suggestedDeptId?: string;
     isPersonalProcessing?: boolean;
+    hasFiles?: boolean;
   };
 }
 
@@ -157,7 +158,28 @@ export default function ChuyenTiepNhanModal({
 
         {/* Modal Body */}
         <div className="p-6 overflow-y-auto space-y-4 text-xs text-slate-700">
-          {/* Thông tin vắn tắt hồ sơ */}
+          {donInfo.hasFiles === false ? (
+            <div className="p-3 bg-amber-50/90 border border-amber-200 rounded-xl flex items-start gap-2.5 text-amber-900 text-xs">
+              <span className="material-symbols-outlined text-amber-600 text-[18px] shrink-0 mt-0.5">info</span>
+              <div>
+                <div className="font-bold">Lượt nhận không có tệp đính kèm</div>
+                <p className="text-[11.5px] text-amber-800 mt-0.5">
+                  Hồ sơ này sẽ được chuyển trực tiếp sang <strong>Màn chi tiết đơn</strong> (không qua Bàn phân tích AI). Cán bộ thụ lý sẽ nhấn tiếp nhận và nhập các thông tin cơ bản.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="p-3 bg-blue-50/90 border border-blue-200 rounded-xl flex items-start gap-2.5 text-blue-900 text-xs">
+              <span className="material-symbols-outlined text-blue-600 text-[18px] shrink-0 mt-0.5">auto_awesome</span>
+              <div>
+                <div className="font-bold">Hồ sơ có tệp số hóa đính kèm</div>
+                <p className="text-[11.5px] text-blue-800 mt-0.5">
+                  Hồ sơ sẽ được chuyển tiếp sang <strong>Bàn phân tích AI</strong> để bóc tách OCR và phân tích tự động.
+                </p>
+              </div>
+            </div>
+          )}
+
           <form id="chuyen-tiep-nhan-form" onSubmit={handleSubmit} className="space-y-4">
             {/* SELECT DẠNG CÂY: ĐƠN VỊ TIẾP NHẬN TRƯỚC -> MỞ RỘNG CÁN BỘ BÊN DƯỚI */}
             <div className="space-y-1.5">
@@ -454,8 +476,6 @@ export default function ChuyenTiepNhanModal({
                 </div>
               )}
             </div>
-
-            {/* Ghi chú chuyển bàn giao */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="block font-semibold text-slate-800 text-xs">
