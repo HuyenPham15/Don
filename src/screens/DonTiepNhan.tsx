@@ -53,10 +53,10 @@ export const HUONG_XU_LY_CONFIG: Record<
   }
 > = {
   thu_ly: {
-    label: 'Thụ lý',
+    label: 'Xử lý đơn',
     subLabel: 'Đủ điều kiện thụ lý giải quyết theo quy định',
     badgeColor: 'bg-emerald-50 text-emerald-800 border-emerald-300',
-    buttonText: 'Thụ lý',
+    buttonText: 'Xử lý đơn',
     icon: 'gavel',
   },
   khong_thu_ly: {
@@ -1411,7 +1411,7 @@ export default function DonTiepNhan({
     }));
 
     showToast(
-      `✓ Đã trình ký Báo cáo đề xuất (${docToSubmit.soKyHieu || docToSubmit.tenVanBan}) tới Lãnh đạo! Đã chuyển sang Bước 2 và mở khóa nút Thụ lý đơn.`
+      `✓ Đã trình ký Báo cáo đề xuất (${docToSubmit.soKyHieu || docToSubmit.tenVanBan}) tới Lãnh đạo! Đã chuyển sang Bước 2 và mở khóa nút Xử lý đơn.`
     );
 
     addHistoryLog({
@@ -1924,7 +1924,7 @@ export default function DonTiepNhan({
                       </button>
 
                       {/* 3. Phân công xử lý */}
-                      {/* <button
+                      <button
                         type="button"
                         onClick={() => {
                           setShowThaoTacKhacDropdown(false);
@@ -1943,7 +1943,7 @@ export default function DonTiepNhan({
                             Giao cán bộ thụ lý hoặc chuyển đơn vị phụ trách
                           </p>
                         </div>
-                      </button> */}
+                      </button>
 
                       {/* 4. Chỉnh sửa thông tin đơn */}
                       <button
@@ -2103,10 +2103,10 @@ export default function DonTiepNhan({
                           type="button"
                           onClick={() => setShowTaoVuViecModal(true)}
                           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-[13px] font-bold shadow-lg ring-2 ring-emerald-300/40 transition-all cursor-pointer animate-pulse"
-                          title="Bấm để thụ lý đơn và mở popup tạo hồ sơ vụ việc"
+                          title="Bấm để xử lý đơn và mở popup tạo hồ sơ vụ việc"
                         >
                           <span className="material-symbols-outlined text-[18px]">gavel</span>
-                          <span>Thụ lý đơn</span>
+                          <span>Xử lý đơn</span>
                         </button>
                       )}
                     </>
@@ -2254,7 +2254,7 @@ export default function DonTiepNhan({
                             </div>
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center justify-between gap-1">
-                                <span className="font-bold text-[13px] text-slate-900">Thụ lý</span>
+                                <span className="font-bold text-[13px] text-slate-900">Xử lý đơn</span>
                               </div>
                               <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
                                 Đủ điều kiện thụ lý giải quyết theo quy định
