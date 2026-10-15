@@ -386,6 +386,7 @@ export default function DonTiepNhan({
     sdt: "0983 123 456",
     diaChi: "Số 15 đường Cầu Giấy, phường Quan Hoa, quận Cầu Giấy, Hà Nội",
     noiDung: "Tố cáo hành vi vi phạm quy định pháp luật trong quản lý đất đai và trật tự xây dựng",
+    hasBaoCaoDeXuat: false,
   };
 
   const [currentDon, setCurrentDon] = useState<DonDetail>(donDetail || defaultDon);
@@ -393,10 +394,10 @@ export default function DonTiepNhan({
   useEffect(() => {
     if (donDetail) {
       setCurrentDon(donDetail);
-      if (donDetail.fromBanPhanTich || donDetail.hasBaoCaoDeXuat === false) {
-        setHasCreatedBaoCaoDeXuat(false);
-      } else if (donDetail.hasBaoCaoDeXuat === true) {
+      if (donDetail.hasBaoCaoDeXuat === true) {
         setHasCreatedBaoCaoDeXuat(true);
+      } else {
+        setHasCreatedBaoCaoDeXuat(false);
       }
     }
   }, [donDetail]);
@@ -409,7 +410,7 @@ export default function DonTiepNhan({
     return (
       signingDocuments?.find(
         (d) =>
-          (d.hoSoCode === currentDon.code || d.hoSoCode === currentDon.id || (currentDon.luotNhanId && d.luotNhanId === currentDon.luotNhanId)) &&
+          (d.hoSoCode === currentDon.code || d.hoSoCode === currentDon.id) &&
           (d.loaiVanBan === 'bao_cao_de_xuat' ||
             d.loaiVanBan === 'to_trinh_thu_ly' ||
             d.loaiVanBan === 'bao_cao_xac_minh' ||
@@ -418,7 +419,7 @@ export default function DonTiepNhan({
             d.tenVanBan?.toLowerCase().includes('báo cáo'))
       ) || null
     );
-  }, [signingDocuments, currentDon.code, currentDon.id, currentDon.luotNhanId]);
+  }, [signingDocuments, currentDon.code, currentDon.id]);
   const isBaoCaoDaTrinhKy = Boolean(
     (existingSigningDoc && existingSigningDoc.status !== 'nhap') ||
     currentDon.statusBadge === 'Chờ phê duyệt' ||
@@ -519,7 +520,7 @@ export default function DonTiepNhan({
     return (
       signingDocuments?.find(
         (d) =>
-          (d.hoSoCode === currentDon.code || d.hoSoCode === currentDon.id || (currentDon.luotNhanId && d.luotNhanId === currentDon.luotNhanId)) &&
+          (d.hoSoCode === currentDon.code || d.hoSoCode === currentDon.id) &&
           (d.loaiVanBan === 'quyet_dinh_thu_ly' ||
             d.loaiVanBan === 'thong_bao_khong_thu_ly' ||
             d.loaiVanBan === 'van_ban_tra_lai' ||
@@ -536,7 +537,7 @@ export default function DonTiepNhan({
             d.tenVanBan?.toLowerCase().includes('chuyển đơn'))
       ) || null
     );
-  }, [signingDocuments, currentDon.code, currentDon.id, currentDon.luotNhanId]);
+  }, [signingDocuments, currentDon.code, currentDon.id]);
 
   // Phân loại nhánh xử lý dựa trên văn bản quyết định
   const quyetDinhBranch = useMemo<'thu_ly' | 'khong_thu_ly' | 'tra_lai' | 'ban_giao' | null>(() => {
@@ -754,12 +755,13 @@ export default function DonTiepNhan({
   const hasBaoCaoDeXuat = Boolean(
     hasCreatedBaoCaoDeXuat ||
     currentDon.hasBaoCaoDeXuat === true ||
-    (!currentDon.fromBanPhanTich && currentDon.hasBaoCaoDeXuat !== false && !isAwaitingAcceptance && (
-      (existingSigningDoc && existingSigningDoc.hoSoCode === currentDon.code) ||
-      isBaoCaoDaTrinhKy ||
-      quyetDinhSigningDoc ||
-      decisionStatus !== 'chua_tao'
-    ))
+    (
+      currentDon.hasBaoCaoDeXuat !== false &&
+      !isAwaitingAcceptance &&
+      existingSigningDoc &&
+      (existingSigningDoc.hoSoCode === currentDon.code || existingSigningDoc.hoSoCode === currentDon.id) &&
+      (existingSigningDoc.loaiVanBan === 'bao_cao_de_xuat' || (existingSigningDoc as any).fromBaoCaoModal)
+    )
   );
 
   // Tự động đồng bộ trạng thái hồ sơ theo kết quả phê duyệt của Lãnh đạo
@@ -1456,8 +1458,9 @@ export default function DonTiepNhan({
       let mappedHuong: HuongGiaiQuyetType = 'thu_ly';
       if (_formData.phuongAnDeXuat === 1) mappedHuong = 'thu_ly';
       else if (_formData.phuongAnDeXuat === 2) mappedHuong = 'ban_giao';
-      else if (_formData.phuongAnDeXuat === 3) mappedHuong = 'tra_loi_don';
-      else if (_formData.phuongAnDeXuat === 4) mappedHuong = 'yeu_cau_bo_sung';
+      else if (_formData.phuongAnDeXuat === 3) mappedHuong = 'khong_thu_ly';
+      else if (_formData.phuongAnDeXuat === 4) mappedHuong = 'tra_lai';
+      else if (_formData.phuongAnDeXuat === 5) mappedHuong = 'yeu_cau_bo_sung';
       setHuongXuLyDaChon(mappedHuong);
     }
 
@@ -1539,8 +1542,9 @@ export default function DonTiepNhan({
       let mappedHuong: HuongGiaiQuyetType = 'thu_ly';
       if (formData.phuongAnDeXuat === 1) mappedHuong = 'thu_ly';
       else if (formData.phuongAnDeXuat === 2) mappedHuong = 'ban_giao';
-      else if (formData.phuongAnDeXuat === 3) mappedHuong = 'tra_loi_don';
-      else if (formData.phuongAnDeXuat === 4) mappedHuong = 'yeu_cau_bo_sung';
+      else if (formData.phuongAnDeXuat === 3) mappedHuong = 'khong_thu_ly';
+      else if (formData.phuongAnDeXuat === 4) mappedHuong = 'tra_lai';
+      else if (formData.phuongAnDeXuat === 5) mappedHuong = 'yeu_cau_bo_sung';
       setHuongXuLyDaChon(mappedHuong);
     }
 
@@ -1993,8 +1997,19 @@ export default function DonTiepNhan({
 
             {/* KHU VỰC THAO TÁC HƯỚNG XỬ LÝ THEO QUY TRÌNH KÝ DUYỆT CỦA LÃNH ĐẠO (Chỉ hiển thị sau khi đã tiếp nhận về) */}
             {!isAwaitingAcceptance && (
-              /* 1. KHI VĂN BẢN QUYẾT ĐỊNH ĐANG CHỜ LÃNH ĐẠO KÝ */
-              decisionStatus === 'cho_ky' ? (
+              !hasBaoCaoDeXuat ? (
+                /* CHƯA CÓ BÁO CÁO ĐỀ XUẤT: BẮT BUỘC TẠO BÁO CÁO ĐỀ XUẤT TRƯỚC, CHƯA HIỂN THỊ CÁC NÚT HƯỚNG XỬ LÝ */
+                <button
+                  type="button"
+                  onClick={handleTaoBaoCaoDeXuat}
+                  className="inline-flex items-center gap-2 px-4.5 py-2.5 rounded-xl border border-blue-600 bg-[#004ac6] hover:bg-[#003ea8] active:scale-95 text-white shadow-md ring-2 ring-blue-300/40 transition-all cursor-pointer text-[13px] font-bold animate-pulse"
+                  title="Khởi tạo văn bản Báo cáo đề xuất hướng xử lý đơn trước khi xác định hướng giải quyết"
+                >
+                  <span className="material-symbols-outlined text-[18px]">rate_review</span>
+                  <span>Tạo báo cáo đề xuất</span>
+                </button>
+              ) : decisionStatus === 'cho_ky' ? (
+                /* 1. KHI VĂN BẢN QUYẾT ĐỊNH ĐANG CHỜ LÃNH ĐẠO KÝ */
                 <div className="flex items-center gap-2">
                   <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-50 text-amber-900 border border-amber-200 text-xs font-semibold shadow-2xs">
                     <span className="material-symbols-outlined text-[17px] text-amber-600 animate-spin">progress_activity</span>
@@ -2174,10 +2189,8 @@ export default function DonTiepNhan({
                   )}
                 </div>
               ) : (
-                /* 4. CHƯA TẠO VĂN BẢN QUYẾT ĐỊNH */
-                hasBaoCaoDeXuat ? (
-                  /* ĐÃ CÓ BÁO CÁO ĐỀ XUẤT: HIỂN THỊ CÁC NÚT XÁC ĐỊNH HƯỚNG XỬ LÝ ĐƠN (THỤ LÝ, KHÔNG THỤ LÝ, TRẢ LẠI...) */
-                  <div className="relative inline-flex items-center">
+                /* 4. ĐÃ CÓ BÁO CÁO ĐỀ XUẤT & CHƯA TẠO VĂN BẢN QUYẾT ĐỊNH: HIỂN THỊ CÁC NÚT XÁC ĐỊNH HƯỚNG XỬ LÝ ĐƠN (THỤ LÝ, KHÔNG THỤ LÝ, TRẢ LẠI...) */
+                <div className="relative inline-flex items-center">
                     <button
                       type="button"
                       onClick={handleExecutePrimaryAction}
@@ -2371,19 +2384,8 @@ export default function DonTiepNhan({
                       </>
                     )}
                   </div>
-                ) : (
-                  /* CHƯA CÓ BÁO CÁO ĐỀ XUẤT: BẮT BUỘC TẠO BÁO CÁO ĐỀ XUẤT TRƯỚC, CHƯA HIỂN THỊ CÁC NÚT HƯỚNG XỬ LÝ */
-                  <button
-                    type="button"
-                    onClick={handleTaoBaoCaoDeXuat}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-blue-600 bg-[#004ac6] hover:bg-[#003ea8] active:scale-95 text-white shadow-md ring-2 ring-blue-300/40 transition-all cursor-pointer text-[13px] font-bold animate-pulse"
-                    title="Khởi tạo văn bản Báo cáo đề xuất hướng xử lý đơn trước khi xác định hướng giải quyết"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">rate_review</span>
-                    <span>Tạo báo cáo đề xuất</span>
-                  </button>
                 )
-              ))}
+            )}
           </div>
         </div>
         <div className="flex items-center gap-8 text-xs font-bold border-b border-slate-200 -mb-px">

@@ -91,6 +91,18 @@ export const DANH_SACH_PHUONG_AN = [
     desc: 'Nếu đơn nặc danh không có căn cứ, đơn trùng lặp, hoặc đã có kết luận giải quyết đúng pháp luật trước đó.',
     badgeClass: 'bg-rose-50 text-rose-800 border-rose-300',
   },
+  {
+    id: 4,
+    title: 'Trả lại đơn & Kèm phiếu hướng dẫn',
+    desc: 'Trả lại đơn do không thuộc thẩm quyền hoặc chưa đủ điều kiện theo quy định.',
+    badgeClass: 'bg-amber-50 text-amber-800 border-amber-300',
+  },
+  {
+    id: 5,
+    title: 'Yêu cầu bổ sung thông tin, tài liệu',
+    desc: 'Hồ sơ tài liệu chưa đầy đủ hoặc cần công dân bổ sung tài liệu, giải trình.',
+    badgeClass: 'bg-blue-50 text-blue-800 border-blue-300',
+  },
 ];
 
 /**
@@ -148,7 +160,9 @@ ${data.canCuPhapLyApDung || data.canCuPhapLy || ''}
 Lựa chọn phương án:
 [${data.phuongAnDeXuat === 1 ? 'X' : '  '}] Phương án 1: Thụ lý giải quyết (Nếu đơn đủ điều kiện và thuộc thẩm quyền).
 [${data.phuongAnDeXuat === 2 ? 'X' : '  '}] Phương án 2: Chuyển đơn đến cơ quan có thẩm quyền (Nếu không thuộc thẩm quyền của mình).
-[${data.phuongAnDeXuat === 3 ? 'X' : '  '}] Phương án 3: Không thụ lý / Lưu đơn (Nếu đơn nặc danh không có căn cứ, đơn trùng lặp, hoặc đã có kết luận giải quyết đúng pháp luật trước đó).
+[${data.phuongAnDeXuat === 3 ? 'X' : '  '}] Phương án 3: Không thụ lý / Lưu đơn (Nếu đơn nặc danh không có căn cứ, đơn trùng lặp...).
+[${data.phuongAnDeXuat === 4 ? 'X' : '  '}] Phương án 4: Trả lại đơn & Kèm phiếu hướng dẫn công dân (Không thuộc thẩm quyền hoặc chưa đủ điều kiện).
+[${data.phuongAnDeXuat === 5 ? 'X' : '  '}] Phương án 5: Yêu cầu bổ sung thông tin, tài liệu chứng cứ.
 
 ${data.kienNghiChiTiet || data.chiTietPhuongAn ? `Nội dung kiến nghị cụ thể: ${data.kienNghiChiTiet || data.chiTietPhuongAn}\n` : ''}${data.vanBanKemTheo ? `Dự thảo văn bản kèm theo: ${data.vanBanKemTheo}\n` : ''}
 Kính trình Đồng chí phê duyệt./.
@@ -327,6 +341,14 @@ export default function TaoBaoCaoDeXuatModal({
     } else if (paId === 3) {
       setKienNghiChiTiet(
         'Đơn không đủ điều kiện thụ lý giải quyết (nặc danh / không có căn cứ xác thực / trùng lặp / đã có kết luận giải quyết đúng pháp luật trước đó). Đề xuất không thụ lý giải quyết và thực hiện lưu đơn theo đúng quy định pháp luật.'
+      );
+    } else if (paId === 4) {
+      setKienNghiChiTiet(
+        'Đơn không thuộc thẩm quyền giải quyết của cơ quan. Đề xuất trả lại đơn và ban hành Phiếu hướng dẫn công dân gửi đơn đến đúng cơ quan có thẩm quyền giải quyết theo quy định.'
+      );
+    } else if (paId === 5) {
+      setKienNghiChiTiet(
+        'Đơn chưa đầy đủ thông tin hoặc tài liệu, chứng cứ cần thiết để làm căn cứ thụ lý. Đề xuất ban hành Thông báo yêu cầu công dân bổ sung thông tin, tài liệu theo quy định.'
       );
     }
   };

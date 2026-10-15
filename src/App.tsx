@@ -49,6 +49,7 @@ export default function App() {
     sdt: "0983 123 456",
     diaChi: "Số 15 đường Cầu Giấy, phường Quan Hoa, quận Cầu Giấy, Hà Nội",
     noiDung: "Tố cáo hành vi vi phạm quy định pháp luật trong quản lý đất đai và trật tự xây dựng",
+    hasBaoCaoDeXuat: false,
   });
   const [acceptedDons, setAcceptedDons] = useState<DonDetail[]>([]);
   const [extraCard, setExtraCard] = useState<LuotNhan | null>(null);
