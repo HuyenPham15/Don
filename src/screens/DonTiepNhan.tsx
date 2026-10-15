@@ -2158,10 +2158,10 @@ export default function DonTiepNhan({
                     <>
                       {isChuyenThamQuyenSuccess || currentDon.statusBadge === 'Đã chuyển thẩm quyền' ? (
                         <div className="flex items-center gap-2">
-                          <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-purple-50 text-purple-900 border border-purple-200 text-xs font-bold shadow-2xs">
+                          {/* <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-purple-50 text-purple-900 border border-purple-200 text-xs font-bold shadow-2xs">
                             <span className="material-symbols-outlined text-[16px] text-purple-600">task_alt</span>
                             <span>Đã chuyển đến: {banGiaoData?.donViNhanName || currentDon.donViTiepNhan || 'Đơn vị thẩm quyền'}</span>
-                          </span>
+                          </span> */}
                           <button
                             type="button"
                             onClick={() => {
@@ -2191,200 +2191,200 @@ export default function DonTiepNhan({
               ) : (
                 /* 4. ĐÃ CÓ BÁO CÁO ĐỀ XUẤT & CHƯA TẠO VĂN BẢN QUYẾT ĐỊNH: HIỂN THỊ CÁC NÚT XÁC ĐỊNH HƯỚNG XỬ LÝ ĐƠN (THỤ LÝ, KHÔNG THỤ LÝ, TRẢ LẠI...) */
                 <div className="relative inline-flex items-center">
-                    <button
-                      type="button"
-                      onClick={handleExecutePrimaryAction}
-                      className={`inline-flex items-center gap-2 px-4.5 py-2.5 rounded-l-xl rounded-r-none border-r border-white/20 active:scale-98 text-white text-[13px] font-bold transition-all cursor-pointer shadow-md ${huongXuLyDaChon === 'thu_ly'
-                        ? 'bg-emerald-600 hover:bg-emerald-700 ring-2 ring-emerald-300/40'
-                        : huongXuLyDaChon === 'khong_thu_ly'
-                          ? 'bg-rose-600 hover:bg-rose-700 ring-2 ring-rose-300/40'
-                          : huongXuLyDaChon === 'yeu_cau_bo_sung'
-                            ? 'bg-blue-600 hover:bg-blue-700 ring-2 ring-blue-300/40'
-                            : huongXuLyDaChon === 'tra_lai'
-                              ? 'bg-amber-600 hover:bg-amber-700 ring-2 ring-amber-300/40'
-                              : huongXuLyDaChon === 'ban_giao'
-                                ? 'bg-purple-600 hover:bg-purple-700 ring-2 ring-purple-300/40'
-                                : 'bg-teal-600 hover:bg-teal-700 ring-2 ring-teal-300/40'
-                        }`}
-                      title={`Bấm để thực hiện: ${HUONG_XU_LY_CONFIG[huongXuLyDaChon]?.buttonText || 'Thụ lý'}`}
-                    >
-                      <span className="material-symbols-outlined text-[18px]">
-                        {HUONG_XU_LY_CONFIG[huongXuLyDaChon]?.icon || 'gavel'}
-                      </span>
-                      <span>{HUONG_XU_LY_CONFIG[huongXuLyDaChon]?.buttonText || 'Thụ lý'}</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowHuongDropdown(!showHuongDropdown)}
-                      className={`inline-flex items-center justify-center px-2.5 py-2.5 rounded-r-xl rounded-l-none text-white transition-all cursor-pointer shadow-md ${huongXuLyDaChon === 'thu_ly'
-                        ? 'bg-emerald-700 hover:bg-emerald-800'
-                        : huongXuLyDaChon === 'khong_thu_ly'
-                          ? 'bg-rose-700 hover:bg-rose-800'
-                          : huongXuLyDaChon === 'yeu_cau_bo_sung'
-                            ? 'bg-blue-700 hover:bg-blue-800'
-                            : huongXuLyDaChon === 'tra_lai'
-                              ? 'bg-amber-700 hover:bg-amber-800'
-                              : huongXuLyDaChon === 'ban_giao'
-                                ? 'bg-purple-700 hover:bg-purple-800'
-                                : 'bg-teal-700 hover:bg-teal-800'
-                        }`}
-                      title="Nhấn để chọn hướng xử lý khác"
-                    >
-                      <span className={`material-symbols-outlined text-[20px] transition-transform ${showHuongDropdown ? 'rotate-180' : ''}`}>
-                        arrow_drop_down
-                      </span>
-                    </button>
+                  <button
+                    type="button"
+                    onClick={handleExecutePrimaryAction}
+                    className={`inline-flex items-center gap-2 px-4.5 py-2.5 rounded-l-xl rounded-r-none border-r border-white/20 active:scale-98 text-white text-[13px] font-bold transition-all cursor-pointer shadow-md ${huongXuLyDaChon === 'thu_ly'
+                      ? 'bg-emerald-600 hover:bg-emerald-700 ring-2 ring-emerald-300/40'
+                      : huongXuLyDaChon === 'khong_thu_ly'
+                        ? 'bg-rose-600 hover:bg-rose-700 ring-2 ring-rose-300/40'
+                        : huongXuLyDaChon === 'yeu_cau_bo_sung'
+                          ? 'bg-blue-600 hover:bg-blue-700 ring-2 ring-blue-300/40'
+                          : huongXuLyDaChon === 'tra_lai'
+                            ? 'bg-amber-600 hover:bg-amber-700 ring-2 ring-amber-300/40'
+                            : huongXuLyDaChon === 'ban_giao'
+                              ? 'bg-purple-600 hover:bg-purple-700 ring-2 ring-purple-300/40'
+                              : 'bg-teal-600 hover:bg-teal-700 ring-2 ring-teal-300/40'
+                      }`}
+                    title={`Bấm để thực hiện: ${HUONG_XU_LY_CONFIG[huongXuLyDaChon]?.buttonText || 'Thụ lý'}`}
+                  >
+                    <span className="material-symbols-outlined text-[18px]">
+                      {HUONG_XU_LY_CONFIG[huongXuLyDaChon]?.icon || 'gavel'}
+                    </span>
+                    <span>{HUONG_XU_LY_CONFIG[huongXuLyDaChon]?.buttonText || 'Thụ lý'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowHuongDropdown(!showHuongDropdown)}
+                    className={`inline-flex items-center justify-center px-2.5 py-2.5 rounded-r-xl rounded-l-none text-white transition-all cursor-pointer shadow-md ${huongXuLyDaChon === 'thu_ly'
+                      ? 'bg-emerald-700 hover:bg-emerald-800'
+                      : huongXuLyDaChon === 'khong_thu_ly'
+                        ? 'bg-rose-700 hover:bg-rose-800'
+                        : huongXuLyDaChon === 'yeu_cau_bo_sung'
+                          ? 'bg-blue-700 hover:bg-blue-800'
+                          : huongXuLyDaChon === 'tra_lai'
+                            ? 'bg-amber-700 hover:bg-amber-800'
+                            : huongXuLyDaChon === 'ban_giao'
+                              ? 'bg-purple-700 hover:bg-purple-800'
+                              : 'bg-teal-700 hover:bg-teal-800'
+                      }`}
+                    title="Nhấn để chọn hướng xử lý khác"
+                  >
+                    <span className={`material-symbols-outlined text-[20px] transition-transform ${showHuongDropdown ? 'rotate-180' : ''}`}>
+                      arrow_drop_down
+                    </span>
+                  </button>
 
-                    {/* DROPDOWN MENU CHỌN CÁC HƯỚNG XỬ LÝ KHÁC */}
-                    {showHuongDropdown && (
-                      <>
-                        <div className="fixed inset-0 z-40" onClick={() => setShowHuongDropdown(false)} />
-                        <div className="absolute right-0 top-full mt-2 w-84 bg-white rounded-2xl shadow-2xl border border-slate-200 p-2 z-50 animate-scale-up">
-                          <div className="space-y-1">
-                            <button
-                              type="button"
-                              onClick={() => handleSelectHuong('thu_ly')}
-                              className={`w-full flex items-start gap-2.5 p-2.5 rounded-xl text-left transition-colors cursor-pointer ${huongXuLyDaChon === 'thu_ly'
-                                ? 'bg-emerald-50/80 text-emerald-900 ring-1 ring-emerald-300'
-                                : 'hover:bg-slate-50 text-slate-800'
-                                }`}
-                            >
-                              <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
-                                <span className="material-symbols-outlined text-[18px]">gavel</span>
+                  {/* DROPDOWN MENU CHỌN CÁC HƯỚNG XỬ LÝ KHÁC */}
+                  {showHuongDropdown && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setShowHuongDropdown(false)} />
+                      <div className="absolute right-0 top-full mt-2 w-84 bg-white rounded-2xl shadow-2xl border border-slate-200 p-2 z-50 animate-scale-up">
+                        <div className="space-y-1">
+                          <button
+                            type="button"
+                            onClick={() => handleSelectHuong('thu_ly')}
+                            className={`w-full flex items-start gap-2.5 p-2.5 rounded-xl text-left transition-colors cursor-pointer ${huongXuLyDaChon === 'thu_ly'
+                              ? 'bg-emerald-50/80 text-emerald-900 ring-1 ring-emerald-300'
+                              : 'hover:bg-slate-50 text-slate-800'
+                              }`}
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+                              <span className="material-symbols-outlined text-[18px]">gavel</span>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-1">
+                                <span className="font-bold text-[13px] text-slate-900">Thụ lý</span>
                               </div>
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-center justify-between gap-1">
-                                  <span className="font-bold text-[13px] text-slate-900">Thụ lý</span>
-                                </div>
-                                <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
-                                  Đủ điều kiện thụ lý giải quyết theo quy định
-                                </p>
-                              </div>
-                              {huongXuLyDaChon === 'thu_ly' && (
-                                <span className="material-symbols-outlined text-emerald-600 text-[18px] shrink-0 mt-1">check</span>
-                              )}
-                            </button>
+                              <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
+                                Đủ điều kiện thụ lý giải quyết theo quy định
+                              </p>
+                            </div>
+                            {huongXuLyDaChon === 'thu_ly' && (
+                              <span className="material-symbols-outlined text-emerald-600 text-[18px] shrink-0 mt-1">check</span>
+                            )}
+                          </button>
 
-                            <button
-                              type="button"
-                              onClick={() => handleSelectHuong('khong_thu_ly')}
-                              className={`w-full flex items-start gap-2.5 p-2.5 rounded-xl text-left transition-colors cursor-pointer ${huongXuLyDaChon === 'khong_thu_ly'
-                                ? 'bg-rose-50/80 text-rose-900 ring-1 ring-rose-300'
-                                : 'hover:bg-slate-50 text-slate-800'
-                                }`}
-                            >
-                              <div className="w-8 h-8 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">
-                                <span className="material-symbols-outlined text-[18px]">cancel</span>
+                          <button
+                            type="button"
+                            onClick={() => handleSelectHuong('khong_thu_ly')}
+                            className={`w-full flex items-start gap-2.5 p-2.5 rounded-xl text-left transition-colors cursor-pointer ${huongXuLyDaChon === 'khong_thu_ly'
+                              ? 'bg-rose-50/80 text-rose-900 ring-1 ring-rose-300'
+                              : 'hover:bg-slate-50 text-slate-800'
+                              }`}
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center shrink-0 mt-0.5">
+                              <span className="material-symbols-outlined text-[18px]">cancel</span>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-1">
+                                <span className="font-bold text-[13px] text-slate-900">Không thụ lý</span>
                               </div>
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-center justify-between gap-1">
-                                  <span className="font-bold text-[13px] text-slate-900">Không thụ lý</span>
-                                </div>
-                                <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
-                                  Không đủ điều kiện thụ lý theo Điều 29
-                                </p>
-                              </div>
-                              {huongXuLyDaChon === 'khong_thu_ly' && (
-                                <span className="material-symbols-outlined text-rose-600 text-[18px] shrink-0 mt-1">check</span>
-                              )}
-                            </button>
+                              <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
+                                Không đủ điều kiện thụ lý theo Điều 29
+                              </p>
+                            </div>
+                            {huongXuLyDaChon === 'khong_thu_ly' && (
+                              <span className="material-symbols-outlined text-rose-600 text-[18px] shrink-0 mt-1">check</span>
+                            )}
+                          </button>
 
-                            <button
-                              type="button"
-                              onClick={() => handleSelectHuong('yeu_cau_bo_sung')}
-                              className={`w-full flex items-start gap-2.5 p-2.5 rounded-xl text-left transition-colors cursor-pointer ${huongXuLyDaChon === 'yeu_cau_bo_sung'
-                                ? 'bg-blue-50/80 text-blue-900 ring-1 ring-blue-300'
-                                : 'hover:bg-slate-50 text-slate-800'
-                                }`}
-                            >
-                              <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0 mt-0.5">
-                                <span className="material-symbols-outlined text-[18px]">note_add</span>
+                          <button
+                            type="button"
+                            onClick={() => handleSelectHuong('yeu_cau_bo_sung')}
+                            className={`w-full flex items-start gap-2.5 p-2.5 rounded-xl text-left transition-colors cursor-pointer ${huongXuLyDaChon === 'yeu_cau_bo_sung'
+                              ? 'bg-blue-50/80 text-blue-900 ring-1 ring-blue-300'
+                              : 'hover:bg-slate-50 text-slate-800'
+                              }`}
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0 mt-0.5">
+                              <span className="material-symbols-outlined text-[18px]">note_add</span>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-1">
+                                <span className="font-bold text-[13px] text-slate-900">Yêu cầu bổ sung</span>
+                                {isAiNeedsMissingDocs && (
+                                  <span className="text-[10px] font-bold text-blue-700 bg-blue-100 px-1.5 py-0.2 rounded">
+                                    AI đề xuất
+                                  </span>
+                                )}
                               </div>
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-center justify-between gap-1">
-                                  <span className="font-bold text-[13px] text-slate-900">Yêu cầu bổ sung</span>
-                                  {isAiNeedsMissingDocs && (
-                                    <span className="text-[10px] font-bold text-blue-700 bg-blue-100 px-1.5 py-0.2 rounded">
-                                      AI đề xuất
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
-                                  Chưa đủ chứng cứ hoặc hồ sơ theo quy định
-                                </p>
-                              </div>
-                              {huongXuLyDaChon === 'yeu_cau_bo_sung' && (
-                                <span className="material-symbols-outlined text-blue-600 text-[18px] shrink-0 mt-1">check</span>
-                              )}
-                            </button>
+                              <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
+                                Chưa đủ chứng cứ hoặc hồ sơ theo quy định
+                              </p>
+                            </div>
+                            {huongXuLyDaChon === 'yeu_cau_bo_sung' && (
+                              <span className="material-symbols-outlined text-blue-600 text-[18px] shrink-0 mt-1">check</span>
+                            )}
+                          </button>
 
-                            <button
-                              type="button"
-                              onClick={() => handleSelectHuong('tra_lai')}
-                              className={`w-full flex items-start gap-2.5 p-2.5 rounded-xl text-left transition-colors cursor-pointer ${huongXuLyDaChon === 'tra_lai'
-                                ? 'bg-amber-50/80 text-amber-900 ring-1 ring-amber-300'
-                                : 'hover:bg-slate-50 text-slate-800'
-                                }`}
-                            >
-                              <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 mt-0.5">
-                                <span className="material-symbols-outlined text-[18px]">assignment_return</span>
+                          <button
+                            type="button"
+                            onClick={() => handleSelectHuong('tra_lai')}
+                            className={`w-full flex items-start gap-2.5 p-2.5 rounded-xl text-left transition-colors cursor-pointer ${huongXuLyDaChon === 'tra_lai'
+                              ? 'bg-amber-50/80 text-amber-900 ring-1 ring-amber-300'
+                              : 'hover:bg-slate-50 text-slate-800'
+                              }`}
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 mt-0.5">
+                              <span className="material-symbols-outlined text-[18px]">assignment_return</span>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-1">
+                                <span className="font-bold text-[13px] text-slate-900">Trả lại</span>
                               </div>
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-center justify-between gap-1">
-                                  <span className="font-bold text-[13px] text-slate-900">Trả lại</span>
-                                </div>
-                                <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
-                                  Trả lại đơn và kèm phiếu hướng dẫn công dân
-                                </p>
-                              </div>
-                              {huongXuLyDaChon === 'tra_lai' && (
-                                <span className="material-symbols-outlined text-amber-600 text-[18px] shrink-0 mt-1">check</span>
-                              )}
-                            </button>
+                              <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
+                                Trả lại đơn và kèm phiếu hướng dẫn công dân
+                              </p>
+                            </div>
+                            {huongXuLyDaChon === 'tra_lai' && (
+                              <span className="material-symbols-outlined text-amber-600 text-[18px] shrink-0 mt-1">check</span>
+                            )}
+                          </button>
 
-                            <button
-                              type="button"
-                              onClick={() => handleSelectHuong('ban_giao')}
-                              className={`w-full flex items-start gap-2.5 p-2.5 rounded-xl text-left transition-colors cursor-pointer ${huongXuLyDaChon === 'ban_giao'
-                                ? 'bg-purple-50/80 text-purple-900 ring-1 ring-purple-300'
-                                : 'hover:bg-slate-50 text-slate-800'
-                                }`}
-                            >
-                              <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center shrink-0 mt-0.5">
-                                <span className="material-symbols-outlined text-[18px]">drive_file_move</span>
+                          <button
+                            type="button"
+                            onClick={() => handleSelectHuong('ban_giao')}
+                            className={`w-full flex items-start gap-2.5 p-2.5 rounded-xl text-left transition-colors cursor-pointer ${huongXuLyDaChon === 'ban_giao'
+                              ? 'bg-purple-50/80 text-purple-900 ring-1 ring-purple-300'
+                              : 'hover:bg-slate-50 text-slate-800'
+                              }`}
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center shrink-0 mt-0.5">
+                              <span className="material-symbols-outlined text-[18px]">drive_file_move</span>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-1">
+                                <span className="font-bold text-[13px] text-slate-900">Chuyển thẩm quyền xử lý</span>
                               </div>
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-center justify-between gap-1">
-                                  <span className="font-bold text-[13px] text-slate-900">Chuyển thẩm quyền xử lý</span>
-                                </div>
-                                <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
-                                  Chuyển đơn đến cơ quan có thẩm quyền giải quyết
-                                </p>
-                              </div>
-                              {huongXuLyDaChon === 'ban_giao' && (
-                                <span className="material-symbols-outlined text-purple-600 text-[18px] shrink-0 mt-1">check</span>
-                              )}
-                            </button>
-                          </div>
-
-                          <div className="border-t border-slate-100 pt-1.5 mt-1">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setShowHuongDropdown(false);
-                                setShowXacMinhModal(true);
-                              }}
-                              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:text-blue-700 hover:bg-blue-50/80 transition-colors text-[12.5px] font-semibold cursor-pointer"
-                            >
-                              <span className="material-symbols-outlined text-[17px] text-blue-600">fact_check</span>
-                              <span>Mở bảng Xác minh &amp; Đề xuất (4 tiêu chí)</span>
-                            </button>
-                          </div>
+                              <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
+                                Chuyển đơn đến cơ quan có thẩm quyền giải quyết
+                              </p>
+                            </div>
+                            {huongXuLyDaChon === 'ban_giao' && (
+                              <span className="material-symbols-outlined text-purple-600 text-[18px] shrink-0 mt-1">check</span>
+                            )}
+                          </button>
                         </div>
-                      </>
-                    )}
-                  </div>
-                )
+
+                        <div className="border-t border-slate-100 pt-1.5 mt-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowHuongDropdown(false);
+                              setShowXacMinhModal(true);
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:text-blue-700 hover:bg-blue-50/80 transition-colors text-[12.5px] font-semibold cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined text-[17px] text-blue-600">fact_check</span>
+                            <span>Mở bảng Xác minh &amp; Đề xuất (4 tiêu chí)</span>
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )
             )}
           </div>
         </div>
@@ -4350,13 +4350,6 @@ export default function DonTiepNhan({
             </div>
 
             <div className="p-6 space-y-3.5">
-              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-start gap-2">
-                <span className="material-symbols-outlined text-[17px] text-amber-700 shrink-0 mt-0.5">warning</span>
-                <p>
-                  Vui lòng kiểm tra kỹ đơn vị tiếp nhận trước khi gửi. Sau khi gửi thành công, trạng thái hồ sơ sẽ chuyển sang <strong>"Đã chuyển thẩm quyền"</strong> và ghi nhận biên bản giao nhận.
-                </p>
-              </div>
-
               <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-2">
                 <div className="flex justify-between">
                   <span className="text-slate-500">Mã hồ sơ đơn:</span>
