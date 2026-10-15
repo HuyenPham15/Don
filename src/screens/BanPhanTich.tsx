@@ -874,7 +874,10 @@ export default function BanPhanTich({
       ngayNhan: luotNhan?.ngayNhan || '16/09/2026 09:15',
       loaiDon: extractData.loaiNoiDung || luotNhan?.loaiDon || 'Đơn phản ánh kiến nghị',
       type: (dynamicCode.startsWith('VV') ? 'VỤ VIỆC' : 'ĐƠN TIẾP NHẬN') as 'VỤ VIỆC' | 'ĐƠN TIẾP NHẬN',
-      statusBadge: 'Đang xác minh thông tin',
+      statusBadge: 'Chờ tiếp nhận',
+      isAwaitingAcceptance: true,
+      hasBaoCaoDeXuat: false,
+      fromBanPhanTich: true,
       isNew: true,
     };
     onAcceptAndProcess?.(donObj);
@@ -902,7 +905,10 @@ export default function BanPhanTich({
       ngayNhan: luotNhan?.ngayNhan || 'Hôm nay',
       loaiDon: extractData.loaiNoiDung || luotNhan?.loaiDon || 'Đơn tiếp nhận hành chính',
       type: (dynamicCode.startsWith('VV') ? 'VỤ VIỆC' : 'ĐƠN TIẾP NHẬN') as 'VỤ VIỆC' | 'ĐƠN TIẾP NHẬN',
-      statusBadge: 'Đang xác minh thông tin',
+      statusBadge: 'Chờ tiếp nhận',
+      isAwaitingAcceptance: true,
+      hasBaoCaoDeXuat: false,
+      fromBanPhanTich: true,
       currentStep: 2,
       stepName: 'Xác minh thông tin & Đề xuất hướng xử lý',
     };

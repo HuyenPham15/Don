@@ -235,17 +235,17 @@ export default function TaoLuotTrinhModal({
         {/* ================= HEADER ================= */}
         <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between shrink-0 bg-white">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-rose-50 border border-rose-200 text-[#991b1b] flex items-center justify-center font-bold text-lg shrink-0 shadow-2xs">
-              ⌘
+            <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-200 text-[#004ac6] flex items-center justify-center font-bold text-lg shrink-0 shadow-2xs">
+              <span className="material-symbols-outlined text-[20px]">assignment_add</span>
             </div>
             <div>
               <h2
                 id="tao-luot-trinh-title"
-                className="text-base font-bold text-slate-900 leading-snug"
+                className="text-[16px] font-bold text-slate-900 leading-snug"
               >
                 Tạo lượt trình &amp; Ma trận phân quyền văn bản
               </h2>
-              <p className="text-xs text-slate-500 font-normal mt-0.5">
+              <p className="text-[12.5px] text-slate-500 font-normal mt-0.5">
                 {documents.length} văn bản đã chọn · Cấu hình thứ tự trình ký và phân quyền xử lý từng văn bản
               </p>
             </div>
@@ -273,7 +273,7 @@ export default function TaoLuotTrinhModal({
                   value={selectedLeaderId}
                   onChange={(e) => setSelectedLeaderId(e.target.value)}
                   disabled={isSubmitting || availableLeaders.length === 0}
-                  className="w-full h-9 pl-3.5 pr-8 text-xs font-medium text-slate-800 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#991b1b]/20 focus:border-[#991b1b] transition cursor-pointer appearance-none disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+                  className="w-full h-9 pl-3.5 pr-8 text-[13px] font-medium text-slate-800 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6] transition cursor-pointer appearance-none disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
                 >
                   <option value="">
                     {availableLeaders.length === 0
@@ -295,8 +295,8 @@ export default function TaoLuotTrinhModal({
                 type="button"
                 onClick={handleAddLeader}
                 disabled={!selectedLeaderId || isSubmitting}
-                className={`h-9 px-4 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-2xs ${selectedLeaderId && !isSubmitting
-                  ? 'bg-[#991b1b] hover:bg-[#7f1d1d] text-white active:scale-98 cursor-pointer'
+                className={`h-9 px-4 rounded-lg text-[13px] font-semibold flex items-center gap-1.5 transition shadow-2xs ${selectedLeaderId && !isSubmitting
+                  ? 'bg-[#004ac6] hover:bg-[#003ea8] text-white active:scale-98 cursor-pointer'
                   : 'bg-slate-200 text-slate-400 cursor-not-allowed'
                   }`}
               >
@@ -306,14 +306,14 @@ export default function TaoLuotTrinhModal({
             </div>
 
             {/* Thông tin nhanh số lượng lãnh đạo đã thêm */}
-            <div className="text-xs font-medium text-slate-500">
+            <div className="text-[12.5px] font-medium text-slate-500">
               Đã thêm: <strong className="text-slate-900">{leaders.length}</strong> lãnh đạo
             </div>
           </div>
 
           {/* Cảnh báo lỗi gửi API nếu có */}
           {submitError && (
-            <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs flex items-center gap-2.5 animate-fade-in">
+            <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-[12.5px] flex items-center gap-2.5 animate-fade-in">
               <span className="material-symbols-outlined text-rose-600 text-lg shrink-0">
                 error
               </span>
@@ -323,7 +323,7 @@ export default function TaoLuotTrinhModal({
 
           {/* Bảng ma trận phân quyền văn bản */}
           <div className="border border-slate-200 rounded-xl overflow-x-auto shadow-2xs bg-white">
-            <table className="w-full border-collapse text-xs">
+            <table className="w-full border-collapse text-[13px]">
               {/* Định nghĩa chiều rộng các cột */}
               <colgroup>
                 {/* Cột 1: Danh sách văn bản cố định */}
@@ -345,12 +345,12 @@ export default function TaoLuotTrinhModal({
               <thead>
                 <tr className="bg-[#f8fafc] border-b border-slate-200">
                   {/* Cột 1: DANH SÁCH VĂN BẢN */}
-                  <th className="w-[260px] min-w-[240px] px-4 py-3.5 text-center font-bold text-slate-700 text-xs tracking-wider border-r border-slate-200 align-middle">
+                  <th className="w-[260px] min-w-[240px] px-4 py-3.5 text-center font-bold text-slate-700 text-[12.5px] tracking-wider border-r border-slate-200 align-middle">
                     DANH SÁCH VĂN BẢN
                   </th>
 
                   {leaders.length === 0 ? (
-                    <th className="px-5 text-center font-normal text-slate-400 text-xs italic bg-[#f8fafc] align-middle">
+                    <th className="px-5 text-center font-normal text-slate-400 text-[12.5px] italic bg-[#f8fafc] align-middle">
                       Chưa có lãnh đạo nào được thêm vào lượt trình.
                     </th>
                   ) : (
@@ -360,7 +360,7 @@ export default function TaoLuotTrinhModal({
                           index === 0
                             ? 'bg-emerald-600'
                             : index < 3
-                              ? 'bg-[#80182a]'
+                              ? 'bg-[#004ac6]'
                               : 'bg-slate-400';
 
                         return (
@@ -376,13 +376,13 @@ export default function TaoLuotTrinhModal({
                               </span>
                               <div className="min-w-0 flex-1">
                                 <strong
-                                  className="block text-xs font-bold text-slate-900 leading-snug truncate"
+                                  className="block text-[13px] font-bold text-slate-900 leading-snug truncate"
                                   title={`${index + 1}. ${leader.name}`}
                                 >
                                   {index + 1}. {leader.name}
                                 </strong>
                                 <span
-                                  className="block text-[11px] text-slate-500 font-normal mt-0.5 truncate"
+                                  className="block text-[11.5px] text-slate-500 font-normal mt-0.5 truncate"
                                   title={leader.title}
                                 >
                                   {leader.title}
@@ -390,7 +390,7 @@ export default function TaoLuotTrinhModal({
 
                                 {/* Huy hiệu Được đề xuất */}
                                 {leader.isProposed && (
-                                  <div className="flex items-center gap-1 mt-1 text-[#b45309] text-[10.5px] font-medium leading-tight">
+                                  <div className="flex items-center gap-1 mt-1 text-[#b45309] text-[11px] font-medium leading-tight">
                                     <span>Được đề xuất</span>
                                     <span className="w-4 h-4 rounded-full bg-[#f59e0b] text-white text-[9px] font-bold flex items-center justify-center shadow-2xs shrink-0">
                                       T
@@ -430,7 +430,7 @@ export default function TaoLuotTrinhModal({
                           description
                         </span>
                         <strong
-                          className="block text-xs font-semibold text-slate-900 leading-snug break-words"
+                          className="block text-[13px] font-semibold text-slate-900 leading-snug break-words"
                           title={doc.name}
                         >
                           {doc.name}
@@ -449,10 +449,10 @@ export default function TaoLuotTrinhModal({
                             <span className="material-symbols-outlined text-3xl text-slate-300">
                               person_add
                             </span>
-                            <span className="text-xs font-medium text-slate-500">
+                            <span className="text-[13px] font-medium text-slate-500">
                               Chưa có lãnh đạo nào trong lượt trình
                             </span>
-                            <span className="text-[11px] text-slate-400">
+                            <span className="text-[12px] text-slate-400">
                               Chọn lãnh đạo phê duyệt ở danh sách phía trên và bấm &quot;+ Thêm lãnh đạo&quot; để cấu hình
                             </span>
                           </div>
@@ -482,8 +482,8 @@ export default function TaoLuotTrinhModal({
                                     )
                                   }
                                   disabled={isSubmitting}
-                                  className={`w-full h-8.5 pl-3 pr-7 text-xs font-medium rounded-lg border appearance-none transition focus:outline-none cursor-pointer disabled:bg-slate-100 disabled:cursor-not-allowed ${isMainSigner
-                                    ? 'bg-white border-rose-300 ring-1 ring-rose-200 text-slate-900 shadow-2xs'
+                                  className={`w-full h-8.5 pl-3 pr-7 text-[12.5px] font-medium rounded-lg border appearance-none transition focus:outline-none cursor-pointer disabled:bg-slate-100 disabled:cursor-not-allowed ${isMainSigner
+                                    ? 'bg-white border-blue-400 ring-1 ring-blue-300 text-slate-900 shadow-2xs font-semibold'
                                     : isDismissed
                                       ? 'bg-white border-slate-300 text-slate-400 hover:border-slate-400'
                                       : 'bg-white border-slate-300 text-slate-700 hover:border-slate-400 focus:border-blue-400'
@@ -520,7 +520,7 @@ export default function TaoLuotTrinhModal({
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-4 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold cursor-pointer transition shadow-2xs disabled:opacity-50"
+              className="px-4 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-[13px] font-semibold cursor-pointer transition shadow-2xs disabled:opacity-50"
             >
               Đóng
             </button>
@@ -529,8 +529,8 @@ export default function TaoLuotTrinhModal({
               type="button"
               disabled={!validation.isValid || isSubmitting}
               onClick={handleConfirm}
-              className={`px-5 py-2 rounded-lg text-white text-xs font-bold flex items-center gap-2 shadow-sm transition ${validation.isValid && !isSubmitting
-                ? 'bg-[#991b1b] hover:bg-[#7f1d1d] active:scale-98 cursor-pointer'
+              className={`px-5 py-2 rounded-lg text-white text-[13px] font-bold flex items-center gap-2 shadow-sm transition ${validation.isValid && !isSubmitting
+                ? 'bg-[#004ac6] hover:bg-[#003ea8] active:scale-98 cursor-pointer'
                 : 'bg-slate-300 text-slate-500 cursor-not-allowed'
                 }`}
             >
@@ -547,10 +547,6 @@ export default function TaoLuotTrinhModal({
               )}
             </button>
           </div>
-
-          {/* <div className="text-[11.5px] text-slate-400 font-normal hidden sm:block">
-            * Mỗi văn bản cần tối thiểu 01 lãnh đạo phân quyền Ký số hoặc Duyệt
-          </div> */}
         </div>
       </div>
     </div>

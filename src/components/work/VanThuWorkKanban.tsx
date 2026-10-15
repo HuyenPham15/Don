@@ -724,12 +724,12 @@ export default function VanThuWorkKanban({
                       <span className="px-2 py-0.5 rounded text-[10.5px] font-bold bg-blue-50 text-[#004ac6] border border-blue-200/60 inline-block">
                         {item.badge}
                       </span>
-                      {item.files && item.files.length > 0 && (
+                      {/* {item.files && item.files.length > 0 && (
                         <span className="text-[10.5px] text-slate-400 font-medium flex items-center gap-0.5" title={`${item.files.length} tệp đính kèm`}>
                           <span className="material-symbols-outlined text-[13px] text-slate-400">attach_file</span>
                           {item.files.length}
                         </span>
-                      )}
+                      )} */}
                     </div>
                     <span className="text-[11px] text-slate-400 font-label-technical">
                       {item.ngayNhan}
@@ -816,12 +816,12 @@ export default function VanThuWorkKanban({
                       <span className="px-2 py-0.5 rounded text-[10.5px] font-bold bg-amber-50 text-amber-800 border border-amber-200/60 inline-block">
                         {item.badge}
                       </span>
-                      {item.files && item.files.length > 0 && (
+                      {/* {item.files && item.files.length > 0 && (
                         <span className="text-[10.5px] text-slate-400 font-medium flex items-center gap-0.5" title={`${item.files.length} tệp đính kèm`}>
                           <span className="material-symbols-outlined text-[13px] text-slate-400">attach_file</span>
                           {item.files.length}
                         </span>
-                      )}
+                      )} */}
                     </div>
                     <span className="text-[11px] text-slate-400 font-label-technical">
                       {item.ngayNhan}
@@ -899,12 +899,12 @@ export default function VanThuWorkKanban({
                       <span className="px-2 py-0.5 rounded text-[10.5px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/60 inline-block">
                         {item.badge}
                       </span>
-                      {item.files && item.files.length > 0 && (
+                      {/* {item.files && item.files.length > 0 && (
                         <span className="text-[10.5px] text-slate-400 font-medium flex items-center gap-0.5" title={`${item.files.length} tệp đính kèm`}>
                           <span className="material-symbols-outlined text-[13px] text-slate-400">attach_file</span>
                           {item.files.length}
                         </span>
-                      )}
+                      )} */}
                     </div>
                     <span className="text-[11px] text-slate-400 font-label-technical">
                       {item.ngayNhan}

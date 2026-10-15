@@ -69,7 +69,10 @@ export type DocumentType =
   | 'bien_ban_ban_giao'      // Biên bản bàn giao đơn
   | 'van_ban_tra_lai'        // Văn bản trả lại đơn
   | 'bao_cao_xac_minh'       // Báo cáo kết quả xác minh
-  | 'ket_luan_to_cao';       // Kết luận nội dung tố cáo
+  | 'ket_luan_to_cao'        // Kết luận nội dung tố cáo
+  | 'thong_bao_bo_sung'      // Thông báo bổ sung thông tin hồ sơ
+  | 'chuyen_don'             // Phiếu chuyển đơn xử lý
+  | 'tra_loi_don';           // Văn bản trả lời đơn công dân
 
 export interface SigningHistoryLog {
   id: string;

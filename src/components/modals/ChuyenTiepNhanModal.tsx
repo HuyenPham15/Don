@@ -158,7 +158,7 @@ export default function ChuyenTiepNhanModal({
 
         {/* Modal Body */}
         <div className="p-6 overflow-y-auto space-y-4 text-xs text-slate-700">
-          {donInfo.hasFiles === false ? (
+          {/* {donInfo.hasFiles === false ? (
             <div className="p-3 bg-amber-50/90 border border-amber-200 rounded-xl flex items-start gap-2.5 text-amber-900 text-xs">
               <span className="material-symbols-outlined text-amber-600 text-[18px] shrink-0 mt-0.5">info</span>
               <div>
@@ -178,7 +178,7 @@ export default function ChuyenTiepNhanModal({
                 </p>
               </div>
             </div>
-          )}
+          )} */}
 
           <form id="chuyen-tiep-nhan-form" onSubmit={handleSubmit} className="space-y-4">
             {/* SELECT DẠNG CÂY: ĐƠN VỊ TIẾP NHẬN TRƯỚC -> MỞ RỘNG CÁN BỘ BÊN DƯỚI */}

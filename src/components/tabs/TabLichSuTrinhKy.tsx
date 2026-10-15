@@ -192,20 +192,20 @@ export default function TabLichSuTrinhKy({
   const renderStatusBadge = (status: VanBanTrinhKyItem['trangThai'], label: string) => {
     if (status === 'dang_trinh') {
       return (
-        <span className="inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs font-medium bg-[#f0f7ff] text-[#1967d2] border border-[#d2e3fc] whitespace-nowrap">
+        <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full text-[12px] font-semibold bg-[#f0f7ff] text-[#1967d2] border border-[#d2e3fc] whitespace-nowrap shadow-2xs">
           {label}
         </span>
       );
     }
     if (status === 'da_thu_hoi') {
       return (
-        <span className="inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs font-medium bg-[#fef2f2] text-[#c5221f] border border-[#fad2cf] whitespace-nowrap">
+        <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full text-[12px] font-semibold bg-[#fef2f2] text-[#c5221f] border border-[#fad2cf] whitespace-nowrap shadow-2xs">
           {label}
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center justify-center px-3 py-0.5 rounded-full text-xs font-medium bg-[#f0fdf4] text-[#15803d] border border-[#bbf7d0] whitespace-nowrap">
+      <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full text-[12px] font-semibold bg-[#f0fdf4] text-[#15803d] border border-[#bbf7d0] whitespace-nowrap shadow-2xs">
         {label}
       </span>
     );
@@ -254,10 +254,10 @@ export default function TabLichSuTrinhKy({
   }
 
   return (
-    <div className="w-full text-slate-800 font-sans pb-10 select-none animate-fade-in">
+    <div className="w-full text-slate-800 pb-10 select-none animate-fade-in text-[13.5px]">
       {/* Toast Notification */}
       {toastMsg && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-2.5 bg-slate-900 text-white rounded-xl shadow-xl border border-slate-700 text-xs font-medium animate-fade-in">
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-2.5 bg-slate-900 text-white rounded-xl shadow-xl border border-slate-700 text-[13px] font-medium animate-fade-in">
           <span className="material-symbols-outlined text-blue-400 text-[18px]">check_circle</span>
           <span>{toastMsg}</span>
         </div>
@@ -268,7 +268,7 @@ export default function TabLichSuTrinhKy({
         {/* Left Filters Group */}
         <div className="flex flex-wrap items-center gap-2 flex-1 min-w-[280px]">
           {/* Date Range Box */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-normal text-slate-700 shadow-2xs">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-[13px] font-medium text-slate-700 shadow-2xs">
             <span>{startDate}</span>
             <span className="text-slate-400">→</span>
             <span>{endDate}</span>
@@ -285,7 +285,7 @@ export default function TabLichSuTrinhKy({
                 setFilterStatus(e.target.value);
                 setCurrentPage(1);
               }}
-              className="appearance-none bg-white border border-slate-300 rounded-lg pl-3 pr-7 py-1.5 text-xs text-slate-700 font-normal focus:outline-none focus:border-blue-500 cursor-pointer shadow-2xs"
+              className="appearance-none bg-white border border-slate-300 rounded-lg pl-3 pr-7 py-1.5 text-[13px] text-slate-700 font-medium focus:outline-none focus:border-blue-500 cursor-pointer shadow-2xs"
             >
               <option value="all">Trạng thái: Tất cả</option>
               <option value="dang_trinh">Đang trình</option>
@@ -305,7 +305,7 @@ export default function TabLichSuTrinhKy({
                 setFilterLeader(e.target.value);
                 setCurrentPage(1);
               }}
-              className="appearance-none bg-white border border-slate-300 rounded-lg pl-3 pr-7 py-1.5 text-xs text-slate-700 font-normal focus:outline-none focus:border-blue-500 cursor-pointer shadow-2xs"
+              className="appearance-none bg-white border border-slate-300 rounded-lg pl-3 pr-7 py-1.5 text-[13px] text-slate-700 font-medium focus:outline-none focus:border-blue-500 cursor-pointer shadow-2xs"
             >
               <option value="all">Lãnh đạo: Tất cả</option>
               <option value="Nguyễn Đức Thắng">Nguyễn Đức Thắng</option>
@@ -326,7 +326,7 @@ export default function TabLichSuTrinhKy({
                 setFilterDocType(e.target.value);
                 setCurrentPage(1);
               }}
-              className="appearance-none bg-white border border-slate-300 rounded-lg pl-3 pr-7 py-1.5 text-xs text-slate-700 font-normal focus:outline-none focus:border-blue-500 cursor-pointer shadow-2xs"
+              className="appearance-none bg-white border border-slate-300 rounded-lg pl-3 pr-7 py-1.5 text-[13px] text-slate-700 font-medium focus:outline-none focus:border-blue-500 cursor-pointer shadow-2xs"
             >
               <option value="all">Loại văn bản: Tất cả</option>
               <option value="Phiếu thông báo chuyển thẩm quyền">Phiếu thông báo chuyển thẩm quyền</option>
@@ -345,7 +345,7 @@ export default function TabLichSuTrinhKy({
           <button
             type="button"
             onClick={handleResetFilters}
-            className="px-3.5 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-normal rounded-lg transition-colors cursor-pointer shadow-2xs"
+            className="px-3.5 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-[13px] font-medium rounded-lg transition-colors cursor-pointer shadow-2xs"
           >
             Xóa bộ lọc
           </button>
@@ -353,7 +353,7 @@ export default function TabLichSuTrinhKy({
           <button
             type="button"
             onClick={handleRefresh}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-normal rounded-lg transition-colors cursor-pointer shadow-2xs"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-[13px] font-medium rounded-lg transition-colors cursor-pointer shadow-2xs"
           >
             <span
               className={`material-symbols-outlined text-[15px] text-slate-500 ${isRefreshing ? 'animate-spin' : ''
@@ -369,26 +369,26 @@ export default function TabLichSuTrinhKy({
       {/* Main Table Container */}
       <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+          <table className="w-full text-left border-collapse">
             {/* Table Header with vertical divider borders */}
             <thead>
-              <tr className="bg-[#f8fafc] border-b border-slate-200 text-slate-600 font-medium">
-                <th className="py-2.5 px-4 font-medium border-r border-slate-200/80 w-[140px]">
+              <tr className="bg-slate-50/90 border-b border-slate-200 text-[12px] font-bold text-slate-700 uppercase tracking-wider">
+                <th className="py-3 px-4 font-bold border-r border-slate-200/80 w-[140px]">
                   Ngày
                 </th>
-                <th className="py-2.5 px-4 font-medium border-r border-slate-200/80">
+                <th className="py-3 px-4 font-bold border-r border-slate-200/80">
                   Văn bản
                 </th>
-                <th className="py-2.5 px-4 font-medium border-r border-slate-200/80 w-[220px]">
+                <th className="py-3 px-4 font-bold border-r border-slate-200/80 w-[220px]">
                   Đang trình tới
                 </th>
-                <th className="py-2.5 px-4 font-medium border-r border-slate-200/80 w-[190px]">
+                <th className="py-3 px-4 font-bold border-r border-slate-200/80 w-[190px]">
                   Tiến độ
                 </th>
-                <th className="py-2.5 px-4 font-medium border-r border-slate-200/80 w-[150px]">
+                <th className="py-3 px-4 font-bold border-r border-slate-200/80 w-[150px]">
                   Trạng thái
                 </th>
-                <th className="py-2.5 px-4 font-medium text-center w-[90px]">
+                <th className="py-3 px-4 font-bold text-center w-[90px]">
                   Thao tác
                 </th>
               </tr>
@@ -398,7 +398,7 @@ export default function TabLichSuTrinhKy({
             <tbody className="divide-y divide-slate-200">
               {displayedItems.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-400 text-xs">
+                  <td colSpan={6} className="py-12 text-center text-slate-400 text-[13px] font-medium">
                     Không có văn bản trình ký nào phù hợp với điều kiện tìm kiếm.
                   </td>
                 </tr>
@@ -411,26 +411,34 @@ export default function TabLichSuTrinhKy({
                       className="hover:bg-slate-50/70 transition-colors h-[54px] cursor-pointer"
                     >
                       {/* Cột 1: Ngày */}
-                      <td className="py-3 px-4 font-semibold text-slate-900 text-xs whitespace-nowrap align-middle">
+                      <td className="py-3.5 px-4 font-semibold text-slate-900 text-[13px] whitespace-nowrap align-middle">
                         {item.ngay}
                       </td>
 
                       {/* Cột 2: Văn bản */}
-                      <td className="py-3 px-4 text-slate-900 font-medium text-xs align-middle">
-                        <span className="block truncate max-w-[420px]" title={item.tenVanBan}>
+                      <td className="py-3.5 px-4 text-slate-900 align-middle">
+                        <div className="font-semibold text-[13.5px] text-slate-900 truncate max-w-[440px]" title={item.tenVanBan}>
                           {item.tenVanBan}
-                        </span>
+                        </div>
+                        {item.soKyHieu && (
+                          <span className="inline-block text-[11.5px] font-mono text-slate-400 mt-0.5">
+                            {item.soKyHieu}
+                          </span>
+                        )}
                       </td>
 
                       {/* Cột 3: Đang trình tới */}
-                      <td className="py-3 px-4 text-slate-800 text-xs whitespace-nowrap align-middle">
-                        {item.dangTrinhToi}
+                      <td className="py-3.5 px-4 text-slate-800 text-[13px] whitespace-nowrap align-middle">
+                        <div className="font-semibold text-slate-800">{item.dangTrinhToi}</div>
+                        {item.chucVuNguoiNhan && (
+                          <div className="text-[11.5px] text-slate-500 font-normal mt-0.5">{item.chucVuNguoiNhan}</div>
+                        )}
                       </td>
 
                       {/* Cột 4: Tiến độ */}
-                      <td className="py-3 px-4 text-xs align-middle">
+                      <td className="py-3.5 px-4 align-middle">
                         <div className="flex flex-col gap-1.5 w-[140px]">
-                          <span className="text-slate-600 text-[11px] font-normal leading-none">
+                          <span className="text-slate-600 text-[12px] font-medium leading-none">
                             Đã qua {item.tienDoDaQua}/{item.tienDoTong}
                           </span>
                           <div className="flex items-center gap-1.5 w-full">
@@ -439,7 +447,7 @@ export default function TabLichSuTrinhKy({
                               return (
                                 <div
                                   key={segIdx}
-                                  className={`h-1 flex-1 rounded-sm ${isCompleted ? 'bg-[#15803d]' : 'bg-[#e2e8f0]'
+                                  className={`h-1.5 flex-1 rounded-sm ${isCompleted ? 'bg-[#15803d]' : 'bg-slate-200'
                                     }`}
                                 />
                               );
@@ -449,19 +457,19 @@ export default function TabLichSuTrinhKy({
                       </td>
 
                       {/* Cột 5: Trạng thái */}
-                      <td className="py-3 px-4 align-middle">
+                      <td className="py-3.5 px-4 align-middle">
                         {renderStatusBadge(item.trangThai, item.trangThaiLabel)}
                       </td>
 
                       {/* Cột 6: Thao tác */}
-                      <td className="py-3 px-4 text-center align-middle">
+                      <td className="py-3.5 px-4 text-center align-middle">
                         <button
                           type="button"
                           onClick={() => handleOpenDoc(item)}
                           title="Xem văn bản"
-                          className="w-7 h-7 rounded border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors cursor-pointer shadow-2xs mx-auto"
+                          className="w-8 h-8 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors cursor-pointer shadow-2xs mx-auto"
                         >
-                          <span className="material-symbols-outlined text-[16px]">
+                          <span className="material-symbols-outlined text-[17px]">
                             visibility
                           </span>
                         </button>
@@ -475,7 +483,7 @@ export default function TabLichSuTrinhKy({
         </div>
 
         {/* Table Footer matching Figma screenshot */}
-        <div className="px-4 py-2.5 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500 bg-white">
+        <div className="px-4 py-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 text-[13px] text-slate-500 bg-white">
           {/* Left summary text */}
           <div>
             Hiển thị <strong className="font-semibold text-slate-800">{displayedItems.length > 0 ? `1 - ${displayedItems.length}` : '0'}</strong> của{' '}
@@ -489,13 +497,13 @@ export default function TabLichSuTrinhKy({
                 type="button"
                 disabled={currentPage <= 1}
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                className="w-6 h-6 flex items-center justify-center text-slate-500 hover:text-slate-800 disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+                className="w-7 h-7 flex items-center justify-center text-slate-500 hover:text-slate-800 disabled:opacity-30 disabled:pointer-events-none cursor-pointer rounded-lg hover:bg-slate-100 transition-colors"
                 aria-label="Trang trước"
               >
-                <span className="material-symbols-outlined text-[17px]">chevron_left</span>
+                <span className="material-symbols-outlined text-[18px]">chevron_left</span>
               </button>
 
-              <div className="w-6 h-6 rounded-full border border-blue-600 text-blue-600 font-semibold text-xs flex items-center justify-center">
+              <div className="w-7 h-7 rounded-full border border-blue-600 bg-blue-50/60 text-[#004ac6] font-bold text-[12.5px] flex items-center justify-center shadow-2xs">
                 {currentPage}
               </div>
 
@@ -503,10 +511,10 @@ export default function TabLichSuTrinhKy({
                 type="button"
                 disabled={currentPage >= totalPages}
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                className="w-6 h-6 flex items-center justify-center text-slate-500 hover:text-slate-800 disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+                className="w-7 h-7 flex items-center justify-center text-slate-500 hover:text-slate-800 disabled:opacity-30 disabled:pointer-events-none cursor-pointer rounded-lg hover:bg-slate-100 transition-colors"
                 aria-label="Trang sau"
               >
-                <span className="material-symbols-outlined text-[17px]">chevron_right</span>
+                <span className="material-symbols-outlined text-[18px]">chevron_right</span>
               </button>
             </div>
 
@@ -518,13 +526,13 @@ export default function TabLichSuTrinhKy({
                   setPageSize(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="appearance-none bg-white border border-slate-300 rounded px-2.5 py-1 text-xs text-slate-700 font-normal focus:outline-none cursor-pointer pr-6 shadow-2xs"
+                className="appearance-none bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-[12.5px] text-slate-700 font-medium focus:outline-none cursor-pointer pr-6 shadow-2xs"
               >
                 <option value={10}>10 / trang</option>
                 <option value={20}>20 / trang</option>
                 <option value={50}>50 / trang</option>
               </select>
-              <span className="material-symbols-outlined absolute right-1 pointer-events-none text-[15px] text-slate-400">
+              <span className="material-symbols-outlined absolute right-1.5 pointer-events-none text-[16px] text-slate-400">
                 expand_more
               </span>
             </div>

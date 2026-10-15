@@ -493,20 +493,20 @@ p {
   flex: 1;
 }
 
-table {
+.table-scroll table {
   width: 100%;
   min-width: 1130px;
   border-collapse: collapse;
   table-layout: fixed;
 }
 
-thead {
+.table-scroll thead {
   position: sticky;
   z-index: 1;
   top: 0;
 }
 
-th {
+.table-scroll th {
   height: 36px;
   padding: 0 10px;
   border-bottom: 1px solid var(--border);
@@ -518,45 +518,45 @@ th {
   text-align: left;
 }
 
-th:nth-child(1) {
+.table-scroll th:nth-child(1) {
   width: 4%;
   text-align: center;
 }
 
-th:nth-child(2) {
+.table-scroll th:nth-child(2) {
   width: 24%;
 }
 
-th:nth-child(3) {
+.table-scroll th:nth-child(3) {
   width: 8%;
 }
 
-th:nth-child(4) {
+.table-scroll th:nth-child(4) {
   width: 11%;
 }
 
-th:nth-child(5) {
+.table-scroll th:nth-child(5) {
   width: 11%;
 }
 
-th:nth-child(6) {
+.table-scroll th:nth-child(6) {
   width: 10%;
 }
 
-th:nth-child(7) {
+.table-scroll th:nth-child(7) {
   width: 13%;
 }
 
-th:nth-child(8) {
+.table-scroll th:nth-child(8) {
   width: 14%;
 }
 
-th:nth-child(9) {
+.table-scroll th:nth-child(9) {
   width: 5%;
   text-align: center;
 }
 
-td {
+.table-scroll td {
   height: 60px;
   padding: 7px 10px;
   border-bottom: 1px solid #edf0f3;
@@ -565,7 +565,7 @@ td {
   vertical-align: middle;
 }
 
-tbody tr:hover {
+.table-scroll tbody tr:hover {
   background: #fefcfc;
 }
 

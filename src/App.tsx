@@ -289,7 +289,10 @@ export default function App() {
   const handleAcceptFromBanPhanTich = useCallback((don: DonDetail, wfState?: ActiveWorkflowState) => {
     const donWithStatus: DonDetail = {
       ...don,
-      statusBadge: don.statusBadge || 'Đang xác minh thông tin',
+      statusBadge: don.statusBadge || 'Chờ tiếp nhận',
+      isAwaitingAcceptance: don.isAwaitingAcceptance !== undefined ? don.isAwaitingAcceptance : true,
+      hasBaoCaoDeXuat: false,
+      fromBanPhanTich: true,
     };
     setAcceptedDons((prev) => [donWithStatus, ...prev.filter((d) => d.code !== donWithStatus.code)]);
     setSelectedDon(donWithStatus);

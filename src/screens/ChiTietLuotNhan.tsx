@@ -319,7 +319,7 @@ export default function ChiTietLuotNhan({
               </span>
 
               {/* Tag Nguồn tệp */}
-              {!hasFiles ? (
+              {/* {!hasFiles ? (
                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300">
                   <span className="material-symbols-outlined text-[13px]">edit_note</span>
                   <span>Chưa có tệp (Chuyển trực tiếp)</span>
@@ -329,7 +329,7 @@ export default function ChiTietLuotNhan({
                   <span className="material-symbols-outlined text-[13px]">attach_file</span>
                   <span>Có tệp đính kèm</span>
                 </span>
-              )}
+              )} */}
             </div>
           </div>
 

@@ -369,38 +369,15 @@ export default function KhongThuLyModal({
             Hủy
           </button>
 
-          <div className="flex items-center gap-2.5">
-            <button
-              type="button"
-              onClick={() => setActiveTab(activeTab === 'form' ? 'preview' : 'form')}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold cursor-pointer transition shadow-2xs"
-            >
-              <span className="material-symbols-outlined text-[16px] text-slate-500">
-                {activeTab === 'form' ? 'visibility' : 'edit_note'}
-              </span>
-              <span>{activeTab === 'form' ? 'Xem trước bản in' : 'Quay lại biểu mẫu'}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleConfirmSubmit('save')}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold cursor-pointer transition shadow-2xs"
-              title="Lưu văn bản vào tab Hồ sơ & Văn bản (Trạng thái: Bản nháp)"
-            >
-              <span className="material-symbols-outlined text-[16px] text-slate-500">save</span>
-              <span>Lưu nháp</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleConfirmSubmit('trinh_ky')}
-              className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-98 text-white text-xs font-bold shadow-md shadow-rose-200 cursor-pointer transition"
-              title="Lập quyết định và chuyển sang luồng trình ký Lãnh đạo phê duyệt"
-            >
-              <span className="material-symbols-outlined text-[18px]">send</span>
-              <span>Trình ký Lãnh đạo</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => handleConfirmSubmit('save')}
+            className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-[#004ac6] hover:bg-[#003ea8] active:scale-98 text-white text-xs font-bold shadow-xs cursor-pointer transition"
+            title="Lưu văn bản vào danh sách tài liệu xử lý"
+          >
+            <span className="material-symbols-outlined text-[16px]">save</span>
+            <span>Lưu văn bản</span>
+          </button>
         </div>
       </div>
     </div>

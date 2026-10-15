@@ -330,7 +330,7 @@ export default function TraLaiDonModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    handleDoSubmit('trinh_ky');
+    handleDoSubmit('luu_nhap');
   };
 
   if (!isOpen) return null;
@@ -459,7 +459,7 @@ export default function TraLaiDonModal({
               </div>
 
               {/* ──────────────── 2. THÔNG TIN ĐỊA CHỈ TRẢ LẠI CỦA NGƯỜI NỘP ĐƠN ──────────────── */}
-              <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs space-y-3">
+              {/* <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs space-y-3">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                   <div className="flex items-center gap-2">
                     <span className="w-5 h-5 rounded-full bg-slate-100 text-slate-800 text-xs font-bold flex items-center justify-center">
@@ -504,10 +504,10 @@ export default function TraLaiDonModal({
                     {errors.diaChi && <p className="text-[11px] text-rose-600 font-medium mt-0.5">{errors.diaChi}</p>}
                   </div>
                 </div>
-              </div>
+              </div> */}
 
               {/* ──────────────── 3. HÌNH THỨC NHẬN CỦA NGƯỜI NỘP ĐƠN (ĐỒNG BỘ TỪ LƯỢT NHẬN) ──────────────── */}
-              <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs space-y-2.5">
+              {/* <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs space-y-2.5">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                   <div className="flex items-center gap-2">
                     <span className="w-5 h-5 rounded-full bg-slate-100 text-slate-800 text-xs font-bold flex items-center justify-center">
@@ -535,7 +535,7 @@ export default function TraLaiDonModal({
 
                   </div>
                 </div>
-              </div>
+              </div> */}
 
               {/* ──────────────── 4. LUỒNG TRÌNH KÝ LÃNH ĐẠO DUYỆT VĂN BẢN TRẢ ĐƠN ──────────────── */}
               {/* <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs space-y-3">
@@ -625,16 +625,17 @@ export default function TraLaiDonModal({
                   type="submit"
                   disabled={isSubmitting}
                   className="px-6 py-2.5 rounded-xl bg-[#004ac6] hover:bg-[#003ea8] active:scale-95 text-white text-xs font-bold shadow-md shadow-blue-600/20 cursor-pointer flex items-center gap-1.5 transition-all disabled:opacity-50"
+                  title="Lưu văn bản vào hồ sơ xử lý"
                 >
                   {isSubmitting ? (
                     <>
                       <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                      <span>Đang chuyển trình ký...</span>
+                      <span>Đang lưu văn bản...</span>
                     </>
                   ) : (
                     <>
-                      <span className="material-symbols-outlined text-[18px]">draw</span>
-                      <span>Lưu &amp; Trình ký Lãnh đạo ➔</span>
+                      <span className="material-symbols-outlined text-[18px]">save</span>
+                      <span>Lưu văn bản</span>
                     </>
                   )}
                 </button>
@@ -772,10 +773,20 @@ export default function TraLaiDonModal({
                   type="button"
                   onClick={handleSubmit}
                   disabled={isSubmitting}
-                  className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow cursor-pointer flex items-center gap-1.5"
+                  className="px-5 py-2 rounded-xl bg-[#004ac6] hover:bg-[#003ea8] text-white text-xs font-bold shadow cursor-pointer flex items-center gap-1.5 transition-all disabled:opacity-50"
+                  title="Lưu văn bản vào hồ sơ xử lý"
                 >
-                  <span className="material-symbols-outlined text-[16px]">send</span>
-                  <span>Xác nhận &amp; Ban hành văn bản ➔</span>
+                  {isSubmitting ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                      <span>Đang lưu văn bản...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined text-[16px]">save</span>
+                      <span>Lưu văn bản</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>

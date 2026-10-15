@@ -180,6 +180,85 @@ export interface DonDetail {
   isNoFileTransfer?: boolean;
   hasFile?: boolean;
   isNew?: boolean;
+  hasBaoCaoDeXuat?: boolean;
+  fromBanPhanTich?: boolean;
+  quyetDinhTraLai?: QuyetDinhTraLaiInfo;
+  trangThaiGuiQuyetDinh?: TrangThaiGuiQuyetDinh;
+}
+
+export type TrangThaiGuiQuyetDinh = 
+  | 'cho_gui'          // Bước 3: Chờ gửi cho đương sự
+  | 'da_gui'           // Bước 4: Đã gửi cho đương sự
+  | 'da_giao_nhan'     // Bước 4 nâng cao: Đã giao/Đã nhận (khi có biên bản ký nhận hoặc xác nhận bưu chính thành công)
+  | 'gui_that_bai';    // Thất bại / bị hoàn trả
+
+export type PhuongThucGuiQuyetDinh = 
+  | 'truc_tiep'        // Gửi trực tiếp tại trụ sở
+  | 'buu_chinh'        // Gửi qua bưu chính (VNPost / ViettelPost)
+  | 'dien_tu';         // Gửi điện tử (Cổng DVC / Email)
+
+export interface ChungTuGiaoNhan {
+  id: string;
+  name: string;
+  size: string;
+  uploadTime: string;
+  loaiChungTu: 'bien_ban_ban_giao' | 'phieu_gui_buu_dien' | 'giay_bao_phat' | 'anh_chup' | 'khac';
+}
+
+export interface ThongTinGuiQuyetDinh {
+  id: string;
+  lanGui: number; // Lần gửi thứ 1, 2...
+  ngayGui: string; // Ngày gửi
+  gioGui?: string;
+  nguoiThucHien: string; // Cán bộ gửi
+  phuongThuc: PhuongThucGuiQuyetDinh;
+  trangThai: TrangThaiGuiQuyetDinh;
+  
+  // Thông tin người nhận tại thời điểm gửi
+  nguoiNhan: string;
+  diaChiNhan: string;
+  sdtNhan?: string;
+  emailNhan?: string;
+  
+  // 1. Trực tiếp
+  nguoiGiao?: string;
+  ngayGiao?: string;
+  xacNhanGiaoNhan?: string; // Ghi chú xác nhận / CMND người nhận trực tiếp
+  
+  // 2. Bưu chính
+  donViVanChuyen?: string; // 'VNPost' | 'ViettelPost' | string
+  maVanDon?: string;
+  ngayGuiBuuChinh?: string;
+  
+  // 3. Điện tử
+  diaChiDienTu?: string;
+  thoiDiemGuiDienTu?: string;
+  maPhanHoiDienTu?: string;
+  trangThaiGuiDienTu?: 'thanh_cong' | 'that_bai' | 'cho_xac_nhan';
+  
+  // Chứng từ & Ghi chú
+  ghiChu?: string;
+  chungTuList?: ChungTuGiaoNhan[];
+  
+  // Trường hợp gửi lại
+  lyDoGuiLai?: string;
+  ketQuaGui?: string;
+  thoiDiemNhanThanhCong?: string;
+  nguoiKyNhan?: string;
+}
+
+export interface QuyetDinhTraLaiInfo {
+  soQuyetDinh: string;
+  ngayBanHanh: string;
+  nguoiKy: string;
+  chucVuNguoiKy?: string;
+  thoiDiemKy?: string;
+  tepQuyetDinh?: { name: string; size: string; url?: string };
+  lyDoTraLai: string;
+  canCuPhapLy?: string;
+  trangThaiGui: TrangThaiGuiQuyetDinh;
+  thongTinGuiHienTai?: ThongTinGuiQuyetDinh;
+  lichSuGui?: ThongTinGuiQuyetDinh[];
 }
 
 export interface UploadedFile { name: string; size: string; category: "main" | "attach" | "extra"; }

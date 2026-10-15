@@ -185,22 +185,46 @@ export default function TabTaiLieu({
   // Nhận doc từ initialEditingDoc nếu có
   useEffect(() => {
     if (initialEditingDoc) {
-      const exists = documents.find((d) => d.id === initialEditingDoc.id || d.soHieu === initialEditingDoc.soHieu);
-      if (exists) {
-        setActiveDocId(exists.id);
-        setSelectedDocIds([exists.id]);
+      const existsIdx = documents.findIndex((d) => d.id === initialEditingDoc.id || (initialEditingDoc.soHieu && d.soHieu === initialEditingDoc.soHieu));
+      if (existsIdx >= 0) {
+        const updated = {
+          ...documents[existsIdx],
+          noiDungChiTiet: initialEditingDoc.noiDungChiTiet || documents[existsIdx].noiDungChiTiet,
+          previewExcerpt: (initialEditingDoc as any).previewExcerpt || initialEditingDoc.noiDungChiTiet || documents[existsIdx].previewExcerpt,
+          category: initialEditingDoc.category || documents[existsIdx].category,
+          folder: (initialEditingDoc as any).folder || documents[existsIdx].folder,
+          name: (initialEditingDoc as any).name || documents[existsIdx].name,
+          soHieu: initialEditingDoc.soHieu || documents[existsIdx].soHieu,
+          trangThaiTrinhKy: (initialEditingDoc as any).signingStatus === 'da_trinh' ? 'dang_trinh' : documents[existsIdx].trangThaiTrinhKy,
+        };
+        setDocuments((prev) => {
+          const next = [...prev];
+          next[existsIdx] = updated;
+          return next;
+        });
+        setActiveDocId(updated.id);
+        setSelectedDocIds([updated.id]);
       } else {
         const isQd = Boolean(
           initialEditingDoc.category?.toLowerCase().includes('quyết định') ||
           (initialEditingDoc as any).tenVanBan?.toLowerCase().includes('quyết định') ||
           (initialEditingDoc as any).loaiVanBan === 'quyet_dinh' ||
           (initialEditingDoc as any).loaiVanBan === 'quyet_dinh_thu_ly' ||
-          initialEditingDoc.category?.toLowerCase().includes('thụ lý')
+          (initialEditingDoc as any).loaiVanBan === 'van_ban_tra_lai' ||
+          (initialEditingDoc as any).loaiVanBan === 'thong_bao_khong_thu_ly' ||
+          (initialEditingDoc as any).loaiVanBan === 'chuyen_don' ||
+          (initialEditingDoc as any).loaiVanBan === 'tra_loi_don' ||
+          (initialEditingDoc as any).loaiVanBan === 'thong_bao_bo_sung' ||
+          initialEditingDoc.category?.toLowerCase().includes('thụ lý') ||
+          initialEditingDoc.category?.toLowerCase().includes('trả lại') ||
+          initialEditingDoc.category?.toLowerCase().includes('không thụ lý') ||
+          initialEditingDoc.category?.toLowerCase().includes('chuyển') ||
+          initialEditingDoc.category?.toLowerCase().includes('trả lời')
         );
         const docToAdd: DocItem = {
           id: initialEditingDoc.id || `DOC-INIT-${Date.now()}`,
           name: (initialEditingDoc as any).name || initialEditingDoc.tenVanBan || 'Văn bản',
-          category: initialEditingDoc.category || (isQd ? 'Quyết định thụ lý' : 'Báo cáo đề xuất'),
+          category: initialEditingDoc.category || (isQd ? 'Văn bản quyết định' : 'Báo cáo đề xuất'),
           folder: (initialEditingDoc as any).folder || (isQd ? 'van_ban_quyet_dinh' : 'ho_so_ban_dau'),
           soHieu: initialEditingDoc.soHieu,
           size: (initialEditingDoc as any).size || '380 KB',
@@ -209,12 +233,12 @@ export default function TabTaiLieu({
           signer: initialEditingDoc.signer || currentDon.canBoXuLy || 'Nguyễn Minh Anh',
           coQuanBanHanh: initialEditingDoc.coQuanBanHanh || 'Phòng Tiếp công dân & Xử lý đơn',
           ocrStatus: 'Hoàn tất',
-          previewExcerpt: initialEditingDoc.noiDungChiTiet || '',
+          previewExcerpt: (initialEditingDoc as any).previewExcerpt || initialEditingDoc.noiDungChiTiet || '',
           noiDungChiTiet: initialEditingDoc.noiDungChiTiet || '',
           loaiVanBan: (initialEditingDoc as any).loaiVanBan || (initialEditingDoc.loai as any) || (isQd ? 'quyet_dinh' : 'bao_cao_de_xuat'),
           tenVanBan: initialEditingDoc.tenVanBan,
           trichYeu: initialEditingDoc.trichYeu,
-          trangThaiTrinhKy: 'chua_trinh',
+          trangThaiTrinhKy: (initialEditingDoc as any).signingStatus === 'da_trinh' ? 'dang_trinh' : 'chua_trinh',
           yeuCau: 'Ký',
         };
         setDocuments((prev) => [docToAdd, ...prev]);
@@ -254,31 +278,22 @@ export default function TabTaiLieu({
     setSelectedDocIds([]);
   };
 
-  // Chọn toàn bộ văn bản trong thư mục "Hồ sơ ban đầu" (chỉ những văn bản chưa có hiệu lực)
-  const selectableDocsInHoSo = documents.filter(
-    (d) => d.folder === 'ho_so_ban_dau' && d.trangThaiTrinhKy !== 'da_co_hieu_luc'
-  );
-  const isAllHoSoSelected =
-    selectableDocsInHoSo.length > 0 &&
-    selectableDocsInHoSo.every((d) => selectedDocIds.includes(d.id));
-
-  const handleToggleSelectAllHoSo = () => {
-    if (isAllHoSoSelected) {
-      const hoSoIds = selectableDocsInHoSo.map((d) => d.id);
-      setSelectedDocIds((prev) => prev.filter((id) => !hoSoIds.includes(id)));
-    } else {
-      const hoSoIds = selectableDocsInHoSo.map((d) => d.id);
-      setSelectedDocIds((prev) => Array.from(new Set([...prev, ...hoSoIds])));
-    }
-  };
-
   // Checkbox nhóm "Văn bản và quyết định xử lý"
   const quyetDinhDocs = documents.filter(
     (d) =>
       d.folder === 'van_ban_quyet_dinh' ||
       d.category?.toLowerCase().includes('quyết định') ||
+      d.category?.toLowerCase().includes('trả lại') ||
+      d.category?.toLowerCase().includes('không thụ lý') ||
+      d.category?.toLowerCase().includes('chuyển') ||
+      d.category?.toLowerCase().includes('trả lời') ||
       d.loaiVanBan === 'quyet_dinh' ||
-      (d.loaiVanBan as string) === 'quyet_dinh_thu_ly'
+      (d.loaiVanBan as string) === 'quyet_dinh_thu_ly' ||
+      (d.loaiVanBan as string) === 'van_ban_tra_lai' ||
+      (d.loaiVanBan as string) === 'thong_bao_khong_thu_ly' ||
+      (d.loaiVanBan as string) === 'chuyen_don' ||
+      (d.loaiVanBan as string) === 'tra_loi_don' ||
+      (d.loaiVanBan as string) === 'thong_bao_bo_sung'
   );
   const selectableDocsInQuyetDinh = quyetDinhDocs.filter(
     (d) => d.trangThaiTrinhKy !== 'da_co_hieu_luc'
@@ -294,6 +309,24 @@ export default function TabTaiLieu({
     } else {
       const qdIds = selectableDocsInQuyetDinh.map((d) => d.id);
       setSelectedDocIds((prev) => Array.from(new Set([...prev, ...qdIds])));
+    }
+  };
+
+  // Chọn toàn bộ văn bản trong thư mục "Hồ sơ ban đầu" (chỉ những văn bản chưa có hiệu lực và không thuộc quyết định)
+  const selectableDocsInHoSo = documents.filter(
+    (d) => d.folder === 'ho_so_ban_dau' && !quyetDinhDocs.some((q) => q.id === d.id) && d.trangThaiTrinhKy !== 'da_co_hieu_luc'
+  );
+  const isAllHoSoSelected =
+    selectableDocsInHoSo.length > 0 &&
+    selectableDocsInHoSo.every((d) => selectedDocIds.includes(d.id));
+
+  const handleToggleSelectAllHoSo = () => {
+    if (isAllHoSoSelected) {
+      const hoSoIds = selectableDocsInHoSo.map((d) => d.id);
+      setSelectedDocIds((prev) => prev.filter((id) => !hoSoIds.includes(id)));
+    } else {
+      const hoSoIds = selectableDocsInHoSo.map((d) => d.id);
+      setSelectedDocIds((prev) => Array.from(new Set([...prev, ...hoSoIds])));
     }
   };
 
@@ -350,10 +383,37 @@ export default function TabTaiLieu({
       });
 
       const primarySigner = signers.find((s) => s.vaiTro === 'ky') || signers[0];
+
+      const isTraLai = Boolean(
+        (doc.loaiVanBan as string) === 'van_ban_tra_lai' ||
+        doc.category?.toLowerCase().includes('trả lại') ||
+        doc.name.toLowerCase().includes('trả lại') ||
+        doc.name.toLowerCase().includes('tra_lai')
+      );
+      const isKhongThuLy = Boolean(
+        (doc.loaiVanBan as string) === 'thong_bao_khong_thu_ly' ||
+        doc.category?.toLowerCase().includes('không thụ lý') ||
+        doc.name.toLowerCase().includes('không thụ lý') ||
+        doc.name.toLowerCase().includes('khong_thu_ly')
+      );
+      const isChuyenDon = Boolean(
+        (doc.loaiVanBan as string) === 'bien_ban_ban_giao' ||
+        (doc.loaiVanBan as string) === 'phieu_chuyen_don' ||
+        (doc.loaiVanBan as string) === 'chuyen_don' ||
+        doc.category?.toLowerCase().includes('chuyển') ||
+        doc.name.toLowerCase().includes('chuyen_don') ||
+        doc.name.toLowerCase().includes('chuyển đơn')
+      );
+      const isTraLoiDon = Boolean(
+        (doc.loaiVanBan as string) === 'tra_loi_don' ||
+        doc.category?.toLowerCase().includes('trả lời') ||
+        doc.name.toLowerCase().includes('tra_loi') ||
+        doc.name.toLowerCase().includes('trả lời')
+      );
       const isQuyetDinhThuLy = Boolean(
-        doc.loaiVanBan === 'quyet_dinh' ||
+        !isTraLai && !isKhongThuLy && !isChuyenDon && !isTraLoiDon &&
+        (doc.loaiVanBan === 'quyet_dinh' ||
         (doc.loaiVanBan as string) === 'quyet_dinh_thu_ly' ||
-        doc.folder === 'van_ban_quyet_dinh' ||
         doc.category?.toLowerCase().includes('quyết định') ||
         doc.category?.toLowerCase().includes('thụ lý') ||
         doc.tenVanBan?.toLowerCase().includes('quyết định') ||
@@ -361,10 +421,10 @@ export default function TabTaiLieu({
         doc.name.toLowerCase().includes('quyết định') ||
         doc.name.toLowerCase().includes('quyet_dinh') ||
         doc.name.toLowerCase().includes('thụ lý') ||
-        doc.name.toLowerCase().includes('thu_ly')
+        doc.name.toLowerCase().includes('thu_ly'))
       );
       const isBaoCao =
-        !isQuyetDinhThuLy &&
+        !isQuyetDinhThuLy && !isTraLai && !isKhongThuLy && !isChuyenDon && !isTraLoiDon &&
         (doc.category === 'Báo cáo đề xuất' ||
           doc.loaiVanBan === 'bao_cao_de_xuat' ||
           doc.loaiVanBan === 'bao_cao_xac_minh' ||
@@ -386,12 +446,34 @@ export default function TabTaiLieu({
         nguoiGuiDon: currentDon.nguoiNop,
         noiDungDon: currentDon.title,
         tenVanBan: doc.name,
-        loaiVanBan: isQuyetDinhThuLy
-          ? 'quyet_dinh_thu_ly'
-          : isBaoCao
-            ? 'bao_cao_de_xuat'
-            : 'to_trinh_thu_ly',
-        loaiVanBanLabel: doc.category || (isQuyetDinhThuLy ? 'Quyết định thụ lý' : isBaoCao ? 'Báo cáo đề xuất' : 'Tờ trình thụ lý'),
+        loaiVanBan: isTraLai
+          ? 'van_ban_tra_lai'
+          : isKhongThuLy
+            ? 'thong_bao_khong_thu_ly'
+            : isChuyenDon
+              ? 'bien_ban_ban_giao'
+              : isTraLoiDon
+                ? ('tra_loi_don' as any)
+                : isQuyetDinhThuLy
+                  ? 'quyet_dinh_thu_ly'
+                  : isBaoCao
+                    ? 'bao_cao_de_xuat'
+                    : 'to_trinh_thu_ly',
+        loaiVanBanLabel: doc.category || (
+          isTraLai
+            ? 'Phiếu hướng dẫn trả lại đơn'
+            : isKhongThuLy
+              ? 'Quyết định không thụ lý'
+              : isChuyenDon
+                ? 'Phiếu chuyển đơn xử lý'
+                : isTraLoiDon
+                  ? 'Văn bản trả lời đơn'
+                  : isQuyetDinhThuLy
+                    ? 'Quyết định thụ lý'
+                    : isBaoCao
+                      ? 'Báo cáo đề xuất'
+                      : 'Tờ trình thụ lý'
+        ),
         trichYeu: doc.trichYeu || doc.name,
         noiDungChiTiet: doc.noiDungChiTiet || '',
         nguoiLap: doc.signer,
@@ -498,7 +580,7 @@ export default function TabTaiLieu({
     <div className="space-y-3 font-sans">
       {/* Toast Notification */}
       {toastMsg && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 bg-slate-900/95 backdrop-blur-md text-white rounded-xl shadow-2xl text-xs font-semibold border border-slate-700 animate-fade-in">
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-2.5 bg-slate-900/95 backdrop-blur-md text-white rounded-xl shadow-2xl text-xs font-medium border border-slate-700 animate-fade-in">
           <span className="material-symbols-outlined text-emerald-400 text-[18px]">check_circle</span>
           <span>{toastMsg}</span>
         </div>
@@ -513,21 +595,31 @@ export default function TabTaiLieu({
         {/* ========================================================================= */}
         <div className="lg:col-span-7 xl:col-span-8 flex flex-col space-y-2">
           {/* Header tên văn bản đang chọn */}
-          <div className="px-1 py-0.5">
-            <h2 className="text-base font-bold text-slate-900 truncate">
-              {currentActiveDoc.name}
-            </h2>
+          <div className="px-1 py-1 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="material-symbols-outlined text-rose-600 text-[20px] shrink-0">
+                picture_as_pdf
+              </span>
+              <h2 className="text-[15px] font-bold text-slate-900 truncate tracking-tight">
+                {currentActiveDoc.name}
+              </h2>
+            </div>
+            {currentActiveDoc.soHieu && (
+              <span className="text-[12.5px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
+                {currentActiveDoc.soHieu}
+              </span>
+            )}
           </div>
 
           {/* Khung OnlyOffice Suite */}
-          <div className="bg-[#2b2b2b] rounded-lg shadow-md overflow-hidden border border-slate-700 flex flex-col min-h-[750px]">
+          <div className="bg-[#2b2b2b] rounded-xl shadow-md overflow-hidden border border-slate-700 flex flex-col min-h-[750px]">
             {/* Top Toolbar OnlyOffice */}
-            <div className="bg-[#2e2e2e] text-slate-200 px-3 py-2 flex items-center justify-between border-b border-[#3e3e3e] select-none text-xs">
+            <div className="bg-[#2e2e2e] text-slate-200 px-3.5 py-2.5 flex items-center justify-between border-b border-[#3e3e3e] select-none text-[12.5px]">
               <div className="flex items-center gap-4">
-                <span className="font-extrabold tracking-wider text-white text-[13px] flex items-center gap-1">
+                <span className="font-extrabold tracking-wider text-white text-[12px] flex items-center gap-1">
                   ONLYOFFICE
                 </span>
-                <div className="flex items-center gap-3 text-slate-300 font-medium">
+                <div className="flex items-center gap-3.5 text-slate-300 font-medium text-[12.5px]">
                   <span className="hover:text-white cursor-pointer transition-colors">Tệp</span>
                   <span className="hover:text-white cursor-pointer transition-colors">Xem</span>
                   <span className="hover:text-white cursor-pointer transition-colors">Plugin</span>
@@ -558,7 +650,7 @@ export default function TabTaiLieu({
                 >
                   <span className="material-symbols-outlined text-[17px]">search</span>
                 </button>
-                <div className="w-6 h-6 rounded-full bg-slate-700 text-white flex items-center justify-center font-bold text-[10px] border border-slate-500 shadow-xs">
+                <div className="w-6 h-6 rounded-full bg-slate-700 text-white flex items-center justify-center font-bold text-[11px] border border-slate-500 shadow-xs">
                   NA
                 </div>
               </div>
@@ -613,35 +705,36 @@ export default function TabTaiLieu({
                     width: '680px',
                     minHeight: '960px',
                     transform: `scale(${zoomPercent / 100})`,
+                    fontFamily: '"Times New Roman", Times, serif',
                   }}
                 >
                   {/* Mã FORM ID & Nguồn mẫu góc trên */}
-                  <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 pb-3 border-b border-slate-200 mb-6">
-                    <span className="border border-dashed border-slate-300 px-1.5 py-0.5 rounded">
+                  <div className="flex items-center justify-between text-[12px] font-mono text-slate-500 pb-3 border-b border-slate-200 mb-6">
+                    <span className="border border-dashed border-slate-300 px-2 py-0.5 rounded">
                       {currentActiveDoc.soHieu || 'VB-2026/UBND'}
                     </span>
-                    <span className="italic font-sans">
+                    <span className="italic font-sans text-[12px]">
                       {currentActiveDoc.category || 'Văn bản hành chính'}
                     </span>
                   </div>
 
                   {currentActiveDoc.noiDungChiTiet ? (
                     <div className="space-y-4">
-                      <div className="text-[12.5px] leading-relaxed font-serif whitespace-pre-wrap text-slate-900 selection:bg-blue-100">
+                      <div className="text-[14px] leading-relaxed font-serif whitespace-pre-wrap text-slate-900 selection:bg-blue-100">
                         {currentActiveDoc.noiDungChiTiet}
                       </div>
 
                       {/* Hiển thị con dấu / chữ ký số nếu đã có hiệu lực */}
                       {currentActiveDoc.trangThaiTrinhKy === 'da_co_hieu_luc' && (
                         <div className="mt-8 pt-4 border-t border-slate-200 flex justify-end">
-                          <div className="p-3 rounded-lg border-2 border-emerald-600 bg-emerald-50 text-emerald-900 text-xs font-mono inline-block shadow-xs">
-                            <p className="font-bold flex items-center gap-1">
+                          <div className="p-3 rounded-lg border-2 border-emerald-600 bg-emerald-50 text-emerald-900 text-[12px] font-mono inline-block shadow-xs">
+                            <p className="font-bold flex items-center gap-1.5 text-[12.5px] text-emerald-900">
                               <span className="material-symbols-outlined text-[16px] text-emerald-700">verified</span>
                               <span>KÝ SỐ BỞI: {currentActiveDoc.signer || 'LÃNH ĐẠO'}</span>
                             </p>
-                            <p className="text-[11px] text-emerald-800 mt-0.5">Cơ quan: {currentActiveDoc.coQuanBanHanh || 'UBND Quận Cầu Giấy'}</p>
-                            <p className="text-[11px] text-emerald-700">Thời gian: {currentActiveDoc.uploadDate}</p>
-                            <p className="text-[10px] text-emerald-600 italic">Chứng thư số Ban Cơ yếu Chính phủ VGCA cấp</p>
+                            <p className="text-[12px] text-emerald-800 mt-1">Cơ quan: {currentActiveDoc.coQuanBanHanh || 'UBND Quận Cầu Giấy'}</p>
+                            <p className="text-[12px] text-emerald-700 mt-0.5">Thời gian: {currentActiveDoc.uploadDate}</p>
+                            <p className="text-[11.5px] text-emerald-600 italic mt-1">Chứng thư số Ban Cơ yếu Chính phủ VGCA cấp</p>
                           </div>
                         </div>
                       )}
@@ -650,10 +743,10 @@ export default function TabTaiLieu({
                     <>
                       {/* Quốc hiệu Tiêu ngữ */}
                       <div className="text-center space-y-1 mb-8">
-                        <h3 className="font-bold text-xs uppercase tracking-wider text-slate-900">
+                        <h3 className="font-bold text-[13px] uppercase tracking-wider text-slate-900">
                           CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
                         </h3>
-                        <p className="font-bold text-xs text-slate-900">
+                        <p className="font-bold text-[13.5px] text-slate-900">
                           Độc lập - Tự do - Hạnh phúc
                         </p>
                         <div className="w-36 h-px bg-slate-800 mx-auto mt-1"></div>
@@ -661,16 +754,16 @@ export default function TabTaiLieu({
 
                       {/* Tiêu đề văn bản */}
                       <div className="text-center mb-6">
-                        <h1 className="font-bold text-base uppercase text-slate-900 tracking-wide">
+                        <h1 className="font-bold text-[16px] uppercase text-slate-900 tracking-wide">
                           {currentActiveDoc.name.toUpperCase()}
                         </h1>
-                        <p className="italic text-xs text-slate-700 mt-1">
+                        <p className="italic text-[13px] text-slate-700 mt-1">
                           (Về hành vi có dấu hiệu "Lừa đảo chiếm đoạt tài sản" qua mạng xã hội)
                         </p>
                       </div>
 
                       {/* Kính gửi */}
-                      <div className="mb-6 text-xs leading-relaxed space-y-0.5">
+                      <div className="mb-6 text-[14px] leading-relaxed space-y-0.5">
                         <p>
                           <strong className="font-bold">Kính gửi:</strong> Cơ quan Cảnh sát điều tra - Công an Quận Cầu Giấy, TP. Hà Nội
                         </p>
@@ -680,8 +773,8 @@ export default function TabTaiLieu({
                       </div>
 
                       {/* Mục I: Thông tin người tố giác */}
-                      <div className="mb-6 space-y-2 text-xs leading-relaxed">
-                        <h4 className="font-bold uppercase text-slate-900 border-b border-slate-200 pb-0.5">
+                      <div className="mb-6 space-y-2 text-[13.5px] leading-relaxed">
+                        <h4 className="font-bold uppercase text-slate-900 border-b border-slate-200 pb-0.5 text-[14px]">
                           I. THÔNG TIN NGƯỜI TỐ GIÁC (DENOUNCER INFORMATION)
                         </h4>
                         <div className="space-y-1 pt-1">
@@ -706,8 +799,8 @@ export default function TabTaiLieu({
                       </div>
 
                       {/* Mục II: Thông tin người bị tố giác / Nội dung */}
-                      <div className="mb-6 space-y-2 text-xs leading-relaxed">
-                        <h4 className="font-bold uppercase text-slate-900 border-b border-slate-200 pb-0.5">
+                      <div className="mb-6 space-y-2 text-[13.5px] leading-relaxed">
+                        <h4 className="font-bold uppercase text-slate-900 border-b border-slate-200 pb-0.5 text-[14px]">
                           II. THÔNG TIN NGƯỜI BỊ TỐ GIÁC (ACCUSED INFORMATION)
                         </h4>
                         <div className="space-y-1 pt-1">
@@ -721,19 +814,19 @@ export default function TabTaiLieu({
                       </div>
 
                       {/* Phần chữ ký hoặc con dấu */}
-                      <div className="pt-8 border-t border-slate-200 grid grid-cols-2 gap-6 text-xs text-center font-sans">
+                      <div className="pt-8 border-t border-slate-200 grid grid-cols-2 gap-6 text-[12.5px] text-center font-sans">
                         <div className="space-y-1 text-slate-500">
-                          <p className="font-bold text-slate-700">NGƯỜI XÁC NHẬN</p>
-                          <p className="italic text-[10px]">(Ký, ghi rõ họ tên)</p>
+                          <p className="font-bold text-slate-700 text-[13px]">NGƯỜI XÁC NHẬN</p>
+                          <p className="italic text-[12px]">(Ký, ghi rõ họ tên)</p>
                           <div className="h-12"></div>
-                          <p className="font-semibold text-slate-800">Cán bộ thụ lý hồ sơ</p>
+                          <p className="font-semibold text-slate-800 text-[13px]">Cán bộ thụ lý hồ sơ</p>
                         </div>
 
                         <div className="space-y-1">
-                          <p className="font-bold text-slate-800">NGƯỜI LÀM ĐƠN</p>
-                          <p className="italic text-[10px] text-slate-500">(Ký, ghi rõ họ tên)</p>
+                          <p className="font-bold text-slate-800 text-[13px]">NGƯỜI LÀM ĐƠN</p>
+                          <p className="italic text-[12px] text-slate-500">(Ký, ghi rõ họ tên)</p>
                           {currentActiveDoc.trangThaiTrinhKy === 'da_co_hieu_luc' ? (
-                            <div className="my-2 p-1.5 rounded border border-emerald-500 bg-emerald-50 text-emerald-800 text-[9px] font-mono inline-block">
+                            <div className="my-2 p-1.5 rounded border border-emerald-500 bg-emerald-50 text-emerald-800 text-[12px] font-mono inline-block">
                               <p className="font-bold">✓ ĐÃ KÝ SỐ ĐIỆN TỬ VGCA</p>
                               <p>Ký bởi: {currentActiveDoc.signer}</p>
                               <p>Thời gian: {currentActiveDoc.uploadDate}</p>
@@ -741,7 +834,7 @@ export default function TabTaiLieu({
                           ) : (
                             <div className="h-12"></div>
                           )}
-                          <p className="font-bold text-slate-900">
+                          <p className="font-bold text-slate-900 text-[14px]">
                             {currentDon.nguoiNop || 'Nguyễn Thị Minh Phương'}
                           </p>
                         </div>
@@ -753,19 +846,19 @@ export default function TabTaiLieu({
             </div>
 
             {/* Bottom Toolbar OnlyOffice */}
-            <div className="bg-[#2e2e2e] text-slate-300 px-3 py-1.5 flex items-center justify-between border-t border-[#3e3e3e] text-[11px] select-none">
+            <div className="bg-[#2e2e2e] text-slate-300 px-3.5 py-2.5 flex items-center justify-between border-t border-[#3e3e3e] text-[12.5px] select-none">
               <div className="flex items-center gap-4">
                 <span>Trang 1 trên {currentActiveDoc.pages || 2}</span>
-                <span className="hover:text-white cursor-pointer">Word count</span>
+                <span className="hover:text-white cursor-pointer transition-colors">Word count</span>
               </div>
 
               {/* Điều khiển Zoom */}
-              <div className="flex items-center gap-2 font-mono">
+              <div className="flex items-center gap-2 font-mono text-[12.5px]">
                 <span>Thu phóng {zoomPercent}%</span>
                 <button
                   type="button"
                   onClick={handleZoomOut}
-                  className="w-5 h-5 rounded hover:bg-[#3e3e3e] hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+                  className="w-5.5 h-5.5 rounded hover:bg-[#3e3e3e] hover:text-white flex items-center justify-center cursor-pointer transition-colors text-xs"
                   title="Thu nhỏ"
                 >
                   -
@@ -773,7 +866,7 @@ export default function TabTaiLieu({
                 <button
                   type="button"
                   onClick={handleZoomIn}
-                  className="w-5 h-5 rounded hover:bg-[#3e3e3e] hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+                  className="w-5.5 h-5.5 rounded hover:bg-[#3e3e3e] hover:text-white flex items-center justify-center cursor-pointer transition-colors text-xs"
                   title="Phóng to"
                 >
                   +
@@ -786,32 +879,33 @@ export default function TabTaiLieu({
         {/* ========================================================================= */}
         {/* CỘT PHẢI (~35% width): BẢNG CHỌN VĂN BẢN ĐI TRÌNH KÝ                    */}
         {/* ========================================================================= */}
-        <div className="lg:col-span-5 xl:col-span-4 bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col space-y-4">
+        <div className="lg:col-span-5 xl:col-span-4 bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs flex flex-col space-y-4">
           {/* Header phân loại nhóm */}
-          <div className="flex items-center justify-between gap-2 flex-wrap pb-2 border-b border-slate-100">
+          <div className="flex items-center justify-between gap-2 flex-wrap pb-3 border-b border-slate-100">
             <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-500 font-medium">Nhóm danh sách:</span>
-              <div className="flex items-center gap-1">
-                {/* Nút "Theo thư mục" - Màu đỏ mận đậm đúng ảnh */}
+              <span className="text-[12.5px] text-slate-500 font-medium">Nhóm danh sách:</span>
+              <div className="inline-flex p-0.5 bg-slate-100 rounded-lg border border-slate-200/70">
                 <button
                   type="button"
                   onClick={() => setGroupMode('folder')}
-                  className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${groupMode === 'folder'
-                      ? 'bg-[#881337] text-white shadow-xs'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  className={`px-2.5 py-1 rounded-md text-[12.5px] font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${groupMode === 'folder'
+                      ? 'bg-[#004ac6] text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
                     }`}
                 >
-                  Theo thư mục
+                  <span className="material-symbols-outlined text-[15px]">folder</span>
+                  <span>Theo thư mục</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setGroupMode('date')}
-                  className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${groupMode === 'date'
-                      ? 'bg-[#881337] text-white shadow-xs'
-                      : 'text-slate-600 hover:bg-slate-100'
+                  className={`px-2.5 py-1 rounded-md text-[12.5px] font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${groupMode === 'date'
+                      ? 'bg-[#004ac6] text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
                     }`}
                 >
-                  Theo ngày tải
+                  <span className="material-symbols-outlined text-[15px]">calendar_today</span>
+                  <span>Theo ngày tải</span>
                 </button>
               </div>
             </div>
@@ -819,54 +913,60 @@ export default function TabTaiLieu({
             <button
               type="button"
               onClick={() => showToast('Chức năng thêm thư mục mới')}
-              className="text-xs font-semibold text-[#881337] hover:underline cursor-pointer flex items-center gap-0.5"
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-[12.5px] font-semibold text-[#004ac6] hover:bg-blue-50 rounded-lg border border-transparent hover:border-blue-200 transition-all cursor-pointer"
             >
-              + Thêm thư mục
+              <span className="material-symbols-outlined text-[15px]">create_new_folder</span>
+              <span>Thêm thư mục</span>
             </button>
           </div>
 
           {/* Action Bar: Số văn bản đã chọn + Nút Bỏ chọn + Nút Trình ký */}
-          <div className="flex items-center justify-between gap-2 pt-1">
+          <div className="flex items-center justify-between gap-2 pt-0.5">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-blue-900">
-                Đã chọn {selectedDocIds.length} văn bản
-              </span>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200/70 text-[#004ac6] text-[12.5px] font-bold">
+                <span className="material-symbols-outlined text-[15px]">check_circle</span>
+                <span>Đã chọn {selectedDocIds.length} văn bản</span>
+              </div>
               {selectedDocIds.length > 0 && (
                 <button
                   type="button"
                   onClick={handleClearSelection}
-                  className="text-xs text-slate-500 hover:text-slate-800 underline cursor-pointer"
+                  className="text-[12.5px] text-slate-500 hover:text-red-600 hover:underline cursor-pointer transition-colors font-medium"
                 >
                   Bỏ chọn
                 </button>
               )}
             </div>
 
-            {/* Nút TRÌNH KÝ màu xanh dương chuẩn ảnh */}
+            {/* Nút TRÌNH KÝ */}
             <button
               type="button"
               onClick={handleOpenTrinhKyModal}
-              className="px-4 py-1.5 rounded-lg bg-[#1d4ed8] hover:bg-blue-700 active:scale-95 text-white text-xs font-bold shadow-sm transition-all cursor-pointer flex items-center gap-1.5"
+              className="px-3.5 py-1.5 rounded-xl bg-[#004ac6] hover:bg-[#003ea8] active:scale-95 text-white text-[13px] font-bold shadow-xs ring-2 ring-blue-300/30 transition-all cursor-pointer flex items-center gap-1.5"
             >
+              <span className="material-symbols-outlined text-[16px]">draw</span>
               <span>Trình ký</span>
             </button>
           </div>
 
           {/* Cây thư mục tài liệu */}
-          <div className="space-y-3 pt-2">
+          <div className="space-y-3 pt-1">
             {/* Cấp 1: Thư mục tài liệu */}
             <div className="space-y-2">
               <div
                 onClick={() => setOpenFolders((prev) => ({ ...prev, root: !prev.root }))}
-                className="flex items-center justify-between text-xs font-bold text-slate-900 cursor-pointer select-none py-1 hover:text-[#881337]"
+                className="flex items-center justify-between text-[13.5px] font-bold text-slate-800 cursor-pointer select-none py-1.5 px-2 rounded-lg hover:bg-slate-50 transition-colors"
               >
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] text-slate-500">
-                    {openFolders.root ? '▾' : '▸'}
+                <div className="flex items-center gap-2">
+                  <span className={`material-symbols-outlined text-[18px] text-slate-400 transition-transform duration-150 ${openFolders.root ? 'rotate-90' : ''}`}>
+                    chevron_right
+                  </span>
+                  <span className="material-symbols-outlined text-[19px] text-amber-500">
+                    {openFolders.root ? 'folder_open' : 'folder'}
                   </span>
                   <span>Thư mục tài liệu</span>
                 </div>
-                <span className="text-[11px] text-slate-400 font-normal">
+                <span className="px-2 py-0.5 rounded-full text-[11.5px] font-medium bg-slate-100 text-slate-600 border border-slate-200/80">
                   {documents.length} tài liệu
                 </span>
               </div>
@@ -875,17 +975,20 @@ export default function TabTaiLieu({
                 <div className="pl-2 space-y-3">
                   {/* Nhóm 1: Hồ sơ ban đầu */}
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs font-semibold text-slate-800 select-none py-0.5">
+                    <div className="flex items-center justify-between text-[13.5px] font-bold text-slate-800 select-none py-1 px-2 rounded-lg hover:bg-slate-50">
                       <div className="flex items-center gap-2">
                         <input
                           type="checkbox"
                           checked={isAllHoSoSelected}
                           onChange={handleToggleSelectAllHoSo}
-                          className="w-4 h-4 rounded text-[#881337] focus:ring-[#881337] border-slate-300 cursor-pointer"
+                          className="w-4 h-4 rounded text-[#004ac6] focus:ring-[#004ac6] border-slate-300 cursor-pointer accent-[#004ac6]"
                         />
+                        <span className="material-symbols-outlined text-[18px] text-blue-600">
+                          inventory_2
+                        </span>
                         <span>Hồ sơ ban đầu</span>
                       </div>
-                      <span className="text-[11px] text-slate-400 font-normal">
+                      <span className="text-[12px] text-slate-500 font-medium">
                         {selectableDocsInHoSo.length + 1} tài liệu
                       </span>
                     </div>
@@ -893,7 +996,7 @@ export default function TabTaiLieu({
                     {/* Danh sách các văn bản trong Hồ sơ ban đầu */}
                     <div className="space-y-2 pl-4">
                       {documents
-                        .filter((doc) => doc.folder === 'ho_so_ban_dau')
+                        .filter((doc) => doc.folder === 'ho_so_ban_dau' && !quyetDinhDocs.some((q) => q.id === doc.id))
                         .map((doc) => {
                           const isSelected = selectedDocIds.includes(doc.id);
                           const isActiveView = activeDocId === doc.id;
@@ -903,11 +1006,11 @@ export default function TabTaiLieu({
                             <div
                               key={doc.id}
                               onClick={() => setActiveDocId(doc.id)}
-                              className={`p-3 rounded-lg border transition-all cursor-pointer relative ${isSelected
-                                  ? 'border-red-400 bg-red-50/50 shadow-xs'
+                              className={`p-3 rounded-xl border transition-all cursor-pointer relative ${isSelected
+                                  ? 'border-blue-500 bg-blue-50/50 shadow-xs ring-1 ring-blue-300/60'
                                   : isActiveView
-                                    ? 'border-slate-300 bg-slate-50/80'
-                                    : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/40'
+                                    ? 'border-slate-300 bg-slate-50/90 shadow-2xs'
+                                    : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50 hover:shadow-2xs'
                                 }`}
                             >
                               <div className="flex items-start gap-2.5">
@@ -917,7 +1020,7 @@ export default function TabTaiLieu({
                                     <input
                                       type="checkbox"
                                       disabled
-                                      className="w-4 h-4 rounded text-slate-400 border-slate-200 cursor-not-allowed opacity-50"
+                                      className="w-4 h-4 rounded text-slate-300 border-slate-200 cursor-not-allowed opacity-50"
                                     />
                                   ) : (
                                     <input
@@ -925,35 +1028,37 @@ export default function TabTaiLieu({
                                       checked={isSelected}
                                       onClick={(e) => handleToggleDocSelect(doc, e)}
                                       onChange={() => { }}
-                                      className="w-4 h-4 rounded text-red-600 focus:ring-red-500 border-slate-300 cursor-pointer"
+                                      className="w-4 h-4 rounded text-[#004ac6] focus:ring-[#004ac6] border-slate-300 cursor-pointer accent-[#004ac6]"
                                     />
                                   )}
                                 </div>
 
                                 {/* Icon PDF */}
-                                <div className="w-7 h-7 rounded bg-red-50 border border-red-200 text-red-600 flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">
-                                  PDF
+                                <div className="w-8 h-8 rounded-lg bg-red-50 border border-red-200/80 text-red-600 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                                  <span className="material-symbols-outlined text-[18px]">picture_as_pdf</span>
                                 </div>
 
                                 {/* Thông tin văn bản */}
                                 <div className="min-w-0 flex-1">
                                   <div className="flex items-start justify-between gap-2">
-                                    <h4 className="text-xs font-bold text-slate-900 leading-snug line-clamp-2">
+                                    <h4 className="text-[13.5px] font-bold text-slate-900 leading-snug line-clamp-2">
                                       {doc.name}
                                     </h4>
 
                                     {/* Trạng thái Badge bên phải */}
                                     <div className="shrink-0">
                                       {doc.trangThaiTrinhKy === 'da_co_hieu_luc' ? (
-                                        <span className="px-2 py-0.5 rounded-full text-[10.5px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-300">
+                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11.5px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+                                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                           Đã có hiệu lực
                                         </span>
                                       ) : doc.trangThaiTrinhKy === 'dang_trinh' ? (
-                                        <span className="px-2 py-0.5 rounded-full text-[10.5px] font-semibold bg-blue-50 text-blue-700 border border-blue-300">
+                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11.5px] font-semibold bg-blue-50 text-blue-700 border border-blue-200/80">
+                                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
                                           Đang trình ký
                                         </span>
                                       ) : (
-                                        <span className="px-2 py-0.5 rounded-full text-[10.5px] font-medium bg-slate-50 text-slate-600 border border-slate-200">
+                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11.5px] font-medium bg-slate-100 text-slate-600 border border-slate-200/80">
                                           Chưa trình
                                         </span>
                                       )}
@@ -961,13 +1066,15 @@ export default function TabTaiLieu({
                                   </div>
 
                                   {/* Mã số & Ngày */}
-                                  <div className="text-[11px] text-slate-500 mt-0.5 font-mono">
-                                    {doc.soHieu} • {doc.uploadDate}
+                                  <div className="text-[12px] text-slate-500 mt-1 flex items-center gap-1.5 font-sans">
+                                    <span className="font-mono font-medium text-slate-600">{doc.soHieu}</span>
+                                    <span>•</span>
+                                    <span>{doc.uploadDate}</span>
                                   </div>
 
                                   {/* Dòng Yêu cầu */}
-                                  <div className="text-[11px] text-slate-600 mt-1 font-medium">
-                                    Yêu cầu: <span className="text-slate-800">{doc.yeuCau || 'Ký'}</span>
+                                  <div className="text-[12.5px] text-slate-600 mt-1.5 pt-1.5 border-t border-slate-100/90 font-medium">
+                                    Yêu cầu: <span className="font-bold text-slate-800">{doc.yeuCau || 'Ký'}</span>
                                   </div>
                                 </div>
                               </div>
@@ -979,25 +1086,28 @@ export default function TabTaiLieu({
 
                   {/* Nhóm 2: Văn bản và quyết định xử lý */}
                   <div className="space-y-2 pt-1">
-                    <div className="flex items-center justify-between text-xs font-semibold text-slate-800 select-none py-0.5">
+                    <div className="flex items-center justify-between text-[13.5px] font-bold text-slate-800 select-none py-1 px-2 rounded-lg hover:bg-slate-50">
                       <div className="flex items-center gap-2">
                         {quyetDinhDocs.length === 0 ? (
                           <input
                             type="checkbox"
                             disabled
-                            className="w-4 h-4 rounded text-slate-400 border-slate-200 cursor-not-allowed opacity-50"
+                            className="w-4 h-4 rounded text-slate-300 border-slate-200 cursor-not-allowed opacity-50"
                           />
                         ) : (
                           <input
                             type="checkbox"
                             checked={isAllQuyetDinhSelected}
                             onChange={handleToggleSelectAllQuyetDinh}
-                            className="w-4 h-4 rounded text-[#881337] focus:ring-[#881337] border-slate-300 cursor-pointer"
+                            className="w-4 h-4 rounded text-[#004ac6] focus:ring-[#004ac6] border-slate-300 cursor-pointer accent-[#004ac6]"
                           />
                         )}
+                        <span className="material-symbols-outlined text-[18px] text-indigo-600">
+                          gavel
+                        </span>
                         <span>Văn bản và quyết định xử lý</span>
                       </div>
-                      <span className="text-[11px] text-slate-500 font-normal">
+                      <span className="text-[12px] text-slate-500 font-medium">
                         {quyetDinhDocs.length} tài liệu
                       </span>
                     </div>
@@ -1014,12 +1124,12 @@ export default function TabTaiLieu({
                             <div
                               key={doc.id}
                               onClick={() => setActiveDocId(doc.id)}
-                              className={`p-3 rounded-lg border transition-all cursor-pointer relative ${
+                              className={`p-3 rounded-xl border transition-all cursor-pointer relative ${
                                 isSelected
-                                  ? 'border-red-400 bg-red-50/50 shadow-xs'
+                                  ? 'border-blue-500 bg-blue-50/50 shadow-xs ring-1 ring-blue-300/60'
                                   : isActiveView
-                                    ? 'border-slate-300 bg-slate-50/80'
-                                    : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/40'
+                                    ? 'border-slate-300 bg-slate-50/90 shadow-2xs'
+                                    : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50 hover:shadow-2xs'
                               }`}
                             >
                               <div className="flex items-start gap-2.5">
@@ -1029,7 +1139,7 @@ export default function TabTaiLieu({
                                     <input
                                       type="checkbox"
                                       disabled
-                                      className="w-4 h-4 rounded text-slate-400 border-slate-200 cursor-not-allowed opacity-50"
+                                      className="w-4 h-4 rounded text-slate-300 border-slate-200 cursor-not-allowed opacity-50"
                                     />
                                   ) : (
                                     <input
@@ -1037,35 +1147,37 @@ export default function TabTaiLieu({
                                       checked={isSelected}
                                       onClick={(e) => handleToggleDocSelect(doc, e)}
                                       onChange={() => {}}
-                                      className="w-4 h-4 rounded text-red-600 focus:ring-red-500 border-slate-300 cursor-pointer"
+                                      className="w-4 h-4 rounded text-[#004ac6] focus:ring-[#004ac6] border-slate-300 cursor-pointer accent-[#004ac6]"
                                     />
                                   )}
                                 </div>
 
                                 {/* Icon PDF */}
-                                <div className="w-7 h-7 rounded bg-red-50 border border-red-200 text-red-600 flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">
-                                  PDF
+                                <div className="w-8 h-8 rounded-lg bg-red-50 border border-red-200/80 text-red-600 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                                  <span className="material-symbols-outlined text-[18px]">picture_as_pdf</span>
                                 </div>
 
                                 {/* Thông tin văn bản */}
                                 <div className="min-w-0 flex-1">
                                   <div className="flex items-start justify-between gap-2">
-                                    <h4 className="text-xs font-bold text-slate-900 leading-snug line-clamp-2">
+                                    <h4 className="text-[13.5px] font-bold text-slate-900 leading-snug line-clamp-2">
                                       {doc.tenVanBan || doc.name}
                                     </h4>
 
                                     {/* Trạng thái Badge bên phải */}
                                     <div className="shrink-0">
                                       {doc.trangThaiTrinhKy === 'da_co_hieu_luc' ? (
-                                        <span className="px-2 py-0.5 rounded-full text-[10.5px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-300">
+                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11.5px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+                                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                           Đã có hiệu lực
                                         </span>
                                       ) : doc.trangThaiTrinhKy === 'dang_trinh' || doc.trangThaiTrinhKy === 'da_trinh' ? (
-                                        <span className="px-2 py-0.5 rounded-full text-[10.5px] font-semibold bg-blue-50 text-blue-700 border border-blue-300">
+                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11.5px] font-semibold bg-blue-50 text-blue-700 border border-blue-200/80">
+                                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
                                           Đang trình ký
                                         </span>
                                       ) : (
-                                        <span className="px-2 py-0.5 rounded-full text-[10.5px] font-medium bg-amber-50 text-amber-800 border border-amber-200">
+                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11.5px] font-medium bg-amber-50 text-amber-800 border border-amber-200/80">
                                           Bản nháp
                                         </span>
                                       )}
@@ -1073,14 +1185,16 @@ export default function TabTaiLieu({
                                   </div>
 
                                   {/* Mã số & Ngày */}
-                                  <div className="text-[11px] text-slate-500 mt-0.5 font-mono">
-                                    {doc.soHieu || 'Chưa cấp số'} • {doc.uploadDate}
+                                  <div className="text-[12px] text-slate-500 mt-1 flex items-center gap-1.5 font-sans">
+                                    <span className="font-mono font-medium text-slate-600">{doc.soHieu || 'Chưa cấp số'}</span>
+                                    <span>•</span>
+                                    <span>{doc.uploadDate}</span>
                                   </div>
 
                                   {/* Dòng Yêu cầu */}
-                                  <div className="text-[11px] text-slate-600 mt-1 font-medium flex items-center justify-between">
-                                    <span>Yêu cầu: <span className="text-slate-800">{doc.yeuCau || 'Ký'}</span></span>
-                                    <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                                  <div className="text-[12.5px] text-slate-600 mt-1.5 pt-1.5 border-t border-slate-100/90 flex items-center justify-between font-medium">
+                                    <span>Yêu cầu: <span className="font-bold text-slate-800">{doc.yeuCau || 'Ký'}</span></span>
+                                    <span className="text-[11.5px] text-indigo-700 font-semibold bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200/70">
                                       Quyết định thụ lý
                                     </span>
                                   </div>
@@ -1098,8 +1212,9 @@ export default function TabTaiLieu({
           </div>
 
           {/* Dòng ghi chú chú thích ở dưới cùng cột phải */}
-          <div className="pt-4 mt-auto border-t border-slate-100">
-            <p className="text-[11px] text-slate-500 italic">
+          <div className="pt-3 mt-auto border-t border-slate-100 flex items-center gap-1.5 text-[12px] text-slate-400">
+            <span className="material-symbols-outlined text-[15px] text-slate-400">info</span>
+            <p className="italic">
               Văn bản đã ký số được khóa chọn và hiển thị trạng thái Đã có hiệu lực.
             </p>
           </div>
