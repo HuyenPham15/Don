@@ -495,60 +495,6 @@ export default function GuiQuyetDinhModal({
               </button>
             </div>
 
-            {/* Chi tiết theo phương thức: Bưu chính */}
-            {phuongThuc === 'buu_chinh' && (
-              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-3 animate-fade-in">
-                <div className="text-xs font-bold text-slate-800">Khai báo thông tin bưu chính</div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                      Đơn vị bưu chính <span className="text-rose-600">*</span>:
-                    </label>
-                    <select
-                      value={donViVanChuyen}
-                      onChange={(e) => setDonViVanChuyen(e.target.value)}
-                      className="w-full px-3 py-2 bg-white rounded-xl border border-slate-300 text-xs font-medium text-slate-900 focus:outline-none focus:border-[#004ac6]"
-                    >
-                      <option value="VNPost (Bưu điện Việt Nam)">VNPost (Bưu điện Việt Nam)</option>
-                      <option value="ViettelPost">ViettelPost</option>
-                      <option value="EMS Việt Nam">EMS Việt Nam</option>
-                      <option value="Khác">Đơn vị chuyển phát khác</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                      Mã vận đơn bưu chính <span className="text-rose-600">*</span>:
-                    </label>
-                    <input
-                      type="text"
-                      value={maVanDon}
-                      onChange={(e) => setMaVanDon(e.target.value.toUpperCase())}
-                      placeholder="VD: VN982348123VN"
-                      className={`w-full px-3 py-2 bg-white rounded-xl border text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-[#004ac6] ${errors.maVanDon ? 'border-rose-500 ring-1 ring-rose-200' : 'border-slate-300'}`}
-                    />
-                    {errors.maVanDon && (
-                      <p className="text-[11px] text-rose-600 mt-1 font-semibold">{errors.maVanDon}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                      Ngày gửi bưu điện:
-                    </label>
-                    <input
-                      type="text"
-                      value={ngayGuiBuuChinh}
-                      onChange={(e) => setNgayGuiBuuChinh(e.target.value)}
-                      placeholder="DD/MM/YYYY"
-                      className="w-full px-3 py-2 bg-white rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-[#004ac6]"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Chi tiết theo phương thức: Trực tiếp */}
             {phuongThuc === 'truc_tiep' && (
               <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-3 animate-fade-in">
                 <div className="text-xs font-bold text-slate-800">Thông tin biên bản giao nhận trực tiếp</div>
