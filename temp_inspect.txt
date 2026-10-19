@@ -1,0 +1,250 @@
+﻿                      contentEditable={isEditingExtract}
+                      suppressContentEditableWarning
+                      onBlur={(e) => updateExtractField('cccd', e.currentTarget.textContent || '')}
+                      className={`font-label-technical font-semibold text-slate-800 outline-none transition-all ${isEditingExtract
+                        ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 rounded cursor-text focus:ring-1 focus:ring-blue-300'
+                        : ''
+                        }`}
+                      title={isEditingExtract ? 'Nhß║Ñp v├áo chß╗» ─æß╗â sß╗¡a' : undefined}
+                    >
+                      {extractData.cccd}
+                    </span>
+                  </p>
+                  <p className="text-[11px] text-slate-600 flex items-center gap-1">
+                    <span>S─ÉT:</span>
+                    <span
+                      contentEditable={isEditingExtract}
+                      suppressContentEditableWarning
+                      onBlur={(e) => updateExtractField('sdt', e.currentTarget.textContent || '')}
+                      className={`font-label-technical outline-none transition-all ${isEditingExtract
+                        ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 rounded cursor-text focus:ring-1 focus:ring-blue-300'
+                        : ''
+                        }`}
+                      title={isEditingExtract ? 'Nhß║Ñp v├áo chß╗» ─æß╗â sß╗¡a' : undefined}
+                    >
+                      {extractData.sdt}
+                    </span>
+                  </p>
+                  <p className="text-[11px] text-slate-600 flex items-start gap-1">
+                    <span className="shrink-0">─Éß╗ïa chß╗ë:</span>
+                    <span
+                      contentEditable={isEditingExtract}
+                      suppressContentEditableWarning
+                      onBlur={(e) => updateExtractField('diaChi', e.currentTarget.textContent || '')}
+                      className={`outline-none transition-all ${isEditingExtract
+                        ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 rounded cursor-text focus:ring-1 focus:ring-blue-300'
+                        : ''
+                        }`}
+                      title={isEditingExtract ? 'Nhß║Ñp v├áo chß╗» ─æß╗â sß╗¡a' : undefined}
+                    >
+                      {extractData.diaChi}
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              {/* 2. Loß║íi nß╗Öi dung */}
+              <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-50/80 border border-slate-200/80 hover:bg-blue-50/50 transition-colors">
+                <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-[18px]">gavel</span>
+                </div>
+                <div className="min-w-0 flex-1 leading-snug space-y-1">
+                  <span className="text-[10.5px] text-slate-500 font-medium block">Loß║íi nß╗Öi dung</span>
+                  {aiState === 'reading' && readingProgress < 70 ? (
+                    <div className="space-y-1.5 pt-1">
+                      <div className="h-3 w-28 bg-slate-200 rounded skel" />
+                      <div className="h-2.5 w-40 bg-slate-200 rounded skel" />
+                    </div>
+                  ) : (
+                    <>
+                      <div className="font-bold text-blue-900 text-[12.5px] flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[15px] text-blue-700 shrink-0">shield</span>
+                        <span
+                          contentEditable={isEditingExtract}
+                          suppressContentEditableWarning
+                          onBlur={(e) => updateExtractField('loaiNoiDung', e.currentTarget.textContent || '')}
+                          className={`outline-none transition-all ${isEditingExtract
+                            ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 py-0.5 rounded cursor-text focus:ring-1 focus:ring-blue-300'
+                            : ''
+                            }`}
+                          title={isEditingExtract ? 'Nhß║Ñp v├áo chß╗» ─æß╗â sß╗¡a' : undefined}
+                        >
+                          {extractData.loaiNoiDung}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 pt-0.5 flex items-center flex-wrap gap-1">
+                        <span>C├│ dß║Ñu hiß╗çu:</span>
+                        <span
+                          contentEditable={isEditingExtract}
+                          suppressContentEditableWarning
+                          onBlur={(e) => updateExtractField('dauHieu', e.currentTarget.textContent || '')}
+                          className={`text-slate-800 font-medium outline-none transition-all ${isEditingExtract
+                            ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 rounded cursor-text focus:ring-1 focus:ring-blue-300'
+                            : ''
+                            }`}
+                          title={isEditingExtract ? 'Nhß║Ñp v├áo chß╗» ─æß╗â sß╗¡a' : undefined}
+                        >
+                          {extractData.dauHieu}
+                        </span>
+                      </p>
+
+                      {/* Quick select pills for testing rule 8 */}
+                      <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                        <span className="text-[10px] text-slate-400 font-medium">Chß╗ìn nhanh:</span>
+                        {[
+                          'Tß╗æ gi├íc tß╗Öi phß║ím',
+                          '─É╞ín khiß║┐u nß║íi (Lß║ºn 1)',
+                          '─É╞ín tß╗æ c├ío',
+                          '─É╞ín phß║ún ├ính, kiß║┐n nghß╗ï',
+                        ].map((ld) => (
+                          <button
+                            key={ld}
+                            type="button"
+                            onClick={() => {
+                              updateExtractField('loaiNoiDung', ld);
+                              showToast(`─É├ú chuyß╗ân loß║íi ─æ╞ín sang: "${ld}"`);
+                            }}
+                            className={`text-[10px] px-1.5 py-0.5 rounded border transition-colors cursor-pointer ${extractData.loaiNoiDung === ld
+                              ? 'bg-rose-50 text-rose-700 border-rose-300 font-bold'
+                              : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+                              }`}
+                          >
+                            {ld}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* 3. ─Éß╗æi t╞░ß╗úng bß╗ï tß╗æ gi├íc / li├¬n quan */}
+              <div
+                onMouseEnter={() => setActiveHighlightKey('doiTuong')}
+                onMouseLeave={() => setActiveHighlightKey(null)}
+                className="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-50/80 border border-slate-200/80 hover:bg-purple-50/50 transition-colors"
+              >
+                <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-[18px]">group</span>
+                </div>
+                <div className="min-w-0 flex-1 leading-snug space-y-1">
+                  <span className="text-[10.5px] text-slate-500 font-medium block">
+                    ─Éß╗æi t╞░ß╗úng bß╗ï tß╗æ gi├íc / li├¬n quan
+                  </span>
+                  <div>
+                    <span
+                      contentEditable={isEditingExtract}
+                      suppressContentEditableWarning
+                      onBlur={(e) => updateExtractField('doiTuong', e.currentTarget.textContent || '')}
+                      className={`font-bold text-slate-900 text-[12.5px] outline-none transition-all inline-block ${isEditingExtract
+                        ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 py-0.5 rounded cursor-text focus:ring-1 focus:ring-blue-300'
+                        : ''
+                        }`}
+                      title={isEditingExtract ? 'Nhß║Ñp v├áo chß╗» ─æß╗â sß╗¡a' : undefined}
+                    >
+                      {extractData.doiTuong}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-600 flex items-center gap-1">
+                    <span>Chß╗⌐c vß╗Ñ:</span>
+                    <span
+                      contentEditable={isEditingExtract}
+                      suppressContentEditableWarning
+                      onBlur={(e) => updateExtractField('chucVu', e.currentTarget.textContent || '')}
+                      className={`outline-none transition-all ${isEditingExtract
+                        ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 rounded cursor-text focus:ring-1 focus:ring-blue-300'
+                        : ''
+                        }`}
+                      title={isEditingExtract ? 'Nhß║Ñp v├áo chß╗» ─æß╗â sß╗¡a' : undefined}
+                    >
+                      {extractData.chucVu}
+                    </span>
+                  </p>
+                  <p className="text-[11px] text-slate-600 flex items-center gap-1">
+                    <span>─É╞ín vß╗ï:</span>
+                    <span
+                      contentEditable={isEditingExtract}
+                      suppressContentEditableWarning
+                      onBlur={(e) => updateExtractField('donVi', e.currentTarget.textContent || '')}
+                      className={`outline-none transition-all ${isEditingExtract
+                        ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 rounded cursor-text focus:ring-1 focus:ring-blue-300'
+                        : ''
+                        }`}
+                      title={isEditingExtract ? 'Nhß║Ñp v├áo chß╗» ─æß╗â sß╗¡a' : undefined}
+                    >
+                      {extractData.donVi}
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              {/* 4. Thß╗¥i gian sß╗▒ viß╗çc */}
+              <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-50/80 border border-slate-200/80 hover:bg-blue-50/50 transition-colors">
+                <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-[18px]">calendar_month</span>
+                </div>
+                <div className="min-w-0 flex-1 leading-snug space-y-1">
+                  <span className="text-[10.5px] text-slate-500 font-medium block">
+                    Thß╗¥i gian sß╗▒ viß╗çc
+                  </span>
+                  {aiState === 'reading' && readingProgress < 60 ? (
+                    <div className="h-3.5 w-32 bg-slate-200 rounded skel mt-1" />
+                  ) : (
+                    <p className="font-bold text-slate-800 text-[12px] pt-0.5">
+                      <span
+                        contentEditable={isEditingExtract}
+                        suppressContentEditableWarning
+                        onBlur={(e) => updateExtractField('thoiGian', e.currentTarget.textContent || '')}
+                        className={`outline-none transition-all ${isEditingExtract
+                          ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 py-0.5 rounded cursor-text focus:ring-1 focus:ring-blue-300'
+                          : ''
+                          }`}
+                        title={isEditingExtract ? 'Nhß║Ñp v├áo chß╗» ─æß╗â sß╗¡a' : undefined}
+                      >
+                        {extractData.thoiGian}
+                      </span>
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* 5. ─Éß╗ïa ─æiß╗âm, dß╗▒ ├ín, sß╗▒ viß╗çc */}
+              <div
+                onMouseEnter={() => setActiveHighlightKey('diaDiem')}
+                onMouseLeave={() => setActiveHighlightKey(null)}
+                className="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-50/80 border border-slate-200/80 hover:bg-rose-50/50 transition-colors"
+              >
+                <div className="w-8 h-8 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-[18px]">location_on</span>
+                </div>
+                <div className="min-w-0 flex-1 leading-snug space-y-1">
+                  <span className="text-[10.5px] text-slate-500 font-medium block">
+                    ─Éß╗ïa ─æiß╗âm, dß╗▒ ├ín, sß╗▒ viß╗çc
+                  </span>
+
+                  <p className="text-[11px] text-slate-600 pl-4">
+                    <span
+                      contentEditable={isEditingExtract}
+                      suppressContentEditableWarning
+                      onBlur={(e) => updateExtractField('diaDiem', e.currentTarget.textContent || '')}
+                      className={`outline-none transition-all ${isEditingExtract
+                        ? 'bg-white border-b border-dashed border-[#004ac6] hover:bg-blue-50/70 px-1 rounded cursor-text focus:ring-1 focus:ring-blue-300'
+                        : ''
+                        }`}
+                      title={isEditingExtract ? 'Nhß║Ñp v├áo chß╗» ─æß╗â sß╗¡a' : undefined}
+                    >
+                      {extractData.diaDiem}
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              {/* 6. Y├¬u cß║ºu cß╗ºa ng╞░ß╗¥i gß╗¡i */}
+              <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-50/80 border border-slate-200/80 hover:bg-emerald-50/50 transition-colors">
+                <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-[18px]">description</span>
+                </div>
+                <div className="min-w-0 flex-1 leading-snug space-y-1">
+                  <span className="text-[10.5px] text-slate-500 font-medium block">
+                    Y├¬u cß║ºu cß╗ºa ng╞░ß╗¥i gß╗¡i
+                  </span>
