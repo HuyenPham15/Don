@@ -42,7 +42,7 @@ export default function ChatHeader({
             </span>
             <span>•</span>
             <span className="truncate max-w-[340px]">
-              Tự động bóc tách, lập bản nháp tiếp nhận & cấp số chính thức
+              Tự động bóc tách, lập bản nháp & tạo đơn trực tiếp
             </span>
           </div>
         </div>
@@ -59,7 +59,7 @@ export default function ChatHeader({
         {isReceived && (
           <div className="hidden md:flex items-center gap-1.5 px-3 py-1 bg-emerald-50 border border-emerald-200/80 rounded-xl text-xs text-emerald-800 font-medium animate-fade-in">
             <span className="material-symbols-outlined text-[16px] text-emerald-600">verified</span>
-            <span>Đã tiếp nhận: <strong className="font-mono text-slate-900">{draft?.receptionCode}</strong></span>
+            <span>Đã tạo đơn: <strong className="font-mono text-slate-900">{draft?.receptionCode}</strong></span>
           </div>
         )}
 

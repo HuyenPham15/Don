@@ -929,15 +929,42 @@ export default function App() {
             {screen === "ai-tiep-nhan-chat" && (
               <AITiepNhanChatScreen
                 onNav={setScreen}
-                onReceptionCreated={(newLn, newDon) => {
-                  setLuotNhanList((prev) => [newLn, ...prev.filter((l) => l.id !== newLn.id)]);
-                  setAcceptedDons((prev) => [newDon, ...prev.filter((d) => d.id !== newDon.id)]);
-                  setSelected(newLn);
+                onReceptionCreated={(newDon) => {
+                  // Chỉ sinh ra Đơn, KHÔNG tạo lượt nhận
+                  setAcceptedDons((prev) => [newDon, ...prev.filter((d) => d.id !== newDon.id && d.code !== newDon.code)]);
                   setSelectedDon(newDon);
+
+                  // Khởi tạo quy trình thụ lý cho đơn vừa tạo từ chat
+                  const loaiDon = newDon.loaiDon || 'Khiếu nại';
+                  const wfDef = matchWorkflowByLoaiDon(loaiDon);
+                  setActiveWorkflow({
+                    donCode: newDon.code,
+                    donTitle: newDon.title,
+                    luotNhanId: '',
+                    nguoiNop: newDon.nguoiNop,
+                    loaiDonConfirmed: loaiDon,
+                    workflow: wfDef,
+                    activeStepId: wfDef.steps[0]?.id || 'step-1',
+                    tasks: wfDef.defaultTasks,
+                    missingInfoList: wfDef.potentialMissingInfo,
+                    status: 'dang_xu_ly',
+                    startedAt: newDon.ngayNhan || new Date().toISOString(),
+                    assignedOfficer: 'Nguyễn Minh Anh',
+                    historyLogs: [
+                      {
+                        id: `log-${Date.now()}`,
+                        timestamp: 'Hôm nay, vừa xong',
+                        action: 'Tạo đơn từ Chat AI',
+                        actor: 'Nguyễn Minh Anh (Cán bộ tiếp nhận)',
+                        reason: `Hồ sơ đơn ${newDon.code} được tạo trực tiếp từ Chatbot AI bóc tách hồ sơ.`,
+                      },
+                    ],
+                  });
                 }}
-                onSaveDraftToWorkItems={(draftLn, draftDon) => {
-                  setLuotNhanList((prev) => [draftLn, ...prev.filter((l) => l.id !== draftLn.id)]);
-                  setAcceptedDons((prev) => [draftDon, ...prev.filter((d) => d.id !== draftDon.id)]);
+                onSaveDraftToWorkItems={(draftDon) => {
+                  // Chỉ lưu Đơn vào việc cần xử lý, KHÔNG tạo lượt nhận
+                  setAcceptedDons((prev) => [draftDon, ...prev.filter((d) => d.id !== draftDon.id && d.code !== draftDon.code)]);
+                  setSelectedDon(draftDon);
                 }}
               />
             )}

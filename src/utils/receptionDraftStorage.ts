@@ -49,16 +49,16 @@ export const DEFAULT_PROCESS_STEPS: ProcessStepItem[] = [
   {
     id: 'step-6',
     code: 'DRAFT',
-    name: 'Tạo bản nháp tiếp nhận',
+    name: 'Tạo bản nháp hồ sơ đơn',
     status: 'pending',
-    description: 'Khởi tạo hồ sơ tiếp nhận điện tử và lập mã phiên',
+    description: 'Khởi tạo hồ sơ đơn điện tử và lập mã phiên',
   },
   {
     id: 'step-7',
     code: 'CONFIRM',
-    name: 'Chờ xác nhận tiếp nhận',
+    name: 'Chờ xác nhận tạo đơn',
     status: 'pending',
-    description: 'Cán bộ kiểm tra, chỉnh sửa bổ sung và bấm Tiếp nhận đơn',
+    description: 'Cán bộ kiểm tra, chỉnh sửa bổ sung và bấm Tạo đơn',
   },
 ];
 
@@ -207,7 +207,7 @@ export function createDemoConversation(): { draft: ReceptionDraft; messages: Cha
       sender: 'assistant',
       timestamp: '09:16',
       type: 'text',
-      text: 'Tôi đã hoàn thành bóc tách dữ liệu từ tài liệu đính kèm. Dưới đây là **Bản nháp tiếp nhận** đã được đối soát theo quy định. Bạn có thể kiểm tra, chỉnh sửa thông tin hoặc bấm **Tiếp nhận đơn** để cấp số tiếp nhận chính thức.',
+      text: 'Tôi đã hoàn thành bóc tách dữ liệu từ tài liệu đính kèm. Dưới đây là **Bản nháp hồ sơ đơn** đã được đối soát theo quy định. Bạn có thể kiểm tra, chỉnh sửa thông tin hoặc bấm **Tạo đơn** để khởi tạo đơn chính thức vào hệ thống xử lý.',
       draftId: draft.id,
     },
     {
@@ -275,8 +275,8 @@ export function clearReceptionStorage(): void {
   }
 }
 
-// Helper sinh mã tiếp nhận
+// Helper sinh mã Đơn chính thức (Trực tiếp tạo đơn, không qua lượt nhận)
 export function generateReceptionCode(): string {
   const randNum = Math.floor(100000 + Math.random() * 900000);
-  return `TN-2026-${randNum}`;
+  return `Đ-2026-${randNum}`;
 }

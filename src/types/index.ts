@@ -168,6 +168,7 @@ export interface DonDetail {
   canBoXuLy?: string;
   cccd?: string;
   sdt?: string;
+  email?: string;
   diaChi?: string;
   noiDung?: string;
   progress?: {

@@ -25,8 +25,8 @@ import ReceptionExtractedFormPane from '../components/chatReception/ReceptionExt
 
 interface AITiepNhanChatScreenProps {
   onNav?: (s: Screen) => void;
-  onReceptionCreated?: (newLuotNhan: LuotNhan, newDon: DonDetail) => void;
-  onSaveDraftToWorkItems?: (draftLuotNhan: LuotNhan, draftDon: DonDetail) => void;
+  onReceptionCreated?: (newDon: DonDetail) => void;
+  onSaveDraftToWorkItems?: (draftDon: DonDetail) => void;
 }
 
 export default function AITiepNhanChatScreen({
@@ -109,10 +109,10 @@ export default function AITiepNhanChatScreen({
           prev.map((m) =>
             m.id === msg.id
               ? {
-                  ...m,
-                  text: `${(m.text || '').replace(/\s*\(Đã làm mới lại lúc .*\)/g, '')} (Đã làm mới lại lúc ${new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })})`,
-                  timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-                }
+                ...m,
+                text: `${(m.text || '').replace(/\s*\(Đã làm mới lại lúc .*\)/g, '')} (Đã làm mới lại lúc ${new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })})`,
+                timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+              }
               : m
           )
         );
@@ -473,42 +473,34 @@ export default function AITiepNhanChatScreen({
     });
   };
 
-  // 5. LƯU NHÁP / CHUYỂN VÀO MÀN CÔNG VIỆC CỦA TÔI (CHO ĐƠN CHƯA THỂ TIẾP NHẬN NGAY)
+  // 5. LƯU NHÁP / CHUYỂN VÀO MÀN CÔNG VIỆC CỦA TÔI (CHO ĐƠN CHƯA THỂ TẠO CHÍNH THỨC NGAY)
   const handleSaveDraftToWork = (targetDraft: ReceptionDraft, reason?: string) => {
     const data = targetDraft.extractedData;
     const timeNow = new Date().toLocaleString('vi-VN');
 
-    // Tạo bản ghi lượt nhận nháp & DonDetail
-    const draftLuotNhan: LuotNhan = {
-      id: `LN-NHAP-${targetDraft.id.replace('DRAFT-', '')}`,
-      ngayNhan: timeNow,
-      nguoiNop: data.nguoiNop.value || data.nguoiDungDon.value || 'Người nộp chưa rõ',
-      hinhThuc: 'Bản nháp AI Chat',
-      noiDung: data.noiDungTomTat.value || 'Bản nháp tiếp nhận đơn đang chờ xử lý',
-      donVi: 'Phòng Tiếp công dân & Xử lý đơn',
-      aiJob: 5,
-      status: 'cho_chuyen',
-      hasFile: true,
-      sourceType: 'file',
-      loaiDon: data.loaiDon.value,
-      ghiChu: reason || 'Chờ bổ sung giấy tờ và xác minh',
-    };
-
+    // Chỉ tạo bản ghi Đơn nháp (DonDetail), KHÔNG tạo lượt nhận
     const draftDon: DonDetail = {
       id: `Đ-NHAP-${targetDraft.id.replace('DRAFT-', '')}`,
       code: `Đ-NHAP-${targetDraft.id.replace('DRAFT-', '')}`,
-      title: data.noiDungTomTat.value.slice(0, 90) + '...',
-      luotNhanId: draftLuotNhan.id,
-      nguoiNop: data.nguoiNop.value || data.nguoiDungDon.value,
+      title: data.noiDungTomTat.value.slice(0, 90) + (data.noiDungTomTat.value.length > 90 ? '...' : ''),
+      nguoiNop: data.nguoiNop.value || data.nguoiDungDon.value || 'Người nộp chưa rõ',
       ngayNhan: timeNow,
       loaiDon: data.loaiDon.value,
       type: 'ĐƠN TIẾP NHẬN',
       statusBadge: 'Chờ tiếp nhận', // CongViecCuaToi map statusBadge 'Chờ tiếp nhận' vào Cột 1 'action_required' (Cần xử lý)
+      canBoTiepNhan: targetDraft.createdBy || 'Nguyễn Minh Anh',
+      chucVuCanBo: 'Chuyên viên Tiếp nhận',
+      donViXuLy: 'Phòng Tiếp công dân & Xử lý đơn',
+      cccd: data.cccd.value,
+      sdt: data.soDienThoai.value,
+      email: data.email.value,
+      diaChi: data.diaChi.value,
+      noiDung: data.noiDungTomTat.value,
     };
 
-    // Gọi callback để App.tsx cập nhật vào work items
+    // Gọi callback để App.tsx cập nhật vào work items - CHỈ lưu Đơn, KHÔNG tạo lượt nhận
     if (onSaveDraftToWorkItems) {
-      onSaveDraftToWorkItems(draftLuotNhan, draftDon);
+      onSaveDraftToWorkItems(draftDon);
     }
 
     // AI thêm tin nhắn xác nhận trong luồng chat bên trái
@@ -517,18 +509,18 @@ export default function AITiepNhanChatScreen({
       sender: 'assistant',
       timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
       type: 'text',
-      text: `✓ **Đã lưu bản nháp vào danh sách "Cần xử lý" trên màn Công việc của tôi**.\n- Mã hồ sơ: \`${draftDon.code}\`\n- Trạng thái: Chờ tiếp nhận\n- Lý do/Ghi chú: ${reason || 'Chờ xử lý tiếp'}\n\nBạn có thể sang màn hình **Công việc của tôi** bất cứ lúc nào để tiếp tục xử lý.`,
+      text: `✓ **Đã lưu bản nháp đơn vào danh sách "Cần xử lý" trên màn Công việc của tôi**.\n- Mã đơn nháp: \`${draftDon.code}\`\n- Trạng thái: Chờ tạo đơn chính thức\n- Lý do/Ghi chú: ${reason || 'Chờ xử lý tiếp'}\n\nBạn có thể sang màn hình **Công việc của tôi** bất cứ lúc nào để tiếp tục xử lý.`,
     };
     setMessages((prev) => [...prev, aiLogMsg]);
 
     showToast(
-      `✓ Đã lưu hồ sơ vào 'Việc cần xử lý' trên màn Công việc của tôi!`,
+      `✓ Đã lưu đơn nháp vào 'Việc cần xử lý' trên màn Công việc của tôi!`,
       'Xem ngay',
       () => onNav?.('cong-viec')
     );
   };
 
-  // 6. XÁC NHẬN TIẾP NHẬN ĐƠN CHÍNH THỨC
+  // 6. XÁC NHẬN TẠO ĐƠN CHÍNH THỨC TỪ CHAT (KHÔNG TẠO LƯỢT NHẬN)
   const handleConfirmReception = async (targetDraft: ReceptionDraft) => {
     const data = targetDraft.extractedData;
 
@@ -539,7 +531,7 @@ export default function AITiepNhanChatScreen({
     }
 
     setIsProcessing(true);
-    const receptionCode = generateReceptionCode();
+    const donCode = generateReceptionCode(); // Sinh mã đơn chính thức: Đ-2026-xxxxxx
     const timeNow = new Date().toLocaleString('vi-VN');
 
     await new Promise((res) => setTimeout(res, 600));
@@ -548,7 +540,7 @@ export default function AITiepNhanChatScreen({
     const updatedDraft: ReceptionDraft = {
       ...targetDraft,
       status: 'RECEIVED',
-      receptionCode,
+      receptionCode: donCode,
       receptionTime: timeNow,
       stepsProgress: targetDraft.stepsProgress.map((s) => ({
         ...s,
@@ -570,37 +562,31 @@ export default function AITiepNhanChatScreen({
     };
 
     setMessages((prev) => [...prev, successMsg]);
-    showToast(`✓ Tiếp nhận thành công! Số hồ sơ: ${receptionCode}`, 'Đến công việc', () => onNav?.('cong-viec'));
+    showToast(`✓ Tạo đơn thành công! Mã đơn: ${donCode}`, 'Đến công việc', () => onNav?.('cong-viec'));
 
-    // Đồng bộ vào hệ thống chung qua onReceptionCreated
+    // Đồng bộ vào hệ thống chung qua onReceptionCreated: CHỈ sinh ra Đơn, KHÔNG tạo lượt nhận
     if (onReceptionCreated) {
-      const newLuotNhan: LuotNhan = {
-        id: `LN-${receptionCode.replace('TN-', '')}`,
-        ngayNhan: timeNow,
-        nguoiNop: data.nguoiNop.value || data.nguoiDungDon.value,
-        hinhThuc: 'Trực tuyến qua Chat AI',
-        noiDung: data.noiDungTomTat.value,
-        donVi: 'Phòng Tiếp công dân & Xử lý đơn',
-        aiJob: 5,
-        status: 'da_chuyen',
-        hasFile: true,
-        sourceType: 'file',
-        loaiDon: data.loaiDon.value,
-      };
-
       const newDon: DonDetail = {
-        id: `Đ-${receptionCode.replace('TN-', '')}`,
-        code: `Đ-${receptionCode.replace('TN-', '')}`,
-        title: data.noiDungTomTat.value.slice(0, 90) + '...',
-        luotNhanId: newLuotNhan.id,
+        id: donCode,
+        code: donCode,
+        title: data.noiDungTomTat.value.slice(0, 90) + (data.noiDungTomTat.value.length > 90 ? '...' : ''),
         nguoiNop: data.nguoiNop.value || data.nguoiDungDon.value,
         ngayNhan: timeNow,
         loaiDon: data.loaiDon.value,
         type: 'ĐƠN TIẾP NHẬN',
         statusBadge: 'Đang xử lý',
+        canBoTiepNhan: targetDraft.createdBy || 'Nguyễn Minh Anh',
+        chucVuCanBo: 'Chuyên viên Tiếp nhận',
+        donViXuLy: 'Phòng Tiếp công dân & Xử lý đơn',
+        cccd: data.cccd.value,
+        sdt: data.soDienThoai.value,
+        email: data.email.value,
+        diaChi: data.diaChi.value,
+        noiDung: data.noiDungTomTat.value,
+        hasBaoCaoDeXuat: false,
       };
 
-      onReceptionCreated(newLuotNhan, newDon);
+      onReceptionCreated(newDon);
     }
   };
 
@@ -612,34 +598,6 @@ export default function AITiepNhanChatScreen({
         onResetDemo={handleResetDemo}
         onClearChat={handleClearChat}
       />
-
-      {/* 2. Top Banner thông báo Draft chưa hoàn tất khi reload */}
-      {showDraftBanner && draft && draft.status === 'WAITING_CONFIRMATION' && (
-        <div className="px-5 py-2.5 bg-amber-50 border-b border-amber-200 flex items-center justify-between text-xs text-amber-900 animate-in slide-in-from-top duration-200 shrink-0">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[18px] text-amber-700 animate-pulse">
-              notification_important
-            </span>
-            <span>
-              <strong>Bạn có 1 hồ sơ tiếp nhận đang xử lý dở:</strong>{' '}
-              <span className="font-mono">{draft.fileMeta.name}</span> (Mã nháp:{' '}
-              <strong className="font-mono">{draft.id}</strong>) - Dữ liệu đã mở sẵn trên biểu mẫu bên phải để bạn tiếp tục tiếp nhận hoặc lưu nháp.
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setShowDraftBanner(false)}
-              className="p-1 text-amber-700 hover:text-amber-950 rounded cursor-pointer"
-              title="Đóng thông báo"
-            >
-              <span className="material-symbols-outlined text-[16px]">close</span>
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* 3. KHU VỰC CHIA ĐÔI: BÊN TRÁI (QUÁ TRÌNH XỬ LÝ & CHAT) - BÊN PHẢI (BIỂU MẪU DỮ LIỆU) */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
         {/* ==================== BÊN TRÁI: QUÁ TRÌNH XỬ LÝ & HỘI THOẠI AI ==================== */}

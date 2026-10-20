@@ -162,7 +162,7 @@ export default function ReceptionExtractedFormPane({
               <span className="material-symbols-outlined text-[17px]">edit_document</span>
             </div>
             <h2 className="text-sm font-bold text-slate-900 tracking-tight">
-              Biểu mẫu Tiếp nhận hồ sơ (AI bóc tách)
+              Biểu mẫu Tạo đơn trực tiếp (AI bóc tách)
             </h2>
             <span className="font-mono text-[10.5px] font-bold text-slate-600 bg-white px-2 py-0.5 rounded-md border border-slate-200">
               {draft.id}
@@ -177,12 +177,12 @@ export default function ReceptionExtractedFormPane({
           {isReceived ? (
             <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1.5 shadow-2xs">
               <span className="material-symbols-outlined text-[15px]">verified</span>
-              <span>ĐÃ TIẾP NHẬN: <strong className="font-mono">{draft.receptionCode}</strong></span>
+              <span>ĐÃ TẠO ĐƠN: <strong className="font-mono">{draft.receptionCode}</strong></span>
             </span>
           ) : (
             <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1.5 shadow-2xs">
               <span className="material-symbols-outlined text-[15px]">pending_actions</span>
-              <span>Chờ tiếp nhận / Cần kiểm tra</span>
+              <span>Chờ tạo đơn / Cần kiểm tra</span>
             </span>
           )}
 
@@ -204,19 +204,6 @@ export default function ReceptionExtractedFormPane({
 
       {/* 2. BODY FORM (CUỘN ĐƯỢC) */}
       <div className="flex-1 overflow-y-auto p-5 space-y-5 bg-[#fafbfd]">
-        {/* Banner cảnh báo nếu có trường CCCD hoặc trường khác cần kiểm tra */}
-        {data.cccd.status === 'needs_review' && !isReceived && (
-          <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-xl flex items-start gap-2.5 text-xs text-amber-900 animate-fade-in">
-            <span className="material-symbols-outlined text-[18px] text-amber-600 shrink-0 mt-0.5">
-              notification_important
-            </span>
-            <div className="flex-1">
-              <span className="font-bold">Lưu ý kiểm tra thông tin:</span> AI nhận diện số CCCD{' '}
-              <strong className="font-mono text-slate-900">{formValues.cccd}</strong> với độ tin cậy thấp (68%). Cán bộ vui lòng đối chiếu bản scan và sửa trực tiếp nếu có sai khác.
-            </div>
-          </div>
-        )}
-
         {/* NHÓM 1: PHÂN LOẠI & NGƯỜI ĐỨNG ĐƠN */}
         <section className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-2xs space-y-3.5">
           <div className="flex items-center justify-between pb-2 border-b border-slate-100">
@@ -471,7 +458,7 @@ export default function ReceptionExtractedFormPane({
         <div className="flex items-center gap-2 text-xs text-slate-500">
           <span className="material-symbols-outlined text-emerald-600 text-[18px]">shield_check</span>
           <span className="hidden md:inline">
-            Tự động lưu thay đổi vào bản nháp. Cán bộ có thể lưu nháp vào việc cần xử lý hoặc tiếp nhận ngay.
+            Tự động lưu thay đổi vào bản nháp. Cán bộ có thể lưu nháp vào việc cần xử lý hoặc tạo đơn ngay.
           </span>
         </div>
 
@@ -482,14 +469,14 @@ export default function ReceptionExtractedFormPane({
               type="button"
               onClick={() => setShowSaveDialog(true)}
               className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95"
-              title="Lưu hồ sơ vào danh sách 'Cần xử lý' của màn Công việc của tôi khi chưa đủ điều kiện tiếp nhận ngay"
+              title="Lưu đơn nháp vào danh sách 'Cần xử lý' của màn Công việc của tôi khi chưa đủ điều kiện tạo đơn ngay"
             >
               <span className="material-symbols-outlined text-[17px] text-amber-700">pending_actions</span>
-              <span>Lưu nháp / Cần xử lý</span>
+              <span>Lưu nháp đơn / Cần xử lý</span>
             </button>
           )}
 
-          {/* NÚT TIẾP NHẬN ĐƠN (Chính thức) */}
+          {/* NÚT TẠO ĐƠN (Chính thức, không qua lượt nhận) */}
           {!isReceived ? (
             <button
               type="button"
@@ -504,22 +491,32 @@ export default function ReceptionExtractedFormPane({
                 </>
               ) : (
                 <>
-                  {/* <span className="material-symbols-outlined text-[18px]">assignment_turned_in</span> */}
-                  <span>Tiếp nhận đơn</span>
+                  <span className="material-symbols-outlined text-[17px]">post_add</span>
+                  <span>Tạo đơn</span>
                 </>
               )}
             </button>
           ) : (
             <div className="flex items-center gap-2">
               {onNav && (
-                <button
-                  type="button"
-                  onClick={() => onNav('cong-viec')}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#004ac6] hover:bg-[#003ba0] text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-[17px]">task_alt</span>
-                  <span>Mở tại Công việc của tôi</span>
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => onNav('don-tiep-nhan')}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-50 hover:bg-blue-100 text-[#004ac6] border border-blue-200 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[17px]">folder_open</span>
+                    <span>Xem tại Quản lý đơn</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onNav('cong-viec')}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#004ac6] hover:bg-[#003ba0] text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[17px]">task_alt</span>
+                    <span>Mở tại Công việc của tôi</span>
+                  </button>
+                </>
               )}
             </div>
           )}
@@ -545,12 +542,12 @@ export default function ReceptionExtractedFormPane({
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-slate-700">Lý do chưa tiếp nhận ngay / Ghi chú xử lý:</label>
+              <label className="text-[11px] font-bold text-slate-700">Lý do chưa tạo đơn ngay / Ghi chú xử lý:</label>
               <textarea
                 rows={3}
                 value={saveNote}
                 onChange={(e) => setSaveNote(e.target.value)}
-                placeholder="Nhập lý do chưa tiếp nhận (VD: Chờ công dân nộp bổ sung giấy tờ, cần xác minh địa bàn...)"
+                placeholder="Nhập lý do chưa tạo đơn (VD: Chờ công dân nộp bổ sung giấy tờ, cần xác minh địa bàn...)"
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:border-[#004ac6]"
               />
             </div>
@@ -558,7 +555,7 @@ export default function ReceptionExtractedFormPane({
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 text-[11.5px] text-slate-600 space-y-1">
               <div>• <strong>Hồ sơ:</strong> {formValues.loaiDon} - {formValues.nguoiDungDon}</div>
               <div>• <strong>Vị trí sau khi lưu:</strong> Cột &quot;Cần xử lý&quot; trên màn hình <em>Công việc của tôi</em>.</div>
-              <div>• <strong>Thao tác tiếp theo:</strong> Bất cứ lúc nào bạn có thể bấm vào thẻ để mở lại màn tiếp nhận này.</div>
+              <div>• <strong>Thao tác tiếp theo:</strong> Bất cứ lúc nào bạn có thể bấm vào thẻ để mở lại màn tạo đơn này.</div>
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">

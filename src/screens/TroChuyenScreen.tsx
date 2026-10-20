@@ -952,7 +952,7 @@ Phòng Tài nguyên và Môi trường kính trình UBND quận/huyện xem xét
                               <span className={`material-symbols-outlined text-[13px] ${isGenerating ? 'animate-spin' : ''}`}>
                                 replay
                               </span>
-                              <span>Thử lại</span>
+                              {/* <span>Thử lại</span> */}
                             </button>
 
                             {/* Nút Sao chép câu hỏi */}
@@ -966,7 +966,7 @@ Phòng Tài nguyên và Môi trường kính trình UBND quận/huyện xem xét
                               <span className="material-symbols-outlined text-[13px]">
                                 {copiedMsgId === m.id ? 'check' : 'content_copy'}
                               </span>
-                              <span>{copiedMsgId === m.id ? 'Đã sao chép' : 'Sao chép'}</span>
+                              {/* <span>{copiedMsgId === m.id ? 'Đã sao chép' : 'Sao chép'}</span> */}
                             </button>
                           </div>
                         </div>

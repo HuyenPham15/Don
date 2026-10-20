@@ -14,7 +14,7 @@ export default function ReceptionSuccessCard({
   onNav,
   onNewSession,
 }: ReceptionSuccessCardProps) {
-  const code = draft.receptionCode || 'TN-2026-000123';
+  const code = draft.receptionCode || 'Đ-2026-000123';
   const data = draft.extractedData;
 
   return (
@@ -36,10 +36,10 @@ export default function ReceptionSuccessCard({
           </div>
 
           <h3 className="text-base font-extrabold text-slate-900 mt-0.5 tracking-tight">
-            Tiếp nhận hồ sơ thành công!
+            Tạo đơn thành công!
           </h3>
           <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">
-            Hồ sơ đã được cấp số tiếp nhận điện tử và chuyển tiếp vào quy trình xử lý của cơ quan.
+            Hồ sơ đơn đã được khởi tạo trực tiếp và chuyển vào quy trình xử lý của cơ quan (không qua lượt nhận).
           </p>
         </div>
       </div>
@@ -49,7 +49,7 @@ export default function ReceptionSuccessCard({
         <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              Mã số tiếp nhận chính thức
+              Mã số đơn chính thức
             </span>
             <div className="text-xl font-extrabold font-mono text-[#004ac6] tracking-tight mt-0.5">
               {code}
@@ -60,7 +60,7 @@ export default function ReceptionSuccessCard({
             <span className="material-symbols-outlined text-slate-400 text-[28px]">qr_code_2</span>
             <div className="text-[11px] text-slate-500">
               <div>Đã đồng bộ cơ sở dữ liệu</div>
-              <div className="font-semibold text-emerald-700">Trạng thái: Đã tiếp nhận</div>
+              <div className="font-semibold text-emerald-700">Trạng thái: Đã tạo đơn & Đang xử lý</div>
             </div>
           </div>
         </div>
@@ -112,7 +112,7 @@ export default function ReceptionSuccessCard({
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold cursor-pointer transition-colors"
             >
               <span className="material-symbols-outlined text-[16px]">add_circle</span>
-              <span>Tiếp nhận đơn khác</span>
+              <span>Tạo đơn khác</span>
             </button>
           )}
 
