@@ -54,6 +54,7 @@ export default function AITiepNhanChatScreen({
     return Boolean(saved && saved.status === 'WAITING_CONFIRMATION');
   });
   const [toastMsg, setToastMsg] = useState<{ text: string; actionText?: string; onAction?: () => void } | null>(null);
+  const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -62,6 +63,63 @@ export default function AITiepNhanChatScreen({
     setTimeout(() => {
       setToastMsg((curr) => (curr?.text === text ? null : curr));
     }, 4500);
+  };
+
+  // Sao chép nội dung tin nhắn
+  const handleCopyMessage = async (msg: ChatMessage) => {
+    const textToCopy = msg.text || '';
+    if (!textToCopy) return;
+    try {
+      if (navigator?.clipboard?.writeText && window.isSecureContext) {
+        await navigator.clipboard.writeText(textToCopy);
+      } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = textToCopy;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand('copy');
+        textArea.remove();
+      }
+      setCopiedMsgId(msg.id);
+      showToast('✓ Đã sao chép nội dung tin nhắn.');
+      setTimeout(() => {
+        setCopiedMsgId((curr) => (curr === msg.id ? null : curr));
+      }, 2000);
+    } catch {
+      showToast('⚠️ Không thể sao chép văn bản.');
+    }
+  };
+
+  // Thử lại tin nhắn người dùng hoặc tạo lại câu trả lời AI
+  const handleRetryMessage = async (msg: ChatMessage) => {
+    if (isProcessing) return;
+
+    if (msg.sender === 'user') {
+      if (!msg.text) return;
+      showToast('🔄 Đang gửi lại câu hỏi...');
+      await handleSendMessage(msg.text);
+    } else {
+      showToast('🔄 Đang thử lại và phân tích lại phản hồi...');
+      setIsProcessing(true);
+      setTimeout(() => {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === msg.id
+              ? {
+                  ...m,
+                  text: `${(m.text || '').replace(/\s*\(Đã làm mới lại lúc .*\)/g, '')} (Đã làm mới lại lúc ${new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })})`,
+                  timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+                }
+              : m
+          )
+        );
+        setIsProcessing(false);
+        showToast('✓ Đã làm mới phản hồi của Trợ lý AI.');
+      }, 650);
+    }
   };
 
   // Cuộn xuống tin nhắn mới nhất trong khung chat bên trái
@@ -617,11 +675,34 @@ export default function AITiepNhanChatScreen({
               // Tin nhắn User thông thường
               if (msg.sender === 'user') {
                 return (
-                  <div key={msg.id} className="flex flex-col items-end gap-1 max-w-sm ml-auto animate-fade-in">
+                  <div key={msg.id} className="flex flex-col items-end gap-1 max-w-sm ml-auto animate-fade-in group">
                     <div className="px-3.5 py-2 bg-gradient-to-r from-[#004ac6] to-[#1e5cd8] text-white rounded-2xl rounded-tr-xs shadow-2xs text-xs font-medium leading-relaxed">
                       {msg.text}
                     </div>
-                    <span className="text-[10px] text-slate-400 pr-1">{msg.timestamp}</span>
+                    <div className="flex items-center gap-2 text-[10.5px] text-slate-400 pr-1">
+                      <span>{msg.timestamp}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRetryMessage(msg)}
+                        disabled={isProcessing}
+                        className="hover:text-blue-600 cursor-pointer inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded hover:bg-slate-200/70 transition-colors disabled:opacity-50"
+                        title="Thử lại gửi tin nhắn này"
+                      >
+                        <span className="material-symbols-outlined text-[13px]">replay</span>
+                        <span>Thử lại</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyMessage(msg)}
+                        className="hover:text-slate-700 cursor-pointer inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded hover:bg-slate-200/70 transition-colors"
+                        title="Sao chép nội dung"
+                      >
+                        <span className="material-symbols-outlined text-[13px]">
+                          {copiedMsgId === msg.id ? 'check' : 'content_copy'}
+                        </span>
+                        <span>{copiedMsgId === msg.id ? 'Đã sao chép' : 'Sao chép'}</span>
+                      </button>
+                    </div>
                   </div>
                 );
               }
@@ -637,7 +718,40 @@ export default function AITiepNhanChatScreen({
                     {/* Text AI */}
                     {msg.text && (
                       <div className="px-3.5 py-2.5 bg-white border border-slate-200/90 rounded-2xl rounded-tl-xs shadow-2xs text-xs text-slate-800 leading-relaxed whitespace-pre-wrap">
-                        {msg.text}
+                        <div>{msg.text}</div>
+
+                        {/* Footer câu trả lời AI: Thử lại & Sao chép */}
+                        <div className="pt-2 mt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 flex-wrap gap-1">
+                          <span className="text-[10.5px]">{msg.timestamp}</span>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleRetryMessage(msg)}
+                              disabled={isProcessing}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-[#004ac6] border border-blue-200/80 text-[11px] font-semibold transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+                              title="Thử lại và phân tích lại phản hồi này"
+                              aria-label="Thử lại câu trả lời này"
+                            >
+                              <span className={`material-symbols-outlined text-[13px] ${isProcessing ? 'animate-spin' : ''}`}>
+                                replay
+                              </span>
+                              <span>Thử lại</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleCopyMessage(msg)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 text-[11px] font-semibold transition-all cursor-pointer active:scale-95"
+                              title="Sao chép nội dung phản hồi"
+                              aria-label="Sao chép câu trả lời"
+                            >
+                              <span className="material-symbols-outlined text-[13px] text-slate-600">
+                                {copiedMsgId === msg.id ? 'check' : 'content_copy'}
+                              </span>
+                              <span>{copiedMsgId === msg.id ? 'Đã sao chép' : 'Sao chép'}</span>
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     )}
 
@@ -654,8 +768,6 @@ export default function AITiepNhanChatScreen({
                         onNewSession={handleClearChat}
                       />
                     )}
-
-                    <span className="text-[10px] text-slate-400 pl-1 block">{msg.timestamp}</span>
                   </div>
                 </div>
               );

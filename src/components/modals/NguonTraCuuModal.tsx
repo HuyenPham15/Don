@@ -80,6 +80,10 @@ export default function NguonTraCuuModal({
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-50 text-[#004ac6] border border-blue-200">
                     Ngăn kéo chi tiết (Drawer)
                   </span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[11px]">verified</span>
+                    Độ tin cậy AI: 97.5%
+                  </span>
                 </div>
                 <p className="text-xs text-slate-500 font-medium truncate mt-0.5">
                   Đang đối soát cho đơn: <strong className="text-slate-800 font-mono">{currentDonCode}</strong> • Người gửi: <strong className="text-slate-800">{currentNguoiGui}</strong> (CCCD: <span className="font-mono text-slate-700">{currentCccd}</span>)
@@ -133,7 +137,7 @@ export default function NguonTraCuuModal({
               <span className="material-symbols-outlined text-[17px]">compare_arrows</span>
               <span>2. Đơn tương tự gốc (Đ-2025-00341)</span>
               <span className="px-2 py-0.2 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300">
-                Trùng 86%
+                Trùng 86% • Tin cậy 94.2%
               </span>
             </button>
 
@@ -152,7 +156,7 @@ export default function NguonTraCuuModal({
                 className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${activeTab === 'vu-viec' ? 'bg-purple-100 text-purple-800' : 'bg-slate-100 text-slate-600'
                   }`}
               >
-                Đang thụ lý PC03
+                Tin cậy 97.5%
               </span>
             </button>
           </div>
@@ -342,7 +346,12 @@ export default function NguonTraCuuModal({
                       <span className="material-symbols-outlined text-[16px] text-blue-600">compare</span>
                       BẢNG ĐỐI CHIẾU SONG SONG HỒ SƠ ĐƠN
                     </span>
-                    <span className="text-xs text-slate-500 font-medium">Độ trùng khớp tổng thể: <strong className="text-red-600 font-mono">86%</strong></span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-slate-500 font-medium">Độ trùng khớp: <strong className="text-red-600 font-mono">86%</strong></span>
+                      <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                        Độ tin cậy: 94.2%
+                      </span>
+                    </div>
                   </div>
 
                   <div className="overflow-x-auto">

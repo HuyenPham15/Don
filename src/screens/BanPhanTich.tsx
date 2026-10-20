@@ -16,6 +16,8 @@ import { getSuggestedActionsForWorkflow } from '../components/workflow/QuyTrinhS
 import { SigningDocument, CurrentUserAccount } from '../types/signing';
 import { INITIAL_LEADERS } from '../constants/signingData';
 import DonTrungDetailDrawer, { DonTrungItem } from '../components/modals/DonTrungDetailDrawer';
+import PhanTich5W1HSection from '../components/analysis/PhanTich5W1HSection';
+import MoHinhHoa5W1HWidget from '../components/analysis/MoHinhHoa5W1HWidget';
 
 export const DEFAULT_TO_CAO_DATA = {
   // A. Thông tin đơn
@@ -317,6 +319,7 @@ export default function BanPhanTich({
   const [selectedFileIndex, setSelectedFileIndex] = useState<number>(0);
   const activeFile = currentFiles[selectedFileIndex] || currentFiles[0];
   const [activeHighlightKey, setActiveHighlightKey] = useState<string | null>(null);
+  const [analysisActiveTab, setAnalysisActiveTab] = useState<'5w1h' | 'ocr'>('5w1h');
 
   useEffect(() => {
     setSelectedFileIndex(0);
@@ -915,6 +918,16 @@ export default function BanPhanTich({
     setTimeout(() => {
       setToastMsg((curr) => (curr === msg ? null : curr));
     }, 3500);
+  };
+
+  const handleNavigateToDocument = (fileIndex: number, highlightKey?: string) => {
+    setSelectedFileIndex(fileIndex);
+    if (highlightKey) {
+      setActiveHighlightKey(highlightKey);
+    }
+    const targetFile = currentFiles[fileIndex];
+    const targetName = targetFile?.name || `Tệp đính kèm #${fileIndex + 1}`;
+    showToast(`Đã chuyển sang tài liệu gốc: ${targetName}`);
   };
 
   // BR-11: Mô phỏng AI tuần tự 6 bước sau OCR
@@ -2202,6 +2215,10 @@ Kính trình Lãnh đạo phê duyệt:
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
                 OCR 100% Hoàn tất
               </span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-[#004ac6] border border-blue-200 flex items-center gap-1">
+                <span className="material-symbols-outlined text-[12px]">verified</span>
+                Độ tin cậy AI: 96.8%
+              </span>
             </div>
 
             <div className="flex items-center gap-2">
@@ -2252,6 +2269,50 @@ Kính trình Lãnh đạo phê duyệt:
             </div>
           </div>
 
+          {/* TAB CHUYỂN ĐỔI CHẾ ĐỘ XEM: 5W1H vs OCR GỐC */}
+          <div className="flex items-center justify-between px-3 py-1.5 bg-slate-50 border-b border-slate-200 text-xs shrink-0">
+            <div className="flex items-center gap-1.5 p-0.5 bg-slate-200/70 rounded-lg">
+              <button
+                type="button"
+                onClick={() => setAnalysisActiveTab('5w1h')}
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[11.5px] font-bold transition-all cursor-pointer ${analysisActiveTab === '5w1h'
+                  ? 'bg-white text-[#004ac6] shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+                  }`}
+              >
+                <span className="material-symbols-outlined text-[15px] text-[#004ac6]">psychology</span>
+                <span>Phân tích nội dung (5W1H)</span>
+                <span className="text-[9.5px] px-1.5 py-0.2 rounded font-bold bg-blue-50 text-[#004ac6] border border-blue-200">
+                  6 thành phần
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setAnalysisActiveTab('ocr')}
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[11.5px] font-bold transition-all cursor-pointer ${analysisActiveTab === 'ocr'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+                  }`}
+              >
+                <span className="material-symbols-outlined text-[15px] text-slate-700">document_scanner</span>
+                <span>Dữ liệu trích xuất OCR</span>
+                <span className="text-[9.5px] px-1.5 py-0.2 rounded font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                  Bản ghi gốc
+                </span>
+              </button>
+            </div>
+
+            <div className="text-[10.5px] text-slate-500 hidden sm:flex items-center gap-1">
+              <span className="material-symbols-outlined text-[13px] text-slate-400">info</span>
+              <span>
+                {analysisActiveTab === '5w1h'
+                  ? 'AI phân tích 5W1H • Cán bộ đối chiếu tài liệu gốc'
+                  : 'Dữ liệu OCR bóc tách thô • Cho phép sửa trực tiếp'}
+              </span>
+            </div>
+          </div>
+
           {/* Nội dung cuộn chia thành 2 Khu vực phẳng */}
           <div className="flex-1 overflow-y-auto divide-y divide-slate-200/80 p-4 space-y-4 text-xs">
             {/* Banner tiến trình khi đang quét OCR / Phân tích AI */}
@@ -2283,565 +2344,590 @@ Kính trình Lãnh đạo phê duyệt:
               </div>
             )}
 
+            {analysisActiveTab === '5w1h' && (
+              <PhanTich5W1HSection
+                extractData={extractData}
+                onNavigateToDocument={handleNavigateToDocument}
+                onSelectHuongXuLy={(huong, note) => {
+                  setHuongXuLy(huong);
+                  if (note) setOfficerNote(note);
+                }}
+                showToast={showToast}
+                isAiReading={aiState === 'reading'}
+              />
+            )}
+
             {/* ────────────────────────────────────────────────────────── */}
             {/* KHU VỰC 2: THÔNG TIN OCR TRÍCH XUẤT                         */}
             {/* ────────────────────────────────────────────────────────── */}
-            <div>
-              <div className="space-y-3.5">
-                {/* Section Header */}
-                <div className="px-3.5 py-2 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[16px] text-[#004ac6]">description</span>
-                    <span className="font-bold text-slate-900 text-[12px] uppercase tracking-tight">
-                      A. Thông tin đơn
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-[10.5px]">
-                    <span className="px-1.5 py-0.5 rounded font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-                      OCR độ tin cậy 99%
-                    </span>
-                  </div>
-                </div>
+            {analysisActiveTab === 'ocr' && (
+              <div className="space-y-4">
+                {/* 1. Phân tích thực thể 5W1H (Mô hình hóa vụ việc) */}
+                <MoHinhHoa5W1HWidget
+                  extractData={extractData}
+                  onNavigateToDocument={handleNavigateToDocument}
+                  onSelectComponent={(key) => {
+                    setAnalysisActiveTab('5w1h');
+                  }}
+                />
 
-                {/* Section Body: Unified Flat Property Table */}
-                <div className="divide-y divide-slate-100 text-[11.5px]">
-                  {/* Row 1: Số đơn | Ngày làm đơn | Loại đơn */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-100">
-                    <div
-                      onMouseEnter={() => setActiveHighlightKey('soDon')}
-                      onMouseLeave={() => setActiveHighlightKey(null)}
-                      className="p-2.5 hover:bg-blue-50/40 transition-colors"
-                    >
-                      <span className="text-[10.5px] font-medium text-slate-500 block mb-0.5">Số đơn / Ký hiệu trích lục</span>
-                      <span
-                        contentEditable={isEditingExtract}
-                        suppressContentEditableWarning
-                        onBlur={(e) => updateExtractField('soDon' as any, e.currentTarget.textContent || '')}
-                        className={`font-mono font-bold text-slate-900 text-[12px] outline-none block ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/50 px-1 rounded' : ''}`}
-                      >
-                        {extractData.soDon || 'TC-08/2026-ĐTC'}
+                <div className="space-y-3.5">
+                  {/* Section Header */}
+                  <div className="px-3.5 py-2 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[16px] text-[#004ac6]">description</span>
+                      <span className="font-bold text-slate-900 text-[12px] uppercase tracking-tight">
+                        A. Thông tin đơn
                       </span>
                     </div>
-
-                    <div
-                      onMouseEnter={() => setActiveHighlightKey('ngayLamDon')}
-                      onMouseLeave={() => setActiveHighlightKey(null)}
-                      className="p-2.5 hover:bg-blue-50/40 transition-colors"
-                    >
-                      <span className="text-[10.5px] font-medium text-slate-500 block mb-0.5">Ngày làm đơn</span>
-                      <span
-                        contentEditable={isEditingExtract}
-                        suppressContentEditableWarning
-                        onBlur={(e) => updateExtractField('ngayLamDon' as any, e.currentTarget.textContent || '')}
-                        className={`font-semibold text-slate-900 text-[12px] outline-none block ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/50 px-1 rounded' : ''}`}
-                      >
-                        {extractData.ngayLamDon || '12/09/2026'}
+                    <div className="flex items-center gap-2 text-[10.5px]">
+                      <span className="px-1.5 py-0.5 rounded font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+                        OCR độ tin cậy 99%
                       </span>
                     </div>
+                  </div>
 
-                    <div
-                      onMouseEnter={() => setActiveHighlightKey('loaiDon')}
-                      onMouseLeave={() => setActiveHighlightKey(null)}
-                      className="p-2.5 hover:bg-blue-50/40 transition-colors"
-                    >
-                      <span className="text-[10.5px] font-medium text-slate-500 block mb-0.5">Phân loại &amp; Thẩm quyền</span>
-                      <div className="flex items-center gap-1.5">
+                  {/* Section Body: Unified Flat Property Table */}
+                  <div className="divide-y divide-slate-100 text-[11.5px]">
+                    {/* Row 1: Số đơn | Ngày làm đơn | Loại đơn */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+                      <div
+                        onMouseEnter={() => setActiveHighlightKey('soDon')}
+                        onMouseLeave={() => setActiveHighlightKey(null)}
+                        className="p-2.5 hover:bg-blue-50/40 transition-colors"
+                      >
+                        <span className="text-[10.5px] font-medium text-slate-500 block mb-0.5">Số đơn / Ký hiệu trích lục</span>
                         <span
                           contentEditable={isEditingExtract}
                           suppressContentEditableWarning
-                          onBlur={(e) => updateExtractField('loaiNoiDung', e.currentTarget.textContent || '')}
-                          className={`font-bold text-rose-800 text-[12px] outline-none ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/50 px-1 rounded' : ''}`}
+                          onBlur={(e) => updateExtractField('soDon' as any, e.currentTarget.textContent || '')}
+                          className={`font-mono font-bold text-slate-900 text-[12px] outline-none block ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/50 px-1 rounded' : ''}`}
                         >
-                          {extractData.loaiNoiDung || 'Đơn tố cáo'}
+                          {extractData.soDon || 'TC-08/2026-ĐTC'}
                         </span>
-                        <span className="text-[10px] bg-rose-50 text-rose-700 px-1.5 py-0.2 rounded border border-rose-200 font-semibold">
-                          Luật Tố cáo 2018
+                      </div>
+
+                      <div
+                        onMouseEnter={() => setActiveHighlightKey('ngayLamDon')}
+                        onMouseLeave={() => setActiveHighlightKey(null)}
+                        className="p-2.5 hover:bg-blue-50/40 transition-colors"
+                      >
+                        <span className="text-[10.5px] font-medium text-slate-500 block mb-0.5">Ngày làm đơn</span>
+                        <span
+                          contentEditable={isEditingExtract}
+                          suppressContentEditableWarning
+                          onBlur={(e) => updateExtractField('ngayLamDon' as any, e.currentTarget.textContent || '')}
+                          className={`font-semibold text-slate-900 text-[12px] outline-none block ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/50 px-1 rounded' : ''}`}
+                        >
+                          {extractData.ngayLamDon || '12/09/2026'}
+                        </span>
+                      </div>
+
+                      <div
+                        onMouseEnter={() => setActiveHighlightKey('loaiDon')}
+                        onMouseLeave={() => setActiveHighlightKey(null)}
+                        className="p-2.5 hover:bg-blue-50/40 transition-colors"
+                      >
+                        <span className="text-[10.5px] font-medium text-slate-500 block mb-0.5">Phân loại &amp; Thẩm quyền</span>
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            contentEditable={isEditingExtract}
+                            suppressContentEditableWarning
+                            onBlur={(e) => updateExtractField('loaiNoiDung', e.currentTarget.textContent || '')}
+                            className={`font-bold text-rose-800 text-[12px] outline-none ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/50 px-1 rounded' : ''}`}
+                          >
+                            {extractData.loaiNoiDung || 'Đơn tố cáo'}
+                          </span>
+                          <span className="text-[10px] bg-rose-50 text-rose-700 px-1.5 py-0.2 rounded border border-rose-200 font-semibold">
+                            Luật Tố cáo 2018
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Row 2: Thời gian xảy ra | Địa điểm xảy ra */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+                      <div
+                        onMouseEnter={() => setActiveHighlightKey('thoiGian')}
+                        onMouseLeave={() => setActiveHighlightKey(null)}
+                        className="p-2.5 hover:bg-blue-50/40 transition-colors"
+                      >
+                        <span className="text-[10.5px] font-medium text-slate-500 block mb-0.5">Thời gian xảy ra sự việc</span>
+                        <span
+                          contentEditable={isEditingExtract}
+                          suppressContentEditableWarning
+                          onBlur={(e) => updateExtractField('thoiGian', e.currentTarget.textContent || '')}
+                          className={`font-semibold text-slate-800 text-[12px] outline-none block ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/50 px-1 rounded' : ''}`}
+                        >
+                          {extractData.thoiGian || '15/04/2025 – 20/06/2026'}
+                        </span>
+                      </div>
+
+                      <div
+                        onMouseEnter={() => setActiveHighlightKey('diaDiem')}
+                        onMouseLeave={() => setActiveHighlightKey(null)}
+                        className="p-2.5 hover:bg-blue-50/40 transition-colors"
+                      >
+                        <span className="text-[10.5px] font-medium text-slate-500 block mb-0.5">Địa điểm xảy ra sự việc</span>
+                        <span
+                          contentEditable={isEditingExtract}
+                          suppressContentEditableWarning
+                          onBlur={(e) => updateExtractField('diaDiem', e.currentTarget.textContent || '')}
+                          className={`text-slate-800 text-[12px] outline-none block ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/50 px-1 rounded' : ''}`}
+                        >
+                          {extractData.diaDiem || 'Dự án Khu đô thị mới Y, phường Mộ Lao, quận Hà Đông, TP. Hà Nội'}
                         </span>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Row 2: Thời gian xảy ra | Địa điểm xảy ra */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+                    {/* Row 3: Nội dung tố cáo trích xuất */}
                     <div
-                      onMouseEnter={() => setActiveHighlightKey('thoiGian')}
+                      onMouseEnter={() => setActiveHighlightKey('noiDung')}
                       onMouseLeave={() => setActiveHighlightKey(null)}
                       className="p-2.5 hover:bg-blue-50/40 transition-colors"
                     >
-                      <span className="text-[10.5px] font-medium text-slate-500 block mb-0.5">Thời gian xảy ra sự việc</span>
-                      <span
+                      <div className="flex items-center justify-between text-[10.5px] text-slate-500 mb-1">
+                        <span className="font-medium">Nội dung tố cáo trích xuất (Tóm tắt hành vi):</span>
+                        <span className="text-[9.5px] text-emerald-700 font-bold">Khớp văn bản scan gốc</span>
+                      </div>
+                      <p
                         contentEditable={isEditingExtract}
                         suppressContentEditableWarning
-                        onBlur={(e) => updateExtractField('thoiGian', e.currentTarget.textContent || '')}
-                        className={`font-semibold text-slate-800 text-[12px] outline-none block ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/50 px-1 rounded' : ''}`}
+                        onBlur={(e) => updateExtractField('noiDungTomTat', e.currentTarget.textContent || '')}
+                        className={`text-slate-800 text-[12px] leading-relaxed outline-none text-justify ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/50 p-1.5 rounded' : ''}`}
                       >
-                        {extractData.thoiGian || '15/04/2025 – 20/06/2026'}
-                      </span>
+                        {extractData.noiDungTomTat}
+                      </p>
                     </div>
 
-                    <div
-                      onMouseEnter={() => setActiveHighlightKey('diaDiem')}
-                      onMouseLeave={() => setActiveHighlightKey(null)}
-                      className="p-2.5 hover:bg-blue-50/40 transition-colors"
-                    >
-                      <span className="text-[10.5px] font-medium text-slate-500 block mb-0.5">Địa điểm xảy ra sự việc</span>
-                      <span
-                        contentEditable={isEditingExtract}
-                        suppressContentEditableWarning
-                        onBlur={(e) => updateExtractField('diaDiem', e.currentTarget.textContent || '')}
-                        className={`text-slate-800 text-[12px] outline-none block ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/50 px-1 rounded' : ''}`}
+                    {/* Row 4: Yêu cầu của người tố cáo & Tài liệu kèm theo (2 cột phân chia tinh gọn) */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+                      {/* Cột trái: 4 yêu cầu */}
+                      <div
+                        onMouseEnter={() => setActiveHighlightKey('yeuCau')}
+                        onMouseLeave={() => setActiveHighlightKey(null)}
+                        className="p-2.5 hover:bg-blue-50/40 transition-colors space-y-1.5"
                       >
-                        {extractData.diaDiem || 'Dự án Khu đô thị mới Y, phường Mộ Lao, quận Hà Đông, TP. Hà Nội'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Row 3: Nội dung tố cáo trích xuất */}
-                  <div
-                    onMouseEnter={() => setActiveHighlightKey('noiDung')}
-                    onMouseLeave={() => setActiveHighlightKey(null)}
-                    className="p-2.5 hover:bg-blue-50/40 transition-colors"
-                  >
-                    <div className="flex items-center justify-between text-[10.5px] text-slate-500 mb-1">
-                      <span className="font-medium">Nội dung tố cáo trích xuất (Tóm tắt hành vi):</span>
-                      <span className="text-[9.5px] text-emerald-700 font-bold">Khớp văn bản scan gốc</span>
-                    </div>
-                    <p
-                      contentEditable={isEditingExtract}
-                      suppressContentEditableWarning
-                      onBlur={(e) => updateExtractField('noiDungTomTat', e.currentTarget.textContent || '')}
-                      className={`text-slate-800 text-[12px] leading-relaxed outline-none text-justify ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/50 p-1.5 rounded' : ''}`}
-                    >
-                      {extractData.noiDungTomTat}
-                    </p>
-                  </div>
-
-                  {/* Row 4: Yêu cầu của người tố cáo & Tài liệu kèm theo (2 cột phân chia tinh gọn) */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100">
-                    {/* Cột trái: 4 yêu cầu */}
-                    <div
-                      onMouseEnter={() => setActiveHighlightKey('yeuCau')}
-                      onMouseLeave={() => setActiveHighlightKey(null)}
-                      className="p-2.5 hover:bg-blue-50/40 transition-colors space-y-1.5"
-                    >
-                      <div className="flex items-center justify-between text-[10.5px] text-slate-500">
-                        <span className="font-semibold text-slate-700">Yêu cầu của người tố cáo (04 nội dung):</span>
-                        <span className="text-[9.5px] text-emerald-700 font-bold">✓ Đủ 4 yêu cầu</span>
+                        <div className="flex items-center justify-between text-[10.5px] text-slate-500">
+                          <span className="font-semibold text-slate-700">Yêu cầu của người tố cáo (04 nội dung):</span>
+                          <span className="text-[9.5px] text-emerald-700 font-bold">✓ Đủ 4 yêu cầu</span>
+                        </div>
+                        <ol className="space-y-1 text-slate-800 text-[11.5px]">
+                          <li className="flex items-start gap-1.5">
+                            <span className="w-4 h-4 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">1</span>
+                            <span
+                              contentEditable={isEditingExtract}
+                              suppressContentEditableWarning
+                              onBlur={(e) => updateExtractField('yeuCau1', e.currentTarget.textContent || '')}
+                              className={`flex-1 outline-none ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/50 px-1 rounded' : ''}`}
+                            >
+                              {extractData.yeuCau1}
+                            </span>
+                          </li>
+                          <li className="flex items-start gap-1.5">
+                            <span className="w-4 h-4 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">2</span>
+                            <span
+                              contentEditable={isEditingExtract}
+                              suppressContentEditableWarning
+                              onBlur={(e) => updateExtractField('yeuCau2', e.currentTarget.textContent || '')}
+                              className={`flex-1 outline-none ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/50 px-1 rounded' : ''}`}
+                            >
+                              {extractData.yeuCau2}
+                            </span>
+                          </li>
+                          <li className="flex items-start gap-1.5">
+                            <span className="w-4 h-4 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">3</span>
+                            <span
+                              contentEditable={isEditingExtract}
+                              suppressContentEditableWarning
+                              onBlur={(e) => updateExtractField('yeuCau3', e.currentTarget.textContent || '')}
+                              className={`flex-1 outline-none ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/50 px-1 rounded' : ''}`}
+                            >
+                              {extractData.yeuCau3}
+                            </span>
+                          </li>
+                          <li className="flex items-start gap-1.5">
+                            <span className="w-4 h-4 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">4</span>
+                            <span
+                              contentEditable={isEditingExtract}
+                              suppressContentEditableWarning
+                              onBlur={(e) => updateExtractField('yeuCau4' as any, e.currentTarget.textContent || '')}
+                              className={`flex-1 outline-none ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/50 px-1 rounded' : ''}`}
+                            >
+                              {extractData.yeuCau4 || 'Thực hiện bồi thường, bố trí tái định cư công khai, minh bạch đúng quy định.'}
+                            </span>
+                          </li>
+                        </ol>
                       </div>
-                      <ol className="space-y-1 text-slate-800 text-[11.5px]">
-                        <li className="flex items-start gap-1.5">
-                          <span className="w-4 h-4 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">1</span>
-                          <span
-                            contentEditable={isEditingExtract}
-                            suppressContentEditableWarning
-                            onBlur={(e) => updateExtractField('yeuCau1', e.currentTarget.textContent || '')}
-                            className={`flex-1 outline-none ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/50 px-1 rounded' : ''}`}
-                          >
-                            {extractData.yeuCau1}
-                          </span>
-                        </li>
-                        <li className="flex items-start gap-1.5">
-                          <span className="w-4 h-4 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">2</span>
-                          <span
-                            contentEditable={isEditingExtract}
-                            suppressContentEditableWarning
-                            onBlur={(e) => updateExtractField('yeuCau2', e.currentTarget.textContent || '')}
-                            className={`flex-1 outline-none ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/50 px-1 rounded' : ''}`}
-                          >
-                            {extractData.yeuCau2}
-                          </span>
-                        </li>
-                        <li className="flex items-start gap-1.5">
-                          <span className="w-4 h-4 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">3</span>
-                          <span
-                            contentEditable={isEditingExtract}
-                            suppressContentEditableWarning
-                            onBlur={(e) => updateExtractField('yeuCau3', e.currentTarget.textContent || '')}
-                            className={`flex-1 outline-none ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/50 px-1 rounded' : ''}`}
-                          >
-                            {extractData.yeuCau3}
-                          </span>
-                        </li>
-                        <li className="flex items-start gap-1.5">
-                          <span className="w-4 h-4 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">4</span>
-                          <span
-                            contentEditable={isEditingExtract}
-                            suppressContentEditableWarning
-                            onBlur={(e) => updateExtractField('yeuCau4' as any, e.currentTarget.textContent || '')}
-                            className={`flex-1 outline-none ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/50 px-1 rounded' : ''}`}
-                          >
-                            {extractData.yeuCau4 || 'Thực hiện bồi thường, bố trí tái định cư công khai, minh bạch đúng quy định.'}
-                          </span>
-                        </li>
-                      </ol>
-                    </div>
 
-                    {/* Cột phải: 4 tài liệu */}
-                    <div
-                      onMouseEnter={() => setActiveHighlightKey('taiLieu')}
-                      onMouseLeave={() => setActiveHighlightKey(null)}
-                      className="p-2.5 hover:bg-blue-50/40 transition-colors space-y-1.5"
-                    >
-                      <div className="flex items-center justify-between text-[10.5px] text-slate-500">
-                        <span className="font-semibold text-slate-700">Tài liệu, chứng cứ kèm theo (04 tài liệu):</span>
-                        <span className="text-[9.5px] text-emerald-700 font-bold">✓ Khớp hồ sơ</span>
+                      {/* Cột phải: 4 tài liệu */}
+                      <div
+                        onMouseEnter={() => setActiveHighlightKey('taiLieu')}
+                        onMouseLeave={() => setActiveHighlightKey(null)}
+                        className="p-2.5 hover:bg-blue-50/40 transition-colors space-y-1.5"
+                      >
+                        <div className="flex items-center justify-between text-[10.5px] text-slate-500">
+                          <span className="font-semibold text-slate-700">Tài liệu, chứng cứ kèm theo (04 tài liệu):</span>
+                          <span className="text-[9.5px] text-emerald-700 font-bold">✓ Khớp hồ sơ</span>
+                        </div>
+                        <ul className="space-y-1 text-slate-700 text-[11.5px]">
+                          <li className="flex items-center gap-1.5">
+                            <span className="material-symbols-outlined text-[15px] text-rose-600 shrink-0">picture_as_pdf</span>
+                            <span className="font-medium">1. Đơn tố cáo scan bản gốc có chữ ký &amp; điểm chỉ</span>
+                          </li>
+                          <li className="flex items-center gap-1.5">
+                            <span className="material-symbols-outlined text-[15px] text-blue-600 shrink-0">map</span>
+                            <span>2. Trích lục bản đồ 1/500 &amp; địa chính thửa 48 (360m²)</span>
+                          </li>
+                          <li className="flex items-center gap-1.5">
+                            <span className="material-symbols-outlined text-[15px] text-amber-600 shrink-0">description</span>
+                            <span>3. Biên bản kiểm đếm áp giá sai lệch (giảm 150m²)</span>
+                          </li>
+                          <li className="flex items-center gap-1.5">
+                            <span className="material-symbols-outlined text-[15px] text-purple-600 shrink-0">usb</span>
+                            <span>4. Thiết bị USB chứa 02 file ghi âm &amp; 12 ảnh hiện trường</span>
+                          </li>
+                        </ul>
                       </div>
-                      <ul className="space-y-1 text-slate-700 text-[11.5px]">
-                        <li className="flex items-center gap-1.5">
-                          <span className="material-symbols-outlined text-[15px] text-rose-600 shrink-0">picture_as_pdf</span>
-                          <span className="font-medium">1. Đơn tố cáo scan bản gốc có chữ ký &amp; điểm chỉ</span>
-                        </li>
-                        <li className="flex items-center gap-1.5">
-                          <span className="material-symbols-outlined text-[15px] text-blue-600 shrink-0">map</span>
-                          <span>2. Trích lục bản đồ 1/500 &amp; địa chính thửa 48 (360m²)</span>
-                        </li>
-                        <li className="flex items-center gap-1.5">
-                          <span className="material-symbols-outlined text-[15px] text-amber-600 shrink-0">description</span>
-                          <span>3. Biên bản kiểm đếm áp giá sai lệch (giảm 150m²)</span>
-                        </li>
-                        <li className="flex items-center gap-1.5">
-                          <span className="material-symbols-outlined text-[15px] text-purple-600 shrink-0">usb</span>
-                          <span>4. Thiết bị USB chứa 02 file ghi âm &amp; 12 ảnh hiện trường</span>
-                        </li>
-                      </ul>
                     </div>
                   </div>
                 </div>
-              </div>
+                <div className="space-y-3.5">
+                  {/* Section Header with Multi-person Selector */}
+                  <div className="px-3.5 py-2 flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[16px] text-[#004ac6]">groups</span>
+                      <span className="font-bold text-slate-900 text-[12px] uppercase tracking-tight">
+                        B. Danh sách người đứng đơn ({danhSachNguoiDungDon.length} người)
+                      </span>
+                      <span className="hidden sm:inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100/70 text-blue-800 border border-blue-200">
+                        ✓ CSDL VNeID
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                        Khớp danh tính: 99.8%
+                      </span>
+                    </div>
 
-              {/* NHÓM B: THÔNG TIN NGƯỜI ĐỨNG ĐƠN / TỐ CÁO (BẢNG DANH SÁCH PHẲNG TỐI ƯU CHO NHIỀU NGƯỜI) */}
-              <div className="space-y-3.5">
-                {/* Section Header with Multi-person Selector */}
-                <div className="px-3.5 py-2 flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[16px] text-[#004ac6]">groups</span>
-                    <span className="font-bold text-slate-900 text-[12px] uppercase tracking-tight">
-                      B. Danh sách người đứng đơn ({danhSachNguoiDungDon.length} người)
-                    </span>
-                    <span className="hidden sm:inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100/70 text-blue-800 border border-blue-200">
-                      ✓ CSDL VNeID
-                    </span>
+                    {/* Segmented Control: Chuyển đổi nhanh 2 người / Tập thể 6 người / 1 người */}
+                    <div className="flex items-center gap-1 bg-slate-200/80 p-0.5 rounded-lg text-[10.5px]">
+                      <button
+                        type="button"
+                        onClick={() => handleChonCheDoNguoiDungDon('2_nguoi')}
+                        className={`px-2 py-1 rounded font-semibold transition-all cursor-pointer ${cheDoNguoiDungDon === '2_nguoi'
+                          ? 'bg-white text-blue-700 shadow-2xs font-bold'
+                          : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        title="Đơn có 02 công dân đồng đứng tên (Bà Thanh & Ông A)"
+                      >
+                        Đồng đứng đơn (02 người)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleChonCheDoNguoiDungDon('tap_the')}
+                        className={`px-2 py-1 rounded font-semibold transition-all cursor-pointer ${cheDoNguoiDungDon === 'tap_the'
+                          ? 'bg-white text-blue-700 shadow-2xs font-bold'
+                          : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        title="Đơn tập thể nhiều người (06 công dân cử người đại diện)"
+                      >
+                        Đơn tập thể (06 người)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleChonCheDoNguoiDungDon('1_nguoi')}
+                        className={`px-2 py-1 rounded font-semibold transition-all cursor-pointer ${cheDoNguoiDungDon === '1_nguoi'
+                          ? 'bg-white text-blue-700 shadow-2xs font-bold'
+                          : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        title="Đơn 01 cá nhân đứng tên"
+                      >
+                        Cá nhân (01 người)
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Segmented Control: Chuyển đổi nhanh 2 người / Tập thể 6 người / 1 người */}
-                  <div className="flex items-center gap-1 bg-slate-200/80 p-0.5 rounded-lg text-[10.5px]">
-                    <button
-                      type="button"
-                      onClick={() => handleChonCheDoNguoiDungDon('2_nguoi')}
-                      className={`px-2 py-1 rounded font-semibold transition-all cursor-pointer ${cheDoNguoiDungDon === '2_nguoi'
-                        ? 'bg-white text-blue-700 shadow-2xs font-bold'
-                        : 'text-slate-600 hover:text-slate-900'
-                        }`}
-                      title="Đơn có 02 công dân đồng đứng tên (Bà Thanh & Ông A)"
-                    >
-                      Đồng đứng đơn (02 người)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleChonCheDoNguoiDungDon('tap_the')}
-                      className={`px-2 py-1 rounded font-semibold transition-all cursor-pointer ${cheDoNguoiDungDon === 'tap_the'
-                        ? 'bg-white text-blue-700 shadow-2xs font-bold'
-                        : 'text-slate-600 hover:text-slate-900'
-                        }`}
-                      title="Đơn tập thể nhiều người (06 công dân cử người đại diện)"
-                    >
-                      Đơn tập thể (06 người)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleChonCheDoNguoiDungDon('1_nguoi')}
-                      className={`px-2 py-1 rounded font-semibold transition-all cursor-pointer ${cheDoNguoiDungDon === '1_nguoi'
-                        ? 'bg-white text-blue-700 shadow-2xs font-bold'
-                        : 'text-slate-600 hover:text-slate-900'
-                        }`}
-                      title="Đơn 01 cá nhân đứng tên"
-                    >
-                      Cá nhân (01 người)
-                    </button>
-                  </div>
-                </div>
-
-                {/* Sub-banner: Căn cứ pháp lý theo số lượng người tố cáo */}
+                  {/* Sub-banner: Căn cứ pháp lý theo số lượng người tố cáo */}
 
 
-                {/* BẢNG DANH SÁCH NGƯỜI ĐỨNG ĐƠN PHẲNG (Ultra-compact, High-density Table) */}
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse text-left text-[11px]">
-                    <thead>
-                      <tr className="bg-slate-100/70 border-b border-slate-200 text-slate-600 font-bold">
-                        <th className="py-2 px-3 text-center w-12">STT</th>
-                        <th className="py-2 px-3 min-w-[150px]">Họ và tên &amp; Năm sinh</th>
-                        <th className="py-2 px-3 min-w-[120px]">Số CCCD &amp; Cấp</th>
-                        <th className="py-2 px-3 min-w-[130px]">Điện thoại &amp; Email</th>
-                        <th className="py-2 px-3 min-w-[200px]">Địa chỉ thường trú / Liên hệ</th>
-                        <th className="py-2 px-3 text-center min-w-[110px]">Chữ ký / Điểm chỉ</th>
-                        <th className="py-2 px-3 text-center min-w-[100px]">Vai trò</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {danhSachNguoiDungDon.map((nd, idx) => (
-                        <tr
-                          key={nd.id}
-                          onMouseEnter={() => setActiveHighlightKey('nguoiGui')}
-                          onMouseLeave={() => setActiveHighlightKey(null)}
-                          className="hover:bg-blue-50/40 transition-colors"
-                        >
-                          {/* STT */}
-                          <td className="py-2 px-3 text-center font-bold text-slate-500">
-                            #{idx + 1}
-                          </td>
+                  {/* BẢNG DANH SÁCH NGƯỜI ĐỨNG ĐƠN PHẲNG (Ultra-compact, High-density Table) */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse text-left text-[11px]">
+                      <thead>
+                        <tr className="bg-slate-100/70 border-b border-slate-200 text-slate-600 font-bold">
+                          <th className="py-2 px-3 text-center w-12">STT</th>
+                          <th className="py-2 px-3 min-w-[150px]">Họ và tên &amp; Năm sinh</th>
+                          <th className="py-2 px-3 min-w-[120px]">Số CCCD &amp; Cấp</th>
+                          <th className="py-2 px-3 min-w-[130px]">Điện thoại &amp; Email</th>
+                          <th className="py-2 px-3 min-w-[200px]">Địa chỉ thường trú / Liên hệ</th>
+                          <th className="py-2 px-3 text-center min-w-[110px]">Chữ ký / Điểm chỉ</th>
+                          <th className="py-2 px-3 text-center min-w-[100px]">Vai trò</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {danhSachNguoiDungDon.map((nd, idx) => (
+                          <tr
+                            key={nd.id}
+                            onMouseEnter={() => setActiveHighlightKey('nguoiGui')}
+                            onMouseLeave={() => setActiveHighlightKey(null)}
+                            className="hover:bg-blue-50/40 transition-colors"
+                          >
+                            {/* STT */}
+                            <td className="py-2 px-3 text-center font-bold text-slate-500">
+                              #{idx + 1}
+                            </td>
 
-                          {/* Họ tên & Năm sinh */}
-                          <td className="py-2 px-3">
-                            <div className="flex items-center gap-1.5 flex-wrap">
+                            {/* Họ tên & Năm sinh */}
+                            <td className="py-2 px-3">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span
+                                  contentEditable={isEditingExtract}
+                                  suppressContentEditableWarning
+                                  onBlur={(e) => updateNguoiDungDonField(nd.id, 'hoTen', e.currentTarget.textContent || '')}
+                                  className={`font-bold text-slate-900 text-[12px] outline-none ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/60 px-1 rounded' : ''}`}
+                                >
+                                  {nd.hoTen}
+                                </span>
+                                <span
+                                  contentEditable={isEditingExtract}
+                                  suppressContentEditableWarning
+                                  onBlur={(e) => updateNguoiDungDonField(nd.id, 'namSinh', e.currentTarget.textContent || '')}
+                                  className={`text-[10.5px] text-slate-500 font-mono outline-none ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/60 px-0.5 rounded' : ''}`}
+                                >
+                                  ({nd.namSinh})
+                                </span>
+                              </div>
+                            </td>
+
+                            {/* CCCD & Ngày cấp */}
+                            <td className="py-2 px-3">
                               <span
                                 contentEditable={isEditingExtract}
                                 suppressContentEditableWarning
-                                onBlur={(e) => updateNguoiDungDonField(nd.id, 'hoTen', e.currentTarget.textContent || '')}
-                                className={`font-bold text-slate-900 text-[12px] outline-none ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/60 px-1 rounded' : ''}`}
+                                onBlur={(e) => updateNguoiDungDonField(nd.id, 'cccd', e.currentTarget.textContent || '')}
+                                className={`font-mono font-bold text-slate-900 text-[11.5px] outline-none block ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/60 px-1 rounded' : ''}`}
                               >
-                                {nd.hoTen}
+                                {nd.cccd}
+                              </span>
+                              <span className="text-[10px] text-slate-400 block truncate" title={`${nd.ngayCapCCCD} - ${nd.noiCapCCCD}`}>
+                                {nd.ngayCapCCCD} • {nd.noiCapCCCD.includes('Cục') ? 'Cục Cảnh sát QLHC' : nd.noiCapCCCD}
+                              </span>
+                            </td>
+
+                            {/* SĐT & Email */}
+                            <td className="py-2 px-3">
+                              <span
+                                contentEditable={isEditingExtract}
+                                suppressContentEditableWarning
+                                onBlur={(e) => updateNguoiDungDonField(nd.id, 'sdt', e.currentTarget.textContent || '')}
+                                className={`font-mono text-slate-900 font-semibold outline-none block ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/60 px-1 rounded' : ''}`}
+                              >
+                                {nd.sdt}
                               </span>
                               <span
                                 contentEditable={isEditingExtract}
                                 suppressContentEditableWarning
-                                onBlur={(e) => updateNguoiDungDonField(nd.id, 'namSinh', e.currentTarget.textContent || '')}
-                                className={`text-[10.5px] text-slate-500 font-mono outline-none ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/60 px-0.5 rounded' : ''}`}
+                                onBlur={(e) => updateNguoiDungDonField(nd.id, 'email', e.currentTarget.textContent || '')}
+                                className={`text-[10px] text-slate-500 outline-none block truncate max-w-[130px] ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/60 px-0.5 rounded' : ''}`}
+                                title={nd.email}
                               >
-                                ({nd.namSinh})
+                                {nd.email}
                               </span>
-                            </div>
-                          </td>
+                            </td>
 
-                          {/* CCCD & Ngày cấp */}
-                          <td className="py-2 px-3">
-                            <span
-                              contentEditable={isEditingExtract}
-                              suppressContentEditableWarning
-                              onBlur={(e) => updateNguoiDungDonField(nd.id, 'cccd', e.currentTarget.textContent || '')}
-                              className={`font-mono font-bold text-slate-900 text-[11.5px] outline-none block ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/60 px-1 rounded' : ''}`}
-                            >
-                              {nd.cccd}
-                            </span>
-                            <span className="text-[10px] text-slate-400 block truncate" title={`${nd.ngayCapCCCD} - ${nd.noiCapCCCD}`}>
-                              {nd.ngayCapCCCD} • {nd.noiCapCCCD.includes('Cục') ? 'Cục Cảnh sát QLHC' : nd.noiCapCCCD}
-                            </span>
-                          </td>
-
-                          {/* SĐT & Email */}
-                          <td className="py-2 px-3">
-                            <span
-                              contentEditable={isEditingExtract}
-                              suppressContentEditableWarning
-                              onBlur={(e) => updateNguoiDungDonField(nd.id, 'sdt', e.currentTarget.textContent || '')}
-                              className={`font-mono text-slate-900 font-semibold outline-none block ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/60 px-1 rounded' : ''}`}
-                            >
-                              {nd.sdt}
-                            </span>
-                            <span
-                              contentEditable={isEditingExtract}
-                              suppressContentEditableWarning
-                              onBlur={(e) => updateNguoiDungDonField(nd.id, 'email', e.currentTarget.textContent || '')}
-                              className={`text-[10px] text-slate-500 outline-none block truncate max-w-[130px] ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/60 px-0.5 rounded' : ''}`}
-                              title={nd.email}
-                            >
-                              {nd.email}
-                            </span>
-                          </td>
-
-                          {/* Địa chỉ */}
-                          <td className="py-2 px-3">
-                            <span
-                              contentEditable={isEditingExtract}
-                              suppressContentEditableWarning
-                              onBlur={(e) => updateNguoiDungDonField(nd.id, 'diaChi', e.currentTarget.textContent || '')}
-                              className={`text-slate-800 text-[11px] leading-snug outline-none block line-clamp-2 ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/60 px-1 rounded' : ''}`}
-                              title={nd.diaChi}
-                            >
-                              {nd.diaChi}
-                            </span>
-                          </td>
-
-                          {/* Chữ ký / Điểm chỉ */}
-                          <td className="py-2 px-3 text-center">
-                            <div className="inline-flex flex-col items-center gap-0.5">
-                              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 flex items-center gap-0.5">
-                                <span className="material-symbols-outlined text-[12px]">check</span>
-                                <span>Chữ ký tay</span>
+                            {/* Địa chỉ */}
+                            <td className="py-2 px-3">
+                              <span
+                                contentEditable={isEditingExtract}
+                                suppressContentEditableWarning
+                                onBlur={(e) => updateNguoiDungDonField(nd.id, 'diaChi', e.currentTarget.textContent || '')}
+                                className={`text-slate-800 text-[11px] leading-snug outline-none block line-clamp-2 ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/60 px-1 rounded' : ''}`}
+                                title={nd.diaChi}
+                              >
+                                {nd.diaChi}
                               </span>
-                              {nd.coDiemChi && (
-                                <span className="text-[9.5px] font-semibold text-rose-700 bg-rose-50 px-1 py-0.2 rounded border border-rose-200">
-                                  Có điểm chỉ
+                            </td>
+
+                            {/* Chữ ký / Điểm chỉ */}
+                            <td className="py-2 px-3 text-center">
+                              <div className="inline-flex flex-col items-center gap-0.5">
+                                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 flex items-center gap-0.5">
+                                  <span className="material-symbols-outlined text-[12px]">check</span>
+                                  <span>Chữ ký tay</span>
+                                </span>
+                                {nd.coDiemChi && (
+                                  <span className="text-[9.5px] font-semibold text-rose-700 bg-rose-50 px-1 py-0.2 rounded border border-rose-200">
+                                    Có điểm chỉ
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* Vai trò */}
+                            <td className="py-2 px-3 text-center">
+                              {nd.vaiTro === 'dai_dien' ? (
+                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200 inline-block whitespace-nowrap shadow-2xs">
+                                  {nd.vaiTroLabel}
+                                </span>
+                              ) : nd.vaiTro === 'dong_dung_don' ? (
+                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200 inline-block whitespace-nowrap">
+                                  {nd.vaiTroLabel}
+                                </span>
+                              ) : (
+                                <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200 inline-block whitespace-nowrap">
+                                  {nd.vaiTroLabel}
                                 </span>
                               )}
-                            </div>
-                          </td>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
 
-                          {/* Vai trò */}
-                          <td className="py-2 px-3 text-center">
-                            {nd.vaiTro === 'dai_dien' ? (
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200 inline-block whitespace-nowrap shadow-2xs">
-                                {nd.vaiTroLabel}
-                              </span>
-                            ) : nd.vaiTro === 'dong_dung_don' ? (
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200 inline-block whitespace-nowrap">
-                                {nd.vaiTroLabel}
-                              </span>
-                            ) : (
-                              <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200 inline-block whitespace-nowrap">
-                                {nd.vaiTroLabel}
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  {/* Table Footer actions */}
+                  {isEditingExtract && (
+                    <div className="p-2.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const nextIdx = danhSachNguoiDungDon.length + 1;
+                          const newPerson: NguoiDungDonItem = {
+                            id: `nd-custom-${Date.now()}`,
+                            stt: nextIdx,
+                            vaiTro: 'dong_ky_ten',
+                            vaiTroLabel: `Đồng ký tên (#${nextIdx})`,
+                            hoTen: 'Nguyễn Văn Mới',
+                            namSinh: '1980',
+                            cccd: '001080000000',
+                            ngayCapCCCD: '01/01/2022',
+                            noiCapCCCD: 'Cục Cảnh sát QLHC',
+                            sdt: '0900 000 000',
+                            email: 'congdan@gmail.com',
+                            diaChi: 'Hà Đông, Hà Nội',
+                            coChuKy: true,
+                            coDiemChi: false,
+                            trangThaiVNeID: true,
+                          };
+                          setDanhSachNguoiDungDon([...danhSachNguoiDungDon, newPerson]);
+                          showToast(`Đã thêm người đồng đứng đơn #${nextIdx}`);
+                        }}
+                        className="text-[11px] text-[#004ac6] hover:bg-blue-100 px-2 py-1 rounded border border-blue-300 font-semibold flex items-center gap-1 cursor-pointer"
+                      >
+                        <span>+ Thêm người đồng đứng đơn</span>
+                      </button>
+
+                      <span className="text-[10.5px] text-slate-500 italic">
+                        Bấm trực tiếp vào chữ trên bảng để sửa thông tin công dân
+                      </span>
+                    </div>
+                  )}
                 </div>
 
-                {/* Table Footer actions */}
-                {isEditingExtract && (
-                  <div className="p-2.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const nextIdx = danhSachNguoiDungDon.length + 1;
-                        const newPerson: NguoiDungDonItem = {
-                          id: `nd-custom-${Date.now()}`,
-                          stt: nextIdx,
-                          vaiTro: 'dong_ky_ten',
-                          vaiTroLabel: `Đồng ký tên (#${nextIdx})`,
-                          hoTen: 'Nguyễn Văn Mới',
-                          namSinh: '1980',
-                          cccd: '001080000000',
-                          ngayCapCCCD: '01/01/2022',
-                          noiCapCCCD: 'Cục Cảnh sát QLHC',
-                          sdt: '0900 000 000',
-                          email: 'congdan@gmail.com',
-                          diaChi: 'Hà Đông, Hà Nội',
-                          coChuKy: true,
-                          coDiemChi: false,
-                          trangThaiVNeID: true,
-                        };
-                        setDanhSachNguoiDungDon([...danhSachNguoiDungDon, newPerson]);
-                        showToast(`Đã thêm người đồng đứng đơn #${nextIdx}`);
-                      }}
-                      className="text-[11px] text-[#004ac6] hover:bg-blue-100 px-2 py-1 rounded border border-blue-300 font-semibold flex items-center gap-1 cursor-pointer"
-                    >
-                      <span>+ Thêm người đồng đứng đơn</span>
-                    </button>
-
-                    <span className="text-[10.5px] text-slate-500 italic">
-                      Bấm trực tiếp vào chữ trên bảng để sửa thông tin công dân
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* NHÓM C: THÔNG TIN ĐỐI TƯỢNG BỊ TỐ CÁO (Giao diện phẳng, chia vạch hairline, không bọc mini-cards) */}
-              <div className="space-y-3.5">
-                {/* Section Header */}
-                <div className="px-3.5 py-2 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[16px] text-rose-700">warning</span>
-                    <span className="font-bold text-slate-900 text-[12px] uppercase tracking-tight">
-                      C. Thông tin đối tượng bị tố cáo
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-[10.5px]">
-                    <span className="px-1.5 py-0.5 rounded font-semibold bg-rose-50 text-rose-800 border border-rose-200">
-                      ⚠ Cần xác minh thẩm quyền
-                    </span>
-                  </div>
-                </div>
-
-                {/* Section Body: Unified Flat Property Table */}
-                <div className="divide-y divide-slate-100 text-[11.5px]">
-                  {/* Row 1: Họ tên / Tên tổ chức | Chức vụ & Đơn vị */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100">
-                    <div
-                      onMouseEnter={() => setActiveHighlightKey('doiTuong')}
-                      onMouseLeave={() => setActiveHighlightKey(null)}
-                      className="p-2.5 hover:bg-rose-50/30 transition-colors"
-                    >
-                      <span className="text-[10.5px] font-medium text-slate-500 block mb-0.5">
-                        Họ và tên / Tổ chức bị tố cáo
-                      </span>
-                      <span
-                        contentEditable={isEditingExtract}
-                        suppressContentEditableWarning
-                        onBlur={(e) => updateExtractField('doiTuong', e.currentTarget.textContent || '')}
-                        className={`font-bold text-slate-900 text-[12.5px] outline-none block ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/50 px-1 rounded' : ''}`}
-                      >
-                        {extractData.doiTuong}
+                {/* NHÓM C: THÔNG TIN ĐỐI TƯỢNG BỊ TỐ CÁO (Giao diện phẳng, chia vạch hairline, không bọc mini-cards) */}
+                <div className="space-y-3.5">
+                  {/* Section Header */}
+                  <div className="px-3.5 py-2 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[16px] text-rose-700">warning</span>
+                      <span className="font-bold text-slate-900 text-[12px] uppercase tracking-tight">
+                        C. Thông tin đối tượng bị tố cáo
                       </span>
                     </div>
-
-                    <div className="p-2.5 hover:bg-rose-50/30 transition-colors">
-                      <span className="text-[10.5px] font-medium text-slate-500 block mb-0.5">
-                        Chức vụ &amp; Đơn vị công tác
-                      </span>
-                      <span
-                        contentEditable={isEditingExtract}
-                        suppressContentEditableWarning
-                        onBlur={(e) => updateExtractField('chucVu', e.currentTarget.textContent || '')}
-                        className={`font-semibold text-slate-800 text-[12px] outline-none block ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/50 px-1 rounded' : ''}`}
-                      >
-                        {extractData.chucVu} - {extractData.donVi}
+                    <div className="flex items-center gap-2 text-[10.5px]">
+                      <span className="px-1.5 py-0.5 rounded font-semibold bg-rose-50 text-rose-800 border border-rose-200">
+                        ⚠ Cần xác minh thẩm quyền
                       </span>
                     </div>
                   </div>
 
-                  {/* Row 2: Trụ sở / Địa chỉ | Dấu hiệu vi phạm */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100">
-                    <div className="p-2.5 hover:bg-rose-50/30 transition-colors">
-                      <span className="text-[10.5px] font-medium text-slate-500 block mb-0.5">
-                        Trụ sở / Địa chỉ nhận diện
-                      </span>
-                      <span
-                        contentEditable={isEditingExtract}
-                        suppressContentEditableWarning
-                        onBlur={(e) => updateExtractField('diaChiDoiTuong' as any, e.currentTarget.textContent || '')}
-                        className={`text-slate-800 text-[11.5px] outline-none block ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/50 px-1 rounded' : ''}`}
+                  {/* Section Body: Unified Flat Property Table */}
+                  <div className="divide-y divide-slate-100 text-[11.5px]">
+                    {/* Row 1: Họ tên / Tên tổ chức | Chức vụ & Đơn vị */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+                      <div
+                        onMouseEnter={() => setActiveHighlightKey('doiTuong')}
+                        onMouseLeave={() => setActiveHighlightKey(null)}
+                        className="p-2.5 hover:bg-rose-50/30 transition-colors"
                       >
-                        {extractData.diaChiDoiTuong || 'Trụ sở UBND quận Hà Đông & Trụ sở Công ty CP X tại Tòa nhà Stellar, Cầu Giấy, Hà Nội'}
-                      </span>
-                    </div>
-
-                    <div className="p-2.5 hover:bg-rose-50/30 transition-colors">
-                      <span className="text-[10.5px] font-medium text-slate-500 block mb-0.5">
-                        Dấu hiệu sai phạm nhận định sơ bộ
-                      </span>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-rose-800 font-bold text-[11.5px]">
-                          {extractData.dauHieu || 'Cố ý làm trái trong bồi thường đất đai & Dấu hiệu nhận hối lộ'}
+                        <span className="text-[10.5px] font-medium text-slate-500 block mb-0.5">
+                          Họ và tên / Tổ chức bị tố cáo
                         </span>
-                        <span className="text-[10px] bg-rose-50 text-rose-700 px-1.5 py-0.2 rounded border border-rose-200 font-semibold">
-                          Độ tin cậy 96%
+                        <span
+                          contentEditable={isEditingExtract}
+                          suppressContentEditableWarning
+                          onBlur={(e) => updateExtractField('doiTuong', e.currentTarget.textContent || '')}
+                          className={`font-bold text-slate-900 text-[12.5px] outline-none block ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/50 px-1 rounded' : ''}`}
+                        >
+                          {extractData.doiTuong}
+                        </span>
+                      </div>
+
+                      <div className="p-2.5 hover:bg-rose-50/30 transition-colors">
+                        <span className="text-[10.5px] font-medium text-slate-500 block mb-0.5">
+                          Chức vụ &amp; Đơn vị công tác
+                        </span>
+                        <span
+                          contentEditable={isEditingExtract}
+                          suppressContentEditableWarning
+                          onBlur={(e) => updateExtractField('chucVu', e.currentTarget.textContent || '')}
+                          className={`font-semibold text-slate-800 text-[12px] outline-none block ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/50 px-1 rounded' : ''}`}
+                        >
+                          {extractData.chucVu} - {extractData.donVi}
                         </span>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Row 3: Hành vi vi phạm bị tố cáo trích xuất */}
-                  <div className="p-2.5 hover:bg-rose-50/30 transition-colors">
-                    <div className="flex items-center justify-between text-[10.5px] text-slate-500 mb-1">
-                      <span className="font-medium">Hành vi vi phạm bị tố cáo (Trích xuất văn bản):</span>
-                      <span className="text-[9.5px] text-rose-700 font-bold">Mức độ nghiêm trọng</span>
+                    {/* Row 2: Trụ sở / Địa chỉ | Dấu hiệu vi phạm */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+                      <div className="p-2.5 hover:bg-rose-50/30 transition-colors">
+                        <span className="text-[10.5px] font-medium text-slate-500 block mb-0.5">
+                          Trụ sở / Địa chỉ nhận diện
+                        </span>
+                        <span
+                          contentEditable={isEditingExtract}
+                          suppressContentEditableWarning
+                          onBlur={(e) => updateExtractField('diaChiDoiTuong' as any, e.currentTarget.textContent || '')}
+                          className={`text-slate-800 text-[11.5px] outline-none block ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/50 px-1 rounded' : ''}`}
+                        >
+                          {extractData.diaChiDoiTuong || 'Trụ sở UBND quận Hà Đông & Trụ sở Công ty CP X tại Tòa nhà Stellar, Cầu Giấy, Hà Nội'}
+                        </span>
+                      </div>
+
+                      <div className="p-2.5 hover:bg-rose-50/30 transition-colors">
+                        <span className="text-[10.5px] font-medium text-slate-500 block mb-0.5">
+                          Dấu hiệu sai phạm nhận định sơ bộ
+                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-rose-800 font-bold text-[11.5px]">
+                            {extractData.dauHieu || 'Cố ý làm trái trong bồi thường đất đai & Dấu hiệu nhận hối lộ'}
+                          </span>
+                          <span className="text-[10px] bg-rose-50 text-rose-700 px-1.5 py-0.2 rounded border border-rose-200 font-semibold">
+                            Độ tin cậy 96%
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <p
-                      contentEditable={isEditingExtract}
-                      suppressContentEditableWarning
-                      onBlur={(e) => updateExtractField('hanhViBiToCao' as any, e.currentTarget.textContent || '')}
-                      className={`text-slate-800 text-[11.5px] leading-relaxed outline-none text-justify ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/50 p-1.5 rounded' : ''}`}
-                    >
-                      {extractData.hanhViBiToCao || 'Lợi dụng chức vụ quyền hạn lập phương án bồi thường sai thực tế, cắt giảm 150m² đất đền bù, ép hạ giá từ 4.2 triệu/m² xuống 2.5 triệu/m², có dấu hiệu thông đồng trục lợi chênh lệch địa tô dự án.'}
-                    </p>
+
+                    {/* Row 3: Hành vi vi phạm bị tố cáo trích xuất */}
+                    <div className="p-2.5 hover:bg-rose-50/30 transition-colors">
+                      <div className="flex items-center justify-between text-[10.5px] text-slate-500 mb-1">
+                        <span className="font-medium">Hành vi vi phạm bị tố cáo (Trích xuất văn bản):</span>
+                        <span className="text-[9.5px] text-rose-700 font-bold">Mức độ nghiêm trọng</span>
+                      </div>
+                      <p
+                        contentEditable={isEditingExtract}
+                        suppressContentEditableWarning
+                        onBlur={(e) => updateExtractField('hanhViBiToCao' as any, e.currentTarget.textContent || '')}
+                        className={`text-slate-800 text-[11.5px] leading-relaxed outline-none text-justify ${isEditingExtract ? 'border-b border-dashed border-[#004ac6] bg-blue-50/50 p-1.5 rounded' : ''}`}
+                      >
+                        {extractData.hanhViBiToCao || 'Lợi dụng chức vụ quyền hạn lập phương án bồi thường sai thực tế, cắt giảm 150m² đất đền bù, ép hạ giá từ 4.2 triệu/m² xuống 2.5 triệu/m², có dấu hiệu thông đồng trục lợi chênh lệch địa tô dự án.'}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* ────────────────────────────────────────────────────────── */}
             {/* KHU VỰC 3: KẾT QUẢ PHÂN TÍCH AI                            */}
@@ -2889,44 +2975,27 @@ Kính trình Lãnh đạo phê duyệt:
                         <span className="font-bold text-slate-900 text-[12px] uppercase tracking-tight">
                           D. Tra cứu &amp; Đối soát hồ sơ vụ việc, đơn tương tự
                         </span>
-                        {/* <span className="hidden sm:inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                        <span className="hidden sm:inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
                           04 đơn tương tự • 01 vụ việc liên quan
-                        </span> */}
+                        </span>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                          <span>Độ tin cậy AI: 96.8%</span>
+                        </span>
                       </div>
-
-                      {/* <div className="flex items-center gap-1.5 text-[11px]">
-                        <button
-                          type="button"
-                          onClick={() => openNguonTraCuu('don-tuong-tu')}
-                          className="text-[#004ac6] hover:bg-blue-50 px-2 py-0.5 rounded border border-blue-200 font-semibold flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
-                          title="Mở ngăn kéo đối soát chuyên sâu chi tiết"
-                        >
-                          <span className="material-symbols-outlined text-[13px]">open_in_new</span>
-                          <span>Ngăn kéo đối soát CSDL</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => openNguonTraCuu('vu-viec')}
-                          className="text-purple-700 hover:bg-purple-50 px-2 py-0.5 rounded border border-purple-200 font-semibold flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
-                          title="Xem chi tiết hồ sơ vụ việc VV-2026-0042"
-                        >
-                          <span className="material-symbols-outlined text-[13px]">folder</span>
-                          <span>Hồ sơ vụ việc gốc</span>
-                        </button>
-                      </div> */}
                     </div>
-
-                    {/* Toolbar Tra cứu & Lọc nhanh */}
-
-
-                    {/* Dải thống kê 3 chỉ số đối soát */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 text-[11px] bg-slate-50/40 border border-slate-200 rounded">
                       <div
                         onClick={() => openNguonTraCuu('nguoi-gui')}
                         className="p-2 hover:bg-amber-50/50 cursor-pointer transition-colors"
                       >
-                        <span className="text-[10px] text-slate-500 block">Lịch sử người nộp</span>
-                        <div className="flex items-center justify-between mt-0.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-slate-500">Lịch sử người nộp</span>
+                          <span className="text-[9.5px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                            Độ tin cậy: 99.8%
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between mt-1">
                           <strong className="text-slate-900 font-bold">06 đơn đã gửi</strong>
                           <span className="text-[10px] text-amber-700 font-semibold hover:underline">Chi tiết ➔</span>
                         </div>
@@ -2936,8 +3005,13 @@ Kính trình Lãnh đạo phê duyệt:
                         onClick={() => openNguonTraCuu('don-tuong-tu')}
                         className="p-2 hover:bg-rose-50/50 cursor-pointer transition-colors"
                       >
-                        <span className="text-[10px] text-slate-500 block">Đơn tương tự trong CSDL</span>
-                        <div className="flex items-center justify-between mt-0.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-slate-500">Đơn tương tự trong CSDL</span>
+                          <span className="text-[9.5px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                            Độ tin cậy: 96.5%
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between mt-1">
                           <strong className="text-rose-700 font-bold">04 đơn (Trùng đến 96%)</strong>
                           <span className="text-[10px] text-rose-700 font-semibold hover:underline">Đối chiếu ➔</span>
                         </div>
@@ -2947,8 +3021,13 @@ Kính trình Lãnh đạo phê duyệt:
                         onClick={() => openNguonTraCuu('vu-viec')}
                         className="p-2 hover:bg-purple-50/50 cursor-pointer transition-colors"
                       >
-                        <span className="text-[10px] text-slate-500 block">Hồ sơ vụ việc liên quan</span>
-                        <div className="flex items-center justify-between mt-0.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-slate-500">Hồ sơ vụ việc liên quan</span>
+                          <span className="text-[9.5px] font-bold text-purple-700 bg-purple-50 px-1.5 py-0.2 rounded border border-purple-200">
+                            Độ tin cậy: 97.2%
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between mt-1">
                           <strong className="text-purple-800 font-bold">01 vụ việc (VV-2026-0042)</strong>
                           <span className="text-[10px] text-purple-700 font-semibold hover:underline">Xem vụ việc ➔</span>
                         </div>
@@ -2969,7 +3048,6 @@ Kính trình Lãnh đạo phê duyệt:
                         AI gợi ý phương án tối ưu — Cán bộ bấm chọn để áp dụng
                       </span>
                     </div>
-
                     <div className="divide-y divide-slate-100">
                       {/* Phương án 1: Thụ lý giải quyết tố cáo theo thẩm quyền (Khuyến nghị 92%) */}
                       <div
@@ -2995,16 +3073,22 @@ Kính trình Lãnh đạo phê duyệt:
                             )}
                           </div>
                           <div className="min-w-0">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-bold text-slate-900 text-[12.5px]">
                                 Phương án 1: Thụ lý giải quyết tố cáo theo thẩm quyền
                               </span>
                               <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
                                 Khuyến nghị 92%
                               </span>
+                              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-blue-50 text-[#004ac6] border border-blue-200">
+                                Độ tin cậy: 95.5%
+                              </span>
                             </div>
                             <p className="text-[11px] text-slate-600 mt-0.5">
                               Căn cứ Điều 12 &amp; 29 Luật Tố cáo 2018. Ban hành Quyết định thụ lý, thành lập Tổ xác minh trong 07 ngày làm việc để kiểm tra hiện trạng thực địa và đối chiếu hồ sơ bồi thường.
+                            </p>
+                            <p className="text-[10.5px] text-blue-900 mt-1 font-medium bg-blue-50/70 p-1.5 rounded border border-blue-100">
+                              <strong>Lý do căn cứ 5W1H:</strong> Đơn đáp ứng đủ 4 yếu tố cơ bản theo Điều 29 Luật Tố cáo 2018 (Xác định rõ Who - người tố cáo &amp; người bị tố cáo; What - hành vi cố ý làm trái; Where - địa bàn thuộc quận Hà Đông; How - có trích lục 1/500 và biên bản làm căn cứ đối chiếu ban đầu).
                             </p>
                           </div>
                         </div>
@@ -3034,16 +3118,22 @@ Kính trình Lãnh đạo phê duyệt:
                             )}
                           </div>
                           <div className="min-w-0">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-bold text-slate-900 text-[12.5px]">
                                 Phương án 2: Chuyển Cơ quan CSĐT Công an (Dấu hiệu hình sự)
                               </span>
                               <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-purple-100 text-purple-800 border border-purple-200">
                                 Phù hợp 85%
                               </span>
+                              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-purple-50 text-purple-700 border border-purple-200">
+                                Độ tin cậy: 89.0%
+                              </span>
                             </div>
                             <p className="text-[11px] text-slate-600 mt-0.5">
                               Áp dụng nếu xác định hành vi có dấu hiệu tội phạm nhận hối lộ hoặc cố ý làm trái gây thiệt hại nghiêm trọng. Chuyển hồ sơ cho Cơ quan CSĐT theo Quy chế phối hợp liên ngành.
+                            </p>
+                            <p className="text-[10.5px] text-purple-900 mt-1 font-medium bg-purple-50/70 p-1.5 rounded border border-purple-100">
+                              <strong>Lý do căn cứ 5W1H:</strong> Thành phần Why &amp; How phản ánh tình tiết nghi vấn đòi tiền hối lộ 200 triệu đồng và thiết bị ghi âm trong USB. Cần Cơ quan CSĐT trưng cầu giám định tư pháp để bảo đảm giá trị chứng cứ.
                             </p>
                           </div>
                         </div>
@@ -3082,10 +3172,16 @@ Kính trình Lãnh đạo phê duyệt:
                               <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-indigo-100 text-indigo-800 border border-indigo-200">
                                 Trùng {selectedGhepItem?.matchPercent ?? 96}%
                               </span>
+                              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                Độ tin cậy ghép: {selectedGhepItem?.confidencePercent ?? '96.8%'}
+                              </span>
                             </div>
                             <p className="text-[11px] text-slate-600 mt-0.5">
                               {selectedGhepItem?.noiDungGhepGoiY ||
                                 'Ghép lượt nhận vào hồ sơ đang thụ lý để bổ sung tài liệu, không sinh mã đơn mới, không làm tăng tồn đọng.'}
+                            </p>
+                            <p className="text-[10.5px] text-amber-900 mt-1 font-medium bg-amber-50/70 p-1.5 rounded border border-amber-100">
+                              <strong>Lý do căn cứ 5W1H:</strong> Thành phần Where &amp; Who trùng khớp địa bàn Dự án KĐT Y và Hội đồng bồi thường với hồ sơ {selectedGhepDonCode}. Ghép để cơ quan chức năng kiểm tra đồng bộ, tránh ban hành văn bản rời rạc.
                             </p>
                           </div>
                         </div>

@@ -30,6 +30,7 @@ export interface DonTrungItem {
   status: string;
   title: string;
   matchPercent: number;
+  confidencePercent?: string;
   tags: string[];
   ngayNhan: string;
   nguoiNop: string;
@@ -239,7 +240,14 @@ export default function DonTrungDetailDrawer({
                   <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-blue-100 text-blue-700">
                     {donTrung.status}
                   </span>
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold border bg-indigo-50 text-indigo-800 border-indigo-200">
+                  <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold border bg-indigo-50 text-indigo-800 border-indigo-200">
+                    Trùng {donTrung.matchPercent}%
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold border bg-emerald-50 text-emerald-800 border-emerald-200 flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[12px]">verified</span>
+                    Độ tin cậy: {donTrung.code === 'DS-29/2026-GOVEX' ? '96.8%' : `${donTrung.matchPercent}%`}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full text-[10.5px] font-semibold border bg-slate-100 text-slate-700 border-slate-200 hidden sm:inline">
                     Đối chiếu: Trùng CCCD & Đối tượng
                   </span>
                 </div>
@@ -338,9 +346,14 @@ export default function DonTrungDetailDrawer({
                       <span className="material-symbols-outlined text-[17px] text-rose-700">psychology</span>
                       Kết quả đối chiếu CSDL hồ sơ liên quan (GOVEX)
                     </span>
-                    <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-900 text-[11px] font-bold border border-indigo-200">
-                      Khớp tiêu chí xác thực
-                    </span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 text-[10.5px] font-bold border border-emerald-200">
+                        Độ tin cậy: {donTrung.code === 'DS-29/2026-GOVEX' ? '96.8%' : `${donTrung.matchPercent}%`}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-900 text-[10.5px] font-bold border border-indigo-200">
+                        Khớp tiêu chí xác thực
+                      </span>
+                    </div>
                   </div>
                   <p className="text-[11.5px] text-slate-700 leading-relaxed">
                     {donTrung.noiDungGhepGoiY}
@@ -546,8 +559,13 @@ export default function DonTrungDetailDrawer({
             {/* TAB 4: ĐỐI CHIẾU AI */}
             {activeTab === 'doi-chieu' && (
               <div className="space-y-4 animate-in fade-in duration-150">
-                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-950 flex items-center justify-between">
-                  <span className="font-bold">Tiêu chí đối chiếu: Trùng CCCD, Cùng đối tượng & Địa bàn</span>
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-950 flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-bold">Tiêu chí đối chiếu: Trùng CCCD, Cùng đối tượng &amp; Địa bàn</span>
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 font-bold text-[10.5px] border border-emerald-300">
+                      Độ tin cậy đối chiếu: {donTrung.code === 'DS-29/2026-GOVEX' ? '96.8%' : `${donTrung.matchPercent}%`}
+                    </span>
+                  </div>
                   <span className="text-emerald-800 font-semibold">Khuyến nghị: Ghép vào hồ sơ gốc</span>
                 </div>
 
