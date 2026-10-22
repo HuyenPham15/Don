@@ -13,6 +13,7 @@ import {
   getStandardStepTemplate,
   resetStepToStandard,
   resetStepSectionToStandard,
+  STANDARD_STEP_LIBRARY,
 } from '../registry/workflowComponentRegistry';
 import { INITIAL_RECORD_DOCUMENTS } from '../../../constants/processWorkflows';
 
@@ -42,14 +43,14 @@ function InheritBadge({ isOverridden }: { isOverridden?: boolean }) {
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-300">
         <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-        Tùy chỉnh riêng
+        Cấu hình riêng
       </span>
     );
   }
   return (
     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-sky-50 text-sky-700 border border-sky-200">
       <span className="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
-      Mặc định
+      Cấu hình chung
     </span>
   );
 }
@@ -135,6 +136,40 @@ export default function StepPropertiesPanel({
       onUpdateStep(reset);
     }
     setRevertModal({ isOpen: false, targetSection: 'ALL', targetTitle: '' });
+  };
+
+  const handleSelectStandardTemplate = (tplId: string) => {
+    const tpl = STANDARD_STEP_LIBRARY.find((t) => t.id === tplId);
+    if (!tpl) return;
+    onUpdateStep({
+      ...step,
+      inheritedFromId: tpl.id,
+      inheritedFromName: tpl.name,
+      isCustomized: false,
+      conditions: [...tpl.defaultConditions],
+      conditionsOverride: false,
+      stepForms: [...tpl.defaultStepForms],
+      formsOverride: false,
+      usedDocuments: [...tpl.defaultInputDocs],
+      inputDocuments: [...tpl.defaultInputDocs],
+      usedDocsOverride: false,
+      inputDocsOverride: false,
+      storedDocuments: [...tpl.defaultStoredDocs],
+      outputDocsOverride: false,
+      statusChangeDoc: tpl.defaultStatusChangeDoc || '',
+      timeLimitDays: tpl.defaultTimeLimitDays,
+      workHours: tpl.defaultWorkHours,
+      warningBeforeHours: tpl.defaultWarningBeforeHours,
+      workSchedule: tpl.defaultWorkSchedule,
+      slaOverride: false,
+      actions: [...tpl.defaultActions],
+      actionsOverride: false,
+      aiConfig: tpl.defaultAiConfig || step.aiConfig,
+      approvalConfig: tpl.defaultApprovalConfig || step.approvalConfig,
+      notificationConfig: tpl.defaultNotificationConfig || step.notificationConfig,
+      branchConfig: tpl.defaultBranchConfig || step.branchConfig,
+      integrationConfig: tpl.defaultIntegrationConfig || step.integrationConfig,
+    });
   };
 
   // Condition handlers
@@ -462,70 +497,172 @@ export default function StepPropertiesPanel({
         </div>
 
         {/* ============================================================== */}
-        {/* SECTION B: CẤU HÌNH & KẾ THỪA                                  */}
+        {/* SECTION B: PHẠM VI CẤU HÌNH (CẤU HÌNH CHUNG / RIÊNG)          */}
         {/* ============================================================== */}
         <div className="space-y-3">
           <div className="flex items-center justify-between pb-1 border-b border-slate-100">
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
               <span className="text-[11px] font-bold text-slate-800 uppercase tracking-wide">
-                B. Cấu hình
+                B. Chế độ cấu hình
               </span>
             </div>
             <InheritBadge isOverridden={isStepOverridden} />
           </div>
 
-          <div className="p-3.5 bg-slate-50/90 border border-slate-200/90 rounded-2xl space-y-3 shadow-2xs">
-            <div>
-              <span className="text-[11px] text-slate-500 font-medium block">
-                Đang kế thừa từ:
-              </span>
-              <div className="text-xs font-bold text-slate-900 mt-0.5 flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-[17px] text-indigo-600">
-                  library_books
-                </span>
-                <span className="truncate">{inheritedName}</span>
+          {/* Toggle chuyển đổi Cấu hình chung / Cấu hình riêng */}
+          <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-2xl border border-slate-200/80">
+            {/* Lựa chọn 1: Cấu hình chung */}
+            <button
+              type="button"
+              onClick={() => {
+                if (isStepOverridden) {
+                  setRevertModal({
+                    isOpen: true,
+                    targetSection: 'ALL',
+                    targetTitle: 'toàn bộ cấu hình bước về mặc định chung của thư viện',
+                  });
+                }
+              }}
+              className={`py-2 px-2.5 rounded-xl text-xs font-bold transition-all flex flex-col items-center gap-0.5 text-center cursor-pointer ${!isStepOverridden
+                ? 'bg-white text-blue-700 shadow-2xs border border-blue-200'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                }`}
+            >
+              <div className="flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-[17px] text-blue-600">hub</span>
+                <span>Cấu hình chung</span>
               </div>
-            </div>
+              <span className="text-[10px] font-normal text-slate-500">Kế thừa thư viện chuẩn</span>
+            </button>
 
-            <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200/80">
-              {!isStepOverridden ? (
+            {/* Lựa chọn 2: Cấu hình riêng */}
+            <button
+              type="button"
+              onClick={() => {
+                if (!isStepOverridden) {
+                  onUpdateStep({
+                    ...step,
+                    isCustomized: true,
+                  });
+                }
+              }}
+              className={`py-2 px-2.5 rounded-xl text-xs font-bold transition-all flex flex-col items-center gap-0.5 text-center cursor-pointer ${isStepOverridden
+                ? 'bg-white text-amber-900 shadow-2xs border border-amber-300'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                }`}
+            >
+              <div className="flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-[17px] text-amber-600">tune</span>
+                <span>Cấu hình riêng</span>
+              </div>
+              <span className="text-[10px] font-normal text-slate-500">Quy trình hiện tại</span>
+            </button>
+          </div>
+
+          {/* Chi tiết theo chế độ đã chọn */}
+          {!isStepOverridden ? (
+            /* Khối Cấu hình chung */
+            <div className="p-3.5 bg-blue-50/40 border border-blue-200/80 rounded-2xl space-y-3 shadow-2xs">
+              <div>
+                <label className="text-[11px] font-semibold text-slate-700 flex items-center justify-between gap-1 mb-1.5">
+                  <span className="flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[15px] text-blue-600">library_books</span>
+                    <span>Mẫu bước chuẩn đang kế thừa:</span>
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-mono">
+                    {step.inheritedFromId || standardTpl.id}
+                  </span>
+                </label>
+                <select
+                  value={step.inheritedFromId || standardTpl.id}
+                  onChange={(e) => handleSelectStandardTemplate(e.target.value)}
+                  className="w-full px-2.5 py-2 bg-white border border-blue-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer shadow-2xs"
+                >
+                  {STANDARD_STEP_LIBRARY.map((tpl) => (
+                    <option key={tpl.id} value={tpl.id}>
+                      {tpl.name} ({tpl.nodeType})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="text-[11px] text-slate-600 leading-relaxed bg-white/70 p-2.5 rounded-xl border border-blue-100 flex items-start gap-2">
+                <span className="material-symbols-outlined text-blue-600 text-[16px] shrink-0 mt-0.5">info</span>
+                <span>
+                  Bước này đang áp dụng <strong>cấu hình chung</strong>. Các thiết lập điều kiện, biểu mẫu, văn bản và thời hạn (SLA) sẽ đồng bộ tự động theo mẫu chuẩn.
+                </span>
+              </div>
+
+              <div className="pt-2 border-t border-blue-100 flex items-center justify-between">
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={() =>
                     onUpdateStep({
                       ...step,
                       isCustomized: true,
-                    });
-                  }}
-                  className="px-3 py-1.5 bg-white hover:bg-blue-50 text-blue-700 hover:text-blue-900 border border-blue-200 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1 cursor-pointer"
+                    })
+                  }
+                  className="px-3 py-1.5 bg-white hover:bg-blue-50 text-blue-700 hover:text-blue-900 border border-blue-300 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-[15px]">edit_note</span>
-                  Chỉnh sửa riêng
+                  <span>Tùy chỉnh riêng cho quy trình này</span>
                 </button>
-              ) : (
+
+                <span className="text-[10px] text-blue-700 font-semibold bg-blue-100/70 px-2 py-0.5 rounded-full">
+                  Dùng chung
+                </span>
+              </div>
+            </div>
+          ) : (
+            /* Khối Cấu hình riêng */
+            <div className="p-3.5 bg-amber-50/40 border border-amber-200/80 rounded-2xl space-y-3 shadow-2xs">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <span className="text-[11px] text-slate-500 font-medium block">
+                    Đang tùy biến từ mẫu gốc:
+                  </span>
+                  <div className="text-xs font-bold text-slate-900 mt-0.5 flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[17px] text-amber-700">
+                      library_books
+                    </span>
+                    <span className="truncate">{inheritedName}</span>
+                  </div>
+                </div>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                  Chỉ quy trình này
+                </span>
+              </div>
+
+              <div className="text-[11px] text-amber-900/90 leading-relaxed bg-white/80 p-2.5 rounded-xl border border-amber-200 flex items-start gap-2">
+                <span className="material-symbols-outlined text-amber-600 text-[16px] shrink-0 mt-0.5">tune</span>
+                <span>
+                  Bước này đang áp dụng <strong>cấu hình riêng cho quy trình hiện tại</strong>. Mọi chỉnh sửa ở các mục bên dưới (Điều kiện, Biểu mẫu, Tài liệu, SLA, Hành động...) chỉ có hiệu lực trong quy trình này và không ảnh hưởng đến thư viện dùng chung.
+                </span>
+              </div>
+
+              <div className="pt-2 border-t border-amber-200/70 flex items-center justify-between">
                 <button
                   type="button"
                   onClick={() =>
                     setRevertModal({
                       isOpen: true,
                       targetSection: 'ALL',
-                      targetTitle: 'toàn bộ cấu hình bước về mặc định chuẩn',
+                      targetTitle: 'toàn bộ cấu hình bước về mặc định chung của thư viện',
                     })
                   }
-                  className="px-3 py-1.5 bg-white hover:bg-rose-50 text-rose-700 hover:text-rose-900 border border-rose-200 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1 cursor-pointer"
+                  className="px-3 py-1.5 bg-white hover:bg-rose-50 text-rose-700 hover:text-rose-900 border border-rose-200 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-[15px]">restart_alt</span>
-                  Khôi phục mặc định
+                  <span>Khôi phục về cấu hình chung</span>
                 </button>
-              )}
 
-              <span className="text-[10px] text-slate-400 font-mono">
-                {step.inheritedFromId || standardTpl.id}
-              </span>
+                <span className="text-[10px] text-slate-400 font-mono">
+                  {step.inheritedFromId || standardTpl.id}
+                </span>
+              </div>
             </div>
-
-          </div>
+          )}
         </div>
 
         {/* ============================================================== */}
@@ -934,151 +1071,6 @@ export default function StepPropertiesPanel({
             </div>
           </div>
 
-          {/* Sub-section D: Kết quả đầu ra */}
-          <div className="p-3.5 bg-slate-50/70 border border-slate-200/90 rounded-2xl space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-teal-600 text-[16px]">task_alt</span>
-                  <span>D. Kết quả đầu ra ({step.storedDocuments.length})</span>
-                </span>
-                <span className="text-[10px] text-slate-500 block leading-tight mt-0.5">
-                  Kết quả tạo ra sau khi hoàn thành bước (Dữ liệu, Biểu mẫu hoặc Văn bản phát hành/lưu trữ)
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <InheritBadge isOverridden={step.outputDocsOverride} />
-                {step.outputDocsOverride && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setRevertModal({
-                        isOpen: true,
-                        targetSection: 'outputDocs',
-                        targetTitle: 'Kết quả đầu ra về mặc định',
-                      })
-                    }
-                    className="text-[11px] font-bold text-rose-600 hover:text-rose-800 flex items-center gap-0.5 cursor-pointer"
-                    title="Khôi phục kết quả đầu ra chuẩn"
-                  >
-                    <span className="material-symbols-outlined text-[13px]">restart_alt</span>
-                    Khôi phục
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Văn bản đổi trạng thái hồ sơ */}
-            <div className="p-2.5 rounded-xl bg-white border border-slate-200 space-y-1">
-              <label className="block text-[11px] font-bold text-slate-700">
-                Văn bản / Kết quả đổi trạng thái hồ sơ
-              </label>
-              <input
-                type="text"
-                value={step.statusChangeDoc || ''}
-                onChange={(e) =>
-                  onUpdateStep({
-                    ...step,
-                    statusChangeDoc: e.target.value,
-                    outputDocsOverride: true,
-                    isCustomized: true,
-                  })
-                }
-                placeholder="VD: Thông báo thụ lý, Báo cáo xác minh, Kết luận nội dung..."
-                className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white focus:border-blue-500 focus:outline-none"
-              />
-            </div>
-
-            {/* Danh sách văn bản/tài liệu lưu trữ tạo ra */}
-            <div className="space-y-1.5">
-              <label className="block text-[11px] font-bold text-slate-700">
-                Văn bản / tài liệu phát hành hoặc lưu trữ ({step.storedDocuments.length}):
-              </label>
-              {step.storedDocuments.map((doc, i) => (
-                <div
-                  key={i}
-                  className="p-2.5 bg-white rounded-xl border border-slate-200 flex items-center justify-between text-xs shadow-2xs"
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="material-symbols-outlined text-teal-600 text-[17px]">
-                      article
-                    </span>
-                    <span className="font-semibold text-slate-800 truncate">{doc}</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveStoredDoc(i)}
-                    className="text-slate-400 hover:text-rose-600 p-1 rounded"
-                    title="Xóa tài liệu đầu ra"
-                  >
-                    <span className="material-symbols-outlined text-[15px]">close</span>
-                  </button>
-                </div>
-              ))}
-
-              {step.storedDocuments.length === 0 && (
-                <p className="text-[11px] text-slate-400 italic py-1">
-                  Chưa chỉ định văn bản / kết quả đầu ra cụ thể.
-                </p>
-              )}
-            </div>
-
-            <div className="flex gap-1.5 pt-1">
-              <input
-                type="text"
-                value={newDocText}
-                onChange={(e) => setNewDocText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleAddStoredDoc();
-                  }
-                }}
-                placeholder="Tên văn bản / kết quả tạo ra..."
-                className="flex-1 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs focus:border-blue-500 focus:outline-none"
-              />
-              <button
-                type="button"
-                onClick={handleAddStoredDoc}
-                disabled={!newDocText.trim()}
-                className="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 disabled:bg-slate-200 text-white disabled:text-slate-400 rounded-xl text-xs font-bold transition-colors cursor-pointer"
-              >
-                + Thêm
-              </button>
-            </div>
-          </div>
-
-          {/* BẢNG SO SÁNH & PHÂN ĐỊNH TRÁCH NHIỆM TRỰC QUAN */}
-          <div className="p-3.5 bg-gradient-to-r from-blue-50/90 via-slate-50 to-indigo-50/90 border border-blue-200/90 rounded-2xl text-xs space-y-2">
-            <div className="flex items-center gap-1.5 font-bold text-blue-900">
-              <span className="material-symbols-outlined text-[18px] text-blue-600">compare_arrows</span>
-              <span>Phân định rõ ràng giữa Tài liệu tại bước & Điều kiện chuyển bước</span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
-              <div className="p-2.5 bg-white/95 rounded-xl border border-blue-200/70 shadow-2xs space-y-1">
-                <div className="font-bold text-blue-900 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[15px] text-blue-600">visibility</span>
-                  <span>Tài liệu sử dụng tại bước</span>
-                </div>
-                <ul className="text-slate-600 leading-relaxed text-[10.5px] space-y-0.5 list-disc list-inside">
-                  <li>Xác định tài liệu cán bộ cần xem/đọc/xử lý tại bước.</li>
-                  <li><strong>Chỉ mang tính tham chiếu nghiệp vụ</strong>, không tự động làm điều kiện chuyển bước.</li>
-                  <li>Tham chiếu cùng Document Entity (<code className="text-blue-700 font-mono">DOC-001</code>), <strong>không tạo document mới</strong>.</li>
-                </ul>
-              </div>
-              <div className="p-2.5 bg-white/95 rounded-xl border border-indigo-200/70 shadow-2xs space-y-1">
-                <div className="font-bold text-indigo-900 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[15px] text-indigo-600">checklist_rtl</span>
-                  <span>Điều kiện chuyển bước (Connector)</span>
-                </div>
-                <ul className="text-slate-600 leading-relaxed text-[10.5px] space-y-0.5 list-disc list-inside">
-                  <li>Nơi <strong>DUY NHẤT</strong> cấu hình yêu cầu văn bản để được chuyển tiếp.</li>
-                  <li>3 lựa chọn: (1) Không yêu cầu; (2) Kiểm tra văn bản đã có; (3) Yêu cầu văn bản khi chuyển bước.</li>
-                  <li>Hệ thống chặn đẩy bước nếu văn bản bắt buộc chưa đủ.</li>
-                </ul>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* ============================================================== */}
@@ -1728,11 +1720,10 @@ export default function StepPropertiesPanel({
                 return (
                   <div
                     key={docEntity.id}
-                    className={`p-3 rounded-xl border text-xs flex items-center justify-between transition-all ${
-                      isAlreadySelected
-                        ? 'bg-slate-50 border-slate-200 opacity-75'
-                        : 'bg-white border-slate-200 hover:border-blue-300 hover:bg-blue-50/30'
-                    }`}
+                    className={`p-3 rounded-xl border text-xs flex items-center justify-between transition-all ${isAlreadySelected
+                      ? 'bg-slate-50 border-slate-200 opacity-75'
+                      : 'bg-white border-slate-200 hover:border-blue-300 hover:bg-blue-50/30'
+                      }`}
                   >
                     <div className="flex items-start gap-2.5 min-w-0">
                       <span className="material-symbols-outlined text-blue-600 text-[20px] shrink-0 mt-0.5">
@@ -1761,11 +1752,10 @@ export default function StepPropertiesPanel({
                       type="button"
                       disabled={isAlreadySelected}
                       onClick={() => handleAddUsedDocFromRecord(docEntity)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-colors cursor-pointer ${
-                        isAlreadySelected
-                          ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                          : 'bg-blue-600 hover:bg-blue-700 text-white shadow-2xs'
-                      }`}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-colors cursor-pointer ${isAlreadySelected
+                        ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                        : 'bg-blue-600 hover:bg-blue-700 text-white shadow-2xs'
+                        }`}
                     >
                       {isAlreadySelected ? 'Đã tham chiếu' : 'Chọn tham chiếu'}
                     </button>

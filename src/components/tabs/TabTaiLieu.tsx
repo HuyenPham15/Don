@@ -34,10 +34,13 @@ export interface TabTaiLieuProps {
   onTrinhKyBaoCao?: (docId?: string, updatedDoc?: SigningDocument) => void;
 }
 
+export type VaiTroTaiLieu = 'tai_lieu_chinh' | 'tai_lieu_kem_theo' | 'tai_lieu_bo_sung';
+
 export interface DocItem {
   id: string;
   name: string;
   category: string;
+  vaiTroTaiLieu?: VaiTroTaiLieu;
   soHieu?: string;
   size: string;
   pages: number;
@@ -69,6 +72,40 @@ export interface DocItem {
   trangThaiTrinhKy?: 'chua_trinh' | 'dang_trinh' | 'da_trinh' | 'da_co_hieu_luc';
 }
 
+export const getVaiTroInfo = (doc: DocItem): { role: VaiTroTaiLieu; label: string; badgeClass: string; icon: string } => {
+  if (
+    doc.vaiTroTaiLieu === 'tai_lieu_chinh' ||
+    doc.category === 'Tài liệu chính' ||
+    doc.category === 'Báo cáo đề xuất' ||
+    doc.loaiVanBan === 'bao_cao_de_xuat'
+  ) {
+    return {
+      role: 'tai_lieu_chinh',
+      label: 'Tài liệu chính',
+      badgeClass: 'bg-blue-50 text-[#004ac6] border border-blue-200',
+      icon: 'description',
+    };
+  }
+  if (
+    doc.vaiTroTaiLieu === 'tai_lieu_bo_sung' ||
+    doc.category === 'Tài liệu bổ sung' ||
+    doc.category === 'extra'
+  ) {
+    return {
+      role: 'tai_lieu_bo_sung',
+      label: 'Tài liệu bổ sung',
+      badgeClass: 'bg-purple-50 text-purple-700 border border-purple-200',
+      icon: 'post_add',
+    };
+  }
+  return {
+    role: 'tai_lieu_kem_theo',
+    label: 'Tài liệu kèm theo',
+    badgeClass: 'bg-slate-100 text-slate-700 border border-slate-200',
+    icon: 'attach_file',
+  };
+};
+
 export default function TabTaiLieu({
   currentDon,
   onDocCountChange,
@@ -79,13 +116,14 @@ export default function TabTaiLieu({
   onUpdateSigningDocuments,
   onTrinhKyBaoCao,
 }: TabTaiLieuProps) {
-  // Dữ liệu mẫu chuẩn hóa theo đúng hình ảnh thiết kế
+  // Dữ liệu mẫu chuẩn hóa: Phân loại theo 3 vai trò: Tài liệu chính | Tài liệu kèm theo | Tài liệu bổ sung
   const defaultDocs: DocItem[] = [
     {
       id: 'DOC-2026-001',
       name: 'Hợp đồng cung cấp dịch vụ xác minh hồ sơ',
-      category: 'Hồ sơ ban đầu',
-      folder: 'ho_so_ban_dau',
+      category: 'Tài liệu kèm theo',
+      vaiTroTaiLieu: 'tai_lieu_kem_theo',
+      folder: 'tai_lieu_kem_theo',
       soHieu: 'VB-2026-001',
       size: '520 KB',
       pages: 2,
@@ -102,9 +140,10 @@ export default function TabTaiLieu({
     {
       id: 'DOC-2026-002',
       name: 'Báo cáo đề xuất hướng xử lý đơn',
-      category: 'Báo cáo đề xuất',
+      category: 'Tài liệu chính',
+      vaiTroTaiLieu: 'tai_lieu_chinh',
       loaiVanBan: 'bao_cao_de_xuat',
-      folder: 'ho_so_ban_dau',
+      folder: 'tai_lieu_chinh',
       soHieu: 'VB-2026-002',
       size: '340 KB',
       pages: 2,
@@ -116,13 +155,14 @@ export default function TabTaiLieu({
       trangThaiTrinhKy: 'chua_trinh',
       trichYeu: `Đề xuất phê duyệt phương án xử lý đơn đối với hồ sơ ${currentDon.code}`,
       previewExcerpt: 'BÁO CÁO ĐỀ XUẤT HƯỚNG XỬ LÝ ĐƠN\nKính gửi: Lãnh đạo đơn vị\nCán bộ báo cáo kết quả kiểm tra sơ bộ và đề xuất tiếp nhận thụ lý...',
-      noiDungChiTiet: `CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nĐộc lập - Tự do - Hạnh phúc\n------------------------\n\nBÁO CÁO ĐỀ XUẤT HƯỚNG XỬ LÝ ĐƠN\nSố: VB-2026-002\n\nKính gửi: Lãnh đạo đơn vị có thẩm quyền\n\nCán bộ thụ lý báo cáo kết quả kiểm tra sơ bộ đơn của công dân ${currentDon.nguoiNop || 'Nguyễn Thị Minh Phương'}:\n1. Đơn đủ điều kiện thụ lý theo quy định.\n2. Căn cứ hồ sơ ban đầu, đề xuất chuyển bước xác minh và phân công cán bộ chuyên môn thụ lý giải quyết.\n\nKính trình Đồng chí xem xét, phê duyệt.`,
+      noiDungChiTiet: `CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nĐộc lập - Tự do - Hạnh phúc\n------------------------\n\nBÁO CÁO ĐỀ XUẤT HƯỚNG XỬ LÝ ĐƠN\nSố: VB-2026-002\n\nKính gửi: Lãnh đạo đơn vị có thẩm quyền\n\nCán bộ thụ lý báo cáo kết quả kiểm tra sơ bộ đơn của công dân ${currentDon.nguoiNop || 'Nguyễn Thị Minh Phương'}:\n1. Đơn đủ điều kiện thụ lý theo quy định.\n2. Căn cứ hồ sơ tiếp nhận, đề xuất chuyển bước xác minh và phân công cán bộ chuyên môn thụ lý giải quyết.\n\nKính trình Đồng chí xem xét, phê duyệt.`,
     },
     {
       id: 'DOC-2026-003',
-      name: 'Báo cáo kết quả kiểm tra ban đầu',
-      category: 'Hồ sơ ban đầu',
-      folder: 'ho_so_ban_dau',
+      name: 'Báo cáo kết quả kiểm tra xác minh',
+      category: 'Tài liệu bổ sung',
+      vaiTroTaiLieu: 'tai_lieu_bo_sung',
+      folder: 'tai_lieu_bo_sung',
       soHieu: 'VB-2026-003',
       size: '620 KB',
       pages: 3,
@@ -132,9 +172,9 @@ export default function TabTaiLieu({
       ocrStatus: 'Hoàn tất',
       yeuCau: 'Xem',
       trangThaiTrinhKy: 'da_co_hieu_luc', // Đã ký số, khóa chọn
-      trichYeu: 'Báo cáo kết quả kiểm tra điều kiện ban đầu, đã ký số VGCA có hiệu lực thi hành',
-      previewExcerpt: 'BÁO CÁO KẾT QUẢ KIỂM TRA BAN ĐẦU\nVề việc kiểm tra tính pháp lý và tài liệu kèm theo đơn...',
-      noiDungChiTiet: `CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nĐộc lập - Tự do - Hạnh phúc\n------------------------\n\nBÁO CÁO KẾT QUẢ KIỂM TRA BAN ĐẦU\nSố: VB-2026-003\n\n(VĂN BẢN ĐÃ ĐƯỢC KÝ SỐ ĐIỆN TỬ - CÓ HIỆU LỰC PHÁP LÝ)\n\nCăn cứ Điều 145, 146 Bộ luật Tố tụng hình sự năm 2015;\nKết quả xác minh tính có căn cứ ban đầu của đơn tố giác cho thấy dấu hiệu tội phạm rõ ràng, đề nghị tiến hành giải quyết theo đúng trình tự tố tụng.`,
+      trichYeu: 'Báo cáo kết quả kiểm tra xác minh điều kiện, đã ký số VGCA có hiệu lực thi hành',
+      previewExcerpt: 'BÁO CÁO KẾT QUẢ KIỂM TRA XÁC MINH\nVề việc kiểm tra tính pháp lý và tài liệu kèm theo đơn...',
+      noiDungChiTiet: `CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nĐộc lập - Tự do - Hạnh phúc\n------------------------\n\nBÁO CÁO KẾT QUẢ KIỂM TRA XÁC MINH\nSố: VB-2026-003\n\n(VĂN BẢN ĐÃ ĐƯỢC KÝ SỐ ĐIỆN TỬ - CÓ HIỆU LỰC PHÁP LÝ)\n\nCăn cứ Điều 145, 146 Bộ luật Tố tụng hình sự năm 2015;\nKết quả xác minh tính có căn cứ của đơn tố giác cho thấy dấu hiệu tội phạm rõ ràng, đề nghị tiến hành giải quyết theo đúng trình tự tố tụng.`,
     },
   ];
 
@@ -143,20 +183,22 @@ export default function TabTaiLieu({
   const [activeDocId, setActiveDocId] = useState<string>('DOC-2026-001');
   // Danh sách các văn bản được tick chọn để đi trình ký (mặc định chọn item 1 giống ảnh)
   const [selectedDocIds, setSelectedDocIds] = useState<string[]>(['DOC-2026-001']);
-  // Nhóm danh sách: Theo thư mục | Theo ngày tải
-  const [groupMode, setGroupMode] = useState<'folder' | 'date'>('folder');
+  // Sắp xếp danh sách: Mặc định | Ngày tải (Mới nhất) | Ngày tải (Cũ nhất)
+  const [sortMode, setSortMode] = useState<'default' | 'date_desc' | 'date_asc'>('default');
+  // Bộ lọc phân loại vai trò tài liệu: 'all' | 'tai_lieu_chinh' | 'tai_lieu_kem_theo' | 'tai_lieu_bo_sung'
+  const [roleFilter, setRoleFilter] = useState<'all' | VaiTroTaiLieu>('all');
+  // Từ khóa tìm kiếm văn bản
+  const [searchQuery, setSearchQuery] = useState<string>('');
   // Thu phóng OnlyOffice (mặc định 70% như trong ảnh)
   const [zoomPercent, setZoomPercent] = useState<number>(70);
-  // Trạng thái mở/đóng các thư mục
-  const [openFolders, setOpenFolders] = useState<{ [key: string]: boolean }>({
-    root: true,
-    ho_so_ban_dau: true,
-    van_ban_quyet_dinh: true,
-  });
   // Toast thông báo
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   // Trạng thái mở modal Tạo lượt trình & Ma trận phân quyền văn bản
   const [isTrinhKyModalOpen, setIsTrinhKyModalOpen] = useState<boolean>(false);
+  // Trạng thái mở modal Tải file lên & Phân loại vai trò
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState<boolean>(false);
+  // Trạng thái mở menu đổi nhanh vai trò của một doc cụ thể
+  const [openRoleMenuDocId, setOpenRoleMenuDocId] = useState<string | null>(null);
 
   // Sync count to parent
   useEffect(() => {
@@ -224,8 +266,9 @@ export default function TabTaiLieu({
         const docToAdd: DocItem = {
           id: initialEditingDoc.id || `DOC-INIT-${Date.now()}`,
           name: (initialEditingDoc as any).name || initialEditingDoc.tenVanBan || 'Văn bản',
-          category: initialEditingDoc.category || (isQd ? 'Văn bản quyết định' : 'Báo cáo đề xuất'),
-          folder: (initialEditingDoc as any).folder || (isQd ? 'van_ban_quyet_dinh' : 'ho_so_ban_dau'),
+          category: initialEditingDoc.category || (isQd ? 'Tài liệu chính' : 'Tài liệu chính'),
+          vaiTroTaiLieu: 'tai_lieu_chinh',
+          folder: 'tai_lieu_chinh',
           soHieu: initialEditingDoc.soHieu,
           size: (initialEditingDoc as any).size || '380 KB',
           pages: (initialEditingDoc as any).pages || 2,
@@ -248,6 +291,113 @@ export default function TabTaiLieu({
       onClearInitialEditingDoc?.();
     }
   }, [initialEditingDoc, documents, onClearInitialEditingDoc, currentDon.canBoXuLy]);
+
+  // Đồng bộ danh sách tệp đính kèm từ currentDon nếu có (Phân loại chính / kèm theo / bổ sung)
+  useEffect(() => {
+    const rawFiles: any[] = (currentDon as any).files || [];
+    if (rawFiles.length > 0) {
+      setDocuments((prev) => {
+        const existingNames = new Set(prev.map((d) => d.name));
+        const newItems: DocItem[] = [];
+        rawFiles.forEach((f: any, idx: number) => {
+          if (!existingNames.has(f.name)) {
+            const vaiTro: VaiTroTaiLieu =
+              f.category === 'main' ? 'tai_lieu_chinh' : f.category === 'extra' ? 'tai_lieu_bo_sung' : 'tai_lieu_kem_theo';
+            const roleLabel =
+              vaiTro === 'tai_lieu_chinh' ? 'Tài liệu chính' : vaiTro === 'tai_lieu_bo_sung' ? 'Tài liệu bổ sung' : 'Tài liệu kèm theo';
+            const fileUploadDate = currentDon.ngayNhan || (currentDon as any).ngayChuyenXuLy || '05/10/2026';
+            newItems.push({
+              id: `DOC-FILE-${Date.now()}-${idx}`,
+              name: f.name,
+              category: roleLabel,
+              vaiTroTaiLieu: vaiTro,
+              folder: vaiTro,
+              soHieu: `TL-${String(idx + 1).padStart(3, '0')}`,
+              size: f.size || '350 KB',
+              pages: 1,
+              uploadDate: fileUploadDate,
+              signer: currentDon.nguoiNop || 'Người nộp hồ sơ',
+              coQuanBanHanh: 'Hồ sơ người nộp cung cấp',
+              ocrStatus: 'Hoàn tất',
+              yeuCau: 'Xem',
+              trangThaiTrinhKy: 'chua_trinh',
+              trichYeu: `Tài liệu nộp theo hồ sơ: ${f.name}`,
+              previewExcerpt: `TÀI LIỆU HỒ SƠ\nTên tài liệu: ${f.name}\nPhân loại: ${roleLabel}...`,
+              noiDungChiTiet: `CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nĐộc lập - Tự do - Hạnh phúc\n------------------------\n\n${f.name.toUpperCase()}\n\nPhân loại vai trò: ${roleLabel}\nTệp đính kèm theo hồ sơ tiếp nhận: ${currentDon.code}\nNgười nộp: ${currentDon.nguoiNop || 'Công dân'}\nNgày nộp: ${fileUploadDate}\n\nNội dung văn bản được lưu trữ nguyên bản trên hệ thống.`,
+            });
+          }
+        });
+        return newItems.length > 0 ? [...newItems, ...prev] : prev;
+      });
+    }
+  }, [currentDon]);
+
+  // Đổi nhanh phân loại vai trò của tài liệu
+  const handleChangeDocRole = (docId: string, newRole: VaiTroTaiLieu) => {
+    const roleLabels: Record<VaiTroTaiLieu, string> = {
+      tai_lieu_chinh: 'Tài liệu chính',
+      tai_lieu_kem_theo: 'Tài liệu kèm theo',
+      tai_lieu_bo_sung: 'Tài liệu bổ sung',
+    };
+    setDocuments((prev) =>
+      prev.map((d) =>
+        d.id === docId
+          ? {
+              ...d,
+              vaiTroTaiLieu: newRole,
+              category: roleLabels[newRole],
+              folder: newRole,
+            }
+          : d
+      )
+    );
+    setOpenRoleMenuDocId(null);
+    showToast(`✓ Đã đổi phân loại sang "${roleLabels[newRole]}"!`);
+  };
+
+  // Xử lý thêm tài liệu mới tải lên
+  const handleUploadNewDoc = (fileData: {
+    name: string;
+    soHieu: string;
+    vaiTro: VaiTroTaiLieu;
+    yeuCau: 'Ký' | 'Duyệt' | 'Xem';
+    size: string;
+    trichYeu: string;
+  }) => {
+    const roleLabels: Record<VaiTroTaiLieu, string> = {
+      tai_lieu_chinh: 'Tài liệu chính',
+      tai_lieu_kem_theo: 'Tài liệu kèm theo',
+      tai_lieu_bo_sung: 'Tài liệu bổ sung',
+    };
+    const now = new Date();
+    const todayStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+
+    const newDocItem: DocItem = {
+      id: `DOC-UP-${Date.now()}`,
+      name: fileData.name,
+      category: roleLabels[fileData.vaiTro],
+      vaiTroTaiLieu: fileData.vaiTro,
+      folder: fileData.vaiTro,
+      soHieu: fileData.soHieu || `VB-${now.getFullYear()}-${String(documents.length + 1).padStart(3, '0')}`,
+      size: fileData.size || '420 KB',
+      pages: 1,
+      uploadDate: todayStr,
+      signer: currentDon.canBoXuLy || 'Cán bộ thụ lý',
+      coQuanBanHanh: 'Phòng Tiếp công dân & Xử lý đơn',
+      ocrStatus: 'Hoàn tất',
+      yeuCau: fileData.yeuCau,
+      trangThaiTrinhKy: 'chua_trinh',
+      trichYeu: fileData.trichYeu || `Tài liệu tải lên: ${fileData.name}`,
+      previewExcerpt: `${fileData.name.toUpperCase()}\nPhân loại: ${roleLabels[fileData.vaiTro]}\nTrích yếu: ${fileData.trichYeu || 'Tài liệu tiếp nhận'}\nNgày tải: ${todayStr}...`,
+      noiDungChiTiet: `CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nĐộc lập - Tự do - Hạnh phúc\n------------------------\n\n${fileData.name.toUpperCase()}\nSố: ${fileData.soHieu || 'Chưa cấp số'}\n\nPhân loại vai trò: ${roleLabels[fileData.vaiTro]}\nNgày cập nhật: ${todayStr}\nHồ sơ tiếp nhận: ${currentDon.code}\n\nNội dung chi tiết:\n${fileData.trichYeu || 'Tài liệu đã được tải lên thành công và tích hợp vào hệ thống quản lý văn bản hồ sơ.'}`,
+    };
+
+    setDocuments((prev) => [newDocItem, ...prev]);
+    setActiveDocId(newDocItem.id);
+    setSelectedDocIds([newDocItem.id]);
+    setIsUploadModalOpen(false);
+    showToast(`✓ Đã tải lên "${fileData.name}" với vai trò ${roleLabels[fileData.vaiTro]}!`);
+  };
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -278,57 +428,86 @@ export default function TabTaiLieu({
     setSelectedDocIds([]);
   };
 
-  // Checkbox nhóm "Văn bản và quyết định xử lý"
-  const quyetDinhDocs = documents.filter(
-    (d) =>
-      d.folder === 'van_ban_quyet_dinh' ||
-      d.category?.toLowerCase().includes('quyết định') ||
-      d.category?.toLowerCase().includes('trả lại') ||
-      d.category?.toLowerCase().includes('không thụ lý') ||
-      d.category?.toLowerCase().includes('chuyển') ||
-      d.category?.toLowerCase().includes('trả lời') ||
-      d.loaiVanBan === 'quyet_dinh' ||
-      (d.loaiVanBan as string) === 'quyet_dinh_thu_ly' ||
-      (d.loaiVanBan as string) === 'van_ban_tra_lai' ||
-      (d.loaiVanBan as string) === 'thong_bao_khong_thu_ly' ||
-      (d.loaiVanBan as string) === 'chuyen_don' ||
-      (d.loaiVanBan as string) === 'tra_loi_don' ||
-      (d.loaiVanBan as string) === 'thong_bao_bo_sung'
-  );
-  const selectableDocsInQuyetDinh = quyetDinhDocs.filter(
-    (d) => d.trangThaiTrinhKy !== 'da_co_hieu_luc'
-  );
-  const isAllQuyetDinhSelected =
-    selectableDocsInQuyetDinh.length > 0 &&
-    selectableDocsInQuyetDinh.every((d) => selectedDocIds.includes(d.id));
+  // Danh sách các văn bản có thể chọn để trình ký (loại trừ các văn bản đã có hiệu lực pháp lý)
+  const selectableDocs = documents.filter((d) => d.trangThaiTrinhKy !== 'da_co_hieu_luc');
+  const isAllSelected = selectableDocs.length > 0 && selectableDocs.every((d) => selectedDocIds.includes(d.id));
 
-  const handleToggleSelectAllQuyetDinh = () => {
-    if (isAllQuyetDinhSelected) {
-      const qdIds = selectableDocsInQuyetDinh.map((d) => d.id);
-      setSelectedDocIds((prev) => prev.filter((id) => !qdIds.includes(id)));
+  // Toggle chọn tất cả văn bản hợp lệ
+  const handleToggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedDocIds([]);
     } else {
-      const qdIds = selectableDocsInQuyetDinh.map((d) => d.id);
-      setSelectedDocIds((prev) => Array.from(new Set([...prev, ...qdIds])));
+      setSelectedDocIds(selectableDocs.map((d) => d.id));
     }
   };
 
-  // Chọn toàn bộ văn bản trong thư mục "Hồ sơ ban đầu" (chỉ những văn bản chưa có hiệu lực và không thuộc quyết định)
-  const selectableDocsInHoSo = documents.filter(
-    (d) => d.folder === 'ho_so_ban_dau' && !quyetDinhDocs.some((q) => q.id === d.id) && d.trangThaiTrinhKy !== 'da_co_hieu_luc'
-  );
-  const isAllHoSoSelected =
-    selectableDocsInHoSo.length > 0 &&
-    selectableDocsInHoSo.every((d) => selectedDocIds.includes(d.id));
+  // Helper xác định icon và style nhận diện loại văn bản
+  const getDocIcon = (doc: DocItem) => {
+    const isQd = Boolean(
+      doc.loaiVanBan === 'quyet_dinh' ||
+      (doc.loaiVanBan as string) === 'quyet_dinh_thu_ly' ||
+      doc.category?.toLowerCase().includes('quyết định') ||
+      doc.name.toLowerCase().includes('quyết định') ||
+      doc.name.toLowerCase().includes('thụ lý')
+    );
+    const isBc = Boolean(
+      doc.loaiVanBan === 'bao_cao_de_xuat' ||
+      doc.loaiVanBan === 'bao_cao_xac_minh' ||
+      doc.name.toLowerCase().includes('báo cáo') ||
+      doc.name.toLowerCase().includes('đề xuất') ||
+      doc.name.toLowerCase().includes('tờ trình')
+    );
+    const isHd = Boolean(
+      doc.name.toLowerCase().includes('hợp đồng') ||
+      doc.name.toLowerCase().includes('thỏa thuận')
+    );
 
-  const handleToggleSelectAllHoSo = () => {
-    if (isAllHoSoSelected) {
-      const hoSoIds = selectableDocsInHoSo.map((d) => d.id);
-      setSelectedDocIds((prev) => prev.filter((id) => !hoSoIds.includes(id)));
-    } else {
-      const hoSoIds = selectableDocsInHoSo.map((d) => d.id);
-      setSelectedDocIds((prev) => Array.from(new Set([...prev, ...hoSoIds])));
+    if (isQd) {
+      return { icon: 'gavel', color: 'text-indigo-600', bg: 'bg-indigo-50 border-indigo-200/80' };
     }
+    if (isBc) {
+      return { icon: 'assignment', color: 'text-[#004ac6]', bg: 'bg-blue-50 border-blue-200/80' };
+    }
+    if (isHd) {
+      return { icon: 'handshake', color: 'text-teal-600', bg: 'bg-teal-50 border-teal-200/80' };
+    }
+    return { icon: 'picture_as_pdf', color: 'text-rose-600', bg: 'bg-rose-50 border-rose-200/80' };
   };
+
+  // Thống kê số lượng theo vai trò
+  const countChinh = documents.filter((d) => getVaiTroInfo(d).role === 'tai_lieu_chinh').length;
+  const countKemTheo = documents.filter((d) => getVaiTroInfo(d).role === 'tai_lieu_kem_theo').length;
+  const countBoSung = documents.filter((d) => getVaiTroInfo(d).role === 'tai_lieu_bo_sung').length;
+
+  // Danh sách văn bản sau khi lọc theo vai trò, từ khóa & sắp xếp theo yêu cầu
+  const filteredAndSortedDocs = documents
+    .filter((doc) => {
+      const vaiTro = getVaiTroInfo(doc).role;
+      if (roleFilter !== 'all' && vaiTro !== roleFilter) return false;
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      return (
+        doc.name.toLowerCase().includes(q) ||
+        (doc.soHieu && doc.soHieu.toLowerCase().includes(q)) ||
+        (doc.signer && doc.signer.toLowerCase().includes(q))
+      );
+    })
+    .sort((a, b) => {
+      const parseDate = (dStr: string) => {
+        if (!dStr) return 0;
+        const parts = dStr.split(/[\/\-]/);
+        if (parts.length === 3) return new Date(`${parts[2]}-${parts[1]}-${parts[0]}`).getTime();
+        return 0;
+      };
+
+      if (sortMode === 'date_desc') {
+        return parseDate(b.uploadDate) - parseDate(a.uploadDate);
+      }
+      if (sortMode === 'date_asc') {
+        return parseDate(a.uploadDate) - parseDate(b.uploadDate);
+      }
+      return 0;
+    });
 
   // Mở popup Ma trận phân quyền & thêm lãnh đạo khi bấm nút "Trình ký"
   const handleOpenTrinhKyModal = () => {
@@ -413,15 +592,15 @@ export default function TabTaiLieu({
       const isQuyetDinhThuLy = Boolean(
         !isTraLai && !isKhongThuLy && !isChuyenDon && !isTraLoiDon &&
         (doc.loaiVanBan === 'quyet_dinh' ||
-        (doc.loaiVanBan as string) === 'quyet_dinh_thu_ly' ||
-        doc.category?.toLowerCase().includes('quyết định') ||
-        doc.category?.toLowerCase().includes('thụ lý') ||
-        doc.tenVanBan?.toLowerCase().includes('quyết định') ||
-        doc.tenVanBan?.toLowerCase().includes('thụ lý') ||
-        doc.name.toLowerCase().includes('quyết định') ||
-        doc.name.toLowerCase().includes('quyet_dinh') ||
-        doc.name.toLowerCase().includes('thụ lý') ||
-        doc.name.toLowerCase().includes('thu_ly'))
+          (doc.loaiVanBan as string) === 'quyet_dinh_thu_ly' ||
+          doc.category?.toLowerCase().includes('quyết định') ||
+          doc.category?.toLowerCase().includes('thụ lý') ||
+          doc.tenVanBan?.toLowerCase().includes('quyết định') ||
+          doc.tenVanBan?.toLowerCase().includes('thụ lý') ||
+          doc.name.toLowerCase().includes('quyết định') ||
+          doc.name.toLowerCase().includes('quyet_dinh') ||
+          doc.name.toLowerCase().includes('thụ lý') ||
+          doc.name.toLowerCase().includes('thu_ly'))
       );
       const isBaoCao =
         !isQuyetDinhThuLy && !isTraLai && !isKhongThuLy && !isChuyenDon && !isTraLoiDon &&
@@ -585,16 +764,8 @@ export default function TabTaiLieu({
           <span>{toastMsg}</span>
         </div>
       )}
-
-      {/* ========================================================================= */}
-      {/* GIAO DIỆN CHIA 2 CỘT CHUẨN THEO ẢNH: TRÌNH XEM ONLYOFFICE (TRÁI) & CHỌN VĂN BẢN (PHẢI) */}
-      {/* ========================================================================= */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-        {/* ========================================================================= */}
-        {/* CỘT TRÁI (~65% width): TRÌNH XEM ONLYOFFICE / DOCUMENT VIEWER             */}
-        {/* ========================================================================= */}
-        <div className="lg:col-span-7 xl:col-span-8 flex flex-col space-y-2">
-          {/* Header tên văn bản đang chọn */}
+        <div className="lg:col-span-8 flex flex-col space-y-2 h-[820px]">
           <div className="px-1 py-1 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 min-w-0">
               <span className="material-symbols-outlined text-rose-600 text-[20px] shrink-0">
@@ -713,8 +884,8 @@ export default function TabTaiLieu({
                     <span className="border border-dashed border-slate-300 px-2 py-0.5 rounded">
                       {currentActiveDoc.soHieu || 'VB-2026/UBND'}
                     </span>
-                    <span className="italic font-sans text-[12px]">
-                      {currentActiveDoc.category || 'Văn bản hành chính'}
+                    <span className="italic font-sans text-[12px] font-semibold text-slate-600">
+                      {getVaiTroInfo(currentActiveDoc).label}
                     </span>
                   </div>
 
@@ -877,61 +1048,145 @@ export default function TabTaiLieu({
         </div>
 
         {/* ========================================================================= */}
-        {/* CỘT PHẢI (~35% width): BẢNG CHỌN VĂN BẢN ĐI TRÌNH KÝ                    */}
         {/* ========================================================================= */}
-        <div className="lg:col-span-5 xl:col-span-4 bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs flex flex-col space-y-4">
-          {/* Header phân loại nhóm */}
-          <div className="flex items-center justify-between gap-2 flex-wrap pb-3 border-b border-slate-100">
+        {/* CỘT PHẢI (~30-35% width): DANH SÁCH VĂN BẢN                               */}
+        {/* ========================================================================= */}
+        <div className="lg:col-span-4 bg-white rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col h-[820px] overflow-hidden">
+          {/* 1. Header: Tiêu đề Danh sách văn bản + Tùy chọn sắp xếp + Nút Tải file */}
+          <div className="px-4 py-3 bg-slate-50/80 border-b border-slate-200/80 flex items-center justify-between gap-2 shrink-0">
             <div className="flex items-center gap-2">
-              <span className="text-[12.5px] text-slate-500 font-medium">Nhóm danh sách:</span>
-              <div className="inline-flex p-0.5 bg-slate-100 rounded-lg border border-slate-200/70">
-                <button
-                  type="button"
-                  onClick={() => setGroupMode('folder')}
-                  className={`px-2.5 py-1 rounded-md text-[12.5px] font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${groupMode === 'folder'
-                      ? 'bg-[#004ac6] text-white shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
-                    }`}
-                >
-                  <span className="material-symbols-outlined text-[15px]">folder</span>
-                  <span>Theo thư mục</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setGroupMode('date')}
-                  className={`px-2.5 py-1 rounded-md text-[12.5px] font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${groupMode === 'date'
-                      ? 'bg-[#004ac6] text-white shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
-                    }`}
-                >
-                  <span className="material-symbols-outlined text-[15px]">calendar_today</span>
-                  <span>Theo ngày tải</span>
-                </button>
-              </div>
+              <span className="material-symbols-outlined text-[20px] text-[#004ac6]">description</span>
+              <h3 className="text-sm font-bold text-slate-900 tracking-tight">Danh sách văn bản</h3>
+              <span className="px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-white text-[#004ac6] border border-blue-200 shadow-2xs">
+                {documents.length}
+              </span>
             </div>
 
+            <div className="flex items-center gap-2">
+              {/* Nút Tải file lên */}
+              <button
+                type="button"
+                onClick={() => setIsUploadModalOpen(true)}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 active:scale-95 text-[#004ac6] border border-blue-200 text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                title="Tải lên tài liệu và phân loại vai trò"
+              >
+                <span className="material-symbols-outlined text-[16px]">upload_file</span>
+                <span>Tải file</span>
+              </button>
+
+              {/* Tùy chọn sắp xếp theo ngày tải hoặc mặc định */}
+              <select
+                value={sortMode}
+                onChange={(e) => setSortMode(e.target.value as any)}
+                className="text-[12px] font-semibold bg-white border border-slate-200 rounded-lg px-2 py-1 text-slate-700 focus:outline-none focus:border-[#004ac6] cursor-pointer shadow-2xs"
+                title="Sắp xếp danh sách văn bản"
+              >
+                <option value="default">Mặc định</option>
+                <option value="date_desc">Mới nhất</option>
+                <option value="date_asc">Cũ nhất</option>
+              </select>
+            </div>
+          </div>
+
+          {/* 2. Ô tìm kiếm văn bản nhanh */}
+          <div className="px-3.5 pt-3 pb-1.5 shrink-0">
+            <div className="relative">
+              <span className="material-symbols-outlined text-[16px] text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2">
+                search
+              </span>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Tìm theo tên, số hiệu văn bản..."
+                className="w-full pl-8 pr-7 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-[#004ac6] transition-colors"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  title="Xóa tìm kiếm"
+                >
+                  <span className="material-symbols-outlined text-[14px]">close</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* 2b. Bộ lọc phân loại vai trò tài liệu: Tất cả | Tài liệu chính | Kèm theo | Bổ sung */}
+          <div className="px-3.5 pb-2 flex items-center gap-1.5 overflow-x-auto shrink-0 text-[11px] font-medium no-scrollbar">
             <button
               type="button"
-              onClick={() => showToast('Chức năng thêm thư mục mới')}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-[12.5px] font-semibold text-[#004ac6] hover:bg-blue-50 rounded-lg border border-transparent hover:border-blue-200 transition-all cursor-pointer"
+              onClick={() => setRoleFilter('all')}
+              className={`px-2.5 py-1 rounded-lg transition-colors cursor-pointer whitespace-nowrap font-bold ${
+                roleFilter === 'all'
+                  ? 'bg-slate-800 text-white shadow-2xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200/80'
+              }`}
             >
-              <span className="material-symbols-outlined text-[15px]">create_new_folder</span>
-              <span>Thêm thư mục</span>
+              Tất cả ({documents.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setRoleFilter('tai_lieu_chinh')}
+              className={`px-2.5 py-1 rounded-lg transition-colors cursor-pointer whitespace-nowrap font-bold ${
+                roleFilter === 'tai_lieu_chinh'
+                  ? 'bg-[#004ac6] text-white shadow-2xs'
+                  : 'bg-blue-50 text-[#004ac6] border border-blue-200 hover:bg-blue-100'
+              }`}
+            >
+              Tài liệu chính ({countChinh})
+            </button>
+            <button
+              type="button"
+              onClick={() => setRoleFilter('tai_lieu_kem_theo')}
+              className={`px-2.5 py-1 rounded-lg transition-colors cursor-pointer whitespace-nowrap font-bold ${
+                roleFilter === 'tai_lieu_kem_theo'
+                  ? 'bg-slate-700 text-white shadow-2xs'
+                  : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200/80'
+              }`}
+            >
+              Kèm theo ({countKemTheo})
+            </button>
+            <button
+              type="button"
+              onClick={() => setRoleFilter('tai_lieu_bo_sung')}
+              className={`px-2.5 py-1 rounded-lg transition-colors cursor-pointer whitespace-nowrap font-bold ${
+                roleFilter === 'tai_lieu_bo_sung'
+                  ? 'bg-purple-700 text-white shadow-2xs'
+                  : 'bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100'
+              }`}
+            >
+              Bổ sung ({countBoSung})
             </button>
           </div>
 
-          {/* Action Bar: Số văn bản đã chọn + Nút Bỏ chọn + Nút Trình ký */}
-          <div className="flex items-center justify-between gap-2 pt-0.5">
+          {/* 3. Action Bar: Chọn tất cả + Đếm đã chọn + Nút Trình ký nổi bật */}
+          <div className="px-3.5 py-2.5 border-b border-slate-100 flex items-center justify-between gap-2 bg-white shrink-0">
             <div className="flex items-center gap-2">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200/70 text-[#004ac6] text-[12.5px] font-bold">
-                <span className="material-symbols-outlined text-[15px]">check_circle</span>
-                <span>Đã chọn {selectedDocIds.length} văn bản</span>
-              </div>
+              <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={isAllSelected}
+                  onChange={handleToggleSelectAll}
+                  disabled={selectableDocs.length === 0}
+                  className="w-4 h-4 rounded text-[#004ac6] focus:ring-[#004ac6] border-slate-300 cursor-pointer accent-[#004ac6] disabled:opacity-40"
+                />
+                <span className="text-xs font-semibold text-slate-700">
+                  {selectedDocIds.length > 0 ? (
+                    <span>Đã chọn <strong className="text-[#004ac6] font-mono">{selectedDocIds.length}</strong>/{selectableDocs.length}</span>
+                  ) : (
+                    <span>Chọn tất cả ({selectableDocs.length})</span>
+                  )}
+                </span>
+              </label>
+
               {selectedDocIds.length > 0 && (
                 <button
                   type="button"
                   onClick={handleClearSelection}
-                  className="text-[12.5px] text-slate-500 hover:text-red-600 hover:underline cursor-pointer transition-colors font-medium"
+                  className="text-[11.5px] text-slate-400 hover:text-rose-600 transition-colors font-medium cursor-pointer underline ml-1"
                 >
                   Bỏ chọn
                 </button>
@@ -942,280 +1197,218 @@ export default function TabTaiLieu({
             <button
               type="button"
               onClick={handleOpenTrinhKyModal}
-              className="px-3.5 py-1.5 rounded-xl bg-[#004ac6] hover:bg-[#003ea8] active:scale-95 text-white text-[13px] font-bold shadow-xs ring-2 ring-blue-300/30 transition-all cursor-pointer flex items-center gap-1.5"
+              disabled={selectedDocIds.length === 0}
+              className="px-3.5 py-1.5 rounded-xl bg-[#004ac6] hover:bg-[#003ba0] active:scale-95 text-white text-xs font-bold shadow-xs transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
+              title={selectedDocIds.length === 0 ? "Vui lòng tick chọn ít nhất 01 văn bản để trình ký" : "Trình ký các văn bản đã chọn"}
             >
               <span className="material-symbols-outlined text-[16px]">draw</span>
               <span>Trình ký</span>
+              {selectedDocIds.length > 0 && (
+                <span className="w-4 h-4 rounded-full bg-white text-[#004ac6] text-[10px] font-bold flex items-center justify-center font-mono">
+                  {selectedDocIds.length}
+                </span>
+              )}
             </button>
           </div>
 
-          {/* Cây thư mục tài liệu */}
-          <div className="space-y-3 pt-1">
-            {/* Cấp 1: Thư mục tài liệu */}
-            <div className="space-y-2">
-              <div
-                onClick={() => setOpenFolders((prev) => ({ ...prev, root: !prev.root }))}
-                className="flex items-center justify-between text-[13.5px] font-bold text-slate-800 cursor-pointer select-none py-1.5 px-2 rounded-lg hover:bg-slate-50 transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <span className={`material-symbols-outlined text-[18px] text-slate-400 transition-transform duration-150 ${openFolders.root ? 'rotate-90' : ''}`}>
-                    chevron_right
-                  </span>
-                  <span className="material-symbols-outlined text-[19px] text-amber-500">
-                    {openFolders.root ? 'folder_open' : 'folder'}
-                  </span>
-                  <span>Thư mục tài liệu</span>
-                </div>
-                <span className="px-2 py-0.5 rounded-full text-[11.5px] font-medium bg-slate-100 text-slate-600 border border-slate-200/80">
-                  {documents.length} tài liệu
+          {/* 4. Danh sách văn bản dạng thẻ/dòng - HIỂN THỊ TRỰC TIẾP (Cuộn độc lập) */}
+          <div className="flex-1 overflow-y-auto p-3 space-y-2">
+            {filteredAndSortedDocs.length === 0 ? (
+              <div className="py-12 text-center text-slate-400 text-xs">
+                <span className="material-symbols-outlined text-[32px] text-slate-300 block mb-1">
+                  search_off
                 </span>
+                Không tìm thấy văn bản nào phù hợp
               </div>
+            ) : (
+              filteredAndSortedDocs.map((doc) => {
+                const isSelected = selectedDocIds.includes(doc.id);
+                const isActiveView = activeDocId === doc.id;
+                const isLocked = doc.trangThaiTrinhKy === 'da_co_hieu_luc';
+                const { icon, color, bg } = getDocIcon(doc);
+                const vaiTroInfo = getVaiTroInfo(doc);
 
-              {openFolders.root && (
-                <div className="pl-2 space-y-3">
-                  {/* Nhóm 1: Hồ sơ ban đầu */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-[13.5px] font-bold text-slate-800 select-none py-1 px-2 rounded-lg hover:bg-slate-50">
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={isAllHoSoSelected}
-                          onChange={handleToggleSelectAllHoSo}
-                          className="w-4 h-4 rounded text-[#004ac6] focus:ring-[#004ac6] border-slate-300 cursor-pointer accent-[#004ac6]"
-                        />
-                        <span className="material-symbols-outlined text-[18px] text-blue-600">
-                          inventory_2
-                        </span>
-                        <span>Hồ sơ ban đầu</span>
-                      </div>
-                      <span className="text-[12px] text-slate-500 font-medium">
-                        {selectableDocsInHoSo.length + 1} tài liệu
-                      </span>
-                    </div>
-
-                    {/* Danh sách các văn bản trong Hồ sơ ban đầu */}
-                    <div className="space-y-2 pl-4">
-                      {documents
-                        .filter((doc) => doc.folder === 'ho_so_ban_dau' && !quyetDinhDocs.some((q) => q.id === doc.id))
-                        .map((doc) => {
-                          const isSelected = selectedDocIds.includes(doc.id);
-                          const isActiveView = activeDocId === doc.id;
-                          const isLocked = doc.trangThaiTrinhKy === 'da_co_hieu_luc';
-
-                          return (
-                            <div
-                              key={doc.id}
-                              onClick={() => setActiveDocId(doc.id)}
-                              className={`p-3 rounded-xl border transition-all cursor-pointer relative ${isSelected
-                                  ? 'border-blue-500 bg-blue-50/50 shadow-xs ring-1 ring-blue-300/60'
-                                  : isActiveView
-                                    ? 'border-slate-300 bg-slate-50/90 shadow-2xs'
-                                    : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50 hover:shadow-2xs'
-                                }`}
-                            >
-                              <div className="flex items-start gap-2.5">
-                                {/* Checkbox chọn */}
-                                <div className="pt-0.5">
-                                  {isLocked ? (
-                                    <input
-                                      type="checkbox"
-                                      disabled
-                                      className="w-4 h-4 rounded text-slate-300 border-slate-200 cursor-not-allowed opacity-50"
-                                    />
-                                  ) : (
-                                    <input
-                                      type="checkbox"
-                                      checked={isSelected}
-                                      onClick={(e) => handleToggleDocSelect(doc, e)}
-                                      onChange={() => { }}
-                                      className="w-4 h-4 rounded text-[#004ac6] focus:ring-[#004ac6] border-slate-300 cursor-pointer accent-[#004ac6]"
-                                    />
-                                  )}
-                                </div>
-
-                                {/* Icon PDF */}
-                                <div className="w-8 h-8 rounded-lg bg-red-50 border border-red-200/80 text-red-600 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
-                                  <span className="material-symbols-outlined text-[18px]">picture_as_pdf</span>
-                                </div>
-
-                                {/* Thông tin văn bản */}
-                                <div className="min-w-0 flex-1">
-                                  <div className="flex items-start justify-between gap-2">
-                                    <h4 className="text-[13.5px] font-bold text-slate-900 leading-snug line-clamp-2">
-                                      {doc.name}
-                                    </h4>
-
-                                    {/* Trạng thái Badge bên phải */}
-                                    <div className="shrink-0">
-                                      {doc.trangThaiTrinhKy === 'da_co_hieu_luc' ? (
-                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11.5px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
-                                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                          Đã có hiệu lực
-                                        </span>
-                                      ) : doc.trangThaiTrinhKy === 'dang_trinh' ? (
-                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11.5px] font-semibold bg-blue-50 text-blue-700 border border-blue-200/80">
-                                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
-                                          Đang trình ký
-                                        </span>
-                                      ) : (
-                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11.5px] font-medium bg-slate-100 text-slate-600 border border-slate-200/80">
-                                          Chưa trình
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  {/* Mã số & Ngày */}
-                                  <div className="text-[12px] text-slate-500 mt-1 flex items-center gap-1.5 font-sans">
-                                    <span className="font-mono font-medium text-slate-600">{doc.soHieu}</span>
-                                    <span>•</span>
-                                    <span>{doc.uploadDate}</span>
-                                  </div>
-
-                                  {/* Dòng Yêu cầu */}
-                                  <div className="text-[12.5px] text-slate-600 mt-1.5 pt-1.5 border-t border-slate-100/90 font-medium">
-                                    Yêu cầu: <span className="font-bold text-slate-800">{doc.yeuCau || 'Ký'}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                    </div>
-                  </div>
-
-                  {/* Nhóm 2: Văn bản và quyết định xử lý */}
-                  <div className="space-y-2 pt-1">
-                    <div className="flex items-center justify-between text-[13.5px] font-bold text-slate-800 select-none py-1 px-2 rounded-lg hover:bg-slate-50">
-                      <div className="flex items-center gap-2">
-                        {quyetDinhDocs.length === 0 ? (
-                          <input
-                            type="checkbox"
-                            disabled
-                            className="w-4 h-4 rounded text-slate-300 border-slate-200 cursor-not-allowed opacity-50"
-                          />
+                return (
+                  <div
+                    key={doc.id}
+                    onClick={() => setActiveDocId(doc.id)}
+                    className={`p-3 rounded-xl border transition-all cursor-pointer relative group ${
+                      isActiveView
+                        ? 'border-[#004ac6] bg-blue-50/60 shadow-xs ring-1 ring-[#004ac6]/30'
+                        : isSelected
+                        ? 'border-blue-300 bg-blue-50/25 shadow-2xs'
+                        : 'border-slate-200/90 bg-white hover:border-slate-300 hover:bg-slate-50/60 hover:shadow-2xs'
+                    }`}
+                  >
+                    <div className="flex items-start gap-2.5">
+                      {/* Checkbox chọn */}
+                      <div className="pt-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                        {isLocked ? (
+                          <span title="Văn bản đã có hiệu lực (đã ký số), khóa chọn" className="cursor-not-allowed">
+                            <input
+                              type="checkbox"
+                              disabled
+                              checked={false}
+                              className="w-4 h-4 rounded text-slate-300 border-slate-200 cursor-not-allowed opacity-40"
+                            />
+                          </span>
                         ) : (
                           <input
                             type="checkbox"
-                            checked={isAllQuyetDinhSelected}
-                            onChange={handleToggleSelectAllQuyetDinh}
+                            checked={isSelected}
+                            onChange={() => {}}
+                            onClick={(e) => handleToggleDocSelect(doc, e)}
                             className="w-4 h-4 rounded text-[#004ac6] focus:ring-[#004ac6] border-slate-300 cursor-pointer accent-[#004ac6]"
                           />
                         )}
-                        <span className="material-symbols-outlined text-[18px] text-indigo-600">
-                          gavel
-                        </span>
-                        <span>Văn bản và quyết định xử lý</span>
                       </div>
-                      <span className="text-[12px] text-slate-500 font-medium">
-                        {quyetDinhDocs.length} tài liệu
-                      </span>
-                    </div>
 
-                    {/* Danh sách các văn bản Quyết định xử lý */}
-                    {quyetDinhDocs.length > 0 && (
-                      <div className="space-y-2 pl-4">
-                        {quyetDinhDocs.map((doc) => {
-                          const isSelected = selectedDocIds.includes(doc.id);
-                          const isActiveView = activeDocId === doc.id;
-                          const isLocked = doc.trangThaiTrinhKy === 'da_co_hieu_luc';
+                      {/* Icon nhận diện loại văn bản */}
+                      <div className={`w-8 h-8 rounded-lg ${bg} ${color} flex items-center justify-center shrink-0 mt-0.5 shadow-2xs border`}>
+                        <span className="material-symbols-outlined text-[18px]">{icon}</span>
+                      </div>
 
-                          return (
-                            <div
-                              key={doc.id}
-                              onClick={() => setActiveDocId(doc.id)}
-                              className={`p-3 rounded-xl border transition-all cursor-pointer relative ${
-                                isSelected
-                                  ? 'border-blue-500 bg-blue-50/50 shadow-xs ring-1 ring-blue-300/60'
-                                  : isActiveView
-                                    ? 'border-slate-300 bg-slate-50/90 shadow-2xs'
-                                    : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50 hover:shadow-2xs'
+                      {/* Thông tin văn bản */}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-1.5">
+                          <h4 className={`text-[13px] font-bold leading-snug line-clamp-2 transition-colors ${
+                            isActiveView ? 'text-[#004ac6]' : 'text-slate-900 group-hover:text-[#004ac6]'
+                          }`}>
+                            {doc.name}
+                          </h4>
+
+                          {/* Badge trạng thái */}
+                          <div className="shrink-0">
+                            {doc.trangThaiTrinhKy === 'da_co_hieu_luc' ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/90">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                Đã có hiệu lực
+                              </span>
+                            ) : doc.trangThaiTrinhKy === 'dang_trinh' || doc.trangThaiTrinhKy === 'da_trinh' ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-blue-50 text-blue-700 border border-blue-200/90">
+                                <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span>
+                                Đang trình ký
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-medium bg-slate-100 text-slate-600 border border-slate-200/80">
+                                Chưa trình
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Số hiệu & Ngày văn bản & Kích thước */}
+                        <div className="text-[11.5px] text-slate-500 mt-1 flex flex-wrap items-center gap-1.5 font-sans">
+                          <span className="font-mono font-bold text-slate-700 bg-slate-100 px-1.5 py-0.2 rounded text-[11px] border border-slate-200/70">
+                            {doc.soHieu || 'Chưa cấp số'}
+                          </span>
+                          <span>•</span>
+                          <span className="flex items-center gap-0.5 text-slate-500">
+                            <span className="material-symbols-outlined text-[13px] text-slate-400">calendar_today</span>
+                            <span>{doc.uploadDate}</span>
+                          </span>
+                          <span>•</span>
+                          <span>{doc.size}</span>
+                        </div>
+
+                        {/* Yêu cầu xử lý (Xem, Ký hoặc Duyệt) & Phân loại vai trò tài liệu */}
+                        <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[11.5px]">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-slate-500 font-medium">Yêu cầu:</span>
+                            <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold ${
+                              doc.yeuCau === 'Ký' ? 'bg-amber-50 text-amber-800 border border-amber-200' :
+                              doc.yeuCau === 'Duyệt' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' :
+                              'bg-slate-100 text-slate-700 border border-slate-200'
+                            }`}>
+                              {doc.yeuCau || 'Xem'}
+                            </span>
+                          </div>
+
+                          {/* Phân loại vai trò tài liệu: Tài liệu chính | Tài liệu kèm theo | Tài liệu bổ sung */}
+                          <div className="relative" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenRoleMenuDocId((curr) => (curr === doc.id ? null : doc.id));
+                              }}
+                              className={`px-2 py-0.5 rounded-md text-[10.5px] font-bold shrink-0 transition-all flex items-center gap-0.5 cursor-pointer hover:shadow-2xs ${
+                                vaiTroInfo.badgeClass
                               }`}
+                              title="Bấm để đổi phân loại vai trò tài liệu"
                             >
-                              <div className="flex items-start gap-2.5">
-                                {/* Checkbox chọn */}
-                                <div className="pt-0.5">
-                                  {isLocked ? (
-                                    <input
-                                      type="checkbox"
-                                      disabled
-                                      className="w-4 h-4 rounded text-slate-300 border-slate-200 cursor-not-allowed opacity-50"
-                                    />
-                                  ) : (
-                                    <input
-                                      type="checkbox"
-                                      checked={isSelected}
-                                      onClick={(e) => handleToggleDocSelect(doc, e)}
-                                      onChange={() => {}}
-                                      className="w-4 h-4 rounded text-[#004ac6] focus:ring-[#004ac6] border-slate-300 cursor-pointer accent-[#004ac6]"
-                                    />
+                              <span>{vaiTroInfo.label}</span>
+                              <span className="material-symbols-outlined text-[13px] opacity-70">expand_more</span>
+                            </button>
+
+                            {/* Dropdown nhanh đổi phân loại vai trò */}
+                            {openRoleMenuDocId === doc.id && (
+                              <div
+                                className="absolute right-0 bottom-full mb-1 w-44 bg-white rounded-xl shadow-xl border border-slate-200 p-1.5 z-40 space-y-0.5 text-xs"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <p className="text-[10px] uppercase font-bold text-slate-400 px-2 py-1 tracking-wider">
+                                  Đổi phân loại vai trò:
+                                </p>
+                                <button
+                                  type="button"
+                                  onClick={() => handleChangeDocRole(doc.id, 'tai_lieu_chinh')}
+                                  className={`w-full text-left px-2 py-1.5 rounded-lg flex items-center justify-between cursor-pointer transition-colors ${
+                                    vaiTroInfo.role === 'tai_lieu_chinh'
+                                      ? 'bg-blue-50 text-[#004ac6] font-bold'
+                                      : 'text-slate-700 hover:bg-slate-50'
+                                  }`}
+                                >
+                                  <span>Tài liệu chính</span>
+                                  {vaiTroInfo.role === 'tai_lieu_chinh' && (
+                                    <span className="material-symbols-outlined text-[14px] text-[#004ac6]">check</span>
                                   )}
-                                </div>
-
-                                {/* Icon PDF */}
-                                <div className="w-8 h-8 rounded-lg bg-red-50 border border-red-200/80 text-red-600 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
-                                  <span className="material-symbols-outlined text-[18px]">picture_as_pdf</span>
-                                </div>
-
-                                {/* Thông tin văn bản */}
-                                <div className="min-w-0 flex-1">
-                                  <div className="flex items-start justify-between gap-2">
-                                    <h4 className="text-[13.5px] font-bold text-slate-900 leading-snug line-clamp-2">
-                                      {doc.tenVanBan || doc.name}
-                                    </h4>
-
-                                    {/* Trạng thái Badge bên phải */}
-                                    <div className="shrink-0">
-                                      {doc.trangThaiTrinhKy === 'da_co_hieu_luc' ? (
-                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11.5px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
-                                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                          Đã có hiệu lực
-                                        </span>
-                                      ) : doc.trangThaiTrinhKy === 'dang_trinh' || doc.trangThaiTrinhKy === 'da_trinh' ? (
-                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11.5px] font-semibold bg-blue-50 text-blue-700 border border-blue-200/80">
-                                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
-                                          Đang trình ký
-                                        </span>
-                                      ) : (
-                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11.5px] font-medium bg-amber-50 text-amber-800 border border-amber-200/80">
-                                          Bản nháp
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  {/* Mã số & Ngày */}
-                                  <div className="text-[12px] text-slate-500 mt-1 flex items-center gap-1.5 font-sans">
-                                    <span className="font-mono font-medium text-slate-600">{doc.soHieu || 'Chưa cấp số'}</span>
-                                    <span>•</span>
-                                    <span>{doc.uploadDate}</span>
-                                  </div>
-
-                                  {/* Dòng Yêu cầu */}
-                                  <div className="text-[12.5px] text-slate-600 mt-1.5 pt-1.5 border-t border-slate-100/90 flex items-center justify-between font-medium">
-                                    <span>Yêu cầu: <span className="font-bold text-slate-800">{doc.yeuCau || 'Ký'}</span></span>
-                                    <span className="text-[11.5px] text-indigo-700 font-semibold bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200/70">
-                                      Quyết định thụ lý
-                                    </span>
-                                  </div>
-                                </div>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleChangeDocRole(doc.id, 'tai_lieu_kem_theo')}
+                                  className={`w-full text-left px-2 py-1.5 rounded-lg flex items-center justify-between cursor-pointer transition-colors ${
+                                    vaiTroInfo.role === 'tai_lieu_kem_theo'
+                                      ? 'bg-slate-100 text-slate-800 font-bold'
+                                      : 'text-slate-700 hover:bg-slate-50'
+                                  }`}
+                                >
+                                  <span>Tài liệu kèm theo</span>
+                                  {vaiTroInfo.role === 'tai_lieu_kem_theo' && (
+                                    <span className="material-symbols-outlined text-[14px] text-slate-700">check</span>
+                                  )}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleChangeDocRole(doc.id, 'tai_lieu_bo_sung')}
+                                  className={`w-full text-left px-2 py-1.5 rounded-lg flex items-center justify-between cursor-pointer transition-colors ${
+                                    vaiTroInfo.role === 'tai_lieu_bo_sung'
+                                      ? 'bg-purple-50 text-purple-700 font-bold'
+                                      : 'text-slate-700 hover:bg-slate-50'
+                                  }`}
+                                >
+                                  <span>Tài liệu bổ sung</span>
+                                  {vaiTroInfo.role === 'tai_lieu_bo_sung' && (
+                                    <span className="material-symbols-outlined text-[14px] text-purple-700">check</span>
+                                  )}
+                                </button>
                               </div>
-                            </div>
-                          );
-                        })}
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    )}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
+                );
+              })
+            )}
           </div>
 
-          {/* Dòng ghi chú chú thích ở dưới cùng cột phải */}
-          <div className="pt-3 mt-auto border-t border-slate-100 flex items-center gap-1.5 text-[12px] text-slate-400">
-            <span className="material-symbols-outlined text-[15px] text-slate-400">info</span>
+          {/* 5. Dòng ghi chú chú thích ở dưới cùng */}
+          <div className="p-3 bg-slate-50/80 border-t border-slate-100 flex items-center gap-1.5 text-[11.5px] text-slate-500 shrink-0">
+            <span className="material-symbols-outlined text-[16px] text-slate-400">info</span>
             <p className="italic">
-              Văn bản đã ký số được khóa chọn và hiển thị trạng thái Đã có hiệu lực.
+              Văn bản đã ký số (VGCA) được khóa chọn và hiển thị trạng thái Đã có hiệu lực.
             </p>
           </div>
         </div>
@@ -1228,6 +1421,291 @@ export default function TabTaiLieu({
         documents={documents.filter((d) => selectedDocIds.includes(d.id))}
         onSubmit={handleConfirmTrinhKy}
       />
+
+      {/* Modal Tải lên & Phân loại vai trò tài liệu */}
+      <TaiLenTaiLieuModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        onSubmit={handleUploadNewDoc}
+      />
+    </div>
+  );
+}
+
+{/* Sub-component Modal Tải lên & Phân loại vai trò tài liệu */}
+function TaiLenTaiLieuModal({
+  isOpen,
+  onClose,
+  onSubmit,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (fileData: {
+    name: string;
+    soHieu: string;
+    vaiTro: VaiTroTaiLieu;
+    yeuCau: 'Ký' | 'Duyệt' | 'Xem';
+    size: string;
+    trichYeu: string;
+  }) => void;
+}) {
+  const [name, setName] = useState('');
+  const [soHieu, setSoHieu] = useState('');
+  const [vaiTro, setVaiTro] = useState<VaiTroTaiLieu>('tai_lieu_kem_theo');
+  const [yeuCau, setYeuCau] = useState<'Ký' | 'Duyệt' | 'Xem'>('Xem');
+  const [size, setSize] = useState('450 KB');
+  const [trichYeu, setTrichYeu] = useState('');
+  const [dragOver, setDragOver] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setName('');
+      setSoHieu('');
+      setVaiTro('tai_lieu_kem_theo');
+      setYeuCau('Xem');
+      setSize('450 KB');
+      setTrichYeu('');
+      setDragOver(false);
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setName(file.name.replace(/\.[^/.]+$/, ''));
+      const szKB = Math.round(file.size / 1024);
+      setSize(szKB > 1024 ? `${(szKB / 1024).toFixed(1)} MB` : `${szKB} KB`);
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    onSubmit({
+      name: name.trim(),
+      soHieu: soHieu.trim(),
+      vaiTro,
+      yeuCau,
+      size,
+      trichYeu: trichYeu.trim(),
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
+      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        {/* Header */}
+        <div className="px-5 py-4 bg-slate-50/90 border-b border-slate-200 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[22px] text-[#004ac6]">upload_file</span>
+            <div>
+              <h3 className="text-[15px] font-bold text-slate-900">Tải lên & Phân loại tài liệu</h3>
+              <p className="text-[11.5px] text-slate-500">Đánh dấu tài liệu là tài liệu chính, kèm theo hoặc bổ sung</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1 text-slate-400 hover:text-slate-600 rounded-lg transition-colors cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[18px]">close</span>
+          </button>
+        </div>
+
+        {/* Form Body */}
+        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+          {/* File Picker Zone */}
+          <div
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragOver(false);
+              const file = e.dataTransfer.files?.[0];
+              if (file) {
+                setName(file.name.replace(/\.[^/.]+$/, ''));
+                const szKB = Math.round(file.size / 1024);
+                setSize(szKB > 1024 ? `${(szKB / 1024).toFixed(1)} MB` : `${szKB} KB`);
+              }
+            }}
+            className={`border-2 border-dashed rounded-xl p-4 text-center transition-all cursor-pointer ${
+              dragOver ? 'border-[#004ac6] bg-blue-50/50' : 'border-slate-300 bg-slate-50 hover:bg-slate-100/70'
+            }`}
+          >
+            <label className="cursor-pointer block">
+              <span className="material-symbols-outlined text-[32px] text-[#004ac6] block mb-1">
+                cloud_upload
+              </span>
+              <p className="text-xs font-semibold text-slate-700">
+                Nhấp để chọn tệp hoặc kéo thả tệp vào đây
+              </p>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Hỗ trợ định dạng PDF, DOCX, PNG, JPG (tối đa 25MB)
+              </p>
+              <input
+                type="file"
+                className="hidden"
+                accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                onChange={handleFileChange}
+              />
+            </label>
+          </div>
+
+          {/* Tên tài liệu */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">
+              Tên tài liệu <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="text"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="VD: Căn cước công dân của người làm đơn..."
+              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#004ac6] shadow-2xs"
+            />
+          </div>
+
+          {/* Phân loại vai trò tài liệu (Bắt buộc chọn 1 trong 3) */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1.5">
+              Phân loại vai trò tài liệu <span className="text-rose-500">*</span>
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {/* 1. Tài liệu chính */}
+              <button
+                type="button"
+                onClick={() => setVaiTro('tai_lieu_chinh')}
+                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                  vaiTro === 'tai_lieu_chinh'
+                    ? 'bg-blue-50/90 border-[#004ac6] ring-1 ring-[#004ac6]/40 shadow-xs'
+                    : 'bg-white border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+                    vaiTro === 'tai_lieu_chinh' ? 'border-[#004ac6] bg-[#004ac6]' : 'border-slate-300'
+                  }`}>
+                    {vaiTro === 'tai_lieu_chinh' && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                  </span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded font-bold bg-blue-100 text-[#004ac6]">Chính</span>
+                </div>
+                <p className="text-[11.5px] font-bold text-slate-900">Tài liệu chính</p>
+                <p className="text-[10px] text-slate-500 mt-0.5 leading-tight">Đơn gốc, báo cáo, quyết định chủ trì</p>
+              </button>
+
+              {/* 2. Tài liệu kèm theo */}
+              <button
+                type="button"
+                onClick={() => setVaiTro('tai_lieu_kem_theo')}
+                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                  vaiTro === 'tai_lieu_kem_theo'
+                    ? 'bg-slate-100 border-slate-700 ring-1 ring-slate-400 shadow-xs'
+                    : 'bg-white border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+                    vaiTro === 'tai_lieu_kem_theo' ? 'border-slate-700 bg-slate-700' : 'border-slate-300'
+                  }`}>
+                    {vaiTro === 'tai_lieu_kem_theo' && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                  </span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded font-bold bg-slate-200 text-slate-700">Kèm theo</span>
+                </div>
+                <p className="text-[11.5px] font-bold text-slate-900">Tài liệu kèm theo</p>
+                <p className="text-[10px] text-slate-500 mt-0.5 leading-tight">Chứng cứ, CCCD nộp kèm đơn</p>
+              </button>
+
+              {/* 3. Tài liệu bổ sung */}
+              <button
+                type="button"
+                onClick={() => setVaiTro('tai_lieu_bo_sung')}
+                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                  vaiTro === 'tai_lieu_bo_sung'
+                    ? 'bg-purple-50/90 border-purple-600 ring-1 ring-purple-300 shadow-xs'
+                    : 'bg-white border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+                    vaiTro === 'tai_lieu_bo_sung' ? 'border-purple-600 bg-purple-600' : 'border-slate-300'
+                  }`}>
+                    {vaiTro === 'tai_lieu_bo_sung' && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                  </span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded font-bold bg-purple-100 text-purple-700">Bổ sung</span>
+                </div>
+                <p className="text-[11.5px] font-bold text-slate-900">Tài liệu bổ sung</p>
+                <p className="text-[10px] text-slate-500 mt-0.5 leading-tight">Bổ sung sau xác minh hồ sơ</p>
+              </button>
+            </div>
+          </div>
+
+          {/* Row: Số hiệu & Yêu cầu xử lý */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Số hiệu văn bản
+              </label>
+              <input
+                type="text"
+                value={soHieu}
+                onChange={(e) => setSoHieu(e.target.value)}
+                placeholder="VD: VB-2026-004..."
+                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#004ac6] shadow-2xs font-mono"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Yêu cầu xử lý
+              </label>
+              <select
+                value={yeuCau}
+                onChange={(e) => setYeuCau(e.target.value as any)}
+                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#004ac6] shadow-2xs cursor-pointer font-semibold"
+              >
+                <option value="Xem">Xem văn bản</option>
+                <option value="Ký">Ký số</option>
+                <option value="Duyệt">Phê duyệt</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Trích yếu / Nội dung tóm tắt */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">
+              Trích yếu / Ghi chú tài liệu
+            </label>
+            <textarea
+              rows={2}
+              value={trichYeu}
+              onChange={(e) => setTrichYeu(e.target.value)}
+              placeholder="Nhập tóm tắt nội dung tài liệu..."
+              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#004ac6] shadow-2xs resize-none"
+            />
+          </div>
+
+          {/* Footer buttons */}
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+            >
+              Hủy bỏ
+            </button>
+            <button
+              type="submit"
+              disabled={!name.trim()}
+              className="px-4 py-2 rounded-xl bg-[#004ac6] hover:bg-[#003ba0] text-white text-xs font-bold transition-all cursor-pointer shadow-xs disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+            >
+              <span className="material-symbols-outlined text-[16px]">add_circle</span>
+              <span>Thêm vào danh sách</span>
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

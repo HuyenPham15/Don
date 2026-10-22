@@ -12,12 +12,13 @@ import ThuLyDonModal, { ThuLyDonSubmitData } from '../components/modals/ThuLyDon
 import XacMinhVaDeXuatModal, { HuongGiaiQuyetType } from '../components/modals/XacMinhVaDeXuatModal';
 import KhongThuLyModal from '../components/modals/KhongThuLyModal';
 import ThongBaoBoSungModal from '../components/workflow/ThongBaoBoSungModal';
+import TaoBaoCaoDeXuatModal, { BaoCaoDeXuatFormData } from '../components/modals/TaoBaoCaoDeXuatModal';
 import { getSuggestedActionsForWorkflow } from '../components/workflow/QuyTrinhSuggestedActions';
 import { SigningDocument, CurrentUserAccount } from '../types/signing';
 import { INITIAL_LEADERS } from '../constants/signingData';
 import DonTrungDetailDrawer, { DonTrungItem } from '../components/modals/DonTrungDetailDrawer';
 import PhanTich5W1HSection from '../components/analysis/PhanTich5W1HSection';
-import MoHinhHoa5W1HWidget from '../components/analysis/MoHinhHoa5W1HWidget';
+// import MoHinhHoa5W1HWidget from '../components/analysis/MoHinhHoa5W1HWidget';
 
 export const DEFAULT_TO_CAO_DATA = {
   // A. Thông tin đơn
@@ -574,6 +575,7 @@ export default function BanPhanTich({
   const [showBanGiaoModal, setShowBanGiaoModal] = useState<boolean>(false);
   const [traLaiReason, setTraLaiReason] = useState<string>('Không thuộc thẩm quyền giải quyết');
   const [showCanCuModal, setShowCanCuModal] = useState<boolean>(false);
+  const [showTaoBaoCaoDeXuatModal, setShowTaoBaoCaoDeXuatModal] = useState<boolean>(false);
   const [showNguonTraCuuModal, setShowNguonTraCuuModal] = useState<boolean>(false);
   const [nguonTraCuuTab, setNguonTraCuuTab] = useState<NguonTraCuuTabType>('nguoi-gui');
 
@@ -674,6 +676,44 @@ export default function BanPhanTich({
       setSigningNoteInput('');
       showToast(`✓ Đã ký số phê duyệt Tờ trình ${updatedDoc.soKyHieu || ''} cho đơn ${currentDonCode}!`);
     }, 600);
+  };
+
+  // Xử lý lưu nháp từ popup TaoBaoCaoDeXuatModal
+  const handleSaveDraftBaoCaoModal = (
+    _formData: BaoCaoDeXuatFormData,
+    updatedDoc: SigningDocument
+  ) => {
+    if (onUpdateSigningDocuments) {
+      onUpdateSigningDocuments(
+        signingDocuments.some((d) => d.id === updatedDoc.id || d.hoSoCode === currentDonCode)
+          ? signingDocuments.map((d) => (d.id === updatedDoc.id || d.hoSoCode === currentDonCode ? updatedDoc : d))
+          : [updatedDoc, ...signingDocuments]
+      );
+    } else if (onCreateSigningDocument) {
+      onCreateSigningDocument(updatedDoc);
+    }
+    setActiveSigningDoc(updatedDoc);
+    setShowTaoBaoCaoDeXuatModal(false);
+    showToast(`✓ Đã lưu bản nháp Báo cáo đề xuất (${updatedDoc.soKyHieu || 'Mẫu BC-01'})!`);
+  };
+
+  // Xử lý trình lãnh đạo từ popup TaoBaoCaoDeXuatModal
+  const handleSubmitToLeaderBaoCaoModal = (
+    _formData: BaoCaoDeXuatFormData,
+    updatedDoc: SigningDocument
+  ) => {
+    if (onUpdateSigningDocuments) {
+      onUpdateSigningDocuments(
+        signingDocuments.some((d) => d.id === updatedDoc.id || d.hoSoCode === currentDonCode)
+          ? signingDocuments.map((d) => (d.id === updatedDoc.id || d.hoSoCode === currentDonCode ? updatedDoc : d))
+          : [updatedDoc, ...signingDocuments]
+      );
+    } else if (onCreateSigningDocument) {
+      onCreateSigningDocument(updatedDoc);
+    }
+    setActiveSigningDoc(updatedDoc);
+    setShowTaoBaoCaoDeXuatModal(false);
+    showToast(`✓ Đã trình lãnh đạo duyệt Báo cáo đề xuất (${updatedDoc.soKyHieu || 'Mẫu BC-01'})!`);
   };
 
   // Chỉnh sửa trực tiếp dạng text cho Khối 2: Thông tin trích xuất từ đơn
@@ -2362,14 +2402,6 @@ Kính trình Lãnh đạo phê duyệt:
             {/* ────────────────────────────────────────────────────────── */}
             {analysisActiveTab === 'ocr' && (
               <div className="space-y-4">
-                {/* 1. Phân tích thực thể 5W1H (Mô hình hóa vụ việc) */}
-                <MoHinhHoa5W1HWidget
-                  extractData={extractData}
-                  onNavigateToDocument={handleNavigateToDocument}
-                  onSelectComponent={(key) => {
-                    setAnalysisActiveTab('5w1h');
-                  }}
-                />
 
                 <div className="space-y-3.5">
                   {/* Section Header */}
@@ -2660,7 +2692,7 @@ Kính trình Lãnh đạo phê duyệt:
                           <th className="py-2 px-3 min-w-[120px]">Số CCCD &amp; Cấp</th>
                           <th className="py-2 px-3 min-w-[130px]">Điện thoại &amp; Email</th>
                           <th className="py-2 px-3 min-w-[200px]">Địa chỉ thường trú / Liên hệ</th>
-                          <th className="py-2 px-3 text-center min-w-[110px]">Chữ ký / Điểm chỉ</th>
+                          {/* <th className="py-2 px-3 text-center min-w-[110px]">Chữ ký / Điểm chỉ</th> */}
                           <th className="py-2 px-3 text-center min-w-[100px]">Vai trò</th>
                         </tr>
                       </thead>
@@ -2749,7 +2781,7 @@ Kính trình Lãnh đạo phê duyệt:
                             </td>
 
                             {/* Chữ ký / Điểm chỉ */}
-                            <td className="py-2 px-3 text-center">
+                            {/* <td className="py-2 px-3 text-center">
                               <div className="inline-flex flex-col items-center gap-0.5">
                                 <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 flex items-center gap-0.5">
                                   <span className="material-symbols-outlined text-[12px]">check</span>
@@ -2761,7 +2793,7 @@ Kính trình Lãnh đạo phê duyệt:
                                   </span>
                                 )}
                               </div>
-                            </td>
+                            </td> */}
 
                             {/* Vai trò */}
                             <td className="py-2 px-3 text-center">
@@ -2978,10 +3010,10 @@ Kính trình Lãnh đạo phê duyệt:
                         <span className="hidden sm:inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
                           04 đơn tương tự • 01 vụ việc liên quan
                         </span>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+                        {/* <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
                           <span>Độ tin cậy AI: 96.8%</span>
-                        </span>
+                        </span> */}
                       </div>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 text-[11px] bg-slate-50/40 border border-slate-200 rounded">
@@ -3077,19 +3109,17 @@ Kính trình Lãnh đạo phê duyệt:
                               <span className="font-bold text-slate-900 text-[12.5px]">
                                 Phương án 1: Thụ lý giải quyết tố cáo theo thẩm quyền
                               </span>
-                              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                Khuyến nghị 92%
-                              </span>
+
                               <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-blue-50 text-[#004ac6] border border-blue-200">
                                 Độ tin cậy: 95.5%
                               </span>
                             </div>
-                            <p className="text-[11px] text-slate-600 mt-0.5">
+                            {/* <p className="text-[11px] text-slate-600 mt-0.5">
                               Căn cứ Điều 12 &amp; 29 Luật Tố cáo 2018. Ban hành Quyết định thụ lý, thành lập Tổ xác minh trong 07 ngày làm việc để kiểm tra hiện trạng thực địa và đối chiếu hồ sơ bồi thường.
                             </p>
                             <p className="text-[10.5px] text-blue-900 mt-1 font-medium bg-blue-50/70 p-1.5 rounded border border-blue-100">
                               <strong>Lý do căn cứ 5W1H:</strong> Đơn đáp ứng đủ 4 yếu tố cơ bản theo Điều 29 Luật Tố cáo 2018 (Xác định rõ Who - người tố cáo &amp; người bị tố cáo; What - hành vi cố ý làm trái; Where - địa bàn thuộc quận Hà Đông; How - có trích lục 1/500 và biên bản làm căn cứ đối chiếu ban đầu).
-                            </p>
+                            </p> */}
                           </div>
                         </div>
                       </div>
@@ -3122,19 +3152,19 @@ Kính trình Lãnh đạo phê duyệt:
                               <span className="font-bold text-slate-900 text-[12.5px]">
                                 Phương án 2: Chuyển Cơ quan CSĐT Công an (Dấu hiệu hình sự)
                               </span>
-                              <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-purple-100 text-purple-800 border border-purple-200">
+                              {/* <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-purple-100 text-purple-800 border border-purple-200">
                                 Phù hợp 85%
-                              </span>
+                              </span> */}
                               <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-purple-50 text-purple-700 border border-purple-200">
                                 Độ tin cậy: 89.0%
                               </span>
                             </div>
-                            <p className="text-[11px] text-slate-600 mt-0.5">
+                            {/* <p className="text-[11px] text-slate-600 mt-0.5">
                               Áp dụng nếu xác định hành vi có dấu hiệu tội phạm nhận hối lộ hoặc cố ý làm trái gây thiệt hại nghiêm trọng. Chuyển hồ sơ cho Cơ quan CSĐT theo Quy chế phối hợp liên ngành.
                             </p>
                             <p className="text-[10.5px] text-purple-900 mt-1 font-medium bg-purple-50/70 p-1.5 rounded border border-purple-100">
                               <strong>Lý do căn cứ 5W1H:</strong> Thành phần Why &amp; How phản ánh tình tiết nghi vấn đòi tiền hối lộ 200 triệu đồng và thiết bị ghi âm trong USB. Cần Cơ quan CSĐT trưng cầu giám định tư pháp để bảo đảm giá trị chứng cứ.
-                            </p>
+                            </p> */}
                           </div>
                         </div>
                       </div>
@@ -3167,22 +3197,22 @@ Kính trình Lãnh đạo phê duyệt:
                           <div className="min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-bold text-slate-900 text-[12.5px]">
-                                Phương án 3: Ghép vào hồ sơ {selectedGhepDonCode}
+                                Phương án 3: Ghép vào hồ sơ
                               </span>
-                              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-indigo-100 text-indigo-800 border border-indigo-200">
+                              {/* <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-indigo-100 text-indigo-800 border border-indigo-200">
                                 Trùng {selectedGhepItem?.matchPercent ?? 96}%
                               </span>
                               <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
                                 Độ tin cậy ghép: {selectedGhepItem?.confidencePercent ?? '96.8%'}
-                              </span>
+                              </span> */}
                             </div>
-                            <p className="text-[11px] text-slate-600 mt-0.5">
+                            {/* <p className="text-[11px] text-slate-600 mt-0.5">
                               {selectedGhepItem?.noiDungGhepGoiY ||
                                 'Ghép lượt nhận vào hồ sơ đang thụ lý để bổ sung tài liệu, không sinh mã đơn mới, không làm tăng tồn đọng.'}
                             </p>
                             <p className="text-[10.5px] text-amber-900 mt-1 font-medium bg-amber-50/70 p-1.5 rounded border border-amber-100">
                               <strong>Lý do căn cứ 5W1H:</strong> Thành phần Where &amp; Who trùng khớp địa bàn Dự án KĐT Y và Hội đồng bồi thường với hồ sơ {selectedGhepDonCode}. Ghép để cơ quan chức năng kiểm tra đồng bộ, tránh ban hành văn bản rời rạc.
-                            </p>
+                            </p> */}
                           </div>
                         </div>
                       </div>
@@ -3220,7 +3250,7 @@ Kính trình Lãnh đạo phê duyệt:
 
                     {/* Action buttons */}
                     <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <button
                           type="button"
                           onClick={() => showToast('Đã lưu nháp ý kiến và dữ liệu OCR của đơn.')}
@@ -3228,6 +3258,21 @@ Kính trình Lãnh đạo phê duyệt:
                         >
                           <span className="material-symbols-outlined text-[15px]">save</span>
                           <span>Lưu nháp</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setShowTaoBaoCaoDeXuatModal(true)}
+                          className="px-3.5 py-2 rounded border border-blue-200 bg-blue-50/90 hover:bg-blue-100 text-blue-700 hover:text-blue-800 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs active:scale-95"
+                          title="Lập Báo cáo đề xuất hướng xử lý riêng theo mẫu quy định và chuẩn bị luồng trình ký"
+                        >
+                          <span className="material-symbols-outlined text-[16px] text-blue-600">rate_review</span>
+                          <span>Tạo báo cáo đề xuất riêng</span>
+                          {activeSigningDoc && (
+                            <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                              Đã lập
+                            </span>
+                          )}
                         </button>
                       </div>
 
@@ -3310,6 +3355,37 @@ Kính trình Lãnh đạo phê duyệt:
           </div>
         )
       }
+
+      {/* ========================================================================= */}
+      {/* MODAL TẠO BÁO CÁO ĐỀ XUẤT HƯỚNG XỬ LÝ RIÊNG                               */}
+      {/* ========================================================================= */}
+      <TaoBaoCaoDeXuatModal
+        isOpen={showTaoBaoCaoDeXuatModal}
+        onClose={() => setShowTaoBaoCaoDeXuatModal(false)}
+        donInfo={{
+          code: currentDonCode,
+          luotNhanId: luotNhan?.id || 'LN-2026-0819',
+          nguoiNop: extractData?.nguoiGui || luotNhan?.nguoiNop || DEFAULT_TO_CAO_DATA.nguoiGui,
+          loaiDon: extractData?.loaiNoiDung || luotNhan?.loaiDon || DEFAULT_TO_CAO_DATA.loaiNoiDung,
+          ngayNhan: luotNhan?.ngayNhan || DEFAULT_TO_CAO_DATA.ngayLamDon,
+          noiDung: extractData?.noiDungTomTat || luotNhan?.noiDung || DEFAULT_TO_CAO_DATA.noiDungTomTat,
+          canBoTiepNhan: currentAccount?.name || 'Nguyễn Minh Anh',
+          chucVuCanBo: currentAccount?.role || 'Cán bộ thụ lý',
+          donViXuLy: currentAccount?.phongBan || 'Phòng Tiếp công dân & Xử lý đơn',
+          diaChi: extractData?.diaChi || luotNhan?.diaChi || DEFAULT_TO_CAO_DATA.diaChi,
+          cccd: extractData?.cccd || luotNhan?.cccd || DEFAULT_TO_CAO_DATA.cccd,
+        }}
+        currentOfficer={{
+          name: currentAccount?.name || 'Nguyễn Minh Anh',
+          chucVu: currentAccount?.role || 'Cán bộ thụ lý',
+          phongBan: currentAccount?.phongBan || 'Phòng Tiếp công dân & Xử lý đơn',
+          coQuan: 'UBND quận',
+        }}
+        initialHuongXuLy={huongXuLy === 'tiep-nhan' ? 'thu_ly' : huongXuLy === 'chuyen' ? 'ban_giao' : 'ghep'}
+        existingSigningDoc={activeSigningDoc}
+        onSaveDraft={handleSaveDraftBaoCaoModal}
+        onSubmitToLeader={handleSubmitToLeaderBaoCaoModal}
+      />
 
       {/* ========================================================================= */}
       {/* MODAL BÀN GIAO ĐƠN (STEP-03C)                                             */}

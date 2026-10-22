@@ -429,6 +429,48 @@ export default function WorkflowDesignerScreen({
     [workflow, pushToHistory, recordAuditChange]
   );
 
+  // Áp dụng nhóm điều kiện nghiệp vụ vào bước đang được chọn
+  const handleApplyConditionGroupToStep = useCallback(
+    (conditions: string[], groupName: string) => {
+      if (!selectedStepId) {
+        showToast('⚠️ Vui lòng chọn một bước trên sơ đồ trước khi áp dụng nhóm điều kiện.');
+        return;
+      }
+      pushToHistory(workflow);
+      setWorkflow((prev) => ({
+        ...prev,
+        steps: prev.steps.map((s) => {
+          if (s.id !== selectedStepId) return s;
+          const existing = s.conditions || [];
+          const merged = [...existing];
+          conditions.forEach((c) => {
+            if (!merged.includes(c)) {
+              merged.push(c);
+            }
+          });
+          return {
+            ...s,
+            conditions: merged,
+            conditionsOverride: true,
+            isCustomized: true,
+          };
+        }),
+      }));
+      setHasUnsavedChanges(true);
+      showToast(`✓ Đã áp dụng nhóm điều kiện "${groupName}" vào bước hiện tại.`);
+      recordAuditChange(
+        'update_step',
+        'Áp dụng nhóm điều kiện vào bước',
+        groupName,
+        selectedStepId,
+        'step',
+        'Điều kiện trước',
+        `Đã thêm ${conditions.length} điều kiện từ nhóm "${groupName}"`
+      );
+    },
+    [selectedStepId, workflow, pushToHistory, recordAuditChange]
+  );
+
   // Thả bước mới vào ô chỉ định trên Canvas (Drag & Drop từ Palette)
   const handleDropNewNode = useCallback(
     (type: WorkflowNodeType, targetLaneId: string, targetStageId: string) => {
@@ -731,8 +773,8 @@ export default function WorkflowDesignerScreen({
       versionItem.snapshotWorkflow?.steps && versionItem.snapshotWorkflow.steps.length > 0
         ? versionItem.snapshotWorkflow.steps
         : versionItem.isCurrentActive
-        ? workflow.steps
-        : workflow.steps.slice(0, versionItem.totalSteps || workflow.steps.length);
+          ? workflow.steps
+          : workflow.steps.slice(0, versionItem.totalSteps || workflow.steps.length);
 
     if (verSteps.length > 0) {
       setSelectedStepId(verSteps[0].id);
@@ -844,96 +886,23 @@ export default function WorkflowDesignerScreen({
               <span>Loại đơn: <strong className="text-slate-700">{workflow.loaiDonName}</strong></span>
               <span>•</span>
               <span>{workflow.steps.length} bước</span>
-              <span>•</span>
-              <span>{workflow.transitions.length} connector</span>
+
             </div>
           </div>
         </div>
 
         {/* Right: Controls & Actions */}
         <div className="flex items-center gap-2">
-          {activeTab === 'designer' && (
-            <>
-              {/* Undo / Redo controls */}
-              <div className="flex items-center gap-1 mr-1">
-                <button
-                  type="button"
-                  disabled={pastWorkflows.length === 0 || isReadOnly}
-                  onClick={handleUndo}
-                  title={pastWorkflows.length > 0 ? 'Hoàn tác (Undo)' : 'Không có thao tác để hoàn tác'}
-                  className={`p-1.5 rounded-lg border transition-all ${
-                    pastWorkflows.length > 0 && !isReadOnly
-                      ? 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 cursor-pointer shadow-2xs'
-                      : 'border-slate-200/50 bg-slate-100/50 text-slate-400 cursor-not-allowed'
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-[16px]">undo</span>
-                </button>
-                <button
-                  type="button"
-                  disabled={futureWorkflows.length === 0 || isReadOnly}
-                  onClick={handleRedo}
-                  title={futureWorkflows.length > 0 ? 'Làm lại (Redo)' : 'Không có thao tác để làm lại'}
-                  className={`p-1.5 rounded-lg border transition-all ${
-                    futureWorkflows.length > 0 && !isReadOnly
-                      ? 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 cursor-pointer shadow-2xs'
-                      : 'border-slate-200/50 bg-slate-100/50 text-slate-400 cursor-not-allowed'
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-[16px]">redo</span>
-                </button>
-              </div>
-
-              {/* Zoom controls */}
-              <div className="flex items-center bg-slate-100 rounded-xl p-0.5 border border-slate-200/80 mr-1">
-                <button
-                  type="button"
-                  onClick={handleZoomOut}
-                  className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-white rounded-lg transition-all cursor-pointer"
-                  title="Thu nhỏ (-)"
-                >
-                  <span className="material-symbols-outlined text-[16px]">remove</span>
-                </button>
-                <span
-                  onClick={handleZoomReset}
-                  className="px-2 font-mono text-[11px] font-semibold text-slate-600 cursor-pointer select-none"
-                  title="Nhấp để reset về 100%"
-                >
-                  {Math.round(zoomLevel * 100)}%
-                </span>
-                <button
-                  type="button"
-                  onClick={handleZoomIn}
-                  className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-white rounded-lg transition-all cursor-pointer"
-                  title="Phóng to (+)"
-                >
-                  <span className="material-symbols-outlined text-[16px]">add</span>
-                </button>
-              </div>
-
-              {/* Auto layout button */}
-              <button
-                type="button"
-                onClick={handleAutoLayout}
-                className="p-2 text-slate-600 hover:text-blue-700 hover:bg-blue-50 border border-slate-200 rounded-xl transition-colors cursor-pointer"
-                title="Tự động căn chỉnh sơ đồ (Auto layout)"
-              >
-                <span className="material-symbols-outlined text-[18px]">account_tree</span>
-              </button>
-            </>
-          )}
-
           {/* Button Kiểm chứng (Section 18) */}
           <button
             type="button"
             onClick={() => setIsValidationModalOpen(true)}
-            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
-              errorCount > 0
-                ? 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
-                : warningCount > 0
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${errorCount > 0
+              ? 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
+              : warningCount > 0
                 ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
                 : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-            }`}
+              }`}
           >
             <span className="material-symbols-outlined text-[16px]">
               {errorCount > 0 ? 'warning' : 'verified'}
@@ -941,9 +910,8 @@ export default function WorkflowDesignerScreen({
             <span>Kiểm chứng</span>
             {(errorCount > 0 || warningCount > 0) && (
               <span
-                className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                  errorCount > 0 ? 'bg-rose-600 text-white' : 'bg-amber-600 text-white'
-                }`}
+                className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${errorCount > 0 ? 'bg-rose-600 text-white' : 'bg-amber-600 text-white'
+                  }`}
               >
                 {errorCount + warningCount}
               </span>
@@ -977,11 +945,10 @@ export default function WorkflowDesignerScreen({
               <button
                 type="button"
                 onClick={handleSaveDraft}
-                className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                  hasUnsavedChanges
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-xs'
-                    : 'bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 shadow-2xs'
-                }`}
+                className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${hasUnsavedChanges
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-xs'
+                  : 'bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 shadow-2xs'
+                  }`}
               >
                 Lưu bản nháp
               </button>
@@ -1005,24 +972,22 @@ export default function WorkflowDesignerScreen({
           <button
             type="button"
             onClick={() => setActiveTab('designer')}
-            className={`py-3 px-4 border-b-2 flex items-center gap-2 transition-all cursor-pointer ${
-              activeTab === 'designer'
-                ? 'border-[#004ac6] text-[#004ac6]'
-                : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
-            }`}
+            className={`py-3 px-4 border-b-2 flex items-center gap-2 transition-all cursor-pointer ${activeTab === 'designer'
+              ? 'border-[#004ac6] text-[#004ac6]'
+              : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+              }`}
           >
             <span className="material-symbols-outlined text-[17px]">account_tree</span>
             <span>Thiết kế</span>
           </button>
 
-          <button
+          {/* <button
             type="button"
             onClick={() => setActiveTab('conditions')}
-            className={`py-3 px-4 border-b-2 flex items-center gap-2 transition-all cursor-pointer ${
-              activeTab === 'conditions'
+            className={`py-3 px-4 border-b-2 flex items-center gap-2 transition-all cursor-pointer ${activeTab === 'conditions'
                 ? 'border-[#004ac6] text-[#004ac6]'
                 : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
-            }`}
+              }`}
           >
             <span className="material-symbols-outlined text-[17px]">alt_route</span>
             <span>Điều kiện dữ liệu</span>
@@ -1031,16 +996,15 @@ export default function WorkflowDesignerScreen({
                 {workflow.transitions.filter((t) => t.conditions && t.conditions.length > 0).length}
               </span>
             )}
-          </button>
+          </button> */}
 
           <button
             type="button"
             onClick={() => setActiveTab('versions')}
-            className={`py-3 px-4 border-b-2 flex items-center gap-2 transition-all cursor-pointer ${
-              activeTab === 'versions'
-                ? 'border-[#004ac6] text-[#004ac6]'
-                : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
-            }`}
+            className={`py-3 px-4 border-b-2 flex items-center gap-2 transition-all cursor-pointer ${activeTab === 'versions'
+              ? 'border-[#004ac6] text-[#004ac6]'
+              : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+              }`}
           >
             <span className="material-symbols-outlined text-[17px]">layers</span>
             <span>Lịch sử & Phiên bản</span>
@@ -1125,25 +1089,6 @@ export default function WorkflowDesignerScreen({
         </div>
       )}
 
-      {/* Banner thông báo chế độ chỉ đọc nếu đã phát hành */}
-      {isReadOnly && !snapshotLog && !viewingVersion && (
-        <div className="bg-emerald-50 border-b border-emerald-200 px-6 py-2 flex items-center justify-between text-xs text-emerald-900">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[16px] text-emerald-700">lock</span>
-            <span>
-              <strong>Phiên bản đã phát hành ({workflow.version}):</strong> Khóa chỉnh sửa trực tiếp để bảo vệ hồ sơ đang thụ lý.
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={() => onCreateNewVersion(workflow)}
-            className="text-xs font-bold text-purple-700 hover:text-purple-900 underline cursor-pointer"
-          >
-            Tạo phiên bản mới (v2.0 / v1.1) ngay &rarr;
-          </button>
-        </div>
-      )}
-
       {/* 3. TAB WORKSPACES */}
       {activeTab === 'designer' && (
         <div className="flex flex-1 overflow-hidden relative">
@@ -1151,6 +1096,8 @@ export default function WorkflowDesignerScreen({
           <WorkflowLeftPalette
             lanes={activeCanvasWorkflow.lanes}
             stages={activeCanvasWorkflow.stages}
+            selectedStep={currentStep}
+            onApplyConditionGroupToStep={handleApplyConditionGroupToStep}
             onAddStep={handleAddStep}
             onAddLane={handleAddLane}
             onUpdateLane={handleUpdateLane}
@@ -1203,6 +1150,79 @@ export default function WorkflowDesignerScreen({
               onClose={() => setSelectedTransitionId(null)}
             />
           )}
+
+          {/* Floating Canvas Controls Toolbar (Undo / Redo, Zoom, Auto Layout) at bottom */}
+          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-2xl shadow-xl border border-slate-200/90 select-none">
+            {/* Undo / Redo controls */}
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                disabled={pastWorkflows.length === 0 || isReadOnly}
+                onClick={handleUndo}
+                title={pastWorkflows.length > 0 ? 'Hoàn tác (Undo)' : 'Không có thao tác để hoàn tác'}
+                className={`p-1.5 rounded-xl border transition-all ${pastWorkflows.length > 0 && !isReadOnly
+                  ? 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 cursor-pointer shadow-2xs'
+                  : 'border-slate-200/50 bg-slate-100/50 text-slate-400 cursor-not-allowed'
+                  }`}
+              >
+                <span className="material-symbols-outlined text-[16px]">undo</span>
+              </button>
+              <button
+                type="button"
+                disabled={futureWorkflows.length === 0 || isReadOnly}
+                onClick={handleRedo}
+                title={futureWorkflows.length > 0 ? 'Làm lại (Redo)' : 'Không có thao tác để làm lại'}
+                className={`p-1.5 rounded-xl border transition-all ${futureWorkflows.length > 0 && !isReadOnly
+                  ? 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 cursor-pointer shadow-2xs'
+                  : 'border-slate-200/50 bg-slate-100/50 text-slate-400 cursor-not-allowed'
+                  }`}
+              >
+                <span className="material-symbols-outlined text-[16px]">redo</span>
+              </button>
+            </div>
+
+            <div className="h-4 w-px bg-slate-200 mx-1" />
+
+            {/* Zoom controls */}
+            <div className="flex items-center bg-slate-100 rounded-xl p-0.5 border border-slate-200/80">
+              <button
+                type="button"
+                onClick={handleZoomOut}
+                className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-white rounded-lg transition-all cursor-pointer"
+                title="Thu nhỏ (-)"
+              >
+                <span className="material-symbols-outlined text-[16px]">remove</span>
+              </button>
+              <span
+                onClick={handleZoomReset}
+                className="px-2 font-mono text-[11px] font-semibold text-slate-600 cursor-pointer select-none hover:text-blue-700"
+                title="Nhấp để reset về 100%"
+              >
+                {Math.round(zoomLevel * 100)}%
+              </span>
+              <button
+                type="button"
+                onClick={handleZoomIn}
+                className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-white rounded-lg transition-all cursor-pointer"
+                title="Phóng to (+)"
+              >
+                <span className="material-symbols-outlined text-[16px]">add</span>
+              </button>
+            </div>
+
+            <div className="h-4 w-px bg-slate-200 mx-1" />
+
+            {/* Auto layout button */}
+            <button
+              type="button"
+              onClick={handleAutoLayout}
+              className="p-1.5 px-2 text-slate-600 hover:text-blue-700 hover:bg-blue-50 border border-slate-200 bg-white rounded-xl transition-colors cursor-pointer shadow-2xs flex items-center gap-1.5"
+              title="Tự động căn chỉnh sơ đồ (Auto layout)"
+            >
+              <span className="material-symbols-outlined text-[18px]">account_tree</span>
+              <span className="text-[11px] font-semibold text-slate-700 hidden sm:inline">Căn chỉnh</span>
+            </button>
+          </div>
         </div>
       )}
 

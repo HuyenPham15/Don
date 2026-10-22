@@ -129,12 +129,12 @@ export default function ReceptionExtractedFormPane({
       <div className="flex-1 flex flex-col h-full bg-white border-l border-slate-200/90 overflow-hidden items-center justify-center p-8 text-center select-none">
         <div className="max-w-sm space-y-4">
           <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center mx-auto shadow-xs">
-            <span className="material-symbols-outlined text-[36px]">assignment</span>
+            <span className="material-symbols-outlined text-[36px]">auto_awesome_mosaic</span>
           </div>
           <div>
-            <h3 className="text-sm font-bold text-slate-900">Biểu mẫu tiếp nhận hồ sơ</h3>
+            <h3 className="text-sm font-bold text-slate-900">Biểu mẫu Tạo đơn trực tiếp</h3>
             <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-              Tải file đơn ở khung chat bên trái. AI sẽ tự động bóc tách và điền dữ liệu đầy đủ vào biểu mẫu này để bạn kiểm tra, chỉnh sửa và tiếp nhận.
+              Tải file đơn ở khung chat bên trái. AI sẽ tự động bóc tách và điền dữ liệu đầy đủ vào biểu mẫu này để bạn kiểm tra, chỉnh sửa và tạo đơn.
             </p>
           </div>
           {onSelectSampleFile && (
@@ -154,7 +154,6 @@ export default function ReceptionExtractedFormPane({
 
   return (
     <div className="flex-1 flex flex-col h-full bg-white border-l border-slate-200/90 overflow-hidden relative">
-      {/* 1. HEADER CỦA FORM TIẾP NHẬN */}
       <div className="px-5 py-3.5 bg-slate-50/90 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 shrink-0 select-none">
         <div>
           <div className="flex items-center gap-2">
