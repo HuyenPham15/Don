@@ -3107,7 +3107,7 @@ Kính trình Lãnh đạo phê duyệt:
                           <div className="min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-bold text-slate-900 text-[12.5px]">
-                                Phương án 1: Thụ lý giải quyết tố cáo theo thẩm quyền
+                                Phương án 1: Tiếp nhận đơn (Thụ lý giải quyết)
                               </span>
 
                               <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-blue-50 text-[#004ac6] border border-blue-200">
@@ -3124,7 +3124,7 @@ Kính trình Lãnh đạo phê duyệt:
                         </div>
                       </div>
 
-                      {/* Phương án 2: Chuyển Cơ quan CSĐT Công an (85%) */}
+                      {/* Phương án 2: Chuyển thẩm quyền (Cơ quan CSĐT) */}
                       <div
                         onClick={() => {
                           setHuongXuLy('chuyen');
@@ -3150,7 +3150,7 @@ Kính trình Lãnh đạo phê duyệt:
                           <div className="min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-bold text-slate-900 text-[12.5px]">
-                                Phương án 2: Chuyển Cơ quan CSĐT Công an (Dấu hiệu hình sự)
+                                Phương án 2: Chuyển thẩm quyền (Cơ quan CSĐT Công an)
                               </span>
                               {/* <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-purple-100 text-purple-800 border border-purple-200">
                                 Phù hợp 85%
@@ -3169,7 +3169,7 @@ Kính trình Lãnh đạo phê duyệt:
                         </div>
                       </div>
 
-                      {/* Phương án 3: Ghép vào hồ sơ đơn đã có / Đoàn thanh tra */}
+                      {/* Phương án 3: Ghép vào hồ sơ đã có */}
                       <div
                         onClick={() => {
                           setHuongXuLy('ghep');
@@ -3197,8 +3197,9 @@ Kính trình Lãnh đạo phê duyệt:
                           <div className="min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-bold text-slate-900 text-[12.5px]">
-                                Phương án 3: Ghép vào hồ sơ
+                                Phương án 3: Ghép vào (Hồ sơ đã có)
                               </span>
+
                               {/* <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-indigo-100 text-indigo-800 border border-indigo-200">
                                 Trùng {selectedGhepItem?.matchPercent ?? 96}%
                               </span>
@@ -3229,7 +3230,7 @@ Kính trình Lãnh đạo phê duyệt:
                         </h4>
                       </div>
                       <span className="text-[10.5px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
-                        Đang chọn: {huongXuLy === 'tiep-nhan' ? 'Phương án 1 (Thụ lý giải quyết)' : huongXuLy === 'chuyen' ? 'Phương án 2 (Chuyển CSĐT)' : 'Phương án 3 (Ghép Đoàn thanh tra)'}
+                        Đang chọn: {huongXuLy === 'tiep-nhan' ? 'Phương án 1 (Tiếp nhận đơn)' : huongXuLy === 'chuyen' ? 'Phương án 2 (Chuyển thẩm quyền)' : 'Phương án 3 (Ghép vào)'}
                       </span>
                     </div>
 
@@ -3264,7 +3265,7 @@ Kính trình Lãnh đạo phê duyệt:
                           type="button"
                           onClick={() => setShowTaoBaoCaoDeXuatModal(true)}
                           className="px-3.5 py-2 rounded border border-blue-200 bg-blue-50/90 hover:bg-blue-100 text-blue-700 hover:text-blue-800 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs active:scale-95"
-                          title="Lập Báo cáo đề xuất hướng xử lý riêng theo mẫu quy định và chuẩn bị luồng trình ký"
+                          title="Lập Báo cáo đề xuất hướng xử lý theo 3 phương án (Tiếp nhận đơn, Chuyển thẩm quyền, Ghép vào) và chuẩn bị luồng trình ký"
                         >
                           <span className="material-symbols-outlined text-[16px] text-blue-600">rate_review</span>
                           <span>Tạo báo cáo đề xuất riêng</span>
@@ -3381,7 +3382,7 @@ Kính trình Lãnh đạo phê duyệt:
           phongBan: currentAccount?.phongBan || 'Phòng Tiếp công dân & Xử lý đơn',
           coQuan: 'UBND quận',
         }}
-        initialHuongXuLy={huongXuLy === 'tiep-nhan' ? 'thu_ly' : huongXuLy === 'chuyen' ? 'ban_giao' : 'ghep'}
+        initialHuongXuLy={huongXuLy === 'tiep-nhan' ? 'tiep_nhan' : huongXuLy === 'chuyen' ? 'chuyen_tham_quyen' : 'ghep_vao'}
         existingSigningDoc={activeSigningDoc}
         onSaveDraft={handleSaveDraftBaoCaoModal}
         onSubmitToLeader={handleSubmitToLeaderBaoCaoModal}

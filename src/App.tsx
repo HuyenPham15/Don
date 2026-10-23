@@ -772,7 +772,7 @@ export default function App() {
       {/* 2. BODY: SIDEBAR + MAIN WORKSPACE */}
       <div className="flex flex-1 overflow-hidden">
         <Sidebar screen={screen} onNav={setScreen} currentAccount={currentAccount} signingCounts={signingCounts} />
-        <main className="flex-1 bg-[#f4f7fb]">
+        <main className="flex-1 min-w-0 h-full overflow-hidden flex flex-col bg-[#f4f7fb]">
           <ErrorBoundary fallbackScreen={() => setScreen("don-tiep-nhan")}>
             {(screen === "cong-viec" || screen === "tiep-nhan-xu-ly") && (
               <CongViecCuaToi

@@ -1,5 +1,5 @@
 // src/screens/workflowAdmin/components/WorkflowCanvas.tsx
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import {
   ProcessStep,
   ProcessTransition,
@@ -26,11 +26,10 @@ interface WorkflowCanvasProps {
 }
 
 // Geometry constants for accurate card & connector placement
-const STAGE_COL_WIDTH = 260;
-const LANE_HEADER_WIDTH = 190;
-const LANE_ROW_HEIGHT = 195;
-const CARD_WIDTH = 210;
-const CARD_HEIGHT = 135;
+const STAGE_COL_WIDTH = 340;
+const LANE_HEADER_WIDTH = 160;
+const CARD_WIDTH = 200;
+const CARD_HEIGHT = 80;
 
 export default function WorkflowCanvas({
   steps,
@@ -58,61 +57,143 @@ export default function WorkflowCanvas({
   const [connectingSourceStepId, setConnectingSourceStepId] = useState<string | null>(null);
 
   // Lọc bỏ phần / làn Văn thư theo yêu cầu nghiệp vụ
-  const activeLanes = React.useMemo(() => {
+  const activeLanes = useMemo(() => {
     const filtered = lanes.filter(
       (l) => !l.name.toLowerCase().includes('văn thư') && l.code !== 'VT'
     );
     return filtered.length > 0 ? filtered : lanes;
   }, [lanes]);
 
+  // Tính chiều cao động cho từng làn (Lane) dựa theo số bước tối đa trong 1 ô của làn đó
+  const laneHeights = useMemo(() => {
+    return activeLanes.map((lane) => {
+      let maxStepsInAnyCell = 1;
+      stages.forEach((stg) => {
+        const count = steps.filter(
+          (s) => s.laneId === lane.id && s.stageId === stg.id
+        ).length;
+        if (count > maxStepsInAnyCell) {
+          maxStepsInAnyCell = count;
+        }
+      });
+      // Nếu có từ 3 bước trở lên trong 1 ô, mở rộng chiều cao để các bước xếp dọc không bị đè
+      return Math.max(240, maxStepsInAnyCell * (CARD_HEIGHT + 24) + 40);
+    });
+  }, [activeLanes, stages, steps]);
+
+  // Tọa độ Y bắt đầu của từng làn (sau thanh header 44px)
+  const laneTops = useMemo(() => {
+    const tops: number[] = [];
+    let currentTop = 44; // Chiều cao Header
+    for (let i = 0; i < laneHeights.length; i++) {
+      tops.push(currentTop);
+      currentTop += laneHeights[i];
+    }
+    return tops;
+  }, [laneHeights]);
+
+  // Tổng chiều cao vùng làn bơi
+  const totalLanesHeight = useMemo(() => {
+    if (laneHeights.length === 0) return 300;
+    const lastTop = laneTops[laneTops.length - 1] || 44;
+    const lastH = laneHeights[laneHeights.length - 1] || 240;
+    return lastTop + lastH;
+  }, [laneTops, laneHeights]);
+
   // Tính toán tọa độ tâm và biên của từng bước
-  const stepPositions = React.useMemo(() => {
+  const stepPositions = useMemo(() => {
     const map = new Map<
       string,
       { x: number; y: number; centerX: number; centerY: number; laneIndex: number; stageIndex: number }
     >();
 
-    // Nhóm các bước cùng ô để tránh đè nhau nếu có nhiều hơn 1 bước trong cùng 1 ô
-    const cellCount = new Map<string, number>();
-
+    // Nhóm các bước theo ô (laneId, stageId)
+    const cellGroups = new Map<string, ProcessStep[]>();
     steps.forEach((step) => {
-      const stageIdx = stages.findIndex((s) => s.id === step.stageId);
-      let laneIdx = activeLanes.findIndex((l) => l.id === step.laneId);
-
-      // Nếu bước thuộc làn Văn thư đã được bỏ, chuyển về làn đầu tiên
-      if (laneIdx < 0) {
-        laneIdx = 0;
+      let lId = step.laneId;
+      if (!activeLanes.some((l) => l.id === lId)) {
+        lId = activeLanes[0]?.id || 'lane-default';
       }
+      const sId = step.stageId;
+      const key = `${lId}_${sId}`;
+      if (!cellGroups.has(key)) {
+        cellGroups.set(key, []);
+      }
+      cellGroups.get(key)!.push(step);
+    });
+
+    cellGroups.forEach((stepsInCell, cellKey) => {
+      const [lId, sId] = cellKey.split('_');
+      const stageIdx = stages.findIndex((s) => s.id === sId);
+      const laneIdx = activeLanes.findIndex((l) => l.id === lId);
 
       const validStageIdx = stageIdx >= 0 ? stageIdx : 0;
       const validLaneIdx = laneIdx >= 0 ? laneIdx : 0;
 
-      const cellKey = `${step.laneId}_${step.stageId}`;
-      const countInCell = cellCount.get(cellKey) || 0;
-      cellCount.set(cellKey, countInCell + 1);
-
       const cellLeft = LANE_HEADER_WIDTH + validStageIdx * STAGE_COL_WIDTH;
-      const cellTop = 48 + validLaneIdx * LANE_ROW_HEIGHT;
+      const cellTop = laneTops[validLaneIdx] || 44;
+      const currentLaneH = laneHeights[validLaneIdx] || 240;
 
-      // Căn giữa thẻ bước trong ô (hoặc offset nhẹ nếu trùng ô)
-      const x = cellLeft + (STAGE_COL_WIDTH - CARD_WIDTH) / 2 + (countInCell > 0 ? 15 : 0);
-      const y = cellTop + (LANE_ROW_HEIGHT - CARD_HEIGHT) / 2 + (countInCell > 0 ? 15 : 0);
+      const totalInCell = stepsInCell.length;
 
-      map.set(step.id, {
-        x,
-        y,
-        centerX: x + CARD_WIDTH / 2,
-        centerY: y + CARD_HEIGHT / 2,
-        laneIndex: validLaneIdx,
-        stageIndex: validStageIdx,
+      stepsInCell.forEach((step, idx) => {
+        // Nếu có tọa độ tùy chỉnh explicit từ trước
+        if (step.position && typeof step.position.x === 'number' && typeof step.position.y === 'number') {
+          map.set(step.id, {
+            x: step.position.x,
+            y: step.position.y,
+            centerX: step.position.x + CARD_WIDTH / 2,
+            centerY: step.position.y + CARD_HEIGHT / 2,
+            laneIndex: validLaneIdx,
+            stageIndex: validStageIdx,
+          });
+          return;
+        }
+
+        let x = cellLeft + (STAGE_COL_WIDTH - CARD_WIDTH) / 2;
+        let y = cellTop + (currentLaneH - CARD_HEIGHT) / 2;
+
+        if (totalInCell === 1) {
+          // 1 bước duy nhất: Căn giữa ô
+          x = cellLeft + (STAGE_COL_WIDTH - CARD_WIDTH) / 2;
+          y = cellTop + (currentLaneH - CARD_HEIGHT) / 2;
+        } else if (totalInCell === 2) {
+          // 2 bước trong cùng 1 ô: Bước 1 ở góc trên trái, Bước 2 ở góc dưới phải
+          if (idx === 0) {
+            x = cellLeft + 24;
+            y = cellTop + 24;
+          } else {
+            x = cellLeft + STAGE_COL_WIDTH - CARD_WIDTH - 24;
+            y = cellTop + currentLaneH - CARD_HEIGHT - 24;
+          }
+        } else {
+          // Từ 3 bước trở lên (ví dụ: các nhánh kết quả kết thúc): Xếp dọc thẳng hàng
+          const verticalGap = 24;
+          x = cellLeft + (STAGE_COL_WIDTH - CARD_WIDTH) / 2;
+          y = cellTop + 24 + idx * (CARD_HEIGHT + verticalGap);
+        }
+
+        map.set(step.id, {
+          x,
+          y,
+          centerX: x + CARD_WIDTH / 2,
+          centerY: y + CARD_HEIGHT / 2,
+          laneIndex: validLaneIdx,
+          stageIndex: validStageIdx,
+        });
       });
     });
 
     return map;
-  }, [steps, activeLanes, stages]);
+  }, [steps, activeLanes, stages, laneTops, laneHeights]);
 
-  const canvasTotalWidth = LANE_HEADER_WIDTH + stages.length * STAGE_COL_WIDTH + 80;
-  const canvasTotalHeight = 48 + activeLanes.length * LANE_ROW_HEIGHT + 60;
+  const canvasTotalWidth = useMemo(() => {
+    return Math.max(920, LANE_HEADER_WIDTH + stages.length * STAGE_COL_WIDTH);
+  }, [stages]);
+
+  const canvasTotalHeight = useMemo(() => {
+    return totalLanesHeight + 40; // 40px cho thanh legend đáy
+  }, [totalLanesHeight]);
 
   // Xử lý kéo thả HTML5
   const handleDragStart = (e: React.DragEvent, stepId: string) => {
@@ -177,18 +258,24 @@ export default function WorkflowCanvas({
     onSelectStep(stepId);
   };
 
+  const handleFitView = () => {
+    if (containerRef.current) {
+      containerRef.current.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
+    }
+  };
+
   return (
     <div
       ref={containerRef}
       id="workflow-canvas-scroll-container"
-      className="flex-1 overflow-auto bg-[#f8fafc] relative select-none cursor-grab active:cursor-grabbing"
+      className="flex-1 min-w-0 w-full h-full overflow-auto bg-slate-50 relative select-none p-4"
       onClick={() => {
         if (connectingSourceStepId) setConnectingSourceStepId(null);
       }}
     >
       {/* Banner thông báo chế độ Nối bước */}
       {connectingSourceStepId && (
-        <div className="sticky top-3 left-1/2 -translate-x-1/2 z-40 bg-blue-600 text-white px-4 py-2 rounded-full shadow-lg text-xs font-semibold flex items-center gap-2 animate-bounce">
+        <div className="sticky top-2 left-1/2 -translate-x-1/2 z-50 bg-[#2b5282] text-white px-4 py-2 rounded-full shadow-xl text-xs font-semibold flex items-center gap-2 animate-bounce w-fit mx-auto">
           <span className="material-symbols-outlined text-[16px]">cable</span>
           <span>Chọn bước đích để thiết lập đường chuyển</span>
           <button
@@ -197,454 +284,556 @@ export default function WorkflowCanvas({
               e.stopPropagation();
               setConnectingSourceStepId(null);
             }}
-            className="ml-2 text-blue-200 hover:text-white"
+            className="ml-2 px-2 py-0.5 rounded-full bg-white/20 hover:bg-white/30 text-white text-[11px]"
           >
             Hủy
           </button>
         </div>
       )}
 
-      {/* Main Scalable Canvas Wrapper */}
+      {/* Vỏ bọc kích thước thực theo tỷ lệ Zoom để thanh cuộn hoạt động chuẩn xác */}
       <div
         style={{
-          width: canvasTotalWidth,
-          height: canvasTotalHeight,
-          transform: `scale(${zoomLevel})`,
-          transformOrigin: 'top left',
-          transition: 'transform 0.15s ease-out',
+          width: `${canvasTotalWidth * zoomLevel + 32}px`,
+          minHeight: `${canvasTotalHeight * zoomLevel + 60}px`,
         }}
         className="relative"
       >
-        {/* 1. STAGES HEADER ROW (Columns) */}
+        {/* Main Scalable Canvas Wrapper */}
         <div
-          className="absolute top-0 left-0 right-0 h-12 flex border-b border-slate-300/80 bg-slate-100 z-10"
-          style={{ width: canvasTotalWidth }}
+          style={{
+            transform: `scale(${zoomLevel})`,
+            transformOrigin: 'top left',
+            transition: 'transform 0.15s ease-out',
+            width: `${canvasTotalWidth}px`,
+          }}
+          className="transition-transform duration-150"
         >
-          {/* Góc trên bên trái */}
-          <div
-            className="h-full bg-slate-200/80 border-r border-slate-300 font-extrabold text-[11px] uppercase tracking-wider text-slate-600 flex items-center px-4"
-            style={{ width: LANE_HEADER_WIDTH }}
+        {/* Nút định vị góc nhìn / Crosshair Focus ở góc trên bên trái */}
+        <div className="flex items-center gap-2 mb-2">
+          <button
+            type="button"
+            onClick={handleFitView}
+            className="w-7 h-7 rounded border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shadow-2xs cursor-pointer"
+            title="Định vị trung tâm / Khôi phục góc nhìn"
           >
-            Nhóm trách nhiệm
+            <span className="material-symbols-outlined text-[17px]">filter_center_focus</span>
+          </button>
+          <span className="text-[11px] text-slate-400 font-medium">Sơ đồ quy trình xử lý luồng công việc</span>
+        </div>
+
+        {/* ========================================================================= */}
+        {/* KHUNG BẢNG LÀN BƠI CHÍNH (THEO THIẾT KẾ ĐỒ HỌA MỚI)                       */}
+        {/* ========================================================================= */}
+        <div
+          className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col relative"
+          style={{ width: canvasTotalWidth, minHeight: canvasTotalHeight }}
+        >
+          {/* 1. STAGES HEADER ROW (Các cột Giai đoạn) */}
+          <div
+            className="h-11 flex border-b border-slate-200 bg-white text-slate-800 text-[11px] font-semibold select-none sticky top-0 z-20"
+            style={{ width: canvasTotalWidth }}
+          >
+            {/* Cột 0: Nhóm trách nhiệm */}
+            <div
+              className="shrink-0 p-2.5 border-r border-slate-200 flex items-center text-slate-600 font-medium"
+              style={{ width: LANE_HEADER_WIDTH }}
+            >
+              Nhóm trách nhiệm
+            </div>
+
+            {/* Tiêu đề từng cột Giai đoạn */}
+            {stages.map((stg, sIdx) => (
+              <div
+                key={stg.id}
+                className="shrink-0 p-2.5 border-r border-slate-200 flex items-center justify-between font-bold text-slate-700 bg-white"
+                style={{ width: STAGE_COL_WIDTH }}
+              >
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="w-4 h-4 rounded-full border border-slate-300 text-slate-600 inline-flex items-center justify-center text-[10px] font-bold shrink-0">
+                    {sIdx + 1}
+                  </span>
+                  <span className="truncate" title={stg.name}>
+                    {stg.name}
+                  </span>
+                </div>
+                <span className="text-[9.5px] font-normal text-slate-400 shrink-0">
+                  Giai đoạn {sIdx + 1}
+                </span>
+              </div>
+            ))}
           </div>
 
-          {/* Tiêu đề từng cột Giai đoạn */}
-          {stages.map((stg, sIdx) => (
-            <div
-              key={stg.id}
-              className="h-full border-r border-slate-300/80 px-4 flex items-center justify-between font-bold text-xs text-slate-800 bg-white/70"
-              style={{ width: STAGE_COL_WIDTH }}
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-mono font-bold flex items-center justify-center shrink-0">
-                  {sIdx + 1}
-                </span>
-                <span className="truncate">{stg.name}</span>
-              </div>
-            </div>
-          ))}
-        </div>
+          {/* 2. LANES ROWS & GRID CELLS */}
+          <div className="relative" style={{ width: canvasTotalWidth, height: totalLanesHeight - 44 }}>
+            {activeLanes.map((lane, lIdx) => {
+              const laneTop = (laneTops[lIdx] || 44) - 44; // relative to lanes wrapper
+              const laneHeight = laneHeights[lIdx] || 240;
+              const stepsInThisLane = steps.filter((s) => s.laneId === lane.id);
 
-        {/* 2. LANES ROWS & GRID CELLS */}
-        <div className="absolute top-12 left-0 right-0 bottom-0" style={{ width: canvasTotalWidth }}>
-          {activeLanes.map((lane, lIdx) => {
-            const laneTop = lIdx * LANE_ROW_HEIGHT;
-            return (
-              <div
-                key={lane.id}
-                className="absolute left-0 right-0 flex border-b border-slate-200/90"
-                style={{
-                  top: laneTop,
-                  height: LANE_ROW_HEIGHT,
-                  width: canvasTotalWidth,
-                  backgroundColor: lIdx % 2 === 0 ? '#ffffff' : '#f8fafc',
-                }}
-              >
-                {/* Lane Header (Bên trái) */}
+              return (
                 <div
-                  className="h-full border-r border-slate-300 p-3.5 flex flex-col justify-between bg-slate-50/90 sticky left-0 z-10 shadow-xs"
-                  style={{ width: LANE_HEADER_WIDTH }}
+                  key={lane.id}
+                  className="absolute left-0 right-0 flex border-b border-slate-200"
+                  style={{
+                    top: laneTop,
+                    height: laneHeight,
+                    width: canvasTotalWidth,
+                  }}
                 >
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
-                      <h4 className="font-extrabold text-slate-900 text-xs tracking-tight">
-                        {lane.name}
-                      </h4>
+                  {/* Cột Tác nhân bên trái (Nhóm trách nhiệm) */}
+                  <div
+                    className="h-full border-r border-slate-200 p-3 flex flex-col justify-between bg-white sticky left-0 z-10 select-none shadow-2xs"
+                    style={{ width: LANE_HEADER_WIDTH }}
+                  >
+                    <div>
+                      <div className="flex items-center gap-1.5 text-[12px] font-bold text-slate-800">
+                        <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0 inline-block"></span>
+                        <span className="truncate" title={lane.name}>
+                          {lane.name}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-slate-400 mt-0.5 pl-3.5 leading-tight">
+                        {lane.description || `${stepsInThisLane.length} bước - 2 vai trò`}
+                      </div>
                     </div>
-                    {lane.description && (
-                      <span className="text-[10px] text-slate-400 mt-1 block leading-tight">
-                        {lane.description}
-                      </span>
-                    )}
+
+                    <div className="text-[11px] text-slate-400 font-medium">
+                      Hàng {lIdx + 1}
+                    </div>
                   </div>
 
-                </div>
+                  {/* Grid Cells theo từng Giai đoạn (Nền lưới chấm Dot-grid) */}
+                  {stages.map((stg) => {
+                    const isHovered =
+                      dragOverCell?.laneId === lane.id && dragOverCell?.stageId === stg.id;
 
-                {/* Grid Cells theo từng Giai đoạn */}
-                {stages.map((stg) => {
-                  const isHovered =
-                    dragOverCell?.laneId === lane.id && dragOverCell?.stageId === stg.id;
-                  return (
-                    <div
-                      key={stg.id}
-                      onDragOver={(e) => handleDragOver(e, lane.id, stg.id)}
-                      onDrop={(e) => handleDrop(e, lane.id, stg.id)}
-                      className={`h-full border-r border-slate-200/80 transition-colors ${isHovered ? 'bg-blue-100/50 border-blue-400 border-2' : ''
+                    return (
+                      <div
+                        key={stg.id}
+                        onDragOver={(e) => handleDragOver(e, lane.id, stg.id)}
+                        onDrop={(e) => handleDrop(e, lane.id, stg.id)}
+                        className={`h-full border-r border-slate-200 relative transition-all ${
+                          isHovered
+                            ? 'bg-blue-50/70 ring-2 ring-inset ring-blue-500'
+                            : ''
                         }`}
-                      style={{ width: STAGE_COL_WIDTH }}
-                    ></div>
-                  );
-                })}
-              </div>
-            );
-          })}
-        </div>
+                        style={{
+                          width: STAGE_COL_WIDTH,
+                          backgroundImage: 'radial-gradient(#cbd5e1 1.25px, transparent 1.25px)',
+                          backgroundSize: '24px 24px',
+                          backgroundColor: '#ffffff',
+                        }}
+                      >
+                        {isHovered && (
+                          <div className="absolute inset-2 border-2 border-dashed border-blue-400 rounded-xl bg-blue-50/40 flex items-center justify-center pointer-events-none z-10 animate-pulse">
+                            <span className="text-xs font-bold text-blue-700 flex items-center gap-1">
+                              <span className="material-symbols-outlined text-[16px]">add_circle</span>
+                              Thả bước vào đây
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
 
-        {/* 3. SVG CONNECTOR LAYER */}
-        <svg
-          className="absolute top-0 left-0 pointer-events-none z-15"
-          style={{ width: canvasTotalWidth, height: canvasTotalHeight }}
-        >
-          <defs>
-            {/* Arrowhead marker: Normal (Blue) */}
-            <marker
-              id="arrow-normal"
-              viewBox="0 0 10 10"
-              refX="8"
-              refY="5"
-              markerWidth="6"
-              markerHeight="6"
-              orient="auto-start-reverse"
-            >
-              <path d="M 0 1 L 9 5 L 0 9 z" fill="#004ac6" />
-            </marker>
+          {/* 3. SVG CONNECTOR LAYER (Các đường nối Bézier mượt mà) */}
+          <svg
+            className="absolute top-0 left-0 pointer-events-none z-15"
+            style={{ width: canvasTotalWidth, height: totalLanesHeight }}
+          >
+            <defs>
+              {/* Arrowhead marker chuẩn theo thiết kế: Navy blue #2b5282 */}
+              <marker
+                id="wf-canvas-arrow-normal"
+                viewBox="0 0 10 10"
+                refX="7"
+                refY="5"
+                markerWidth="6"
+                markerHeight="6"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 2 L 7 5 L 0 8 z" fill="#2b5282" />
+              </marker>
 
-            {/* Arrowhead marker: Return (Amber) */}
-            <marker
-              id="arrow-return"
-              viewBox="0 0 10 10"
-              refX="8"
-              refY="5"
-              markerWidth="6"
-              markerHeight="6"
-              orient="auto-start-reverse"
-            >
-              <path d="M 0 1 L 9 5 L 0 9 z" fill="#d97706" />
-            </marker>
+              {/* Arrowhead marker: Return (Amber) */}
+              <marker
+                id="wf-canvas-arrow-return"
+                viewBox="0 0 10 10"
+                refX="7"
+                refY="5"
+                markerWidth="6"
+                markerHeight="6"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 2 L 7 5 L 0 8 z" fill="#d97706" />
+              </marker>
 
-            {/* Arrowhead marker: Highlighted / Selected */}
-            <marker
-              id="arrow-selected"
-              viewBox="0 0 10 10"
-              refX="8"
-              refY="5"
-              markerWidth="7"
-              markerHeight="7"
-              orient="auto-start-reverse"
-            >
-              <path d="M 0 1 L 9 5 L 0 9 z" fill="#7c3aed" />
-            </marker>
-          </defs>
+              {/* Arrowhead marker: Highlighted / Selected */}
+              <marker
+                id="wf-canvas-arrow-selected"
+                viewBox="0 0 10 10"
+                refX="7"
+                refY="5"
+                markerWidth="7"
+                markerHeight="7"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 2 L 7 5 L 0 8 z" fill="#7c3aed" />
+              </marker>
 
-          {/* Render All Transitions */}
-          {transitions.map((trans) => {
-            const pFrom = stepPositions.get(trans.fromStepId);
-            const pTo = stepPositions.get(trans.toStepId);
+              {/* Arrowhead marker: Focused */}
+              <marker
+                id="wf-canvas-arrow-focused"
+                viewBox="0 0 10 10"
+                refX="7"
+                refY="5"
+                markerWidth="7"
+                markerHeight="7"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 2 L 7 5 L 0 8 z" fill="#ef4444" />
+              </marker>
+            </defs>
 
-            if (!pFrom || !pTo) return null;
+            {/* Render All Transitions */}
+            {transitions.map((trans) => {
+              const pFrom = stepPositions.get(trans.fromStepId);
+              const pTo = stepPositions.get(trans.toStepId);
 
-            const isSelected = selectedTransitionId === trans.id;
-            const isFocused =
-              focusedTarget?.type === 'transition' && focusedTarget?.id === trans.id;
-            const isReturn = trans.type === 'return';
+              if (!pFrom || !pTo) return null;
 
-            // Điểm xuất phát & điểm đến
-            let startX: number;
-            let startY: number;
-            let endX: number;
-            let endY: number;
-            let pathD: string;
+              const isSelected = selectedTransitionId === trans.id;
+              const isFocused =
+                focusedTarget?.type === 'transition' && focusedTarget?.id === trans.id;
+              const isReturn = trans.type === 'return';
 
-            if (isReturn) {
-              // Đường trả lại: Vẽ vòng lượn từ đỉnh hoặc đáy ngược về
-              startX = pFrom.centerX;
-              startY = pFrom.y;
-              endX = pTo.centerX;
-              endY = pTo.y;
+              let startX: number;
+              let startY: number;
+              let endX: number;
+              let endY: number;
+              let pathD: string;
 
-              const midY = Math.min(startY, endY) - 50;
-              pathD = `M ${startX} ${startY} C ${startX} ${midY}, ${endX} ${midY}, ${endX} ${endY - 6}`;
-            } else {
-              // Đường bình thường: Nối từ cạnh phải sang cạnh trái (hoặc thẳng nếu cùng cột)
-              if (pTo.x > pFrom.x) {
-                startX = pFrom.x + CARD_WIDTH;
-                startY = pFrom.centerY;
-                endX = pTo.x;
-                endY = pTo.centerY;
-                const deltaX = (endX - startX) * 0.5;
-                pathD = `M ${startX} ${startY} C ${startX + deltaX} ${startY}, ${endX - deltaX} ${endY}, ${endX - 6} ${endY}`;
-              } else if (pTo.x === pFrom.x) {
-                // Cùng cột: Nối từ đáy xuống đỉnh
+              if (isReturn) {
+                // Đường quay lại / trả hồ sơ: Vòng ngược từ đỉnh hoặc đáy
                 startX = pFrom.centerX;
-                startY = pFrom.y + CARD_HEIGHT;
+                startY = pFrom.y;
                 endX = pTo.centerX;
                 endY = pTo.y;
-                pathD = `M ${startX} ${startY} L ${endX} ${endY - 6}`;
+
+                const midY = Math.min(startY, endY) - 45;
+                pathD = `M ${startX} ${startY} C ${startX} ${midY}, ${endX} ${midY}, ${endX} ${endY - 6}`;
               } else {
-                // Đi lùi nhưng là đường bình thường
-                startX = pFrom.x;
-                startY = pFrom.centerY;
-                endX = pTo.x + CARD_WIDTH;
-                endY = pTo.centerY;
-                const deltaX = Math.abs(endX - startX) * 0.5;
-                pathD = `M ${startX} ${startY} C ${startX - deltaX} ${startY}, ${endX + deltaX} ${endY}, ${endX + 6} ${endY}`;
+                // Đường chuyển tiếp bình thường: Nối mượt mà từ cạnh phải sang cạnh trái
+                if (pTo.x > pFrom.x) {
+                  startX = pFrom.x + CARD_WIDTH;
+                  startY = pFrom.centerY;
+                  endX = pTo.x;
+                  endY = pTo.centerY;
+                  const deltaX = Math.max(35, (endX - startX) * 0.5);
+                  pathD = `M ${startX} ${startY} C ${startX + deltaX} ${startY}, ${endX - deltaX} ${endY}, ${endX - 5} ${endY}`;
+                } else if (pTo.x === pFrom.x) {
+                  // Cùng cột: Nối từ đáy xuống đỉnh
+                  if (pTo.y >= pFrom.y) {
+                    startX = pFrom.centerX;
+                    startY = pFrom.y + CARD_HEIGHT;
+                    endX = pTo.centerX;
+                    endY = pTo.y;
+                    pathD = `M ${startX} ${startY} L ${endX} ${endY - 5}`;
+                  } else {
+                    startX = pFrom.centerX;
+                    startY = pFrom.y;
+                    endX = pTo.centerX;
+                    endY = pTo.y + CARD_HEIGHT;
+                    pathD = `M ${startX} ${startY} L ${endX} ${endY + 5}`;
+                  }
+                } else {
+                  // Đi lùi sang cột trước
+                  startX = pFrom.x;
+                  startY = pFrom.centerY;
+                  endX = pTo.x + CARD_WIDTH;
+                  endY = pTo.centerY;
+                  const deltaX = Math.max(35, Math.abs(endX - startX) * 0.5);
+                  pathD = `M ${startX} ${startY} C ${startX - deltaX} ${startY}, ${endX + deltaX} ${endY}, ${endX + 5} ${endY}`;
+                }
               }
-            }
 
-            // Tọa độ trung tâm để đặt nhãn hành động
-            const labelX = (startX + endX) / 2;
-            const labelY = isReturn ? Math.min(startY, endY) - 35 : (startY + endY) / 2;
+              // Tọa độ đặt nhãn hành động
+              const labelX = (startX + endX) / 2;
+              const labelY = isReturn ? Math.min(startY, endY) - 32 : (startY + endY) / 2;
 
-            const strokeColor = isFocused
-              ? '#ef4444'
-              : isSelected
+              const strokeColor = isFocused
+                ? '#ef4444'
+                : isSelected
                 ? '#7c3aed'
                 : isReturn
-                  ? '#d97706'
-                  : '#004ac6';
+                ? '#d97706'
+                : '#2b5282';
 
-            const markerId = isFocused || isSelected
-              ? 'url(#arrow-selected)'
-              : isReturn
-                ? 'url(#arrow-return)'
-                : 'url(#arrow-normal)';
+              const markerId = isFocused
+                ? 'url(#wf-canvas-arrow-focused)'
+                : isSelected
+                ? 'url(#wf-canvas-arrow-selected)'
+                : isReturn
+                ? 'url(#wf-canvas-arrow-return)'
+                : 'url(#wf-canvas-arrow-normal)';
 
-            return (
-              <g key={trans.id} className="cursor-pointer pointer-events-auto">
-                {/* Hit area rộng hơn để dễ click */}
-                <path
-                  d={pathD}
-                  fill="none"
-                  stroke="transparent"
-                  strokeWidth={20}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSelectTransition(trans.id);
-                  }}
-                />
+              return (
+                <g key={trans.id} className="cursor-pointer pointer-events-auto">
+                  {/* Hit area rộng hơn để dễ bấm chọn đường nối */}
+                  <path
+                    d={pathD}
+                    fill="none"
+                    stroke="transparent"
+                    strokeWidth={20}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectTransition(trans.id);
+                    }}
+                  />
 
-                {/* Đường nối hiển thị */}
-                <path
-                  d={pathD}
-                  fill="none"
-                  stroke={strokeColor}
-                  strokeWidth={isSelected || isFocused ? 2.5 : 2}
-                  strokeDasharray={isReturn ? '5,4' : undefined}
-                  markerEnd={markerId}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSelectTransition(trans.id);
-                  }}
-                  className={`transition-all ${isFocused ? 'animate-pulse' : ''}`}
-                />
+                  {/* Đường nối chính thức */}
+                  <path
+                    d={pathD}
+                    fill="none"
+                    stroke={strokeColor}
+                    strokeWidth={isSelected || isFocused ? 2.5 : 1.75}
+                    strokeDasharray={isReturn ? '5,4' : undefined}
+                    markerEnd={markerId}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectTransition(trans.id);
+                    }}
+                    className={`transition-all ${isFocused ? 'animate-pulse' : ''}`}
+                  />
 
-                {/* Nhãn hành động trên đường chuyển */}
-                {trans.actionName && (
-                  <foreignObject
-                    x={labelX - 70}
-                    y={labelY - 12}
-                    width={140}
-                    height={26}
-                    className="overflow-visible pointer-events-auto"
-                  >
-                    <div
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSelectTransition(trans.id);
-                      }}
-                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold text-center truncate border shadow-2xs transition-all cursor-pointer ${isSelected
-                        ? 'bg-purple-600 text-white border-purple-700 shadow-md ring-2 ring-purple-300'
-                        : isReturn
-                          ? 'bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-200'
-                          : 'bg-white text-blue-900 border-blue-200 hover:border-blue-400'
-                        }`}
-                      title={trans.actionName}
+                  {/* Nhãn hành động trên đường chuyển */}
+                  {trans.actionName && (
+                    <foreignObject
+                      x={labelX - 70}
+                      y={labelY - 12}
+                      width={140}
+                      height={26}
+                      className="overflow-visible pointer-events-auto"
                     >
-                      {isReturn && '↩ '}
-                      {trans.actionName}
-                    </div>
-                  </foreignObject>
-                )}
-              </g>
-            );
-          })}
-        </svg>
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectTransition(trans.id);
+                        }}
+                        className={`px-2 py-0.5 rounded-md text-[10px] font-bold text-center truncate border shadow-2xs transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-purple-600 text-white border-purple-700 shadow-md ring-2 ring-purple-300'
+                            : isReturn
+                            ? 'bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-200'
+                            : 'bg-white text-slate-700 border-slate-300 hover:border-blue-400 hover:text-blue-900'
+                        }`}
+                        title={trans.actionName}
+                      >
+                        {isReturn && '↩ '}
+                        {trans.actionName}
+                      </div>
+                    </foreignObject>
+                  )}
+                </g>
+              );
+            })}
+          </svg>
 
-        {/* 4. STEP CARDS LAYER */}
-        <div className="absolute top-0 left-0 w-full h-full pointer-events-none z-20">
-          {steps.map((step) => {
-            const pos = stepPositions.get(step.id);
-            if (!pos) return null;
+          {/* 4. STEP CARDS LAYER (Các thẻ bước theo đúng chuẩn giao diện) */}
+          <div className="absolute top-0 left-0 w-full h-full pointer-events-none z-20">
+            {steps.map((step) => {
+              const pos = stepPositions.get(step.id);
+              if (!pos) return null;
 
-            const isSelected = selectedStepId === step.id;
-            const isFocused =
-              focusedTarget?.type === 'step' && focusedTarget?.id === step.id;
-            const isConnectSource = connectingSourceStepId === step.id;
+              const isSelected = selectedStepId === step.id;
+              const isFocused =
+                focusedTarget?.type === 'step' && focusedTarget?.id === step.id;
+              const isConnectSource = connectingSourceStepId === step.id;
 
-            return (
-              <div
-                key={step.id}
-                draggable={!isReadOnly}
-                onDragStart={(e) => handleDragStart(e, step.id)}
-                onDragEnd={handleDragEnd}
-                onClick={(e) => handleStepClick(e, step.id)}
-                style={{
-                  transform: `translate3d(${pos.x}px, ${pos.y}px, 0)`,
-                  width: CARD_WIDTH,
-                  height: CARD_HEIGHT,
-                }}
-                className={`absolute top-0 left-0 bg-white rounded-2xl border p-3 flex flex-col justify-between transition-all pointer-events-auto shadow-xs group cursor-pointer ${isFocused
-                  ? 'border-rose-500 ring-4 ring-rose-200 animate-pulse bg-rose-50/20'
-                  : isSelected
-                    ? 'border-blue-600 ring-3 ring-blue-100 shadow-md'
-                    : isConnectSource
-                      ? 'border-purple-600 ring-3 ring-purple-200 bg-purple-50/30'
-                      : 'border-slate-200/90 hover:border-blue-400 hover:shadow-md'
+              return (
+                <div
+                  key={step.id}
+                  draggable={!isReadOnly}
+                  onDragStart={(e) => handleDragStart(e, step.id)}
+                  onDragEnd={handleDragEnd}
+                  onClick={(e) => handleStepClick(e, step.id)}
+                  style={{
+                    transform: `translate3d(${pos.x}px, ${pos.y}px, 0)`,
+                    width: CARD_WIDTH,
+                    height: CARD_HEIGHT,
+                  }}
+                  className={`absolute top-0 left-0 bg-white rounded-xl border p-2.5 flex flex-col justify-between transition-all pointer-events-auto shadow-2xs group cursor-pointer ${
+                    isFocused
+                      ? 'border-rose-500 ring-4 ring-rose-200 animate-pulse bg-rose-50/20'
+                      : isSelected
+                      ? 'ring-2 ring-blue-600 border-blue-500 bg-blue-50/20 shadow-sm scale-[1.01]'
+                      : isConnectSource
+                      ? 'ring-2 ring-purple-600 border-purple-500 bg-purple-50/30'
+                      : 'border-slate-300 hover:border-blue-400 hover:shadow-xs'
                   }`}
-              >
-                {/* Top card: Badges & Step Code */}
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-1 flex-wrap">
-                      {/* Node Type Badge */}
-                      {step.isStart || step.nodeType === 'START' ? (
-                        <span className="px-1.5 py-0.2 rounded bg-blue-100 text-blue-800 font-bold text-[9px] uppercase tracking-wider flex items-center gap-0.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
-                          Bắt đầu
-                        </span>
-                      ) : step.isEnd || step.nodeType === 'END' ? (
-                        <span className="px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 font-bold text-[9px] uppercase tracking-wider flex items-center gap-0.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
-                          Kết thúc
-                        </span>
-                      ) : step.nodeType === 'APPROVAL' ? (
-                        <span className="px-1.5 py-0.2 rounded bg-purple-100 text-purple-800 font-bold text-[9px] flex items-center gap-0.5">
-                          <span className="material-symbols-outlined text-[11px]">verified</span>
-                          Phê duyệt
-                        </span>
-                      ) : step.nodeType === 'NOTIFICATION' ? (
-                        <span className="px-1.5 py-0.2 rounded bg-sky-100 text-sky-800 font-bold text-[9px] flex items-center gap-0.5">
-                          <span className="material-symbols-outlined text-[11px]">notifications</span>
-                          Thông báo
-                        </span>
-                      ) : step.nodeType === 'CHECK' ? (
-                        <span className="px-1.5 py-0.2 rounded bg-indigo-100 text-indigo-800 font-bold text-[9px] flex items-center gap-0.5">
-                          <span className="material-symbols-outlined text-[11px]">fact_check</span>
-                          Kiểm tra
-                        </span>
-                      ) : step.nodeType === 'BRANCH' ? (
-                        <span className="px-1.5 py-0.2 rounded bg-orange-100 text-orange-800 font-bold text-[9px] flex items-center gap-0.5">
-                          <span className="material-symbols-outlined text-[11px]">call_split</span>
-                          Rẽ nhánh
-                        </span>
-                      ) : step.nodeType === 'MERGE' ? (
-                        <span className="px-1.5 py-0.2 rounded bg-teal-100 text-teal-800 font-bold text-[9px] flex items-center gap-0.5">
-                          <span className="material-symbols-outlined text-[11px]">call_merge</span>
-                          Gộp nhánh
-                        </span>
-                      ) : step.nodeType === 'INTEGRATION' ? (
-                        <span className="px-1.5 py-0.2 rounded bg-cyan-100 text-cyan-800 font-bold text-[9px] flex items-center gap-0.5">
-                          <span className="material-symbols-outlined text-[11px]">hub</span>
-                          Tích hợp
-                        </span>
-                      ) : (
-                        <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-mono text-[9px] font-bold">
-                          {step.code}
-                        </span>
-                      )}
+                >
+                  {/* Top row: Huy hiệu loại bước & Nút nối nhanh */}
+                  <div>
+                    <div className="flex items-center justify-between gap-1 mb-1">
+                      <div className="flex items-center gap-1 min-w-0 flex-wrap">
+                        {/* Node Type Badge */}
+                        {step.isStart || step.nodeType === 'START' ? (
+                          <span className="inline-block text-[9px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.2 rounded w-fit">
+                            BẮT ĐẦU
+                          </span>
+                        ) : step.isEnd || step.nodeType === 'END' ? (
+                          <span className="inline-block text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded w-fit">
+                            KẾT THÚC
+                          </span>
+                        ) : step.nodeType === 'APPROVAL' ? (
+                          <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-1.5 py-0.2 rounded">
+                            <span className="material-symbols-outlined text-[11px]">verified</span>
+                            Phê duyệt
+                          </span>
+                        ) : step.nodeType === 'CHECK' ? (
+                          <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.2 rounded">
+                            <span className="material-symbols-outlined text-[11px]">fact_check</span>
+                            Kiểm tra
+                          </span>
+                        ) : step.nodeType === 'BRANCH' ? (
+                          <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-orange-700 bg-orange-50 border border-orange-200 px-1.5 py-0.2 rounded">
+                            <span className="material-symbols-outlined text-[11px]">call_split</span>
+                            Rẽ nhánh
+                          </span>
+                        ) : step.nodeType === 'NOTIFICATION' ? (
+                          <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-sky-700 bg-sky-50 border border-sky-200 px-1.5 py-0.2 rounded">
+                            <span className="material-symbols-outlined text-[11px]">notifications</span>
+                            Thông báo
+                          </span>
+                        ) : (
+                          <span className="text-[9.5px] text-slate-400 font-mono font-medium block truncate max-w-[95px]">
+                            {step.code}
+                          </span>
+                        )}
 
-                      {/* AI Indicator badge */}
-                      {step.aiConfig?.enabled && (
-                        <span className="px-1 py-0.2 rounded bg-indigo-50 text-indigo-700 font-bold text-[8.5px] flex items-center gap-0.5" title="Trợ lý AI được kích hoạt">
-                          <span className="material-symbols-outlined text-[11px]">smart_toy</span>
-                          AI
-                        </span>
-                      )}
+                        {/* AI Indicator badge */}
+                        {step.aiConfig?.enabled && (
+                          <span
+                            className="px-1 py-0.2 rounded bg-indigo-50 text-indigo-700 font-bold text-[8.5px] flex items-center gap-0.5"
+                            title="Trợ lý AI được kích hoạt"
+                          >
+                            <span className="material-symbols-outlined text-[10px]">smart_toy</span>
+                            AI
+                          </span>
+                        )}
 
-                      {/* Inheritance / Override indicator */}
-                      {(step.isCustomized || step.conditionsOverride || step.formsOverride || step.inputDocsOverride || step.outputDocsOverride) ? (
-                        <span className="px-1 py-0.2 rounded bg-amber-50 text-amber-800 font-semibold text-[8px] border border-amber-300" title="Đang tùy chỉnh riêng (Override)">
-                          Tùy chỉnh
-                        </span>
-                      ) : (
-                        <span className="px-1 py-0.2 rounded bg-sky-50 text-sky-700 font-semibold text-[8px] border border-sky-200" title={step.inheritedFromName ? `Kế thừa từ: ${step.inheritedFromName}` : 'Kế thừa chuẩn'}>
-                          Mặc định
-                        </span>
+                        {/* Override Indicator */}
+                        {(step.isCustomized ||
+                          step.conditionsOverride ||
+                          step.formsOverride ||
+                          step.inputDocsOverride ||
+                          step.outputDocsOverride) && (
+                          <span
+                            className="px-1 py-0.2 rounded bg-amber-50 text-amber-800 font-semibold text-[8px] border border-amber-300"
+                            title="Đang tùy chỉnh riêng (Override)"
+                          >
+                            Tùy chỉnh
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Quick Connect Button */}
+                      {!isReadOnly && (
+                        <button
+                          type="button"
+                          onClick={(e) => handleStartConnect(e, step.id)}
+                          className={`w-5 h-5 rounded flex items-center justify-center transition-colors cursor-pointer shrink-0 ${
+                            isConnectSource
+                              ? 'bg-purple-600 text-white shadow-xs'
+                              : 'text-slate-400 hover:text-blue-700 hover:bg-blue-50 opacity-0 group-hover:opacity-100'
+                          }`}
+                          title={isConnectSource ? 'Đang chọn bước này' : 'Nối bước từ đây'}
+                        >
+                          <span className="material-symbols-outlined text-[14px]">cable</span>
+                        </button>
                       )}
                     </div>
 
-                    {/* Quick Connect Button */}
-                    {!isReadOnly && (
-                      <button
-                        type="button"
-                        onClick={(e) => handleStartConnect(e, step.id)}
-                        className={`w-6 h-6 rounded-md flex items-center justify-center transition-colors ${isConnectSource
-                          ? 'bg-purple-600 text-white shadow-xs'
-                          : 'text-slate-400 hover:text-blue-700 hover:bg-blue-50'
-                          }`}
-                        title={isConnectSource ? 'Đang chọn bước này' : 'Nối bước từ đây'}
-                      >
-                        <span className="material-symbols-outlined text-[15px]">cable</span>
-                      </button>
-                    )}
+                    {/* Step Name */}
+                    <h4 className="font-bold text-slate-900 text-[12px] leading-tight line-clamp-2 group-hover:text-blue-700 transition-colors">
+                      {step.name}
+                    </h4>
                   </div>
 
-                  {/* Step Name */}
-                  <h4 className="font-bold text-slate-900 text-xs leading-snug line-clamp-2 group-hover:text-blue-700 transition-colors">
-                    {step.name}
-                  </h4>
-                </div>
+                  {/* Bottom card: Thời hạn (SLA) & Chỉ số biểu mẫu, hành động */}
+                  <div className="pt-1 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500 font-medium">
+                    <span>
+                      {step.timeLimitDays > 0
+                        ? `${step.timeLimitDays} ngày`
+                        : step.workHours > 0
+                        ? `${step.workHours} giờ`
+                        : 'Không hạn'}
+                    </span>
 
-                {/* Bottom card: Time limit, Actions & Forms indicators */}
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10.5px] text-slate-500">
-                  <span className="flex items-center gap-1 font-medium">
-                    <span className="material-symbols-outlined text-[13px] text-slate-400">schedule</span>
-                    {step.timeLimitDays > 0 ? `${step.timeLimitDays} ngày` : '—'}
-                  </span>
-
-                  <div className="flex items-center gap-1">
-                    {step.actions && step.actions.length > 0 && (
-                      <span
-                        className="px-1 py-0.2 rounded bg-purple-50 text-purple-700 font-semibold text-[9px]"
-                        title={`${step.actions.length} hành động`}
-                      >
-                        {step.actions.length} HĐ
-                      </span>
-                    )}
-                    {step.stepForms.length > 0 && (
-                      <span
-                        className="px-1 py-0.2 rounded bg-blue-50 text-blue-700 font-semibold text-[9px]"
-                        title={`${step.stepForms.length} biểu mẫu`}
-                      >
-                        {step.stepForms.length} BM
-                      </span>
-                    )}
-                    {step.storedDocuments.length > 0 && (
-                      <span
-                        className="px-1 py-0.2 rounded bg-slate-100 text-slate-600 font-semibold text-[9px]"
-                        title={`${step.storedDocuments.length} văn bản lưu`}
-                      >
-                        {step.storedDocuments.length} VB
-                      </span>
-                    )}
+                    <div className="flex items-center gap-1">
+                      {step.stepForms && step.stepForms.length > 0 && (
+                        <span>{step.stepForms.length} BM</span>
+                      )}
+                      {((step.documentConditions && step.documentConditions.length > 0) ||
+                        (step.usedDocuments && step.usedDocuments.length > 0)) && (
+                        <span
+                          className="text-blue-700 font-semibold"
+                          title="Số lượng văn bản / hồ sơ yêu cầu"
+                        >
+                          {(step.documentConditions?.length || step.usedDocuments?.length || 0)} VB
+                        </span>
+                      )}
+                      {step.conditions && step.conditions.length > 0 && (
+                        <span
+                          className="text-indigo-700 font-semibold"
+                          title="Số lượng điều kiện nghiệp vụ / tiêu chí"
+                        >
+                          {step.conditions.length} ĐK
+                        </span>
+                      )}
+                      {step.actions && step.actions.length > 0 && (
+                        <span className="text-purple-700 font-semibold">
+                          {step.actions.length} HĐ
+                        </span>
+                      )}
+                      {step.storedDocuments && step.storedDocuments.length > 0 && (
+                        <span className="text-slate-600">
+                          {step.storedDocuments.length} VB
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+
+          {/* 5. CHÚ GIẢI CHÂN BẢNG QUY TRÌNH (LEGEND THEO ẢNH MẪU) */}
+          <div
+            className="flex items-center gap-6 px-4 py-2.5 border-t border-slate-200 text-[11px] text-slate-600 bg-white select-none z-20 mt-auto"
+            style={{ width: canvasTotalWidth }}
+          >
+            <div className="flex items-center gap-2">
+              <span className="w-5 h-[2px] bg-[#2b5282] inline-block"></span>
+              <span>Chuyển tiếp bình thường</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-5 h-[2px] border-b-2 border-dashed border-amber-500 inline-block"></span>
+              <span>Quay lại / trả hồ sơ</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block"></span>
+              <span>Nhóm trách nhiệm</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
+  </div>
   );
 }

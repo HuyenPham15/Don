@@ -22,7 +22,7 @@ export default function QuanTriNghiepVuScreen({
   }, [initialTab]);
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#f4f7fb]">
+    <div className="flex-1 min-w-0 flex flex-col h-full overflow-hidden bg-[#f4f7fb]">
       {activeTab === 'quy-trinh' && <ProcessWorkflowModule onNav={onNav} />}
       {activeTab === 'loai-don' && <LoaiDonTab onNavigateToWorkflow={() => setActiveTab('quy-trinh')} />}
       {activeTab === 'lich-lam-viec' && <LichLamViecTab />}

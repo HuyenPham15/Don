@@ -49,7 +49,7 @@ export default function ProcessWorkflowModule({ onNav }: ProcessWorkflowModulePr
   };
 
   // Sao chép quy trình
-  const handleDuplicateWorkflow = (wf: ProcessWorkflow) => {
+  const handleDuplicateWorkflow = (wf: ProcessWorkflow, openDesigner: boolean = false) => {
     const now = new Date();
     const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
@@ -75,6 +75,12 @@ export default function ProcessWorkflowModule({ onNav }: ProcessWorkflowModulePr
 
     setWorkflows((prev) => [duplicated, ...prev]);
     showToast(`✓ Đã nhân bản quy trình thành "${duplicated.name}".`);
+
+    if (openDesigner) {
+      setEditingWorkflow(duplicated);
+      setDesignerMode('edit');
+      setCurrentView('designer');
+    }
   };
 
   // Tạo phiên bản mới từ quy trình đã phát hành (Requirement 8 & 12)
@@ -229,11 +235,12 @@ export default function ProcessWorkflowModule({ onNav }: ProcessWorkflowModulePr
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#f4f7fb]">
+    <div className="flex-1 min-w-0 flex flex-col h-full overflow-hidden bg-[#f4f7fb]">
       {currentView === 'list' && (
         <ProcessWorkflowList
           workflows={workflows}
           onCreateNew={handleOpenCreate}
+          onCreateAndDesign={handleCreateAndDesign}
           onEditWorkflow={handleEditWorkflow}
           onDuplicateWorkflow={handleDuplicateWorkflow}
           onToggleStatus={handleToggleStatus}

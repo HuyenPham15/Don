@@ -156,655 +156,656 @@ export default function GovexToCaoWorkflowDiagram({
             style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'top left', minWidth: '920px' }}
             className="transition-transform duration-150"
           >
+            {/* Biểu tượng tâm điểm / crosshair ở góc trên bên trái */}
+            <div className="flex items-center gap-2 mb-2">
+              <button
+                type="button"
+                onClick={() => setZoomLevel(1)}
+                className="w-7 h-7 rounded border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shadow-2xs cursor-pointer"
+                title="Định vị trung tâm / Khôi phục góc nhìn"
+              >
+                <span className="material-symbols-outlined text-[17px]">filter_center_focus</span>
+              </button>
+            </div>
+
             {/* ========================================================================= */}
-            {/* PHẦN 1: BẢNG LÀN BƠI CHÍNH – QUY TRÌNH XỬ LÝ ĐƠN                          */}
+            {/* BẢNG LÀN BƠI CHÍNH – QUY TRÌNH XỬ LÝ ĐƠN CHUẨN THEO HÌNH ẢNH             */}
             {/* ========================================================================= */}
-            <div className="bg-white rounded-2xl border border-slate-300 shadow-sm overflow-hidden">
-              {/* Header 2 Giai đoạn chuẩn của Xử lý đơn */}
-              <div className="grid grid-cols-12 bg-sky-100/70 border-b border-slate-300 text-center font-bold text-xs text-slate-800">
-                <div className="col-span-2 p-2.5 border-r border-slate-300 flex items-center justify-center bg-slate-100 text-slate-700 uppercase tracking-tight text-[11px]">
-                  TÁC NHÂN
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+              {/* Header các cột / Giai đoạn */}
+              <div className="flex border-b border-slate-200 bg-white text-slate-800 text-[11px] font-semibold select-none">
+                {/* Cột 0: Nhóm trách nhiệm */}
+                <div className="w-[140px] shrink-0 p-2.5 border-r border-slate-200 flex items-center text-slate-600 font-medium">
+                  Nhóm trách nhiệm
                 </div>
-                <div className="col-span-5 p-2.5 border-r border-slate-300 text-[11px] uppercase bg-sky-50 text-blue-900 flex items-center justify-center gap-1.5">
-                  <span className="w-5 h-5 rounded-full bg-blue-700 text-white inline-flex items-center justify-center text-[10px]">1</span>
-                  <span>GĐ 1 – TIẾP NHẬN &amp; XÁC ĐỊNH HƯỚNG XỬ LÝ ĐƠN</span>
+
+                {/* Cột 1: 1 Phân loại và kiểm tra ban đầu */}
+                <div className="w-[430px] shrink-0 p-2.5 border-r border-slate-200 flex items-center gap-1.5 font-bold text-slate-700">
+                  <span className="w-4 h-4 rounded-full border border-slate-300 text-slate-600 inline-flex items-center justify-center text-[10px] font-bold shrink-0">
+                    1
+                  </span>
+                  <span>Phân loại và kiểm tra ban đầu</span>
                 </div>
-                <div className="col-span-5 p-2.5 text-[11px] uppercase bg-sky-50 text-blue-900 flex items-center justify-center gap-1.5">
-                  <span className="w-5 h-5 rounded-full bg-blue-700 text-white inline-flex items-center justify-center text-[10px]">2</span>
-                  <span>GĐ 2 – PHÊ DUYỆT &amp; THỤ LÝ ĐƠN (HOÀN TẤT XỬ LÝ ĐƠN)</span>
+
+                {/* Cột 2: 2 Văn bản theo hướng xử lý */}
+                <div className="flex-1 min-w-[430px] p-2.5 flex items-center gap-1.5 font-bold text-slate-700">
+                  <span className="w-4 h-4 rounded-full border border-slate-300 text-slate-600 inline-flex items-center justify-center text-[10px] font-bold shrink-0">
+                    2
+                  </span>
+                  <span>Văn bản theo hướng xử lý</span>
                 </div>
               </div>
 
-              {/* 1. LÀN BƠI 1: CÁN BỘ CHUYÊN MÔN */}
-              <div className="grid grid-cols-12 border-b border-slate-300 bg-sky-50/20 min-h-[220px]">
-                <div className="col-span-2 p-3 border-r border-slate-300 flex flex-col justify-center items-center text-center bg-sky-100/40">
-                  <span className="material-symbols-outlined text-blue-700 text-2xl">person</span>
-                  <span className="text-xs font-bold text-blue-950 mt-1 uppercase tracking-tight">
-                    CÁN BỘ CHUYÊN MÔN
-                  </span>
-                  <span className="text-[10px] text-slate-500 mt-0.5">Tiếp nhận &amp; Đề xuất xử lý</span>
-                </div>
-
-                {/* GĐ 1: Tiếp nhận -> Kiểm tra/Xác minh -> 4 nhánh kết quả */}
-                <div className="col-span-5 p-3 border-r border-slate-300 flex flex-col justify-between gap-2.5">
-                  {/* 2 Bước đầu: Tiếp nhận -> Kiểm tra ban đầu */}
-                  <div className="flex items-center gap-2">
-                    {/* Node 1: Tiếp nhận đơn */}
-                    <div
-                      onClick={() => handleSelectNode('tn-1', '● Đã chọn: Bước 1. Tiếp nhận đơn')}
-                      className={`flex-1 p-2 rounded-xl border text-center cursor-pointer transition-all ${selectedNodeId === 'tn-1'
-                        ? 'ring-2 ring-blue-600 bg-blue-100 border-blue-600 font-bold shadow-md scale-[1.02]'
-                        : 'bg-white border-blue-200 hover:border-blue-400 hover:bg-blue-50/50'
-                        }`}
-                    >
-                      <div className="flex items-center justify-between mb-0.5">
-                        <span className="text-[9px] px-1 rounded bg-blue-100 text-blue-800 font-bold">Bước 1</span>
-                        {selectedNodeId === 'tn-1' && (
-                          <span className="w-2 h-2 rounded-full bg-blue-600 animate-ping"></span>
-                        )}
-                      </div>
-                      <span className="text-[11px] text-blue-900 font-bold block leading-tight">1. Tiếp nhận đơn</span>
-                      <span className="text-[9.5px] text-slate-500 block mt-0.5">Vào sổ điện tử &amp; Phiếu nhận</span>
+              {/* Thân bảng: Cột Tác nhân bên trái + Canvas có lưới chấm & đường kết nối bên phải */}
+              <div className="flex min-h-[530px] bg-white relative">
+                {/* Cột Tác nhân bên trái: Chuyên môn / Hàng 1 */}
+                <div className="w-[140px] shrink-0 border-r border-slate-200 bg-white p-3 flex flex-col justify-between select-none">
+                  <div>
+                    <div className="flex items-center gap-1.5 text-[12px] font-bold text-slate-800">
+                      <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0 inline-block"></span>
+                      <span>Chuyên môn</span>
                     </div>
-
-                    <span className="material-symbols-outlined text-blue-600 text-base shrink-0">arrow_forward</span>
-
-                    {/* Node 2: Kiểm tra ban đầu & Xác minh */}
-                    <div
-                      onClick={() => handleSelectNode('tn-2', '● Đã chọn: Bước 2. Kiểm tra & Xác minh')}
-                      className={`flex-1 p-2 rounded-xl border text-center cursor-pointer transition-all ${selectedNodeId === 'tn-2'
-                        ? 'ring-2 ring-blue-600 bg-blue-100 border-blue-600 font-bold shadow-md scale-[1.02]'
-                        : 'bg-white border-blue-200 hover:border-blue-400 hover:bg-blue-50/50'
-                        }`}
-                    >
-                      <div className="flex items-center justify-between mb-0.5">
-                        <span className="text-[9px] px-1 rounded bg-blue-100 text-blue-800 font-bold">Bước 2</span>
-                        {selectedNodeId === 'tn-2' && (
-                          <span className="w-2 h-2 rounded-full bg-blue-600 animate-ping"></span>
-                        )}
-                      </div>
-                      <span className="text-[11px] text-blue-900 font-bold block leading-tight">2. Kiểm tra &amp; Xác minh</span>
-                      <span className="text-[9.5px] text-slate-500 block mt-0.5">Điều kiện thụ lý / Thẩm quyền</span>
+                    <div className="text-[10.5px] text-slate-400 mt-0.5 pl-3.5">
+                      6 bước - 2 vai trò
                     </div>
                   </div>
 
-                  {/* Khối quyết định Kết quả xử lý? & 4 nhánh kết quả */}
-                  <div className="p-2 rounded-xl bg-slate-50/90 border border-slate-200/90 space-y-1.5">
-                    <div className="flex items-center justify-between text-[10px] font-bold text-slate-700 px-1">
-                      <span className="uppercase tracking-tight text-slate-500">Kết quả kiểm tra &amp; xác minh:</span>
-                      <span className="text-blue-700">4 Hướng xử lý</span>
-                    </div>
-
-                    {/* 4 Nhánh kết quả: Không thụ lý, Yêu cầu bổ sung, Bàn giao, Trả lại */}
-                    <div className="grid grid-cols-4 gap-1.5 text-[9px]">
-                      {/* Nhánh 1: Không thụ lý */}
-                      <button
-                        type="button"
-                        onClick={() => handleSelectNode('tn-kt-khong-thu-ly', '● Đã chọn điều kiện: Không thụ lý giải quyết')}
-                        className={`p-1.5 rounded-lg border text-center cursor-pointer transition-all flex flex-col justify-between ${selectedNodeId === 'tn-kt-khong-thu-ly'
-                          ? 'ring-2 ring-rose-600 bg-rose-100 border-rose-500 font-bold shadow-md scale-[1.02]'
-                          : 'bg-white border-slate-300 hover:bg-slate-50'
-                          }`}
-                      >
-                        <span className="font-bold text-slate-800 leading-tight">Không thụ lý</span>
-                        <span className="mt-1 px-1 py-0.5 rounded bg-emerald-100 border border-emerald-300 text-emerald-800 font-bold text-[8px]">
-                          KẾT THÚC ĐƠN
-                        </span>
-                      </button>
-
-                      {/* Nhánh 2: Yêu cầu bổ sung */}
-                      <button
-                        type="button"
-                        onClick={() => handleSelectNode('tn-kt-yeu-cau-bo-sung', '● Đã chọn điều kiện: Yêu cầu bổ sung tài liệu (Hạn 10 ngày)')}
-                        className={`p-1.5 rounded-lg border text-center cursor-pointer transition-all flex flex-col justify-between ${selectedNodeId === 'tn-kt-yeu-cau-bo-sung'
-                          ? 'ring-2 ring-blue-600 bg-blue-100 border-blue-500 font-bold shadow-md scale-[1.02]'
-                          : 'bg-white border-slate-300 hover:bg-slate-50'
-                          }`}
-                      >
-                        <span className="font-bold text-blue-900 leading-tight">Y/C Bổ sung</span>
-                        <span className="mt-1 px-1 py-0.5 rounded bg-blue-100 border border-blue-300 text-blue-800 font-bold text-[8px]">
-                          HẠN 10 NGÀY
-                        </span>
-                      </button>
-
-                      {/* Nhánh 3: Bàn giao */}
-                      <button
-                        type="button"
-                        onClick={() => handleSelectNode('tn-kt-ban-giao', '● Đã chọn điều kiện: Bàn giao / Chuyển cơ quan khác')}
-                        className={`p-1.5 rounded-lg border text-center cursor-pointer transition-all flex flex-col justify-between ${selectedNodeId === 'tn-kt-ban-giao'
-                          ? 'ring-2 ring-amber-600 bg-amber-100 border-amber-500 font-bold shadow-md scale-[1.02]'
-                          : 'bg-white border-slate-300 hover:bg-slate-50'
-                          }`}
-                      >
-                        <span className="font-bold text-slate-800 leading-tight">Bàn giao</span>
-                        <span className="mt-1 px-1 py-0.5 rounded bg-emerald-100 border border-emerald-300 text-emerald-800 font-bold text-[8px]">
-                          KẾT THÚC ĐƠN
-                        </span>
-                      </button>
-
-                      {/* Nhánh 4: Trả lại đơn */}
-                      <button
-                        type="button"
-                        onClick={() => handleSelectNode('tn-kt-tra-lai', '● Đã chọn điều kiện: Trả lại đơn & Hướng dẫn')}
-                        className={`p-1.5 rounded-lg border text-center cursor-pointer transition-all flex flex-col justify-between ${selectedNodeId === 'tn-kt-tra-lai'
-                          ? 'ring-2 ring-rose-600 bg-rose-100 border-rose-500 font-bold shadow-md scale-[1.02]'
-                          : 'bg-white border-slate-300 hover:bg-slate-50'
-                          }`}
-                      >
-                        <span className="font-bold text-slate-800 leading-tight">Trả lại đơn</span>
-                        <span className="mt-1 px-1 py-0.5 rounded bg-emerald-100 border border-emerald-300 text-emerald-800 font-bold text-[8px]">
-                          KẾT THÚC ĐƠN
-                        </span>
-                      </button>
-                    </div>
-
-                    {/* Nhánh 5: Đủ điều kiện thụ lý -> Chuyển sang GĐ 2 */}
-                    <div
-                      onClick={() => handleSelectNode('tn-du-dieu-kien', '● Đã chọn: Đủ điều kiện thụ lý (Chuyển GĐ 2)')}
-                      className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg border cursor-pointer transition-all ${selectedNodeId === 'tn-du-dieu-kien'
-                        ? 'ring-2 ring-blue-600 bg-blue-200 border-blue-600 font-bold shadow-md'
-                        : 'bg-blue-100/70 border-blue-200 hover:bg-blue-200/80 text-blue-900 font-bold'
-                        } text-[10px]`}
-                    >
-                      <span className="flex items-center gap-1.5">
-                        <span className="material-symbols-outlined text-[14px] text-blue-700">check_circle</span>
-                        <span>Đủ điều kiện thụ lý:</span>
-                      </span>
-                      <span className="flex items-center gap-1 text-[9.5px] text-blue-800 font-bold">
-                        Chuyển GĐ 2 (Đề xuất thụ lý)
-                        <span className="material-symbols-outlined text-[13px]">arrow_forward</span>
-                      </span>
-                    </div>
+                  <div className="text-[11px] text-slate-400 font-medium">
+                    Hàng 1
                   </div>
                 </div>
 
-                {/* GĐ 2: Đề xuất thụ lý -> Trình lãnh đạo + Cán bộ thụ lý tố cáo -> KẾT THÚC ĐƠN */}
-                <div className="col-span-5 p-3 flex flex-col justify-between gap-2.5">
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-2">
-                      <div
-                        onClick={() => handleSelectNode('tl-1', '● Đã chọn: Đề xuất thụ lý')}
-                        className={`flex-1 p-2 rounded-xl border text-center cursor-pointer transition-all ${selectedNodeId === 'tl-1'
-                          ? 'ring-2 ring-blue-600 bg-blue-100 border-blue-500 font-bold shadow-md scale-[1.02]'
-                          : 'bg-white border-blue-300 hover:border-blue-500'
-                          }`}
-                      >
-                        <span className="text-[11px] text-blue-900 font-bold block leading-tight">Đề xuất thụ lý</span>
-                        <span className="text-[9.5px] text-slate-500 block mt-0.5">Lập Báo cáo / Tờ trình Mẫu 01</span>
-                      </div>
+                {/* Canvas sơ đồ với nền lưới chấm (Dot Grid) */}
+                <div
+                  className="flex-1 relative overflow-hidden"
+                  style={{
+                    backgroundImage: 'radial-gradient(#cbd5e1 1.25px, transparent 1.25px)',
+                    backgroundSize: '24px 24px',
+                    backgroundColor: '#ffffff',
+                    minWidth: '860px',
+                    height: '530px',
+                  }}
+                >
+                  {/* Đường phân chia dọc giữa Cột 1 và Cột 2 */}
+                  <div className="absolute top-0 bottom-0 left-[430px] w-px bg-slate-200 pointer-events-none" />
 
-                      <span className="material-symbols-outlined text-blue-600 text-base shrink-0">arrow_forward</span>
-
-                      <div
-                        onClick={() => handleSelectNode('tl-2', '● Đã chọn: Trình Lãnh đạo')}
-                        className={`flex-1 p-2 rounded-xl border text-center cursor-pointer transition-all ${selectedNodeId === 'tl-2'
-                          ? 'ring-2 ring-blue-600 bg-blue-100 border-blue-500 font-bold shadow-md scale-[1.02]'
-                          : 'bg-white border-blue-300 hover:border-blue-500'
-                          }`}
+                  {/* SVG Canvas chứa các đường cong kết nối (Bézier Curves) */}
+                  <svg
+                    className="absolute inset-0 w-full h-full pointer-events-none z-0"
+                    style={{ overflow: 'visible' }}
+                  >
+                    <defs>
+                      <marker
+                        id="wf-arrow-head"
+                        viewBox="0 0 10 10"
+                        refX="7"
+                        refY="5"
+                        markerWidth="6"
+                        markerHeight="6"
+                        orient="auto-start-reverse"
                       >
-                        <span className="text-[11px] text-blue-900 font-bold block leading-tight">Trình Lãnh đạo</span>
-                        <span className="text-[9.5px] text-slate-500 block mt-0.5">Gửi hồ sơ vào mục Trình ký</span>
+                        <path d="M 0 2 L 7 5 L 0 8 z" fill="#2b5282" />
+                      </marker>
+                    </defs>
+
+                    {/* Đường 1: Tiếp nhận đơn (right: 198, 62) -> Tạo báo cáo đề xuất (left: 176, 280) */}
+                    <path
+                      d="M 198 62 C 235 62, 135 280, 174 280"
+                      fill="none"
+                      stroke="#2b5282"
+                      strokeWidth="1.75"
+                      markerEnd="url(#wf-arrow-head)"
+                    />
+
+                    {/* Đường 2: Tạo báo cáo đề xuất (right: 356, 280) -> Chuyển xử lý (left: 490, 62) */}
+                    <path
+                      d="M 356 280 C 425 280, 420 62, 488 62"
+                      fill="none"
+                      stroke="#2b5282"
+                      strokeWidth="1.75"
+                      markerEnd="url(#wf-arrow-head)"
+                    />
+
+                    {/* Đường 3: Tạo báo cáo đề xuất (right: 356, 280) -> Trả lại đơn (left: 490, 192) */}
+                    <path
+                      d="M 356 280 C 425 280, 420 192, 488 192"
+                      fill="none"
+                      stroke="#2b5282"
+                      strokeWidth="1.75"
+                      markerEnd="url(#wf-arrow-head)"
+                    />
+
+                    {/* Đường 4: Tạo báo cáo đề xuất (right: 356, 280) -> Xử lý đơn (left: 490, 322) */}
+                    <path
+                      d="M 356 280 C 425 280, 420 322, 488 322"
+                      fill="none"
+                      stroke="#2b5282"
+                      strokeWidth="1.75"
+                      markerEnd="url(#wf-arrow-head)"
+                    />
+
+                    {/* Đường 5: Tạo báo cáo đề xuất (right: 356, 280) -> Không xử lý (left: 490, 452) */}
+                    <path
+                      d="M 356 280 C 425 280, 420 452, 488 452"
+                      fill="none"
+                      stroke="#2b5282"
+                      strokeWidth="1.75"
+                      markerEnd="url(#wf-arrow-head)"
+                    />
+                  </svg>
+
+                  {/* ========================================================================= */}
+                  {/* CÁC THẺ BƯỚC QUY TRÌNH (HTML CARDS TRÊN CANVAS)                           */}
+                  {/* ========================================================================= */}
+
+                  {/* 1. NODE 1: TIẾP NHẬN ĐƠN (Cột 1 - Hàng trên) */}
+                  <div
+                    onClick={() => handleSelectNode('tn-1', '● Đã chọn: Bước 1. Tiếp nhận đơn')}
+                    style={{ left: '26px', top: '24px', width: '172px', height: '76px' }}
+                    className={`absolute z-10 p-2.5 rounded-xl border bg-white flex flex-col justify-between transition-all cursor-pointer ${selectedNodeId === 'tn-1'
+                      ? 'ring-2 ring-blue-600 border-blue-500 bg-blue-50/20 shadow-sm scale-[1.02]'
+                      : 'border-slate-300 hover:border-blue-400 hover:shadow-xs shadow-2xs'
+                      }`}
+                  >
+                    <div>
+                      <span className="inline-block text-[9.5px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.2 rounded w-fit">
+                        BẮT ĐẦU
+                      </span>
+                      <div className="font-bold text-[12px] text-slate-900 mt-1 leading-tight">
+                        Tiếp nhận đơn
                       </div>
                     </div>
-
-                    <div className="text-[9.5px] text-rose-600 font-semibold bg-rose-50/90 p-1.5 rounded-lg border border-rose-200 flex items-center justify-center gap-1.5">
-                      <span className="material-symbols-outlined text-[13px]">undo</span>
-                      <span>Nhận lại nếu có yêu cầu chỉnh sửa, hoàn thiện từ Lãnh đạo</span>
+                    <div className="text-[10px] text-slate-400 pt-1 border-t border-slate-100 flex items-center justify-between">
+                      <span>Không hạn</span>
                     </div>
                   </div>
 
-                  {/* Kết quả sau duyệt: Cán bộ chuyên môn ban hành thông báo thụ lý tố cáo -> KẾT THÚC QUY TRÌNH XỬ LÝ ĐƠN */}
-                  <div className="pt-2 border-t border-slate-200 flex items-center justify-between gap-2">
-                    <div
-                      onClick={() => handleSelectNode('tl-5', '● Đã chọn: Ban hành Quyết định & Thông báo thụ lý')}
-                      className={`flex-1 p-2 rounded-xl border text-center cursor-pointer transition-all ${selectedNodeId === 'tl-5'
-                        ? 'ring-2 ring-blue-600 bg-blue-100 border-blue-500 font-bold shadow-md scale-[1.02]'
-                        : 'bg-white border-blue-300 hover:border-blue-500'
-                        }`}
-                    >
-                      <span className="text-[10.5px] text-blue-950 font-bold block leading-tight">
-                        Ban hành Quyết định &amp; Thông báo thụ lý tố cáo
+                  {/* 2. NODE 2: TẠO BÁO CÁO ĐỀ XUẤT (Cột 1 - Hàng dưới) */}
+                  <div
+                    onClick={() => handleSelectNode('tn-2', '● Đã chọn: Bước 2. Tạo báo cáo đề xuất')}
+                    style={{ left: '176px', top: '240px', width: '180px', height: '80px' }}
+                    className={`absolute z-10 p-2.5 rounded-xl border bg-white flex flex-col justify-between transition-all cursor-pointer ${selectedNodeId === 'tn-2'
+                      ? 'ring-2 ring-blue-600 border-blue-500 bg-blue-50/20 shadow-sm scale-[1.02]'
+                      : 'border-slate-300 hover:border-blue-400 hover:shadow-xs shadow-2xs'
+                      }`}
+                  >
+                    <div>
+                      <span className="text-[10px] text-slate-400 font-medium block">
+                        BUOC_2 Bước 2
                       </span>
-                      <span className="text-[9px] text-slate-500 block mt-0.5">Mẫu số 01 / Gửi người tố cáo</span>
+                      <div className="font-bold text-[12px] text-slate-900 mt-0.5 leading-tight">
+                        Tạo báo cáo đề xuất
+                      </div>
                     </div>
+                    <div className="text-[10px] text-slate-500 font-medium pt-1 border-t border-slate-100 flex items-center justify-between">
+                      <span>4 giờ</span>
+                      <span>1 BM</span>
+                    </div>
+                  </div>
 
-                    <div className="px-2.5 py-2 rounded-xl bg-emerald-100 border border-emerald-400 text-emerald-800 font-black text-[10px] shrink-0 text-center leading-tight">
-                      <div>✓ HOÀN TẤT</div>
-                      <div className="text-[8.5px] font-bold text-emerald-700">XỬ LÝ ĐƠN</div>
+                  {/* 3. NODE 3: CHUYỂN XỬ LÝ (Cột 2 - Vị trí 1) */}
+                  <div
+                    onClick={() => handleSelectNode('tn-kt-ban-giao', '● Đã chọn: Chuyển xử lý')}
+                    style={{ left: '490px', top: '24px', width: '172px', height: '76px' }}
+                    className={`absolute z-10 p-2.5 rounded-xl border bg-white flex flex-col justify-between transition-all cursor-pointer ${selectedNodeId === 'tn-kt-ban-giao'
+                      ? 'ring-2 ring-emerald-600 border-emerald-500 bg-emerald-50/20 shadow-sm scale-[1.02]'
+                      : 'border-slate-300 hover:border-emerald-400 hover:shadow-xs shadow-2xs'
+                      }`}
+                  >
+                    <div>
+                      <span className="inline-block text-[9.5px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded w-fit">
+                        KẾT THÚC
+                      </span>
+                      <div className="font-bold text-[12px] text-slate-900 mt-1 leading-tight">
+                        Chuyển xử lý
+                      </div>
+                    </div>
+                    <div className="text-[10px] text-slate-500 font-medium pt-1 border-t border-slate-100 flex items-center justify-between">
+                      <span>Không hạn</span>
+                      <span>1 BM</span>
+                    </div>
+                  </div>
+
+                  {/* 4. NODE 4: TRẢ LẠI ĐƠN (Cột 2 - Vị trí 2) */}
+                  <div
+                    onClick={() => handleSelectNode('tn-kt-tra-lai', '● Đã chọn: Trả lại đơn')}
+                    style={{ left: '490px', top: '154px', width: '172px', height: '76px' }}
+                    className={`absolute z-10 p-2.5 rounded-xl border bg-white flex flex-col justify-between transition-all cursor-pointer ${selectedNodeId === 'tn-kt-tra-lai'
+                      ? 'ring-2 ring-emerald-600 border-emerald-500 bg-emerald-50/20 shadow-sm scale-[1.02]'
+                      : 'border-slate-300 hover:border-emerald-400 hover:shadow-xs shadow-2xs'
+                      }`}
+                  >
+                    <div>
+                      <span className="inline-block text-[9.5px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded w-fit">
+                        KẾT THÚC
+                      </span>
+                      <div className="font-bold text-[12px] text-slate-900 mt-1 leading-tight">
+                        Trả lại đơn
+                      </div>
+                    </div>
+                    <div className="text-[10px] text-slate-500 font-medium pt-1 border-t border-slate-100 flex items-center justify-between">
+                      <span>Không hạn</span>
+                      <span>1 BM</span>
+                    </div>
+                  </div>
+
+                  {/* 5. NODE 5: XỬ LÝ ĐƠN (Cột 2 - Vị trí 3) */}
+                  <div
+                    onClick={() => handleSelectNode('tl-5', '● Đã chọn: Xử lý đơn')}
+                    style={{ left: '490px', top: '284px', width: '172px', height: '76px' }}
+                    className={`absolute z-10 p-2.5 rounded-xl border bg-white flex flex-col justify-between transition-all cursor-pointer ${selectedNodeId === 'tl-5'
+                      ? 'ring-2 ring-emerald-600 border-emerald-500 bg-emerald-50/20 shadow-sm scale-[1.02]'
+                      : 'border-slate-300 hover:border-emerald-400 hover:shadow-xs shadow-2xs'
+                      }`}
+                  >
+                    <div>
+                      <span className="inline-block text-[9.5px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded w-fit">
+                        KẾT THÚC
+                      </span>
+                      <div className="font-bold text-[12px] text-slate-900 mt-1 leading-tight">
+                        Xử lý đơn
+                      </div>
+                    </div>
+                    <div className="text-[10px] text-slate-500 font-medium pt-1 border-t border-slate-100 flex items-center justify-between">
+                      <span>Không hạn</span>
+                      <span>1 BM</span>
+                    </div>
+                  </div>
+
+                  {/* 6. NODE 6: KHÔNG XỬ LÝ (Cột 2 - Vị trí 4) */}
+                  <div
+                    onClick={() => handleSelectNode('tn-kt-khong-thu-ly', '● Đã chọn: Không xử lý')}
+                    style={{ left: '490px', top: '414px', width: '172px', height: '76px' }}
+                    className={`absolute z-10 p-2.5 rounded-xl border bg-white flex flex-col justify-between transition-all cursor-pointer ${selectedNodeId === 'tn-kt-khong-thu-ly'
+                      ? 'ring-2 ring-emerald-600 border-emerald-500 bg-emerald-50/20 shadow-sm scale-[1.02]'
+                      : 'border-slate-300 hover:border-emerald-400 hover:shadow-xs shadow-2xs'
+                      }`}
+                  >
+                    <div>
+                      <span className="inline-block text-[9.5px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded w-fit">
+                        KẾT THÚC
+                      </span>
+                      <div className="font-bold text-[12px] text-slate-900 mt-1 leading-tight">
+                        Không xử lý
+                      </div>
+                    </div>
+                    <div className="text-[10px] text-slate-500 font-medium pt-1 border-t border-slate-100 flex items-center justify-between">
+                      <span>Không hạn</span>
+                      <span>1 BM</span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* 2. LÀN BƠI 2: LÃNH ĐẠO */}
-              <div className="grid grid-cols-12 border-b border-slate-300 bg-amber-50/25 min-h-[110px]">
-                <div className="col-span-2 p-3 border-r border-slate-300 flex flex-col justify-center items-center text-center bg-amber-100/50">
-                  <span className="material-symbols-outlined text-amber-700 text-2xl">shield_person</span>
-                  <span className="text-xs font-bold text-amber-950 mt-1 uppercase tracking-tight">
-                    LÃNH ĐẠO
-                  </span>
-                  <span className="text-[10px] text-slate-500 mt-0.5">Người có thẩm quyền</span>
+              {/* Chú giải ở chân bảng quy trình (Legend) */}
+              <div className="flex items-center gap-6 px-4 py-2 border-t border-slate-200 text-[11px] text-slate-600 bg-white select-none">
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-[2px] bg-[#2b5282] inline-block"></span>
+                  <span>Chuyển tiếp bình thường</span>
                 </div>
-
-                {/* GĐ 1: Theo dõi chỉ đạo chung */}
-                <div className="col-span-5 p-3 border-r border-slate-300 flex items-center justify-center text-slate-400 text-xs italic bg-slate-50/30">
-                  (Theo dõi tiến độ tiếp nhận &amp; phân loại đơn)
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-[2px] border-b-2 border-dashed border-slate-400 inline-block"></span>
+                  <span>Quay lại / trả hồ sơ</span>
                 </div>
-
-                {/* GĐ 2: Lãnh đạo xem xét / phê duyệt đề xuất thụ lý */}
-                <div className="col-span-5 p-3 flex items-center justify-between gap-3">
-                  <div
-                    onClick={() => handleSelectNode('tl-3', '● Đã chọn: Lãnh đạo xem xét & phê duyệt đề xuất')}
-                    className={`flex-1 p-2.5 rounded-xl border text-center cursor-pointer transition-all ${selectedNodeId === 'tl-3'
-                      ? 'ring-2 ring-amber-600 bg-amber-100 border-amber-500 font-bold shadow-md scale-[1.02]'
-                      : 'bg-white border-amber-300 hover:border-amber-400'
-                      }`}
-                  >
-                    <span className="text-[11px] text-amber-950 font-bold block leading-tight">
-                      Lãnh đạo xem xét &amp; phê duyệt đề xuất thụ lý
-                    </span>
-                    <span className="text-[9.5px] text-slate-500 block mt-0.5">
-                      Ký số phê duyệt Tờ trình &amp; Dự thảo Quyết định thụ lý
-                    </span>
-                  </div>
-
-                  {/* Khối hình thoi quyết định: Ký duyệt thụ lý? */}
-                  <div
-                    onClick={() => handleSelectNode('tl-duyet', '● Đã chọn quyết định: Ký duyệt thụ lý?')}
-                    className={`w-20 h-16 rotate-45 flex items-center justify-center shrink-0 cursor-pointer transition-all ${selectedNodeId === 'tl-duyet'
-                      ? 'ring-2 ring-purple-600 bg-purple-100 border-2 border-purple-600 shadow-md scale-105'
-                      : 'bg-purple-50 border border-purple-300 hover:bg-purple-100 shadow-2xs'
-                      }`}
-                  >
-                    <span className="-rotate-45 text-[9.5px] font-bold text-purple-900 text-center leading-tight">
-                      Ký duyệt<br />thụ lý?
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* 3. LÀN BƠI 3: HỆ THỐNG / VĂN THƯ */}
-              <div className="grid grid-cols-12 border-b border-slate-300 bg-slate-50 min-h-[95px]">
-                <div className="col-span-2 p-3 border-r border-slate-300 flex flex-col justify-center items-center text-center bg-slate-200/60">
-                  <span className="material-symbols-outlined text-slate-700 text-2xl">database</span>
-                  <span className="text-xs font-bold text-slate-900 mt-1 uppercase tracking-tight">
-                    HỆ THỐNG / VĂN THƯ
-                  </span>
-                  <span className="text-[10px] text-slate-500 mt-0.5">Tự động hóa tác vụ</span>
-                </div>
-
-                {/* GĐ 1: Tự động cấp mã đơn & vào sổ điện tử */}
-                <div className="col-span-5 p-3 border-r border-slate-300 flex items-center justify-center text-slate-500 text-xs font-medium">
-                  <div className="flex items-center gap-1.5 p-2 rounded-xl bg-white border border-slate-300 text-[10.5px]">
-                    <span className="material-symbols-outlined text-blue-600 text-base">pin</span>
-                    <span>Tự động cấp mã đơn điện tử &amp; đồng bộ CSDL tiếp nhận</span>
-                  </div>
-                </div>
-
-                {/* GĐ 2: Tự động cấp số thụ lý -> Hoàn tất đóng hồ sơ xử lý đơn */}
-                <div className="col-span-5 p-3 flex items-center gap-2">
-                  <div
-                    onClick={() => handleSelectNode('tl-4', '● Đã chọn: Tự động cấp số thụ lý')}
-                    className={`flex-1 p-2 rounded-xl border text-center cursor-pointer transition-all ${selectedNodeId === 'tl-4'
-                      ? 'ring-2 ring-slate-600 bg-slate-200 border-slate-500 font-bold shadow-md scale-[1.02]'
-                      : 'bg-white border-slate-300 hover:border-slate-400'
-                      }`}
-                  >
-                    <span className="text-[10.5px] text-slate-800 font-bold block leading-tight">
-                      Tự động cấp số thụ lý
-                    </span>
-                    <span className="text-[9px] text-slate-500 block mt-0.5">Số TLTC-2026/... vào sổ điện tử</span>
-                  </div>
-
-                  <span className="material-symbols-outlined text-slate-400 text-sm">arrow_forward</span>
-
-                  <div
-                    onClick={() => handleSelectNode('tl-6', '● Đã chọn: Hoàn tất đóng hồ sơ xử lý đơn')}
-                    className={`flex-1 p-2 rounded-xl border text-center cursor-pointer transition-all ${selectedNodeId === 'tl-6'
-                      ? 'ring-2 ring-slate-600 bg-slate-200 border-slate-500 font-bold shadow-md scale-[1.02]'
-                      : 'bg-white border-slate-300 hover:border-slate-400'
-                      }`}
-                  >
-                    <span className="text-[10.5px] text-slate-800 font-bold block leading-tight">
-                      Hoàn tất đóng hồ sơ xử lý đơn
-                    </span>
-                    <span className="text-[9px] text-slate-500 block mt-0.5">Lưu trữ kết quả xử lý đơn</span>
-                  </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block"></span>
+                  <span>Nhóm trách nhiệm</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
         {isRightPanelOpen && (
-          <aside className="absolute top-0 right-0 bottom-0 w-[440px] xl:w-[480px] border-l border-slate-200 bg-white shadow-2xl z-30 flex flex-col overflow-hidden animate-drawer-slide-in">
-            {/* 1. HEADER PANEL BÊN PHẢI (THÔNG TIN BƯỚC) */}
-            <div className="p-3.5 bg-white text-slate-800 shrink-0 border-b border-slate-200 shadow-2xs">
-              <div className="flex items-start justify-between gap-2.5">
-                <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                  <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-200/60 shrink-0">
-                    <span className="material-symbols-outlined text-[18px]">account_tree</span>
+          <aside className="absolute top-0 right-0 bottom-0 w-[420px] xl:w-[460px] border-l border-slate-200 bg-white shadow-xl z-30 flex flex-col overflow-hidden animate-drawer-slide-in">
+            {/* 1. HEADER BẢNG THÔNG TIN: TINH GỌN, KHÔNG LẠM DỤNG ICON & CARD */}
+            <div className="p-3.5 bg-white text-slate-800 shrink-0 border-b border-slate-200">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      LỊCH SỬ XỬ LÝ BƯỚC
+                    </span>
+                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-200">
+                      {donCode}
+                    </span>
                   </div>
-
-                  <div className="min-w-0 flex-1">
-                    {/* <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200/60">
-                        {selectedNode.code || 'BƯỚC QUY TRÌNH'}
-                      </span>
-                      <span className="text-[10.5px] text-slate-500 font-medium truncate" title={selectedNode.stageName}>
-                        {selectedNode.stageName}
-                      </span>
-                    </div> */}
-                    <div className="font-bold text-slate-900 text-xs truncate mt-0.5" title={selectedNode.name}>
-                      {selectedNode.name}
-                    </div>
+                  <h3 className="font-bold text-slate-900 text-[13px] mt-1 leading-snug">
+                    {selectedNode.name}
+                  </h3>
+                  <div className="text-[11px] text-slate-500 mt-0.5 truncate" title={donTitle}>
+                    Đơn: {donTitle}
                   </div>
                 </div>
 
-                {/* Các nút thao tác góc trên bên phải */}
-                <div className="flex items-center gap-1 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      navigator.clipboard?.writeText(selectedNode.code || selectedNode.name);
-                      showToast(`Đã sao chép: ${selectedNode.name}`);
-                    }}
-                    className="w-7 h-7 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
-                    title="Sao chép tên bước"
-                  >
-                    <span className="material-symbols-outlined text-[17px]">content_copy</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsRightPanelOpen(false)}
-                    className="w-7 h-7 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
-                    title="Đóng bảng chi tiết"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">close</span>
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsRightPanelOpen(false)}
+                  className="w-7 h-7 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                  title="Đóng bảng chi tiết"
+                >
+                  <span className="material-symbols-outlined text-[18px]">close</span>
+                </button>
               </div>
             </div>
 
-            {/* 2. BODY SCROLLABLE CONTENT (HIỂN THỊ LIỀN MẠCH KHÔNG CHIA TAB) */}
-            <div className="flex-1 overflow-y-auto p-3.5 space-y-4 bg-slate-50/60 font-body-md">
+            {/* 2. BODY CONTENT: PHẲNG, TINH GỌN, TẬP TRUNG VÀO LỊCH XỬ LÝ CỦA ĐƠN */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white text-slate-800 text-xs">
 
-              {/* ========================================================================= */}
-              {/* A. THÔNG TIN CHUNG BƯỚC XỬ LÝ                                             */}
-              {/* ========================================================================= */}
-              <div className="bg-white rounded-xl border border-slate-200 shadow-2xs p-3.5 space-y-3.5">
+              {/* A. TIẾN ĐỘ & PHÂN CÔNG TẠI BƯỚC (DẠNG DANH SÁCH BẢNG PHẲNG) */}
+              <div className="border-b border-slate-100 pb-3.5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500 text-[11px]">Trạng thái bước:</span>
+                  <span className={`px-2 py-0.5 rounded text-[10.5px] font-bold ${selectedNode.status === 'completed'
+                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                    : selectedNode.status === 'active'
+                      ? 'bg-blue-50 text-blue-800 border border-blue-200'
+                      : 'bg-slate-100 text-slate-700'
+                    }`}>
+                    {selectedNode.trangThaiText}
+                  </span>
+                </div>
 
-                {/* 1. Người thực hiện & Vai trò, chức vụ */}
-                <div className="space-y-1.5">
-                  <div className="text-[10.5px] uppercase font-bold text-slate-400 flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[13px] text-slate-500">person</span>
-                    <span>Người thực hiện &amp; Vai trò, chức vụ:</span>
+                <div className="grid grid-cols-2 gap-3 text-[11px] pt-1">
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">Thời gian bắt đầu:</span>
+                    <span className="font-medium text-slate-800">{selectedNode.thoiGianBatDau}</span>
                   </div>
-
-                  {/* Cán bộ thực hiện chính */}
-                  <div className="p-2.5 bg-gradient-to-r from-blue-50/40 to-white rounded-lg border border-blue-100 space-y-1.5">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
-                        {selectedNode.nguoiHanhDong.canBoThucHien.hoTen.charAt(0)}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="font-bold text-slate-900 text-xs">
-                            {selectedNode.nguoiHanhDong.canBoThucHien.hoTen}
-                          </span>
-                          <span className="text-[9.5px] px-1.5 py-0.2 rounded bg-blue-100/70 text-blue-700 font-medium">
-                            {selectedNode.roleName}
-                          </span>
-                        </div>
-                        <div className="text-[10.5px] text-slate-600 truncate">
-                          {selectedNode.nguoiHanhDong.canBoThucHien.chucVu} • {selectedNode.nguoiHanhDong.canBoThucHien.donVi}
-                        </div>
-                      </div>
-                    </div>
-                    {selectedNode.nguoiHanhDong.canBoThucHien.hanhDongCuThe && (
-                      <div className="text-[10.5px] text-slate-600 bg-white/80 p-1.5 rounded border border-blue-50">
-                        <span className="font-semibold text-slate-700">Hành động:</span> {selectedNode.nguoiHanhDong.canBoThucHien.hanhDongCuThe}
-                      </div>
-                    )}
+                  <div>
+                    <span className="text-slate-400 block text-[10px]">
+                      {selectedNode.status === 'completed' ? 'Thời gian hoàn thành:' : 'Dự kiến hoàn thành:'}
+                    </span>
+                    <span className="font-medium text-slate-800">{selectedNode.thoiGianHoanThanh}</span>
                   </div>
+                </div>
 
-                  {/* Lãnh đạo ký duyệt (nếu có) */}
+                <div className="space-y-1 pt-1.5 text-[11px]">
+                  <div className="flex items-start gap-1.5">
+                    <span className="text-slate-400 shrink-0 text-[10.5px]">Cán bộ thực hiện:</span>
+                    <span className="text-slate-800 font-medium">
+                      {selectedNode.nguoiHanhDong.canBoThucHien.hoTen} ({selectedNode.nguoiHanhDong.canBoThucHien.chucVu})
+                    </span>
+                  </div>
                   {selectedNode.nguoiHanhDong.lanhDaoKyDuyet && (
-                    <div className="p-2.5 bg-gradient-to-r from-amber-50/40 to-white rounded-lg border border-amber-100 space-y-1.5">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-full bg-amber-600 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
-                          {selectedNode.nguoiHanhDong.lanhDaoKyDuyet.hoTen.charAt(0)}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-bold text-slate-900 text-xs">
-                              {selectedNode.nguoiHanhDong.lanhDaoKyDuyet.hoTen}
-                            </span>
-                            <span className="text-[9.5px] px-1.5 py-0.2 rounded bg-amber-100/70 text-amber-800 font-medium">
-                              Lãnh đạo phê duyệt
-                            </span>
-                          </div>
-                          <div className="text-[10.5px] text-slate-600 truncate">
-                            {selectedNode.nguoiHanhDong.lanhDaoKyDuyet.chucVu} • {selectedNode.nguoiHanhDong.lanhDaoKyDuyet.donVi}
-                          </div>
-                        </div>
-                      </div>
-                      {selectedNode.nguoiHanhDong.lanhDaoKyDuyet.hanhDongCuThe && (
-                        <div className="text-[10.5px] text-slate-600 bg-white/80 p-1.5 rounded border border-amber-50">
-                          <span className="font-semibold text-slate-700">Chỉ đạo / Phê duyệt:</span> {selectedNode.nguoiHanhDong.lanhDaoKyDuyet.hanhDongCuThe}
-                        </div>
-                      )}
-                      {/* Văn bản được ký duyệt */}
-                      {(selectedNode.taiLieuVanBan || selectedNode.ketQuaCuoiCung.vanBanDauRa) && (
-                        <div className="p-2 bg-amber-50/50 rounded-lg border border-amber-100 flex items-center gap-2 text-[10.5px]">
-                          <span className="material-symbols-outlined text-amber-600 text-[16px] shrink-0">description</span>
-                          <div className="min-w-0 flex-1">
-                            <span className="text-slate-500 text-[9.5px] block">Văn bản ký duyệt:</span>
-                            <span className="font-bold text-slate-800 truncate block">
-                              {selectedNode.taiLieuVanBan?.tenVanBan || selectedNode.ketQuaCuoiCung.vanBanDauRa}
-                            </span>
-                            {selectedNode.taiLieuVanBan?.soKyHieu && (
-                              <span className="text-[9.5px] font-mono text-slate-500">
-                                Số: {selectedNode.taiLieuVanBan.soKyHieu} • {selectedNode.taiLieuVanBan.loaiVanBan}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      )}
+                    <div className="flex items-start gap-1.5">
+                      <span className="text-slate-400 shrink-0 text-[10.5px]">Lãnh đạo phê duyệt:</span>
+                      <span className="text-slate-800 font-medium">
+                        {selectedNode.nguoiHanhDong.lanhDaoKyDuyet.hoTen} ({selectedNode.nguoiHanhDong.lanhDaoKyDuyet.chucVu})
+                      </span>
                     </div>
                   )}
                 </div>
-
-                {/* 2. Thời gian bắt đầu, hoàn thành & chuyển tiếp */}
-                {/* <div className="space-y-1.5">
-                  <div className="text-[10.5px] uppercase font-bold text-slate-400 flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[13px] text-slate-500">schedule</span>
-                    <span>2. Thời gian bắt đầu &amp; hoàn thành:</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-[11px]">
-                    <div className="p-2 bg-slate-50 rounded-lg border border-slate-200">
-                      <span className="text-[9.5px] text-slate-500 block uppercase font-medium">Bắt đầu:</span>
-                      <span className="font-bold text-slate-800 block mt-0.5">{selectedNode.thoiGianBatDau}</span>
-                    </div>
-                    <div className="p-2 bg-slate-50 rounded-lg border border-slate-200">
-                      <span className="text-[9.5px] text-slate-500 block uppercase font-medium">
-                        {selectedNode.status === 'completed' ? 'Hoàn thành:' : 'Dự kiến hoàn thành:'}
-                      </span>
-                      <span className="font-bold text-slate-800 block mt-0.5">{selectedNode.thoiGianHoanThanh}</span>
-                    </div>
-                  </div>
-
-                </div> */}
               </div>
-              {selectedNode.taiLieuVanBan && (
-                <div className="bg-white rounded-xl border border-slate-200 shadow-2xs p-3.5 space-y-3">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                    <div className="flex items-center gap-1.5 text-blue-900 font-bold text-xs uppercase tracking-wide">
-                      <span>TÀI LIỆU LIÊN QUAN</span>
+
+              {/* B. LỊCH SỬ XỬ LÝ CỦA ĐƠN NÀY TẠI BƯỚC NÀY (TIMELINE CHÍNH THỨC) */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-700">
+                    LỊCH SỬ XỬ LÝ TẠI BƯỚC NÀY
+                  </h4>
+                  {selectedNode.lichSuTrinhKy && selectedNode.lichSuTrinhKy.length > 0 && onOpenQuanLyTrinhKy && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenQuanLyTrinhKy(selectedNode.lichSuTrinhKy?.[0]?.id)}
+                      className="text-blue-600 hover:text-blue-800 text-[10.5px] font-semibold hover:underline cursor-pointer"
+                    >
+                      Quản lý trình ký →
+                    </button>
+                  )}
+                </div>
+
+                {/* Dòng thời gian các sự kiện xử lý thực tế */}
+                <div className="relative pl-4 space-y-3.5 before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-px before:bg-slate-200">
+                  {/* Mốc 1: Tiếp nhận vào bước */}
+                  <div className="relative group">
+                    <span className="absolute -left-[14px] top-1.5 w-2 h-2 rounded-full bg-blue-600 ring-2 ring-white"></span>
+                    <div className="text-[10px] text-slate-400 font-medium">
+                      {selectedNode.thoiGianBatDau}
                     </div>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200">
-                      {selectedNode.taiLieuVanBan.trangThaiText}
+                    <div className="font-semibold text-slate-800 text-[11.5px] mt-0.5">
+                      Tiếp nhận hồ sơ vụ việc
+                    </div>
+                    <div className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
+                      Cán bộ <strong className="text-slate-700">{selectedNode.nguoiHanhDong.canBoThucHien.hoTen}</strong> tiếp nhận xử lý hồ sơ đơn <strong className="font-mono text-slate-700">{donCode}</strong> theo quy trình chuyên môn.
+                    </div>
+                  </div>
+
+                  {/* Các mốc trình ký & chỉ đạo nghiệp vụ nếu có */}
+                  {selectedNode.lichSuTrinhKy && selectedNode.lichSuTrinhKy.length > 0 ? (
+                    selectedNode.lichSuTrinhKy.map((round) => (
+                      <div key={round.id} className="space-y-3">
+                        {/* Header của lượt trình */}
+                        <div className="relative">
+                          <span className="absolute -left-[14px] top-1.5 w-2 h-2 rounded-full bg-purple-600 ring-2 ring-white"></span>
+                          <div className="text-[10px] text-slate-400 font-medium">
+                            {round.thoiGianBatDau}
+                          </div>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="font-semibold text-purple-900 text-[11.5px]">
+                              {round.tieuDeLuot}
+                            </span>
+                            <span className={`text-[9.5px] font-bold px-1.5 py-0.2 rounded ${round.ketQuaStatus === 'phe_duyet'
+                              ? 'bg-emerald-50 text-emerald-800'
+                              : 'bg-amber-50 text-amber-800'
+                              }`}>
+                              {round.ketQuaStatus === 'phe_duyet' ? 'Đã duyệt' : 'Yêu cầu sửa'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Chi tiết từng người tham gia trong lượt */}
+                        {round.danhSachNguoiThamGia.map((p) => (
+                          <div key={p.id} className="relative pl-2.5">
+                            <span className={`absolute -left-[12px] top-1.5 w-1.5 h-1.5 rounded-full ${p.hanhDong === 'phe_duyet'
+                              ? 'bg-emerald-500'
+                              : p.hanhDong === 'yeu_cau_chinh_sua'
+                                ? 'bg-amber-500'
+                                : 'bg-blue-500'
+                              }`}></span>
+                            <div className="text-[10px] text-slate-400">
+                              {p.thoiGian} • {p.hanhDongText}
+                            </div>
+                            <div className="font-medium text-slate-800 text-[11px] mt-0.5">
+                              {p.hoTen} <span className="text-slate-400 font-normal">({p.chucVu})</span>
+                            </div>
+                            {p.yKien && (
+                              <div className="text-[10.5px] text-slate-600 mt-1 pl-2 border-l-2 border-slate-200 italic leading-snug">
+                                &ldquo;{p.yKien}&rdquo;
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ))
+                  ) : (
+                    /* Nếu không có lịch trình ký: Hiển thị nhật ký thực hiện tác vụ nghiệp vụ */
+                    <div className="relative">
+                      <span className="absolute -left-[14px] top-1.5 w-2 h-2 rounded-full bg-slate-500 ring-2 ring-white"></span>
+                      <div className="text-[10px] text-slate-400 font-medium">
+                        {selectedNode.thoiGianBatDau}
+                      </div>
+                      <div className="font-semibold text-slate-800 text-[11.5px] mt-0.5">
+                        Thực hiện tác vụ chuyên môn
+                      </div>
+                      <div className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
+                        {selectedNode.noiDungCongViec}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Mốc cuối: Kết quả hoặc Hoàn tất bước */}
+                  <div className="relative">
+                    <span className={`absolute -left-[14px] top-1.5 w-2 h-2 rounded-full ${selectedNode.status === 'completed' ? 'bg-emerald-600' : 'bg-blue-600'
+                      } ring-2 ring-white`}></span>
+                    <div className="text-[10px] text-slate-400 font-medium">
+                      {selectedNode.thoiGianHoanThanh}
+                    </div>
+                    <div className="font-semibold text-slate-800 text-[11.5px] mt-0.5">
+                      {selectedNode.status === 'completed' ? 'Hoàn thành bước xử lý' : 'Kết quả xử lý hiện tại'}
+                    </div>
+                    <div className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
+                      {selectedNode.ketQuaCuoiCung.tieuDe}
+                    </div>
+                    {selectedNode.thoiDiemChuyenTiep && (
+                      <div className="text-[10.5px] text-slate-500 mt-1 font-mono">
+                        → {selectedNode.thoiDiemChuyenTiep}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* C. DANH SÁCH VĂN BẢN / TÀI LIỆU TẠI BƯỚC NÀY (DẠNG LIST TINH GỌN) */}
+              {/* C. DANH SÁCH VĂN BẢN / TÀI LIỆU TẠI BƯỚC NÀY (DẠNG LIST TINH GỌN, 2 ICON XEM & TẢI) */}
+              {(selectedNode.taiLieuVanBan || selectedNode.ketQuaCuoiCung.vanBanDauRa) && (
+                <div className="border-t border-slate-100 pt-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-700">
+                      DANH SÁCH VĂN BẢN TẠI BƯỚC
+                    </span>
+                    <span className="text-[10.5px] text-slate-400">
+                      {selectedNode.taiLieuVanBan && selectedNode.ketQuaCuoiCung.vanBanDauRa && selectedNode.ketQuaCuoiCung.vanBanDauRa !== selectedNode.taiLieuVanBan?.tenVanBan && !selectedNode.ketQuaCuoiCung.vanBanDauRa.includes(selectedNode.taiLieuVanBan?.soKyHieu || '___')
+                        ? '2 văn bản'
+                        : selectedNode.taiLieuVanBan || selectedNode.ketQuaCuoiCung.vanBanDauRa
+                        ? '1 văn bản'
+                        : ''}
                     </span>
                   </div>
 
-                  <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-200 space-y-2.5">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-start gap-2 min-w-0">
-                        <span className="material-symbols-outlined text-rose-500 text-xl shrink-0 mt-0.5">
-                          picture_as_pdf
-                        </span>
-                        <div>
-                          <h4 className="font-bold text-slate-900 text-xs leading-snug">
-                            {selectedNode.taiLieuVanBan.tenVanBan}
-                          </h4>
-                          <div className="flex items-center gap-2 text-[10.5px] text-slate-500 mt-1 flex-wrap">
-                            <span className="font-mono font-semibold text-slate-700">
-                              {selectedNode.taiLieuVanBan.soKyHieu || 'Chưa cấp số'}
-                            </span>
-                            <span>•</span>
-                            <span>{selectedNode.taiLieuVanBan.loaiVanBan}</span>
-                            <span>•</span>
-                            <span className="font-semibold text-blue-700">{selectedNode.taiLieuVanBan.phienBan}</span>
+                  <ul className="divide-y divide-slate-100 overflow-hidden bg-white rounded-lg border border-slate-100">
+                    {selectedNode.taiLieuVanBan && (
+                      <li className="py-2.5 px-3 hover:bg-slate-50/80 transition-colors flex items-center justify-between gap-3">
+                        <div className="min-w-0 flex-1 flex items-start gap-2.5">
+                          <span className="material-symbols-outlined text-rose-500 text-[18px] shrink-0 mt-0.5">
+                            picture_as_pdf
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (onViewDocument) {
+                                  handleViewDoc();
+                                } else {
+                                  setIsDocModalOpen(true);
+                                }
+                              }}
+                              className="font-medium text-slate-900 hover:text-blue-700 text-[12px] text-left leading-snug truncate block transition-colors cursor-pointer max-w-full"
+                              title="Nhấn để xem toàn văn văn bản"
+                            >
+                              {selectedNode.taiLieuVanBan.tenVanBan}
+                            </button>
+                            <div className="flex items-center gap-2 text-[10.5px] text-slate-400 mt-0.5">
+                              <span>Số: {selectedNode.taiLieuVanBan.soKyHieu || 'Chưa cấp số'}</span>
+                              <span>•</span>
+                              <span>{selectedNode.taiLieuVanBan.fileDinhKem?.dungLuong || '2.4 MB'}</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
 
-                    {/* Chi tiết người tạo & thời gian */}
-                    <div className="grid grid-cols-2 gap-2 text-[10.5px] pt-1 border-t border-slate-200/80">
-                      <div>
-                        <span className="text-slate-400 block">Người tạo:</span>
-                        <strong className="text-slate-800">{selectedNode.taiLieuVanBan.nguoiTao}</strong>
-                        <span className="text-[10px] text-slate-500 block truncate">{selectedNode.taiLieuVanBan.chucVuNguoiTao}</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-400 block">Thời gian tạo:</span>
-                        <strong className="text-slate-800">{selectedNode.taiLieuVanBan.thoiGianTao}</strong>
-                      </div>
-                    </div>
-
-
-                    {/* Tệp đính kèm */}
-                    {selectedNode.taiLieuVanBan.fileDinhKem && (
-                      <div className="p-2 bg-white rounded-lg border border-slate-200 flex items-center justify-between gap-2 text-[11px]">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <span className="material-symbols-outlined text-slate-400 text-[16px]">attachment</span>
-                          <span className="font-medium text-slate-700 truncate">
-                            {selectedNode.taiLieuVanBan.fileDinhKem.tenFile}
-                          </span>
-                          <span className="text-slate-400 text-[10px] shrink-0">
-                            ({selectedNode.taiLieuVanBan.fileDinhKem.dungLuong})
-                          </span>
+                        {/* 2 icon: Mở xem hồ sơ & Tải về */}
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (onViewDocument) {
+                                handleViewDoc();
+                              } else {
+                                setIsDocModalOpen(true);
+                              }
+                            }}
+                            className="w-7 h-7 rounded hover:bg-blue-50 text-slate-500 hover:text-blue-700 flex items-center justify-center transition-colors cursor-pointer"
+                            title="Mở xem hồ sơ"
+                          >
+                            <span className="material-symbols-outlined text-[17px]">visibility</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const fileName = selectedNode.taiLieuVanBan?.fileDinhKem?.tenFile || `${selectedNode.taiLieuVanBan?.tenVanBan || 'van_ban'}.pdf`;
+                              showToast(`✓ Đang tải ${fileName}`);
+                            }}
+                            className="w-7 h-7 rounded hover:bg-blue-50 text-slate-500 hover:text-blue-700 flex items-center justify-center transition-colors cursor-pointer"
+                            title="Tải về"
+                          >
+                            <span className="material-symbols-outlined text-[17px]">download</span>
+                          </button>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => showToast(`✓ Đang tải ${selectedNode.taiLieuVanBan?.fileDinhKem?.tenFile}`)}
-                          className="text-blue-600 hover:text-blue-800 p-1 hover:bg-blue-50 rounded cursor-pointer"
-                          title="Tải tệp đính kèm"
-                        >
-                          <span className="material-symbols-outlined text-[16px]">download</span>
-                        </button>
-                      </div>
+                      </li>
                     )}
 
-                    {/* Nút hành động xem văn bản */}
-                    <div className="flex items-center gap-2 pt-1">
-                      <button
-                        type="button"
-                        onClick={() => setIsDocModalOpen(true)}
-                        className="flex-1 inline-flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
-                      >
-                        <span className="material-symbols-outlined text-[15px]">visibility</span>
-                        <span>Xem chi tiết văn bản</span>
-                      </button>
+                    {/* Văn bản kết quả xử lý nếu có tên riêng biệt */}
+                    {selectedNode.ketQuaCuoiCung.vanBanDauRa &&
+                      selectedNode.ketQuaCuoiCung.vanBanDauRa !== selectedNode.taiLieuVanBan?.tenVanBan &&
+                      !selectedNode.ketQuaCuoiCung.vanBanDauRa.includes(selectedNode.taiLieuVanBan?.soKyHieu || '___') && (
+                        <li className="py-2.5 px-3 hover:bg-slate-50/80 transition-colors flex items-center justify-between gap-3">
+                          <div className="min-w-0 flex-1 flex items-start gap-2.5">
+                            <span className="material-symbols-outlined text-blue-600 text-[18px] shrink-0 mt-0.5">
+                              description
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (onViewDocument) {
+                                    onViewDocument({
+                                      tenVanBan: selectedNode.ketQuaCuoiCung.vanBanDauRa,
+                                      soHieu: '01/KQ-TC',
+                                      loai: 'quyet_dinh',
+                                      trichYeu: selectedNode.ketQuaCuoiCung.tieuDe || selectedNode.ketQuaCuoiCung.vanBanDauRa,
+                                      noiDungChiTiet: `${selectedNode.ketQuaCuoiCung.tieuDe}\n\n${selectedNode.ketQuaCuoiCung.chiTietKetQua}\n\nCăn cứ pháp lý: ${selectedNode.legalBasis}\nThời hạn: ${selectedNode.ketQuaCuoiCung.thoiHanThucHien}`,
+                                    });
+                                  } else {
+                                    showToast(`✓ Mở hồ sơ: ${selectedNode.ketQuaCuoiCung.vanBanDauRa}`);
+                                  }
+                                }}
+                                className="font-medium text-slate-900 hover:text-blue-700 text-[12px] text-left leading-snug truncate block transition-colors cursor-pointer max-w-full"
+                                title="Nhấn để xem văn bản kết quả"
+                              >
+                                {selectedNode.ketQuaCuoiCung.vanBanDauRa}
+                              </button>
+                              <div className="flex items-center gap-2 text-[10.5px] text-slate-400 mt-0.5">
+                                <span>Văn bản kết quả xử lý</span>
+                                <span>•</span>
+                                <span className="text-blue-600 font-medium">Kết quả</span>
+                              </div>
+                            </div>
+                          </div>
 
-                      {onViewDocument && (
-                        <button
-                          type="button"
-                          onClick={handleViewDoc}
-                          className="inline-flex items-center justify-center gap-1 py-1.5 px-3 rounded-lg bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
-                          title="Xem tại tab Hồ sơ & Văn bản"
-                        >
-                          <span className="material-symbols-outlined text-[15px]">folder_open</span>
-                          <span>Mở tab Hồ sơ</span>
-                        </button>
+                          {/* 2 icon: Mở xem hồ sơ & Tải về */}
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (onViewDocument) {
+                                  onViewDocument({
+                                    tenVanBan: selectedNode.ketQuaCuoiCung.vanBanDauRa,
+                                    soHieu: '01/KQ-TC',
+                                    loai: 'quyet_dinh',
+                                    trichYeu: selectedNode.ketQuaCuoiCung.tieuDe || selectedNode.ketQuaCuoiCung.vanBanDauRa,
+                                    noiDungChiTiet: `${selectedNode.ketQuaCuoiCung.tieuDe}\n\n${selectedNode.ketQuaCuoiCung.chiTietKetQua}\n\nCăn cứ pháp lý: ${selectedNode.legalBasis}\nThời hạn: ${selectedNode.ketQuaCuoiCung.thoiHanThucHien}`,
+                                  });
+                                } else {
+                                  showToast(`✓ Mở hồ sơ: ${selectedNode.ketQuaCuoiCung.vanBanDauRa}`);
+                                }
+                              }}
+                              className="w-7 h-7 rounded hover:bg-blue-50 text-slate-500 hover:text-blue-700 flex items-center justify-center transition-colors cursor-pointer"
+                              title="Mở xem hồ sơ"
+                            >
+                              <span className="material-symbols-outlined text-[17px]">visibility</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => showToast(`✓ Đang tải ${selectedNode.ketQuaCuoiCung.vanBanDauRa}.pdf`)}
+                              className="w-7 h-7 rounded hover:bg-blue-50 text-slate-500 hover:text-blue-700 flex items-center justify-center transition-colors cursor-pointer"
+                              title="Tải về"
+                            >
+                              <span className="material-symbols-outlined text-[17px]">download</span>
+                            </button>
+                          </div>
+                        </li>
                       )}
-                    </div>
-                  </div>
+                  </ul>
                 </div>
               )}
-
-              {/* ========================================================================= */}
-              {/* C. LỊCH SỬ TRÌNH KÝ & PHÊ DUYỆT CỦA STEP                                   */}
-              {/* ========================================================================= */}
-              {/* {selectedNode.lichSuTrinhKy && selectedNode.lichSuTrinhKy.length > 0 && (
-                <div className="bg-white rounded-xl border border-slate-200 shadow-2xs p-3.5 space-y-3">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                    <div className="flex items-center gap-1.5 text-blue-900 font-bold text-xs uppercase tracking-wide">
-                      <span className="w-5 h-5 rounded-md bg-blue-100 text-blue-800 flex items-center justify-center text-[11px] font-black">C</span>
-                      <span>LỊCH SỬ TRÌNH KÝ &amp; PHÊ DUYỆT ({selectedNode.lichSuTrinhKy.length} lượt)</span>
-                    </div>
-                    {onOpenQuanLyTrinhKy && (
-                      <button
-                        type="button"
-                        onClick={() => onOpenQuanLyTrinhKy(selectedNode.lichSuTrinhKy?.[0]?.id)}
-                        className="text-blue-600 hover:text-blue-800 text-[10.5px] font-bold hover:underline cursor-pointer flex items-center gap-0.5"
-                      >
-                        <span>Quản lý trình ký</span>
-                        <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="space-y-2.5">
-                    {selectedNode.lichSuTrinhKy.map((round) => (
-                      <div key={round.id} className="p-3 bg-slate-50/70 rounded-xl border border-slate-200 space-y-2 text-xs">
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-slate-900 text-[11.5px]">{round.tieuDeLuot}</span>
-                          <span className={`px-2 py-0.5 rounded-full text-[9.5px] font-bold ${round.ketQuaStatus === 'phe_duyet'
-                            ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                            : 'bg-amber-50 text-amber-800 border border-amber-200'
-                            }`}>
-                            {round.ketQuaCuoiCung}
-                          </span>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2 text-[10.5px] text-slate-600">
-                          <div>
-                            <span className="text-slate-400 block">Người gửi trình:</span>
-                            <strong className="text-slate-800">{round.nguoiTrinh.hoTen}</strong> ({round.nguoiTrinh.chucVu})
-                          </div>
-                          <div>
-                            <span className="text-slate-400 block">Thời gian:</span>
-                            <span>{round.thoiGianBatDau}</span>
-                          </div>
-                        </div>
-
-                        <div className="space-y-1 pt-1 border-t border-slate-200/80">
-                          {round.danhSachNguoiThamGia.map((p) => (
-                            <div key={p.id} className="p-2 bg-white rounded-lg border border-slate-200/80 space-y-1 text-[11px]">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-1.5">
-                                  <span className={`w-2 h-2 rounded-full ${p.hanhDong === 'phe_duyet' ? 'bg-emerald-500' : 'bg-blue-500'}`}></span>
-                                  <strong className="text-slate-800">{p.hoTen}</strong>
-                                  <span className="text-slate-400 text-[10px]">({p.chucVu})</span>
-                                </div>
-                                <span className={`text-[10px] font-semibold ${p.hanhDong === 'phe_duyet' ? 'text-emerald-700' : 'text-blue-700'}`}>
-                                  {p.hanhDongText}
-                                </span>
-                              </div>
-                              {p.yKien && (
-                                <p className="text-slate-600 italic bg-slate-50 p-1.5 rounded text-[10.5px]">
-                                  &ldquo;{p.yKien}&rdquo;
-                                </p>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )} */}
             </div>
           </aside>
         )}

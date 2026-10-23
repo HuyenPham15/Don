@@ -71,6 +71,8 @@ export type WorkflowNodeType =
   | 'END'
   | 'TASK'
   | 'CHECK'
+  | 'INFO_GROUP'
+  | 'DATA_FIELD'
   | 'APPROVAL'
   | 'NOTIFICATION'
   | 'BRANCH'
@@ -232,6 +234,21 @@ export interface ProcessStep {
   integrationConfig?: IntegrationConfig;
   assigneeRole?: string;
   position?: { x: number; y: number };
+  dataFields?: { id: string; name: string; type: string; required: boolean }[];
+  conditionConfig?: { fieldName: string; operator: string; compareValue: string };
+  infoGroupIds?: string[];
+  fieldType?: string;
+  required?: boolean;
+  documentConditions?: DocumentCondition[];
+  stepComparisonConditions?: StepComparisonCondition[];
+}
+
+export interface StepComparisonCondition {
+  id: string;
+  logicOp: 'AND' | 'OR';
+  fieldName: string;
+  operator: string;
+  value: string;
 }
 
 // Aliases for clean generic workflow architecture

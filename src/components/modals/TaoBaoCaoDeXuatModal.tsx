@@ -75,35 +75,24 @@ export interface TaoBaoCaoDeXuatModalProps {
 export const DANH_SACH_PHUONG_AN = [
   {
     id: 1,
-    title: 'Thụ lý giải quyết',
-    desc: 'Nếu đơn đủ điều kiện và thuộc thẩm quyền giải quyết của cơ quan.',
+    title: 'Tiếp nhận đơn',
+    desc: 'Đơn đủ điều kiện thụ lý và thuộc thẩm quyền giải quyết của cơ quan.',
     badgeClass: 'bg-emerald-50 text-emerald-800 border-emerald-300',
   },
   {
     id: 2,
-    title: 'Chuyển đơn đến cơ quan có thẩm quyền',
-    desc: 'Nếu không thuộc thẩm quyền giải quyết của cơ quan mình.',
+    title: 'Chuyển thẩm quyền',
+    desc: 'Không thuộc thẩm quyền giải quyết hoặc có dấu hiệu chuyển Cơ quan CSĐT / cơ quan có thẩm quyền.',
     badgeClass: 'bg-purple-50 text-purple-800 border-purple-300',
   },
   {
     id: 3,
-    title: 'Không thụ lý / Lưu đơn',
-    desc: 'Nếu đơn nặc danh không có căn cứ, đơn trùng lặp, hoặc đã có kết luận giải quyết đúng pháp luật trước đó.',
-    badgeClass: 'bg-rose-50 text-rose-800 border-rose-300',
-  },
-  {
-    id: 4,
-    title: 'Trả lại đơn & Kèm phiếu hướng dẫn',
-    desc: 'Trả lại đơn do không thuộc thẩm quyền hoặc chưa đủ điều kiện theo quy định.',
+    title: 'Ghép vào',
+    desc: 'Ghép lượt nhận vào hồ sơ vụ việc đang thụ lý giải quyết để xử lý đồng bộ, không sinh đơn mới.',
     badgeClass: 'bg-amber-50 text-amber-800 border-amber-300',
   },
-  {
-    id: 5,
-    title: 'Yêu cầu bổ sung thông tin, tài liệu',
-    desc: 'Hồ sơ tài liệu chưa đầy đủ hoặc cần công dân bổ sung tài liệu, giải trình.',
-    badgeClass: 'bg-blue-50 text-blue-800 border-blue-300',
-  },
 ];
+
 
 /**
  * Hàm ánh xạ toàn bộ dữ liệu người dùng nhập vào biểu mẫu văn bản chuẩn:
@@ -158,11 +147,10 @@ ${data.canCuPhapLyApDung || data.canCuPhapLy || ''}
 
 4. ĐỀ XUẤT HƯỚNG XỬ LÝ CỤ THỂ
 Lựa chọn phương án:
-[${data.phuongAnDeXuat === 1 ? 'X' : '  '}] Phương án 1: Thụ lý giải quyết (Nếu đơn đủ điều kiện và thuộc thẩm quyền).
-[${data.phuongAnDeXuat === 2 ? 'X' : '  '}] Phương án 2: Chuyển đơn đến cơ quan có thẩm quyền (Nếu không thuộc thẩm quyền của mình).
-[${data.phuongAnDeXuat === 3 ? 'X' : '  '}] Phương án 3: Không thụ lý / Lưu đơn (Nếu đơn nặc danh không có căn cứ, đơn trùng lặp...).
-[${data.phuongAnDeXuat === 4 ? 'X' : '  '}] Phương án 4: Trả lại đơn & Kèm phiếu hướng dẫn công dân (Không thuộc thẩm quyền hoặc chưa đủ điều kiện).
-[${data.phuongAnDeXuat === 5 ? 'X' : '  '}] Phương án 5: Yêu cầu bổ sung thông tin, tài liệu chứng cứ.
+[${data.phuongAnDeXuat === 1 ? 'X' : '  '}] Phương án 1: Tiếp nhận đơn (Nếu đơn đủ điều kiện và thuộc thẩm quyền giải quyết của cơ quan).
+[${data.phuongAnDeXuat === 2 ? 'X' : '  '}] Phương án 2: Chuyển thẩm quyền (Nếu vụ việc không thuộc thẩm quyền hoặc chuyển Cơ quan CSĐT / cơ quan có thẩm quyền).
+[${data.phuongAnDeXuat === 3 ? 'X' : '  '}] Phương án 3: Ghép vào (Ghép vào hồ sơ vụ việc đang thụ lý giải quyết để xử lý đồng bộ, không phát sinh đơn mới).
+
 
 ${data.kienNghiChiTiet || data.chiTietPhuongAn ? `Nội dung kiến nghị cụ thể: ${data.kienNghiChiTiet || data.chiTietPhuongAn}\n` : ''}${data.vanBanKemTheo ? `Dự thảo văn bản kèm theo: ${data.vanBanKemTheo}\n` : ''}
 Kính trình Đồng chí phê duyệt./.
@@ -289,9 +277,9 @@ export default function TaoBaoCaoDeXuatModal({
           setTieuDeBaoCao(existingSigningDoc.tenVanBan);
         }
         if (existingSigningDoc.noiDungChiTiet) {
-          if (/\[X\]\s*Phương án 1|Thụ lý/i.test(existingSigningDoc.noiDungChiTiet)) setPhuongAnDeXuat(1);
-          else if (/\[X\]\s*Phương án 2|Chuyển thẩm quyền/i.test(existingSigningDoc.noiDungChiTiet)) setPhuongAnDeXuat(2);
-          else if (/\[X\]\s*Phương án 3|Không thụ lý|Lưu đơn/i.test(existingSigningDoc.noiDungChiTiet)) setPhuongAnDeXuat(3);
+          if (/\[X\]\s*Phương án 1|Tiếp nhận|Thụ lý/i.test(existingSigningDoc.noiDungChiTiet)) setPhuongAnDeXuat(1);
+          else if (/\[X\]\s*Phương án 2|Chuyển thẩm quyền|Chuyển đơn|Chuyển CSĐT/i.test(existingSigningDoc.noiDungChiTiet)) setPhuongAnDeXuat(2);
+          else if (/\[X\]\s*Phương án 3|Ghép vào|Ghép hồ sơ/i.test(existingSigningDoc.noiDungChiTiet)) setPhuongAnDeXuat(3);
         }
       }
     } else {
@@ -312,10 +300,27 @@ export default function TaoBaoCaoDeXuatModal({
       setDieuKienThuLy(defaultDieuKien);
       setCanCuPhapLyApDung(defaultCanCu);
 
-      if (initialHuongXuLy === 'thu_ly') setPhuongAnDeXuat(1);
-      else if (initialHuongXuLy === 'ban_giao') setPhuongAnDeXuat(2);
-      else if (initialHuongXuLy === 'tra_loi_don' || initialHuongXuLy === 'luu_don') setPhuongAnDeXuat(3);
-      else setPhuongAnDeXuat(1);
+      if (initialHuongXuLy === 'tiep-nhan' || initialHuongXuLy === 'tiep_nhan' || initialHuongXuLy === 'thu_ly') {
+        setPhuongAnDeXuat(1);
+        setKienNghiChiTiet(
+          'Đơn đủ điều kiện thụ lý và thuộc thẩm quyền giải quyết của cơ quan. Đề xuất Thủ trưởng Cơ quan phê duyệt tiếp nhận đơn, ban hành Quyết định thụ lý giải quyết và phân công cán bộ/Tổ xác minh làm rõ theo quy định.'
+        );
+        setVanBanKemTheo('Dự thảo Thông báo thụ lý giải quyết đơn; Kế hoạch xác minh chi tiết; Quyết định thành lập Tổ xác minh.');
+      } else if (initialHuongXuLy === 'chuyen' || initialHuongXuLy === 'chuyen_tham_quyen' || initialHuongXuLy === 'ban_giao') {
+        setPhuongAnDeXuat(2);
+        setKienNghiChiTiet(
+          'Vụ việc không thuộc thẩm quyền giải quyết của cơ quan (hoặc có dấu hiệu tội phạm cần Cơ quan CSĐT điều tra, làm rõ). Đề xuất chuyển toàn bộ đơn và tài liệu chứng cứ kèm theo đến Cơ quan có đúng thẩm quyền để thụ lý, giải quyết; đồng thời ban hành văn bản thông báo chuyển đơn cho công dân.'
+        );
+        setVanBanKemTheo('Dự thảo Phiếu chuyển đơn đến cơ quan có thẩm quyền; Dự thảo Thông báo chuyển đơn gửi người gửi đơn.');
+      } else if (initialHuongXuLy === 'ghep' || initialHuongXuLy === 'ghep_vao' || initialHuongXuLy === 'ghep_ho_so') {
+        setPhuongAnDeXuat(3);
+        setKienNghiChiTiet(
+          'Đơn có nội dung trùng khớp hoặc cùng đối tượng, vụ việc với hồ sơ đang thụ lý giải quyết. Đề xuất ghép lượt nhận vào hồ sơ vụ việc đã có để theo dõi tập trung, bổ sung tài liệu chứng cứ và giải quyết đồng bộ, không phát sinh mã đơn mới.'
+        );
+        setVanBanKemTheo('Phiếu đề xuất ghép hồ sơ; Bảng đối chiếu trùng khớp thông tin 5W1H; Biên bản ghép tài liệu bổ sung.');
+      } else {
+        setPhuongAnDeXuat(1);
+      }
     }
 
     setErrors({});
@@ -332,26 +337,22 @@ export default function TaoBaoCaoDeXuatModal({
     setPhuongAnDeXuat(paId);
     if (paId === 1) {
       setKienNghiChiTiet(
-        'Đơn đủ điều kiện thụ lý và thuộc thẩm quyền giải quyết của cơ quan. Đề xuất Thủ trưởng Cơ quan phê duyệt thụ lý giải quyết theo quy định, giao cán bộ thụ lý lập kế hoạch xác minh chi tiết.'
+        'Đơn đủ điều kiện thụ lý và thuộc thẩm quyền giải quyết của cơ quan. Đề xuất Thủ trưởng Cơ quan phê duyệt tiếp nhận đơn, ban hành Quyết định thụ lý giải quyết và phân công cán bộ/Tổ xác minh làm rõ theo quy định.'
       );
+      setVanBanKemTheo('Dự thảo Thông báo thụ lý giải quyết đơn; Kế hoạch xác minh chi tiết; Quyết định thành lập Tổ xác minh.');
     } else if (paId === 2) {
       setKienNghiChiTiet(
-        'Vụ việc không thuộc thẩm quyền giải quyết của cơ quan. Đề xuất chuyển toàn bộ đơn và tài liệu chứng cứ kèm theo đến Cơ quan có đúng thẩm quyền để thụ lý, giải quyết; đồng thời ban hành văn bản thông báo chuyển đơn cho công dân.'
+        'Vụ việc không thuộc thẩm quyền giải quyết của cơ quan (hoặc có dấu hiệu tội phạm cần Cơ quan CSĐT điều tra, làm rõ). Đề xuất chuyển toàn bộ đơn và tài liệu chứng cứ kèm theo đến Cơ quan có đúng thẩm quyền để thụ lý, giải quyết; đồng thời ban hành văn bản thông báo chuyển đơn cho công dân.'
       );
+      setVanBanKemTheo('Dự thảo Phiếu chuyển đơn đến cơ quan có thẩm quyền; Dự thảo Thông báo chuyển đơn gửi người gửi đơn.');
     } else if (paId === 3) {
       setKienNghiChiTiet(
-        'Đơn không đủ điều kiện thụ lý giải quyết (nặc danh / không có căn cứ xác thực / trùng lặp / đã có kết luận giải quyết đúng pháp luật trước đó). Đề xuất không thụ lý giải quyết và thực hiện lưu đơn theo đúng quy định pháp luật.'
+        'Đơn có nội dung trùng khớp hoặc cùng đối tượng, vụ việc với hồ sơ đang thụ lý giải quyết. Đề xuất ghép lượt nhận vào hồ sơ vụ việc đã có để theo dõi tập trung, bổ sung tài liệu chứng cứ và giải quyết đồng bộ, không phát sinh mã đơn mới.'
       );
-    } else if (paId === 4) {
-      setKienNghiChiTiet(
-        'Đơn không thuộc thẩm quyền giải quyết của cơ quan. Đề xuất trả lại đơn và ban hành Phiếu hướng dẫn công dân gửi đơn đến đúng cơ quan có thẩm quyền giải quyết theo quy định.'
-      );
-    } else if (paId === 5) {
-      setKienNghiChiTiet(
-        'Đơn chưa đầy đủ thông tin hoặc tài liệu, chứng cứ cần thiết để làm căn cứ thụ lý. Đề xuất ban hành Thông báo yêu cầu công dân bổ sung thông tin, tài liệu theo quy định.'
-      );
+      setVanBanKemTheo('Phiếu đề xuất ghép hồ sơ; Bảng đối chiếu trùng khớp thông tin 5W1H; Biên bản ghép tài liệu bổ sung.');
     }
   };
+
 
   const getCurrentFormData = (): BaoCaoDeXuatFormData => {
     return {
@@ -783,9 +784,14 @@ export default function TaoBaoCaoDeXuatModal({
 
           {/* Phương án đề xuất hướng xử lý */}
           <div>
-            <label className="block font-bold text-slate-800 mb-1.5">
-              Phương án đề xuất hướng xử lý <span className="text-rose-500">*</span>
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block font-bold text-slate-800">
+                Phương án đề xuất hướng xử lý <span className="text-rose-500">*</span>
+              </label>
+              <span className="text-[10.5px] text-slate-500 italic">
+                3 hướng xử lý: Tiếp nhận đơn • Chuyển thẩm quyền • Ghép vào
+              </span>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {DANH_SACH_PHUONG_AN.map((pa) => {
                 const isChecked = phuongAnDeXuat === pa.id;
@@ -805,19 +811,25 @@ export default function TaoBaoCaoDeXuatModal({
                       onChange={() => handleSelectPhuongAn(pa.id)}
                       className="w-4 h-4 mt-0.5 text-[#004ac6] focus:ring-0 cursor-pointer shrink-0"
                     />
-                    <div className="flex-1 min-w-0 pr-2">
-                      <strong className={`block text-[12.5px] font-bold leading-tight ${isChecked ? 'text-[#004ac6]' : 'text-slate-800'}`}>
-                        {pa.title}
-                      </strong>
-                      {/* <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                    <div className="flex-1 min-w-0 pr-1">
+                      <div className="flex items-center gap-1.5 justify-between">
+                        <strong className={`block text-[12.5px] font-bold leading-tight ${isChecked ? 'text-[#004ac6]' : 'text-slate-800'}`}>
+                          {pa.title}
+                        </strong>
+                        <span className={`text-[9.5px] font-bold px-1.5 py-0.2 rounded border ${pa.badgeClass}`}>
+                          PA {pa.id}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-1 leading-snug">
                         {pa.desc}
-                      </p> */}
+                      </p>
                     </div>
                   </div>
                 );
               })}
             </div>
           </div>
+
 
           {/* Kiến nghị, đề xuất cụ thể */}
           <div>

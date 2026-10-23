@@ -1957,6 +1957,133 @@ export default function DonTiepNhan({
     </div>
   );
 
+  // Render Nút dropdown "Thao tác khác ▼"
+  const renderThaoTacKhacDropdown = () => (
+    <div className="relative inline-flex items-center">
+      <button
+        type="button"
+        onClick={() => setShowThaoTacKhacDropdown(!showThaoTacKhacDropdown)}
+        className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 hover:border-slate-400 active:scale-95 text-slate-700 text-[13px] font-semibold shadow-2xs transition-all cursor-pointer"
+        title="Các thao tác nghiệp vụ: Ghép hồ sơ đơn, Tải bổ sung file, Phân công xử lý, Chỉnh sửa thông tin đơn"
+      >
+        {/* <span className="material-symbols-outlined text-[18px] text-slate-500">tune</span> */}
+        <span>Thao tác khác</span>
+        <span className={`material-symbols-outlined text-[18px] text-slate-400 transition-transform ${showThaoTacKhacDropdown ? 'rotate-180' : ''}`}>
+          expand_more
+        </span>
+      </button>
+
+      {/* Dropdown Menu */}
+      {showThaoTacKhacDropdown && (
+        <>
+          {/* Backdrop vô hình để đóng dropdown khi click outside */}
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setShowThaoTacKhacDropdown(false)}
+          />
+
+          <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-slate-200 p-2 z-50 animate-scale-up">
+            <div className="px-2.5 py-1.5 border-b border-slate-100 mb-1">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                Thao tác nghiệp vụ
+              </span>
+            </div>
+            <div className="space-y-1">
+              {/* 1. Ghép hồ sơ đơn */}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowThaoTacKhacDropdown(false);
+                  setShowGhepDonModal(true);
+                }}
+                className="w-full flex items-start gap-2.5 p-2 rounded-xl text-left hover:bg-slate-50 text-slate-800 transition-colors cursor-pointer group"
+              >
+                <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100 flex items-center justify-center shrink-0 mt-0.5 transition-colors">
+                  <span className="material-symbols-outlined text-[18px]">merge_type</span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="font-bold text-[13px] text-slate-900 group-hover:text-indigo-700 transition-colors">
+                    Ghép hồ sơ đơn
+                  </div>
+                  <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
+                    Ghép vào hồ sơ đơn trùng hoặc vụ việc đã có
+                  </p>
+                </div>
+              </button>
+
+              {/* 2. Tải bổ sung file */}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowThaoTacKhacDropdown(false);
+                  setShowTaiTaiLieuModal(true);
+                }}
+                className="w-full flex items-start gap-2.5 p-2 rounded-xl text-left hover:bg-slate-50 text-slate-800 transition-colors cursor-pointer group"
+              >
+                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100 flex items-center justify-center shrink-0 mt-0.5 transition-colors">
+                  <span className="material-symbols-outlined text-[18px]">upload_file</span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="font-bold text-[13px] text-slate-900 group-hover:text-emerald-700 transition-colors">
+                    Tải bổ sung file / tài liệu
+                  </div>
+                  <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
+                    Đính kèm thêm tài liệu, hồ sơ chứng cứ bổ sung
+                  </p>
+                </div>
+              </button>
+
+              {/* 3. Phân công xử lý */}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowThaoTacKhacDropdown(false);
+                  setShowPhanCongModal(true);
+                }}
+                className="w-full flex items-start gap-2.5 p-2 rounded-xl text-left hover:bg-slate-50 text-slate-800 transition-colors cursor-pointer group"
+              >
+                <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 group-hover:bg-amber-100 flex items-center justify-center shrink-0 mt-0.5 transition-colors">
+                  <span className="material-symbols-outlined text-[18px]">assignment_ind</span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="font-bold text-[13px] text-slate-900 group-hover:text-amber-700 transition-colors">
+                    Phân công xử lý
+                  </div>
+                  <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
+                    Giao cán bộ thụ lý hoặc chuyển đơn vị phụ trách
+                  </p>
+                </div>
+              </button>
+
+              {/* 4. Chỉnh sửa thông tin đơn */}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowThaoTacKhacDropdown(false);
+                  setActiveTab('thong-tin');
+                  setIsEditingThongTinDon(true);
+                }}
+                className="w-full flex items-start gap-2.5 p-2 rounded-xl text-left hover:bg-slate-50 text-slate-800 transition-colors cursor-pointer group"
+              >
+                <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 group-hover:bg-blue-100 flex items-center justify-center shrink-0 mt-0.5 transition-colors">
+                  <span className="material-symbols-outlined text-[18px]">edit_note</span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="font-bold text-[13px] text-slate-900 group-hover:text-blue-700 transition-colors">
+                    Chỉnh sửa thông tin đơn
+                  </div>
+                  <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
+                    Cập nhật trực tiếp người nộp, loại đơn, nội dung tiếp nhận tại màn hình
+                  </p>
+                </div>
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+
   const workflow = matchWorkflowByLoaiDon(currentDon.loaiDon || 'Đơn khiếu nại đất đai');
 
   // Xác định bước hiện tại của quy trình (từ currentDon hoặc mặc định)
@@ -2148,156 +2275,9 @@ export default function DonTiepNhan({
               </button>
             )}
 
-            <div className="relative inline-flex items-center">
-              <button
-                type="button"
-                onClick={() => setShowThaoTacKhacDropdown(!showThaoTacKhacDropdown)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 hover:border-slate-400 active:scale-95 text-slate-700 text-[13px] font-semibold shadow-2xs transition-all cursor-pointer"
-                title="Các thao tác nghiệp vụ: Ghép hồ sơ đơn, Tải bổ sung file, Phân công xử lý, Chỉnh sửa thông tin đơn"
-              >
-                <span className="material-symbols-outlined text-[18px] text-slate-500">tune</span>
-                <span>Thao tác khác</span>
-                <span className={`material-symbols-outlined text-[18px] text-slate-400 transition-transform ${showThaoTacKhacDropdown ? 'rotate-180' : ''}`}>
-                  expand_more
-                </span>
-              </button>
-
-              {/* Dropdown Menu */}
-              {showThaoTacKhacDropdown && (
-                <>
-                  {/* Backdrop vô hình để đóng dropdown khi click outside */}
-                  <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setShowThaoTacKhacDropdown(false)}
-                  />
-
-                  <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-slate-200 p-2 z-50 animate-scale-up">
-                    <div className="px-2.5 py-1.5 border-b border-slate-100 mb-1">
-                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                        Thao tác nghiệp vụ
-                      </span>
-                    </div>
-                    <div className="space-y-1">
-                      {/* 1. Ghép hồ sơ đơn */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowThaoTacKhacDropdown(false);
-                          setShowGhepDonModal(true);
-                        }}
-                        className="w-full flex items-start gap-2.5 p-2 rounded-xl text-left hover:bg-slate-50 text-slate-800 transition-colors cursor-pointer group"
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100 flex items-center justify-center shrink-0 mt-0.5 transition-colors">
-                          <span className="material-symbols-outlined text-[18px]">merge_type</span>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="font-bold text-[13px] text-slate-900 group-hover:text-indigo-700 transition-colors">
-                            Ghép hồ sơ đơn
-                          </div>
-                          <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
-                            Ghép vào hồ sơ đơn trùng hoặc vụ việc đã có
-                          </p>
-                        </div>
-                      </button>
-
-                      {/* 2. Tải bổ sung file */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowThaoTacKhacDropdown(false);
-                          setShowTaiTaiLieuModal(true);
-                        }}
-                        className="w-full flex items-start gap-2.5 p-2 rounded-xl text-left hover:bg-slate-50 text-slate-800 transition-colors cursor-pointer group"
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100 flex items-center justify-center shrink-0 mt-0.5 transition-colors">
-                          <span className="material-symbols-outlined text-[18px]">upload_file</span>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="font-bold text-[13px] text-slate-900 group-hover:text-emerald-700 transition-colors">
-                            Tải bổ sung file / tài liệu
-                          </div>
-                          <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
-                            Đính kèm thêm tài liệu, hồ sơ chứng cứ bổ sung
-                          </p>
-                        </div>
-                      </button>
-
-                      {/* 3. Phân công xử lý */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowThaoTacKhacDropdown(false);
-                          setShowPhanCongModal(true);
-                        }}
-                        className="w-full flex items-start gap-2.5 p-2 rounded-xl text-left hover:bg-slate-50 text-slate-800 transition-colors cursor-pointer group"
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 group-hover:bg-amber-100 flex items-center justify-center shrink-0 mt-0.5 transition-colors">
-                          <span className="material-symbols-outlined text-[18px]">assignment_ind</span>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="font-bold text-[13px] text-slate-900 group-hover:text-amber-700 transition-colors">
-                            Phân công xử lý
-                          </div>
-                          <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
-                            Giao cán bộ thụ lý hoặc chuyển đơn vị phụ trách
-                          </p>
-                        </div>
-                      </button>
-
-                      {/* 4. Chỉnh sửa thông tin đơn */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowThaoTacKhacDropdown(false);
-                          setActiveTab('thong-tin');
-                          setIsEditingThongTinDon(true);
-                        }}
-                        className="w-full flex items-start gap-2.5 p-2 rounded-xl text-left hover:bg-slate-50 text-slate-800 transition-colors cursor-pointer group"
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 group-hover:bg-blue-100 flex items-center justify-center shrink-0 mt-0.5 transition-colors">
-                          <span className="material-symbols-outlined text-[18px]">edit_note</span>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="font-bold text-[13px] text-slate-900 group-hover:text-blue-700 transition-colors">
-                            Chỉnh sửa thông tin đơn
-                          </div>
-                          <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
-                            Cập nhật trực tiếp người nộp, loại đơn, nội dung tiếp nhận tại màn hình
-                          </p>
-                        </div>
-                      </button>
-
-                      {/* 5. Bảng xác minh & Đề xuất (4 tiêu chí) */}
-                      {/* <button
-                        type="button"
-                        onClick={() => {
-                          setShowThaoTacKhacDropdown(false);
-                          setShowXacMinhModal(true);
-                        }}
-                        className="w-full flex items-start gap-2.5 p-2 rounded-xl text-left hover:bg-slate-50 text-slate-800 transition-colors cursor-pointer group"
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 group-hover:bg-teal-100 flex items-center justify-center shrink-0 mt-0.5 transition-colors">
-                          <span className="material-symbols-outlined text-[18px]">fact_check</span>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="font-bold text-[13px] text-slate-900 group-hover:text-teal-700 transition-colors">
-                            Bảng xác minh (4 tiêu chí)
-                          </div>
-                          <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
-                            Kiểm tra tư cách, thẩm quyền, thời hiệu và hồ sơ tài liệu
-                          </p>
-                        </div>
-                      </button> */}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-
             {/* KHU VỰC THAO TÁC HƯỚNG XỬ LÝ THEO QUY TRÌNH KÝ DUYỆT CỦA LÃNH ĐẠO (Chỉ hiển thị sau khi đã tiếp nhận về) */}
             {!isAwaitingAcceptance && (
               decisionStatus === 'cho_ky' ? (
-                /* 1. KHI VĂN BẢN QUYẾT ĐỊNH ĐANG CHỜ LÃNH ĐẠO KÝ */
                 <div className="flex items-center gap-2">
                   <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-50 text-amber-900 border border-amber-200 text-xs font-semibold shadow-2xs">
                     <span className="material-symbols-outlined text-[17px] text-amber-600 animate-spin">progress_activity</span>
@@ -2318,7 +2298,6 @@ export default function DonTiepNhan({
                     <span>Xem văn bản trình ký</span>
                   </button>
 
-                  {/* Cụm thao tác Ký số duyệt cho Lãnh đạo */}
                   <div className="flex items-center gap-1 bg-emerald-50/90 p-1 rounded-xl border border-emerald-200 shadow-2xs">
                     <button
                       type="button"
@@ -2685,6 +2664,9 @@ export default function DonTiepNhan({
                 </div>
               )
             )}
+
+            {/* Nút Thao tác khác đặt sau Nút Thêm văn bản */}
+            {renderThaoTacKhacDropdown()}
           </div>
         </div>
         <div className="flex items-center gap-8 text-xs font-bold border-b border-slate-200 -mb-px">
