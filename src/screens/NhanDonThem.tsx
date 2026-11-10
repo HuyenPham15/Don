@@ -4415,7 +4415,7 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
                             {item.originalName}
                           </span>
                           <span className="text-[11px] font-bold text-slate-500 bg-slate-200 px-1.5 py-0.5 rounded">
-                            Tệp #{idx + 1}
+                            #{idx + 1}
                           </span>
                         </div>
                         <span className="text-[11px] text-slate-400">Dung lượng: {item.size}</span>
@@ -4498,11 +4498,10 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
                               prev ? prev.map((p) => (p.id === item.id ? { ...p, displayName: sug } : p)) : null
                             );
                           }}
-                          className={`text-[11px] px-2 py-0.5 rounded-md border transition-all cursor-pointer ${
-                            item.displayName === sug
-                              ? 'bg-blue-50 text-[#004ac6] border-blue-300 font-bold'
-                              : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200'
-                          }`}
+                          className={`text-[11px] px-2 py-0.5 rounded-md border transition-all cursor-pointer ${item.displayName === sug
+                            ? 'bg-blue-50 text-[#004ac6] border-blue-300 font-bold'
+                            : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200'
+                            }`}
                         >
                           {sug}
                         </button>
@@ -4524,17 +4523,15 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
                             prev ? prev.map((p) => (p.id === item.id ? { ...p, category: 'main' } : p)) : null
                           );
                         }}
-                        className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2.5 ${
-                          item.category === 'main'
-                            ? 'bg-blue-50/90 border-[#004ac6] text-blue-900 ring-1 ring-blue-300 shadow-2xs'
-                            : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                        }`}
+                        className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2.5 ${item.category === 'main'
+                          ? 'bg-blue-50/90 border-[#004ac6] text-blue-900 ring-1 ring-blue-300 shadow-2xs'
+                          : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                          }`}
                       >
-                        <div className={`w-4.5 h-4.5 rounded-md border flex items-center justify-center shrink-0 transition-colors ${
-                          item.category === 'main'
-                            ? 'bg-[#004ac6] border-[#004ac6] text-white'
-                            : 'bg-white border-slate-300 text-transparent'
-                        }`}>
+                        <div className={`w-4.5 h-4.5 rounded-md border flex items-center justify-center shrink-0 transition-colors ${item.category === 'main'
+                          ? 'bg-[#004ac6] border-[#004ac6] text-white'
+                          : 'bg-white border-slate-300 text-transparent'
+                          }`}>
                           <span className="material-symbols-outlined text-[13px] font-bold">check</span>
                         </div>
                         <div className="min-w-0">
@@ -4551,17 +4548,15 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
                             prev ? prev.map((p) => (p.id === item.id ? { ...p, category: 'attach' } : p)) : null
                           );
                         }}
-                        className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2.5 ${
-                          item.category === 'attach'
-                            ? 'bg-blue-50/90 border-[#004ac6] text-blue-900 ring-1 ring-blue-300 shadow-2xs'
-                            : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                        }`}
+                        className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2.5 ${item.category === 'attach'
+                          ? 'bg-blue-50/90 border-[#004ac6] text-blue-900 ring-1 ring-blue-300 shadow-2xs'
+                          : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                          }`}
                       >
-                        <div className={`w-4.5 h-4.5 rounded-md border flex items-center justify-center shrink-0 transition-colors ${
-                          item.category === 'attach'
-                            ? 'bg-[#004ac6] border-[#004ac6] text-white'
-                            : 'bg-white border-slate-300 text-transparent'
-                        }`}>
+                        <div className={`w-4.5 h-4.5 rounded-md border flex items-center justify-center shrink-0 transition-colors ${item.category === 'attach'
+                          ? 'bg-[#004ac6] border-[#004ac6] text-white'
+                          : 'bg-white border-slate-300 text-transparent'
+                          }`}>
                           <span className="material-symbols-outlined text-[13px] font-bold">check</span>
                         </div>
                         <div className="min-w-0">
@@ -4578,17 +4573,15 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
                             prev ? prev.map((p) => (p.id === item.id ? { ...p, category: 'extra' } : p)) : null
                           );
                         }}
-                        className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2.5 ${
-                          item.category === 'extra'
-                            ? 'bg-blue-50/90 border-[#004ac6] text-blue-900 ring-1 ring-blue-300 shadow-2xs'
-                            : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                        }`}
+                        className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2.5 ${item.category === 'extra'
+                          ? 'bg-blue-50/90 border-[#004ac6] text-blue-900 ring-1 ring-blue-300 shadow-2xs'
+                          : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                          }`}
                       >
-                        <div className={`w-4.5 h-4.5 rounded-md border flex items-center justify-center shrink-0 transition-colors ${
-                          item.category === 'extra'
-                            ? 'bg-[#004ac6] border-[#004ac6] text-white'
-                            : 'bg-white border-slate-300 text-transparent'
-                        }`}>
+                        <div className={`w-4.5 h-4.5 rounded-md border flex items-center justify-center shrink-0 transition-colors ${item.category === 'extra'
+                          ? 'bg-[#004ac6] border-[#004ac6] text-white'
+                          : 'bg-white border-slate-300 text-transparent'
+                          }`}>
                           <span className="material-symbols-outlined text-[13px] font-bold">check</span>
                         </div>
                         <div className="min-w-0">
@@ -4604,9 +4597,9 @@ export default function NhanDonThem({ onNav, onSubmit }: NhanDonThemProps) {
 
             {/* Modal Footer */}
             <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3">
-              <span className="text-[11.5px] text-slate-500 font-medium hidden sm:inline">
+              {/* <span className="text-[11.5px] text-slate-500 font-medium hidden sm:inline">
                 Nhấn <kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-300 text-slate-700 text-[10.5px] font-bold shadow-2xs">Enter</kbd> để lưu nhanh
-              </span>
+              </span> */}
               <div className="flex items-center gap-2 ml-auto">
                 <button
                   type="button"

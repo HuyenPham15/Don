@@ -7,6 +7,53 @@ export const INITIAL_WORK_ITEMS: WorkItem[] = [
   // Bị trả lại, Cần xác nhận, Cần trình ký...
   // =========================================================================
 
+  // 0a. Lượt nhận tài liệu không có yếu tố là đơn (AI phát hiện chứng từ thương mại rời)
+  {
+    id: 'LN-59/2026-GOVEX',
+    code: 'LN-59/2026-GOVEX',
+    title: 'Kiểm tra lượt nhận bưu chính: Hợp đồng cung ứng vật tư số 18/2026/HĐKT-MK & Bảng báo giá VLXD (AI cảnh báo: Không có yếu tố là đơn)',
+    sender: 'Công ty TNHH VLXD Minh Khôi',
+    source: 'Dịch vụ bưu chính (VNPost)',
+    sourceType: 'luot_nhan',
+    timeReceived: '16/09/2026 15:10',
+    priority: 'high',
+    deadlineType: 'today',
+    deadlineText: 'Hôm nay 17:30',
+    deadlineFull: 'Hôm nay - 17:30',
+    column: 'action_required',
+    actionTitle: 'Kiểm tra AI: Tài liệu không có yếu tố là đơn',
+    subStatus: 'can_kiem_tra_ai',
+    nextAction: 'Đối chiếu 02 tệp chứng từ thương mại và xác nhận Không tiếp nhận / Xếp lưu hồ sơ theo Thông tư 05/2021/TT-TTCP',
+    holder: {
+      role: 'Đang xử lý',
+      name: 'Tôi (Nguyễn Minh Anh)',
+      department: 'Phòng Tiếp công dân & Xử lý đơn',
+    },
+    departmentId: 'tiep-dan',
+    departmentName: 'Phòng Tiếp công dân & Xử lý đơn',
+    progress: {
+      currentStep: 2,
+      totalSteps: 3,
+      stepName: 'Xác nhận kết quả phân loại AI',
+      steps: ['Quét OCR & 5W1H', 'Kiểm tra yếu tố đơn', 'Xếp lưu / Kết thúc'],
+    },
+    docCount: 2,
+    cta: {
+      label: 'Mở bàn phân tích AI',
+      actionType: 'review_ai',
+      variant: 'warning',
+    },
+    category: 'Phân loại đơn',
+    tags: ['Không có yếu tố là đơn', 'Chứng từ rời', 'Đề xuất xếp lưu'],
+    loaiDon: 'Tài liệu không có yếu tố là đơn (Chứng từ thương mại)',
+    luotNhanId: 'LN-59/2026-GOVEX',
+    aiStatus: 'needs_review',
+    aiReviewNote: 'Độ tin cậy AI 97.4% — Phát hiện 0/4 yếu tố cấu thành đơn (chỉ gồm hợp đồng vật tư và bảng báo giá), khuyến nghị Không tiếp nhận / Xếp lưu.',
+    hasFile: true,
+    nguonXuLy: 'file_ocr',
+    taskReadiness: 'needs_review',
+  },
+
   // 0. Lượt nhận không có tài liệu - Tiếp nhận trực tiếp (Chuyển sang màn chi tiết đơn)
   {
     id: 'LN-2026-GOVEX_008',

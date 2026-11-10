@@ -19,6 +19,13 @@ import ChinhSuaDonModal from '../components/modals/ChinhSuaDonModal';
 import BaoCaoXacMinhModal from '../components/modals/BaoCaoXacMinhModal';
 import TaoBaoCaoDeXuatModal, { BaoCaoDeXuatFormData } from '../components/modals/TaoBaoCaoDeXuatModal';
 import PhanCongModal, { PhanCongSubmitData } from '../components/modals/PhanCongModal';
+import PhanCongVaXacMinhSection from '../components/assignment/PhanCongVaXacMinhSection';
+import {
+  ASSIGNMENT_TASK_STATUS_CONFIG,
+  PhanCongRecord,
+  canUserAssignDon,
+  getPhanCongRecordByDonCode,
+} from '../services/phanCongService';
 import GhepDonModal, { GhepDonSubmitData } from '../components/modals/GhepDonModal';
 import TaiTaiLieuModal, { TaiTaiLieuSubmitData } from '../components/modals/TaiTaiLieuModal';
 import GuiQuyetDinhModal from '../components/modals/GuiQuyetDinhModal';
@@ -108,7 +115,7 @@ export default function DonTiepNhan({
   currentAccount,
   onUpdateDon,
 }: DonTiepNhanProps) {
-  const [activeTab, setActiveTab] = useState<'thong-tin' | 'lien-he' | 'don-khac' | 'tai-lieu' | 'quy-trinh' | 'lich-su' | 'lich-su-trinh-ky'>('thong-tin');
+  const [activeTab, setActiveTab] = useState<'thong-tin' | 'phan-cong-xac-minh' | 'lien-he' | 'don-khac' | 'tai-lieu' | 'quy-trinh' | 'lich-su' | 'lich-su-trinh-ky'>('thong-tin');
   const [docCount, setDocCount] = useState<number>(6);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
@@ -391,6 +398,13 @@ export default function DonTiepNhan({
   };
 
   const [currentDon, setCurrentDon] = useState<DonDetail>(donDetail || defaultDon);
+  const [phanCongRecord, setPhanCongRecord] = useState<PhanCongRecord | null>(() =>
+    getPhanCongRecordByDonCode((donDetail || defaultDon).code)
+  );
+
+  useEffect(() => {
+    setPhanCongRecord(getPhanCongRecordByDonCode(currentDon.code));
+  }, [currentDon.code]);
 
   useEffect(() => {
     if (donDetail) {
@@ -2033,14 +2047,20 @@ export default function DonTiepNhan({
                 </div>
               </button>
 
-              {/* 3. Phân công xử lý */}
+              {/* 3. Phân công xử lý (Chỉ khả dụng đối với đơn đã được tiếp nhận và người dùng có quyền phân công - Mục 2) */}
               <button
                 type="button"
+                disabled={isAwaitingAcceptance || !canUserAssignDon(currentAccount)}
                 onClick={() => {
+                  if (isAwaitingAcceptance || !canUserAssignDon(currentAccount)) return;
                   setShowThaoTacKhacDropdown(false);
                   setShowPhanCongModal(true);
                 }}
-                className="w-full flex items-start gap-2.5 p-2 rounded-xl text-left hover:bg-slate-50 text-slate-800 transition-colors cursor-pointer group"
+                className={`w-full flex items-start gap-2.5 p-2 rounded-xl text-left transition-colors group ${
+                  isAwaitingAcceptance || !canUserAssignDon(currentAccount)
+                    ? 'opacity-50 cursor-not-allowed text-slate-400'
+                    : 'hover:bg-slate-50 text-slate-800 cursor-pointer'
+                }`}
               >
                 <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 group-hover:bg-amber-100 flex items-center justify-center shrink-0 mt-0.5 transition-colors">
                   <span className="material-symbols-outlined text-[18px]">assignment_ind</span>
@@ -2050,7 +2070,9 @@ export default function DonTiepNhan({
                     Phân công xử lý
                   </div>
                   <p className="text-[11px] text-slate-500 leading-snug mt-0.5">
-                    Giao cán bộ thụ lý hoặc chuyển đơn vị phụ trách
+                    {isAwaitingAcceptance
+                      ? 'Chỉ khả dụng sau khi đơn đã được xác nhận tiếp nhận'
+                      : 'Giao cán bộ điều tra/chuyên môn phụ trách, phối hợp & nội dung xác minh'}
                   </p>
                 </div>
               </button>
@@ -2665,21 +2687,63 @@ export default function DonTiepNhan({
               )
             )}
 
+            {/* Nút Phân công xử lý trực tiếp trên thanh hành động (Mục 2: Chỉ khả dụng đối với đơn đã tiếp nhận và người dùng có quyền phân công) */}
+            {!isAwaitingAcceptance && canUserAssignDon(currentAccount) && (
+              <button
+                type="button"
+                onClick={() => setShowPhanCongModal(true)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold shadow-2xs transition-all cursor-pointer"
+                title="Phân công cán bộ điều tra / cán bộ chuyên môn xử lý và xác minh nội dung đơn"
+              >
+                <span className="material-symbols-outlined text-[17px] text-[#C62828]">
+                  assignment_ind
+                </span>
+                <span>Phân công xử lý</span>
+              </button>
+            )}
+
             {/* Nút Thao tác khác đặt sau Nút Thêm văn bản */}
             {renderThaoTacKhacDropdown()}
           </div>
         </div>
-        <div className="flex items-center gap-8 text-xs font-bold border-b border-slate-200 -mb-px">
+        <div className="flex items-center gap-7 text-xs font-bold border-b border-slate-200 -mb-px overflow-x-auto">
           <button
             type="button"
             onClick={() => setActiveTab('thong-tin')}
-            className={`pb-3 border-b-2 flex items-center gap-2 transition-all cursor-pointer ${activeTab === 'thong-tin'
+            className={`pb-3 border-b-2 flex items-center gap-2 transition-all cursor-pointer shrink-0 ${activeTab === 'thong-tin'
               ? 'border-[#004ac6] text-[#004ac6]'
               : 'border-transparent text-slate-500 hover:text-slate-800'
               }`}
           >
             <span className="material-symbols-outlined text-[16px]">description</span>
             <span>Thông tin chung</span>
+          </button>
+
+          {/* Tab Phân công & Xác minh (Mục 3, 4, 5, 6) */}
+          <button
+            type="button"
+            onClick={() => setActiveTab('phan-cong-xac-minh')}
+            className={`pb-3 border-b-2 flex items-center gap-1.5 transition-all cursor-pointer shrink-0 ${activeTab === 'phan-cong-xac-minh'
+              ? 'border-[#C62828] text-[#C62828]'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+          >
+            <span className="material-symbols-outlined text-[16px]">assignment_ind</span>
+            <span>Phân công &amp; Xác minh</span>
+            {phanCongRecord && (
+              <span
+                className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold border ${
+                  ASSIGNMENT_TASK_STATUS_CONFIG[phanCongRecord.taskStatus].badgeClass
+                }`}
+              >
+                {
+                  phanCongRecord.verificationTasks.filter((t) => t.status === 'da_hoan_thanh')
+                    .length
+                }
+                /{phanCongRecord.verificationTasks.length} •{' '}
+                {ASSIGNMENT_TASK_STATUS_CONFIG[phanCongRecord.taskStatus].label}
+              </span>
+            )}
           </button>
 
           {/* Tab 2: Mối liên hệ */}
@@ -2800,33 +2864,273 @@ export default function DonTiepNhan({
           )} */}
 
           {activeTab === 'thong-tin' && (
-            <TabThongTinChung
-              currentDon={currentDon}
-              onOpenLuotNhan={() => onNav('ban-phan-tich')}
-              onOpenSoDo={() => setActiveTab('lien-he')}
-              isEditing={isEditingThongTinDon}
-              onStartEdit={() => setIsEditingThongTinDon(true)}
-              onCancelEdit={() => setIsEditingThongTinDon(false)}
-              onSaveDon={(updatedData) => {
-                setCurrentDon(updatedData);
-                setIsEditingThongTinDon(false);
-                showToast(`✓ Đã cập nhật thành công thông tin đơn ${updatedData.code}!`);
-                addHistoryLog({
-                  title: 'Chỉnh sửa, cập nhật thông tin hồ sơ đơn',
-                  actor: currentAccount?.name || currentDon.canBoXuLy || 'Nguyễn Minh Anh',
-                  actorRole: currentAccount?.role || currentDon.chucVuCanBo || 'Chuyên viên Tiếp nhận & Xử lý đơn',
-                  actorDept: currentDon.donViXuLy || 'Phòng Tiếp công dân & Xử lý đơn',
-                  category: 'ghi_chu',
-                  statusBadge: {
-                    text: 'Cập nhật',
-                    bgClass: 'bg-slate-100',
-                    textClass: 'text-slate-800',
-                    borderClass: 'border-slate-200',
-                  },
-                  description: `Cán bộ thụ lý đã cập nhật lại thông tin hồ sơ trực tiếp: người nộp "${updatedData.nguoiNop}", tiêu đề "${updatedData.title}", loại đơn "${updatedData.loaiDon}".`,
-                });
-              }}
-            />
+            <>
+              <TabThongTinChung
+                currentDon={currentDon}
+                onOpenLuotNhan={() => onNav('ban-phan-tich')}
+                onOpenSoDo={() => setActiveTab('lien-he')}
+                isEditing={isEditingThongTinDon}
+                onStartEdit={() => setIsEditingThongTinDon(true)}
+                onCancelEdit={() => setIsEditingThongTinDon(false)}
+                onSaveDon={(updatedData) => {
+                  setCurrentDon(updatedData);
+                  setIsEditingThongTinDon(false);
+                  showToast(`✓ Đã cập nhật thành công thông tin đơn ${updatedData.code}!`);
+                  addHistoryLog({
+                    title: 'Chỉnh sửa, cập nhật thông tin hồ sơ đơn',
+                    actor: currentAccount?.name || currentDon.canBoXuLy || 'Nguyễn Minh Anh',
+                    actorRole: currentAccount?.role || currentDon.chucVuCanBo || 'Chuyên viên Tiếp nhận & Xử lý đơn',
+                    actorDept: currentDon.donViXuLy || 'Phòng Tiếp công dân & Xử lý đơn',
+                    category: 'ghi_chu',
+                    statusBadge: {
+                      text: 'Cập nhật',
+                      bgClass: 'bg-slate-100',
+                      textClass: 'text-slate-800',
+                      borderClass: 'border-slate-200',
+                    },
+                    description: `Cán bộ thụ lý đã cập nhật lại thông tin hồ sơ trực tiếp: người nộp "${updatedData.nguoiNop}", tiêu đề "${updatedData.title}", loại đơn "${updatedData.loaiDon}".`,
+                  });
+                }}
+              />
+
+              {/* Khu vực Phân công xử lý & Lịch sử phân công ngay tại màn Chi tiết đơn (Mục 5 & Mục 6) */}
+              <div className="px-6 pb-8">
+                <PhanCongVaXacMinhSection
+                  record={phanCongRecord}
+                  donStatusLabel={currentDon.statusBadge || 'Đang xử lý'}
+                  isAwaitingAcceptance={isAwaitingAcceptance}
+                  currentAccount={currentAccount}
+                  onOpenPhanCongModal={() => setShowPhanCongModal(true)}
+                  onRecordUpdated={(updated) => setPhanCongRecord(updated)}
+                  onAttachVerificationDocumentToDon={(att, taskTitle) => {
+                    const newVb: VanBanXacMinhItem = {
+                      id: att.id,
+                      tenVanBan: att.name,
+                      soKyHieu: `TL-XM/${Date.now().toString().slice(-3)}`,
+                      loai: att.docType === 'bien_ban' ? 'bien_ban' : 'file_scan',
+                      ngayLap: att.uploadedAt,
+                      nguoiNhan: currentDon.nguoiNop || 'Hồ sơ xác minh',
+                      coQuanBanHanh: phanCongRecord?.donViXuLyName || 'Tổ xác minh',
+                      trichYeu: `Tài liệu/biên bản thu thập tại mục "${taskTitle}"`,
+                      noiDungChiTiet: `Tài liệu xác minh đính kèm bởi ${att.uploadedBy} lúc ${att.uploadedAt} phục vụ nội dung "${taskTitle}".`,
+                      trangThai: 'da_ban_hanh',
+                    };
+                    setVanBanXacMinhList((prev) => [newVb, ...prev]);
+                  }}
+                  onSubmitBaoCaoDeXuatToLeader={(draft, rec) => {
+                    if (onCreateSigningDocument) {
+                      const fullText = `${draft.noiDungDonBanDau}\n\n${draft.noiDungDuocPhanCong}\n\n${draft.quaTrinhXacMinh}\n\n${draft.ketQuaTungNoiDung}\n\n${draft.taiLieuDaThuThap}\n\n${draft.noiDungChuaLamRo}\n\n${draft.nhanDinhVaKienNghi}`;
+                      const newSignDoc: SigningDocument = {
+                        id: draft.id,
+                        soKyHieu: draft.soKyHieu,
+                        hoSoCode: rec.donCode,
+                        luotNhanId: rec.luotNhanId,
+                        loaiDon: rec.loaiDon,
+                        nguoiGuiDon: rec.nguoiGuiDon,
+                        noiDungDon: rec.noiDungTomTat,
+                        tenVanBan: `Báo cáo tổng hợp kết quả xác minh & đề xuất xử lý đơn ${rec.donCode}`,
+                        loaiVanBan: 'bao_cao_de_xuat',
+                        loaiVanBanLabel: 'Báo cáo đề xuất kết quả xác minh',
+                        trichYeu: `Báo cáo kết quả xác minh ${rec.verificationTasks.length} nội dung được phân công đối với đơn của ${rec.nguoiGuiDon}`,
+                        noiDungChiTiet: fullText,
+                        nguoiLap: draft.nguoiLap,
+                        donViNguoiLap: draft.donViLap,
+                        ngayTao: draft.ngayLap,
+                        nguoiTrinh: draft.nguoiLap,
+                        thoiGianTrinh: draft.updatedAt,
+                        signers: [
+                          {
+                            id: 'ld-01',
+                            name: rec.nguoiPhanCongName,
+                            chucVu: rec.nguoiPhanCongChucVu,
+                            vaiTro: 'ky',
+                            thuTu: 1,
+                            status: 'cho_ky',
+                          },
+                        ],
+                        currentSignerIndex: 0,
+                        lanhDaoId: 'ld-01',
+                        lanhDaoName: rec.nguoiPhanCongName,
+                        lanhDaoChucVu: rec.nguoiPhanCongChucVu,
+                        status: 'da_trinh',
+                        hanXuLy: rec.thoiHanBaoCao,
+                        mucDoUuTien: rec.mucDoUuTien,
+                        tepDinhKem: rec.taiLieuDinhKem.map((f, i) => ({
+                          id: `f-${i}`,
+                          tenTep: f.name,
+                          dungLuong: f.size,
+                          loai: 'chung_cu',
+                        })),
+                        phienBanHienTai: 'V1',
+                        versionHistory: [
+                          {
+                            version: 'V1',
+                            thoiGian: draft.updatedAt,
+                            nguoiTao: draft.nguoiLap,
+                            trangThaiLucDo: 'Đã trình lãnh đạo',
+                            ghiChu: 'Báo cáo tổng hợp kết quả xác minh lần đầu',
+                            noiDungSnapshot: fullText,
+                          },
+                        ],
+                        history: [
+                          {
+                            id: `hl-${Date.now()}`,
+                            time: draft.updatedAt,
+                            actor: draft.nguoiLap,
+                            action: 'Trình Lãnh đạo xem xét Báo cáo đề xuất kết quả xác minh',
+                          },
+                        ],
+                        auditLogs: [
+                          {
+                            id: `al-${Date.now()}`,
+                            time: draft.updatedAt,
+                            actor: draft.nguoiLap,
+                            actorRole: rec.canBoPhuTrachChucVu,
+                            action: 'Trình Lãnh đạo xem xét Báo cáo đề xuất kết quả xác minh',
+                            version: 'V1',
+                          },
+                        ],
+                      };
+                      onCreateSigningDocument(newSignDoc);
+                    }
+                    addHistoryLog({
+                      title: `Trình Lãnh đạo xem xét Báo cáo tổng hợp kết quả xác minh (${draft.soKyHieu})`,
+                      actor: draft.nguoiLap,
+                      actorRole: rec.canBoPhuTrachChucVu,
+                      actorDept: draft.donViLap,
+                      category: 'van_ban',
+                      statusBadge: {
+                        text: 'Chờ phê duyệt báo cáo',
+                        bgClass: 'bg-purple-50',
+                        textClass: 'text-purple-800',
+                        borderClass: 'border-purple-200',
+                      },
+                      description: `Cán bộ điều tra đã tổng hợp kết quả xác minh ${rec.verificationTasks.length} nội dung được giao và trình Báo cáo đề xuất số ${draft.soKyHieu} lên Lãnh đạo xem xét.`,
+                    });
+                  }}
+                  onShowToast={showToast}
+                />
+              </div>
+            </>
+          )}
+          {activeTab === 'phan-cong-xac-minh' && (
+            <div className="p-6">
+              <PhanCongVaXacMinhSection
+                record={phanCongRecord}
+                donStatusLabel={currentDon.statusBadge || 'Đang xử lý'}
+                isAwaitingAcceptance={isAwaitingAcceptance}
+                currentAccount={currentAccount}
+                onOpenPhanCongModal={() => setShowPhanCongModal(true)}
+                onRecordUpdated={(updated) => setPhanCongRecord(updated)}
+                onAttachVerificationDocumentToDon={(att, taskTitle) => {
+                  const newVb: VanBanXacMinhItem = {
+                    id: att.id,
+                    tenVanBan: att.name,
+                    soKyHieu: `TL-XM/${Date.now().toString().slice(-3)}`,
+                    loai: att.docType === 'bien_ban' ? 'bien_ban' : 'file_scan',
+                    ngayLap: att.uploadedAt,
+                    nguoiNhan: currentDon.nguoiNop || 'Hồ sơ xác minh',
+                    coQuanBanHanh: phanCongRecord?.donViXuLyName || 'Tổ xác minh',
+                    trichYeu: `Tài liệu/biên bản thu thập tại mục "${taskTitle}"`,
+                    noiDungChiTiet: `Tài liệu xác minh đính kèm bởi ${att.uploadedBy} lúc ${att.uploadedAt} phục vụ nội dung "${taskTitle}".`,
+                    trangThai: 'da_ban_hanh',
+                  };
+                  setVanBanXacMinhList((prev) => [newVb, ...prev]);
+                }}
+                onSubmitBaoCaoDeXuatToLeader={(draft, rec) => {
+                  if (onCreateSigningDocument) {
+                    const fullText = `${draft.noiDungDonBanDau}\n\n${draft.noiDungDuocPhanCong}\n\n${draft.quaTrinhXacMinh}\n\n${draft.ketQuaTungNoiDung}\n\n${draft.taiLieuDaThuThap}\n\n${draft.noiDungChuaLamRo}\n\n${draft.nhanDinhVaKienNghi}`;
+                    const newSignDoc: SigningDocument = {
+                      id: draft.id,
+                      soKyHieu: draft.soKyHieu,
+                      hoSoCode: rec.donCode,
+                      luotNhanId: rec.luotNhanId,
+                      loaiDon: rec.loaiDon,
+                      nguoiGuiDon: rec.nguoiGuiDon,
+                      noiDungDon: rec.noiDungTomTat,
+                      tenVanBan: `Báo cáo tổng hợp kết quả xác minh & đề xuất xử lý đơn ${rec.donCode}`,
+                      loaiVanBan: 'bao_cao_de_xuat',
+                      loaiVanBanLabel: 'Báo cáo đề xuất kết quả xác minh',
+                      trichYeu: `Báo cáo kết quả xác minh ${rec.verificationTasks.length} nội dung được phân công đối với đơn của ${rec.nguoiGuiDon}`,
+                      noiDungChiTiet: fullText,
+                      nguoiLap: draft.nguoiLap,
+                      donViNguoiLap: draft.donViLap,
+                      ngayTao: draft.ngayLap,
+                      nguoiTrinh: draft.nguoiLap,
+                      thoiGianTrinh: draft.updatedAt,
+                      signers: [
+                        {
+                          id: 'ld-01',
+                          name: rec.nguoiPhanCongName,
+                          chucVu: rec.nguoiPhanCongChucVu,
+                          vaiTro: 'ky',
+                          thuTu: 1,
+                          status: 'cho_ky',
+                        },
+                      ],
+                      currentSignerIndex: 0,
+                      lanhDaoId: 'ld-01',
+                      lanhDaoName: rec.nguoiPhanCongName,
+                      lanhDaoChucVu: rec.nguoiPhanCongChucVu,
+                      status: 'da_trinh',
+                      hanXuLy: rec.thoiHanBaoCao,
+                      mucDoUuTien: rec.mucDoUuTien,
+                      tepDinhKem: rec.taiLieuDinhKem.map((f, i) => ({
+                        id: `f-${i}`,
+                        tenTep: f.name,
+                        dungLuong: f.size,
+                        loai: 'chung_cu',
+                      })),
+                      phienBanHienTai: 'V1',
+                      versionHistory: [
+                        {
+                          version: 'V1',
+                          thoiGian: draft.updatedAt,
+                          nguoiTao: draft.nguoiLap,
+                          trangThaiLucDo: 'Đã trình lãnh đạo',
+                          ghiChu: 'Báo cáo tổng hợp kết quả xác minh lần đầu',
+                          noiDungSnapshot: fullText,
+                        },
+                      ],
+                      history: [
+                        {
+                          id: `hl-${Date.now()}`,
+                          time: draft.updatedAt,
+                          actor: draft.nguoiLap,
+                          action: 'Trình Lãnh đạo xem xét Báo cáo đề xuất kết quả xác minh',
+                        },
+                      ],
+                      auditLogs: [
+                        {
+                          id: `al-${Date.now()}`,
+                          time: draft.updatedAt,
+                          actor: draft.nguoiLap,
+                          actorRole: rec.canBoPhuTrachChucVu,
+                          action: 'Trình Lãnh đạo xem xét Báo cáo đề xuất kết quả xác minh',
+                          version: 'V1',
+                        },
+                      ],
+                    };
+                    onCreateSigningDocument(newSignDoc);
+                  }
+                  addHistoryLog({
+                    title: `Trình Lãnh đạo xem xét Báo cáo tổng hợp kết quả xác minh (${draft.soKyHieu})`,
+                    actor: draft.nguoiLap,
+                    actorRole: rec.canBoPhuTrachChucVu,
+                    actorDept: draft.donViLap,
+                    category: 'van_ban',
+                    statusBadge: {
+                      text: 'Chờ phê duyệt báo cáo',
+                      bgClass: 'bg-purple-50',
+                      textClass: 'text-purple-800',
+                      borderClass: 'border-purple-200',
+                    },
+                    description: `Cán bộ điều tra đã tổng hợp kết quả xác minh ${rec.verificationTasks.length} nội dung được giao và trình Báo cáo đề xuất số ${draft.soKyHieu} lên Lãnh đạo xem xét.`,
+                  });
+                }}
+                onShowToast={showToast}
+              />
+            </div>
           )}
           {activeTab === 'lien-he' && <TabMoiLienHe currentDon={currentDon} />}
           {activeTab === 'don-khac' && <TabDonKhac currentDon={currentDon} />}
@@ -4241,8 +4545,14 @@ export default function DonTiepNhan({
       <PhanCongModal
         isOpen={showPhanCongModal}
         onClose={() => setShowPhanCongModal(false)}
+        existingRecord={phanCongRecord}
+        nguoiPhanCongName={currentAccount?.name || 'Đỗ Văn Thắng'}
+        nguoiPhanCongChucVu={currentAccount?.chucVu || 'Lãnh đạo đơn vị có thẩm quyền phân công'}
         onSubmit={(data: PhanCongSubmitData) => {
           setShowPhanCongModal(false);
+          if (data.phanCongRecord) {
+            setPhanCongRecord(data.phanCongRecord);
+          }
           setCurrentDon((prev) => ({
             ...prev,
             canBoXuLy: data.canBo.name,
@@ -4250,20 +4560,41 @@ export default function DonTiepNhan({
             chucVuCanBo: data.canBo.role,
             donViXuLy: data.canBo.departmentName,
           }));
-          showToast(`✓ Đã phân công thụ lý/xử lý đơn cho cán bộ ${data.canBo.name} (${data.canBo.role})`);
+          const coordText =
+            data.phanCongRecord && data.phanCongRecord.canBoPhoiHop.length > 0
+              ? ` & ${data.phanCongRecord.canBoPhoiHop.length} cán bộ phối hợp (${data.phanCongRecord.canBoPhoiHop
+                  .map((c) => c.officerName)
+                  .join(', ')})`
+              : '';
+          if (data.isDraft) {
+            showToast(
+              `✓ Đã lưu bản nháp phân công xử lý đơn cho đ/c ${data.canBo.name}${coordText}`
+            );
+          } else {
+            showToast(
+              `✓ Đã xác nhận phân công & gửi thông báo công việc đến Cán bộ phụ trách ${data.canBo.name}${coordText}!`
+            );
+            setActiveTab('phan-cong-xac-minh');
+          }
           addHistoryLog({
-            title: 'Phân công cán bộ xử lý đơn',
-            actor: currentAccount?.name || 'Trần Trọng Giáp',
-            actorRole: 'Lãnh đạo đơn vị',
+            title: data.isDraft
+              ? 'Lưu bản nháp phân công xử lý đơn'
+              : `Phân công xử lý & giao ${
+                  data.phanCongRecord?.verificationTasks.length || 0
+                } nội dung xác minh`,
+            actor: currentAccount?.name || 'Đỗ Văn Thắng',
+            actorRole: currentAccount?.chucVu || 'Lãnh đạo đơn vị',
             actorDept: data.canBo.departmentName,
             category: 'tiep_nhan',
             statusBadge: {
-              text: 'Phân công',
+              text: data.isDraft ? 'Lưu nháp phân công' : 'Đã phân công',
               bgClass: 'bg-indigo-50',
               textClass: 'text-indigo-800',
               borderClass: 'border-indigo-200',
             },
-            description: `Phân công hồ sơ cho cán bộ ${data.canBo.name} (${data.canBo.role}) tiếp tục xử lý. Ghi chú: ${data.ghiChu || 'Theo dõi và xử lý đúng hạn quy định.'}`,
+            description: `Cán bộ phụ trách: ${data.canBo.name} (${data.canBo.role})${coordText}. Hạn báo cáo: ${
+              data.phanCongRecord?.thoiHanBaoCao || 'Theo quy định'
+            }. Chỉ đạo: ${data.ghiChu || 'Xác minh đầy đủ các nội dung được giao.'}`,
           });
         }}
         itemsToAssign={[
@@ -4272,21 +4603,21 @@ export default function DonTiepNhan({
             code: currentDon.code,
             luotNhanId: currentDon.luotNhanId || '',
             nguoiNop: currentDon.nguoiNop || '',
-            loaiDon: currentDon.loaiDon || 'Đơn khiếu nại / tố cáo',
+            loaiDon: currentDon.loaiDon || 'Đơn tố giác, tin báo về tội phạm',
             ngayNhan: currentDon.ngayNhan || '',
             ngayChuyenDen: currentDon.ngayNhan || '',
             donViHienTai: currentDon.donViXuLy || 'Phòng Tiếp công dân & Xử lý đơn',
             donViTiepNhanId: 'tiep-dan',
             donViTiepNhan: currentDon.donViXuLy || 'Phòng Tiếp công dân & Xử lý đơn',
-            hanXuLy: '15 ngày',
-            hanXuLyFull: '15 ngày kể từ ngày nhận',
+            hanXuLy: '20 ngày',
+            hanXuLyFull: '20 ngày kể từ ngày nhận',
             trangThai: 'dang_xu_ly',
-            noiDungTomTat: currentDon.title || '',
+            noiDungTomTat: currentDon.noiDung || currentDon.title || '',
             canBoXuLy: currentDon.canBoXuLy || currentDon.canBoTiepNhan,
             chucVuCanBo: currentDon.chucVuCanBo,
           },
         ]}
-        currentDepartmentId="tiep-dan"
+        currentDepartmentId={phanCongRecord?.donViXuLyId || 'pc03'}
         departmentName={currentDon.donViXuLy || 'Phòng Tiếp công dân & Xử lý đơn'}
       />
 

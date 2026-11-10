@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Screen, LuotNhan, DonDetail, UploadedFile } from '../../types';
+import ChuyenTiepNhanModal, { ChuyenTiepNhanSubmitData } from '../modals/ChuyenTiepNhanModal';
 
 interface VanThuWorkItem {
   id: string;
@@ -320,6 +321,10 @@ export default function VanThuWorkKanban({
   onSelect,
   onSelectDon,
 }: VanThuWorkKanbanProps) {
+  const [items, setItems] = useState<VanThuWorkItem[]>(INITIAL_VAN_THU_ITEMS);
+  const [selectedItemForChuyen, setSelectedItemForChuyen] = useState<VanThuWorkItem | null>(null);
+  const [isChuyenModalOpen, setIsChuyenModalOpen] = useState(false);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilterStatus, setActiveFilterStatus] = useState<'all' | 'chua_chuyen' | 'da_chuyen_can_bo' | 'da_chuyen_don_vi'>('all');
   const [toastMsg, setToastMsg] = useState<string | null>(null);
@@ -332,7 +337,7 @@ export default function VanThuWorkKanban({
   };
 
   const filteredItems = useMemo(() => {
-    return INITIAL_VAN_THU_ITEMS.filter((item) => {
+    return items.filter((item) => {
       if (activeFilterStatus !== 'all' && item.status !== activeFilterStatus) {
         return false;
       }
@@ -348,7 +353,7 @@ export default function VanThuWorkKanban({
       }
       return true;
     });
-  }, [searchQuery, activeFilterStatus]);
+  }, [items, searchQuery, activeFilterStatus]);
 
   const colChuaChuyen = useMemo(
     () => filteredItems.filter((i) => i.status === 'chua_chuyen'),
@@ -363,74 +368,116 @@ export default function VanThuWorkKanban({
     [filteredItems]
   );
 
+  const chuaChuyenCount = useMemo(
+    () => items.filter((i) => i.status === 'chua_chuyen').length,
+    [items]
+  );
+  const daChuyenCanBoCount = useMemo(
+    () => items.filter((i) => i.status === 'da_chuyen_can_bo').length,
+    [items]
+  );
+  const daChuyenDonViCount = useMemo(
+    () => items.filter((i) => i.status === 'da_chuyen_don_vi').length,
+    [items]
+  );
+
+  // Tính toán số hiển thị KPI mượt mà tương ứng
+  const kpiChuaChuyen = Math.max(0, 17 - (4 - chuaChuyenCount));
+  const kpiDaChuyenCanBo = 151 + (daChuyenCanBoCount - 4);
+  const kpiDaChuyenDonVi = 40 + (daChuyenDonViCount - 3);
+
+  // Mở popup Chuyển xử lý
   const handleChuyenXuLy = (item: VanThuWorkItem) => {
-    const defaultFiles: UploadedFile[] = item.files && item.files.length > 0
-      ? item.files
-      : [
-        { name: `Don_tiep_nhan_${item.id}.pdf`, size: '2.1 MB', category: 'main' },
-        { name: 'Can_cuoc_cong_dan.pdf', size: '850 KB', category: 'attach' },
-        { name: 'Tai_lieu_kem_theo.pdf', size: '1.4 MB', category: 'attach' },
-      ];
+    setSelectedItemForChuyen(item);
+    setIsChuyenModalOpen(true);
+  };
 
-    const defaultLogs = item.historyLogs && item.historyLogs.length > 0
-      ? item.historyLogs
-      : [
-        {
-          time: `${item.ngayNhan} ${item.gioNhan || '08:30:00'}`,
-          action: 'Tiếp nhận hồ sơ trực tiếp tại Bộ phận Một cửa',
-          actor: 'Lê Ngọc Mai',
-          note: `Công dân ${item.nguoiNop} nộp trực tiếp tại quầy Một cửa CATP Hà Nội`,
-        },
-      ];
-
-    if (item.status === 'da_chuyen_can_bo' || item.status === 'da_chuyen_don_vi') {
-      const dynamicCode = `Đ-${item.code.replace('LN-', '')}`;
-      const mockDon: DonDetail = {
-        id: dynamicCode,
-        code: dynamicCode,
-        title: item.noiDung || `Hồ sơ ${item.code}`,
-        luotNhanId: item.code,
-        nguoiNop: item.nguoiNop,
-        cccd: item.cccd,
-        sdt: item.sdt,
-        diaChi: item.diaChi,
-        ngayNhan: item.ngayNhan,
-        loaiDon: item.loaiDon || 'Đơn phản ánh kiến nghị',
-        type: 'ĐƠN TIẾP NHẬN',
-        statusBadge: 'Đang xử lý',
+  // Chuẩn bị dữ liệu cho Modal Chuyển xử lý
+  const donInfoForChuyen = useMemo(() => {
+    if (!selectedItemForChuyen) {
+      return {
+        code: '',
+        loaiDon: 'Đơn phản ánh kiến nghị',
+        nguoiNop: '',
+        ngayNhan: '',
+        donViHienTai: 'Công an thành phố Hà Nội',
+        noiDungTomTat: '',
+        suggestedDeptId: 'qldt',
+        hasFiles: true,
       };
-      if (onSelectDon) onSelectDon(mockDon);
-      onNav('don-tiep-nhan');
-      showToast(`Mở chi tiết đơn [${dynamicCode}]`);
-      return;
     }
 
-    if (onSelect) {
-      const mockLn: LuotNhan = {
-        id: item.code,
-        nguoiNop: item.nguoiNop,
-        cccd: item.cccd,
-        sdt: item.sdt,
-        diaChi: item.diaChi,
-        hinhThuc: item.hinhThuc,
-        ngayNhan: item.ngayNhan,
-        gioNhan: item.gioNhan || '08:30:00',
-        noiDung: item.noiDung || `Lượt nhận hồ sơ ${item.code}`,
-        donVi: item.donViNhan || 'Công an thành phố Hà Nội',
-        canBoNhan: item.canBoNhan,
-        loaiDon: item.loaiDon || 'Đơn phản ánh kiến nghị',
-        aiJob: 3,
-        status: 'cho_chuyen',
-        hasFile: true,
-        fileCount: defaultFiles.length,
-        files: defaultFiles,
-        historyLogs: defaultLogs,
-        ghiChu: 'cong-viec',
-      };
-      onSelect(mockLn);
+    let suggestedDeptId = 'qldt';
+    const text = ((selectedItemForChuyen.noiDung || '') + ' ' + (selectedItemForChuyen.loaiDon || '')).toLowerCase();
+    if (text.includes('đất') || text.includes('môi trường') || text.includes('sổ đỏ') || text.includes('tnmt')) {
+      suggestedDeptId = 'tnmt';
+    } else if (text.includes('khiếu nại') || text.includes('tố cáo') || text.includes('thanh tra')) {
+      suggestedDeptId = 'thanh-tra';
+    } else if (text.includes('kinh tế') || text.includes('tiền') || text.includes('đa cấp') || text.includes('pc03') || text.includes('lừa đảo')) {
+      suggestedDeptId = 'pc03';
+    } else if (text.includes('tư pháp') || text.includes('hộ tịch')) {
+      suggestedDeptId = 'tu-phap';
+    } else if (text.includes('giao thông') || text.includes('trật tự') || text.includes('tiếng ồn')) {
+      suggestedDeptId = 'qldt';
     }
-    onNav('ban-phan-tich');
-    showToast(`Mở phân tích & chuyển xử lý hồ sơ [${item.code}]`);
+
+    const hasFiles = Boolean(
+      selectedItemForChuyen.files && selectedItemForChuyen.files.length > 0
+    );
+
+    return {
+      code: selectedItemForChuyen.code,
+      loaiDon: selectedItemForChuyen.loaiDon || 'Đơn phản ánh kiến nghị',
+      nguoiNop: selectedItemForChuyen.nguoiNop || 'Chưa rõ',
+      ngayNhan: `${selectedItemForChuyen.ngayNhan} ${selectedItemForChuyen.gioNhan || '08:30:00'}`,
+      donViHienTai: 'Bộ phận Tiếp nhận & Một cửa - CATP Hà Nội',
+      noiDungTomTat: selectedItemForChuyen.noiDung,
+      suggestedDeptId,
+      hasFiles,
+    };
+  }, [selectedItemForChuyen]);
+
+  // Xử lý xác nhận chuyển trong modal
+  const handleChuyenTiepNhanSubmit = (data: ChuyenTiepNhanSubmitData) => {
+    if (!selectedItemForChuyen) return;
+
+    const targetItem = selectedItemForChuyen;
+    const now = new Date();
+    const nowTimeStr = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:00`;
+
+    const isChuyenCanBo = Boolean(data.canBoNhan);
+
+    const newLog = {
+      time: nowTimeStr,
+      action: isChuyenCanBo
+        ? `Chuyển xử lý trực tiếp cho cán bộ ${data.canBoNhan?.name} (${data.donViTiepNhanName})`
+        : `Chuyển xử lý về đơn vị ${data.donViTiepNhanName}`,
+      actor: 'Lê Ngọc Mai',
+      note: data.ghiChu || (isChuyenCanBo
+        ? `Đã phân công cán bộ ${data.canBoNhan?.name} thụ lý giải quyết hồ sơ`
+        : `Chuyển về hàng chờ tiếp nhận của ${data.donViTiepNhanName}`),
+    };
+
+    setItems((prev) =>
+      prev.map((it) => {
+        if (it.id === targetItem.id) {
+          return {
+            ...it,
+            status: isChuyenCanBo ? 'da_chuyen_can_bo' : 'da_chuyen_don_vi',
+            canBoNhan: data.canBoNhan?.name,
+            donViNhan: data.donViTiepNhanName,
+            historyLogs: [...(it.historyLogs || []), newLog],
+          };
+        }
+        return it;
+      })
+    );
+
+    setIsChuyenModalOpen(false);
+    setSelectedItemForChuyen(null);
+
+    const destination = isChuyenCanBo ? `cán bộ ${data.canBoNhan?.name}` : `đơn vị ${data.donViTiepNhanName}`;
+    showToast(`✓ Đã chuyển xử lý hồ sơ [${targetItem.code}] sang ${destination}!`);
   };
 
   const handleXemChiTiet = (item: VanThuWorkItem) => {
@@ -600,7 +647,10 @@ export default function VanThuWorkKanban({
 
         <button
           type="button"
-          onClick={() => showToast('Đã làm mới dữ liệu lượt nhận')}
+          onClick={() => {
+            setItems(INITIAL_VAN_THU_ITEMS);
+            showToast('Đã làm mới dữ liệu lượt nhận');
+          }}
           className="p-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl text-xs shadow-2xs transition-colors cursor-pointer flex items-center justify-center"
           title="Làm mới danh sách"
         >
@@ -643,7 +693,7 @@ export default function VanThuWorkKanban({
             <span>Chưa chuyển xử lý</span>
           </div>
           <div className="text-2xl font-bold text-rose-700 leading-tight mt-1.5 font-headline-md">
-            17
+            {kpiChuaChuyen}
           </div>
           <p className="text-[11px] text-slate-500 mt-1">
             Cần phân loại &amp; chuyển thụ lý
@@ -663,7 +713,7 @@ export default function VanThuWorkKanban({
             <span>Đã chuyển cán bộ</span>
           </div>
           <div className="text-2xl font-bold text-slate-900 leading-tight mt-1.5 font-headline-md">
-            151
+            {kpiDaChuyenCanBo}
           </div>
           <p className="text-[11px] text-slate-500 mt-1">
             Đã giao chuyên viên thụ lý
@@ -683,7 +733,7 @@ export default function VanThuWorkKanban({
             <span>Đã chuyển đơn vị</span>
           </div>
           <div className="text-2xl font-bold text-slate-900 leading-tight mt-1.5 font-headline-md">
-            40
+            {kpiDaChuyenDonVi}
           </div>
           <p className="text-[11px] text-slate-500 mt-1">
             Chuyển tiếp cơ quan liên ngành
@@ -951,6 +1001,19 @@ export default function VanThuWorkKanban({
           </div>
         </div>
       </div>
+      {/* MODAL CHUYỂN XỬ LÝ */}
+      {isChuyenModalOpen && selectedItemForChuyen && (
+        <ChuyenTiepNhanModal
+          isOpen={isChuyenModalOpen}
+          onClose={() => {
+            setIsChuyenModalOpen(false);
+            setSelectedItemForChuyen(null);
+          }}
+          onSubmit={handleChuyenTiepNhanSubmit}
+          currentDepartmentId="tiep-dan"
+          donInfo={donInfoForChuyen}
+        />
+      )}
     </div>
   );
 }

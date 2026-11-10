@@ -413,7 +413,7 @@ export default function DrawioPropertiesPanel({
     const docCode =
       matchedEntity?.code ||
       viewingDocCond.documentId ||
-      `VB-${(selectedStep?.order || 1).toString().padStart(2, '0')}-${viewingDocCond.id.slice(-4).toUpperCase()}`;
+      `VB-${((selectedStep as any)?.order || 1).toString().padStart(2, '0')}-${viewingDocCond.id.slice(-4).toUpperCase()}`;
 
     const fileName =
       matchedEntity?.fileName ||

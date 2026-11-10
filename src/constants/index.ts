@@ -19,6 +19,30 @@ export const LN19: LuotNhan = {
 
 export const ALL_LUOT_NHAN: LuotNhan[] = [
   {
+    id: "LN-59/2026-GOVEX",
+    ngayNhan: "16/09/2026",
+    gioNhan: "15:10",
+    nguoiNop: "Công ty TNHH Vật liệu Xây dựng Minh Khôi",
+    hinhThuc: "Dịch vụ bưu chính",
+    noiDung: "Gửi kèm 01 Hợp đồng kinh tế cung ứng vật tư xây dựng số 18/2026/HĐKT-MK và 01 Bảng thông báo điều chỉnh báo giá VLXD Quý III/2026 (AI nhận diện: Tài liệu không có yếu tố là đơn)",
+    donVi: "Phòng Tiếp công dân & Xử lý đơn",
+    aiJob: 5,
+    status: 'cho_chuyen',
+    hasFile: true,
+    fileCount: 2,
+    files: [
+      { name: "Hop_dong_cung_ung_vat_tu_so_18_2026.pdf", size: "1.4 MB", category: "main" },
+      { name: "Bang_bao_gia_va_thong_bao_dieu_chinh_gia_VLXD.pdf", size: "850 KB", category: "attach" }
+    ],
+    sourceType: 'file',
+    loaiNghiepVu: 'tiep_nhan_don',
+    loaiDon: 'Tài liệu không có yếu tố là đơn (Chứng từ thương mại)',
+    sdt: '0243 998 1122',
+    diaChi: 'Lô B4, Cụm công nghiệp Yên Nghĩa, quận Hà Đông, TP. Hà Nội',
+    ghiChu: 'AI phát hiện lượt nhận chỉ gồm 02 chứng từ thương mại rời, không có văn bản đơn thư và không có nội dung khiếu nại/tố cáo/kiến nghị/phản ánh.',
+    aiAnalysisState: 'da_cap_nhat',
+  },
+  {
     id: "LN-2026-GOVEX_008",
     ngayNhan: "16/09/2026",
     gioNhan: "14:30",

@@ -13,6 +13,7 @@ import { INITIAL_WORK_ITEMS } from '../constants/workItems';
 import { LN19, ALL_LUOT_NHAN } from '../constants';
 import ChuyenTiepNhanModal, { ChuyenTiepNhanSubmitData } from '../components/modals/ChuyenTiepNhanModal';
 import PhanCongModal, { PhanCongSubmitData } from '../components/modals/PhanCongModal';
+import { loadAllPhanCongRecords } from '../services/phanCongService';
 import BanGiaoDonModal, { BanGiaoDonSubmitData } from '../components/modals/BanGiaoDonModal';
 import TraLaiDonModal, { TraLaiDonSubmitData } from '../components/modals/TraLaiDonModal';
 import { TiepNhanDonItem, DEPARTMENTS } from '../constants/departments';
@@ -135,12 +136,37 @@ export default function CongViecCuaToi({
   const [showDropdown, setShowDropdown] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
-  // States cho Modal Bàn giao & Phân công & Trả lại đơn
+  // States cho Modal Bàn giao & Phân công & Trả lại đơn (Hỗ trợ cả Phân công 1 hồ sơ và Phân công nhiều hồ sơ cùng lúc)
   const [selectedItemForAction, setSelectedItemForAction] = useState<WorkItem | null>(null);
+  const [selectedBulkIds, setSelectedBulkIds] = useState<string[]>([]);
+  const [isBulkPhanCongMode, setIsBulkPhanCongMode] = useState<boolean>(false);
   const [isChuyenModalOpen, setIsChuyenModalOpen] = useState(false);
   const [isPhanCongModalOpen, setIsPhanCongModalOpen] = useState(false);
   const [isBanGiaoModalOpen, setIsBanGiaoModalOpen] = useState(false);
   const [isTraLaiModalOpen, setIsTraLaiModalOpen] = useState(false);
+
+  const handleToggleBulkSelect = (itemId: string) => {
+    setSelectedBulkIds((prev) =>
+      prev.includes(itemId) ? prev.filter((id) => id !== itemId) : [...prev, itemId]
+    );
+  };
+
+  const handleToggleSelectColumn = (colItems: WorkItem[]) => {
+    const assignableIds = colItems.filter((i) => !i.isSigningDoc).map((i) => i.id);
+    if (assignableIds.length === 0) return;
+    const allSelected = assignableIds.every((id) => selectedBulkIds.includes(id));
+    if (allSelected) {
+      setSelectedBulkIds((prev) => prev.filter((id) => !assignableIds.includes(id)));
+    } else {
+      setSelectedBulkIds((prev) => Array.from(new Set([...prev, ...assignableIds])));
+    }
+  };
+
+  const handleOpenBulkPhanCong = () => {
+    if (selectedBulkIds.length === 0) return;
+    setIsBulkPhanCongMode(true);
+    setIsPhanCongModalOpen(true);
+  };
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -194,6 +220,7 @@ export default function CongViecCuaToi({
 
   // 3. Nhấn Phân công xử lý: mở Modal phân công cán bộ
   const handleOpenPhanCong = (item: WorkItem) => {
+    setIsBulkPhanCongMode(false);
     setSelectedItemForAction(item);
     setIsPhanCongModalOpen(true);
   };
@@ -270,58 +297,135 @@ export default function CongViecCuaToi({
   };
 
   const handlePhanCongSubmit = (data: PhanCongSubmitData) => {
-    if (selectedItemForAction) {
-      const isMe = data.canBo?.isCurrentUser || data.canBo?.name.includes('Tôi');
-      setItems((prev) => {
-        const exists = prev.some((it) => it.id === selectedItemForAction.id);
-        const updatedItem: WorkItem = {
-          ...selectedItemForAction,
-          column: isMe ? 'processing' : 'waiting',
-          subStatus: isMe ? 'dang_xu_ly' : 'cho_phe_duyet',
-          nguoiGiao: 'Trần Trọng Giáp (Trưởng phòng)',
-          ngayDuocGiao: '23/09/2026',
-          holder: {
-            role: isMe ? 'Đang xử lý' : 'Đang chờ',
-            name: data.canBo.name,
-            department: data.canBo.departmentName || 'Phòng Tiếp công dân & Xử lý đơn',
-          },
-          nextAction: isMe
-            ? `Tôi (${data.canBo.name}) đang trực tiếp giải quyết`
-            : `Cán bộ ${data.canBo.name} (${data.canBo.role}) giải quyết theo thẩm quyền`,
-          cta: isMe
-            ? { label: 'Xử lý', actionType: 'continue', variant: 'primary' }
-            : { label: 'Xem tiến độ', actionType: 'view_progress', variant: 'outline' },
-        };
+    const targetIds =
+      isBulkPhanCongMode && selectedBulkIds.length > 0
+        ? selectedBulkIds
+        : selectedItemForAction
+          ? [selectedItemForAction.id]
+          : data.itemIds;
 
-        if (exists) {
-          return prev.map((it) => (it.id === selectedItemForAction.id ? updatedItem : it));
-        }
-        return [updatedItem, ...prev];
+    if (targetIds.length > 0) {
+      const isMe =
+        data.canBo?.isCurrentUser ||
+        data.canBo?.name.includes('Tôi') ||
+        (currentAccount?.name &&
+          data.canBo?.name.toLowerCase() === currentAccount.name.toLowerCase());
+      const rec = data.phanCongRecord;
+      const coordNames =
+        rec && rec.canBoPhoiHop.length > 0
+          ? ` (Phối hợp: ${rec.canBoPhoiHop.map((c) => c.officerName).join(', ')})`
+          : '';
+
+      setItems((prev) => {
+        const targetSet = new Set(targetIds);
+        return prev.map((it) => {
+          if (!targetSet.has(it.id)) return it;
+          const srcType = getEffectiveSourceType(it);
+          const isLuotNhan = srcType === 'luot_nhan';
+          return {
+            ...it,
+            column: isMe ? 'processing' : 'waiting',
+            subStatus: isMe ? 'dang_xu_ly' : 'cho_phe_duyet',
+            nguoiGiao:
+              rec?.nguoiPhanCongName ||
+              currentAccount?.name ||
+              'Nguyễn Minh Anh (Chuyên viên điều phối)',
+            ngayDuocGiao: rec?.ngayPhanCong || new Date().toLocaleDateString('vi-VN'),
+            deadlineText: rec?.thoiHanBaoCao
+              ? `Hạn BC: ${rec.thoiHanBaoCao}`
+              : it.deadlineText,
+            loaiDon:
+              it.loaiDon ||
+              rec?.loaiDon ||
+              (isLuotNhan ? 'Lượt nhận hồ sơ' : 'Đơn tố giác, tin báo về tội phạm'),
+            holder: {
+              role: isMe ? 'Đang xử lý' : 'Đang chờ',
+              name: `${data.canBo.name}${coordNames}`,
+              department:
+                rec?.donViXuLyName ||
+                data.canBo.departmentName ||
+                'Phòng Tiếp công dân & Xử lý đơn',
+            },
+            actionTitle: isLuotNhan
+              ? `Đã phân công Lượt nhận cho ${data.canBo.name} (${rec?.verificationTasks.length || 4
+              } nội dung kiểm tra)`
+              : `Đã phân công xử lý đơn cho ${data.canBo.name} (${rec?.verificationTasks.length || 0
+              } nội dung xác minh)`,
+            nextAction: isMe
+              ? `Tôi (${data.canBo.name}) đang trực tiếp xác minh / xử lý`
+              : `Cán bộ ${data.canBo.name} (${data.canBo.role}) phụ trách${coordNames}`,
+            cta: isMe
+              ? { label: 'Xử lý', actionType: 'continue', variant: 'primary' }
+              : { label: 'Xem tiến độ', actionType: 'view_progress', variant: 'outline' },
+          };
+        });
       });
 
-      const donObj: DonDetail = {
-        id: selectedItemForAction.id,
-        code: selectedItemForAction.code,
-        title: selectedItemForAction.title,
-        luotNhanId: selectedItemForAction.luotNhanId || selectedItemForAction.id,
-        nguoiNop: selectedItemForAction.sender,
-        ngayNhan: selectedItemForAction.timeReceived,
-        loaiDon: selectedItemForAction.loaiDon || 'Đơn đăng ký hộ kinh doanh',
-        type: selectedItemForAction.code.startsWith('VV') ? 'VỤ VIỆC' : 'ĐƠN TIẾP NHẬN',
-        statusBadge: isMe ? 'Đang xử lý' : 'Chờ xử lý',
-      };
-      if (onSelectDon) {
-        onSelectDon(donObj);
+      if (targetIds.length > 1) {
+        showToast(
+          `✓ Đã phân công hàng loạt ${targetIds.length} hồ sơ (Đơn & Lượt nhận) cho cán bộ ${data.canBo.name}${coordNames}!`
+        );
+        setSelectedBulkIds([]);
+      } else if (selectedItemForAction) {
+        const srcType = getEffectiveSourceType(selectedItemForAction);
+        const isLuotNhan = srcType === 'luot_nhan';
+        if (!isLuotNhan) {
+          const donObj: DonDetail = {
+            id: selectedItemForAction.id,
+            code: selectedItemForAction.code,
+            title: selectedItemForAction.title,
+            luotNhanId: selectedItemForAction.luotNhanId || selectedItemForAction.id,
+            nguoiNop: selectedItemForAction.sender,
+            ngayNhan: selectedItemForAction.timeReceived,
+            loaiDon:
+              rec?.loaiDon ||
+              selectedItemForAction.loaiDon ||
+              'Đơn tố giác, tin báo về tội phạm',
+            canBoXuLy: data.canBo.name,
+            chucVuCanBo: data.canBo.role,
+            donViXuLy: rec?.donViXuLyName || data.canBo.departmentName,
+            type: selectedItemForAction.code.startsWith('VV') ? 'VỤ VIỆC' : 'ĐƠN TIẾP NHẬN',
+            statusBadge: isMe ? 'Đang xử lý' : 'Chờ xử lý',
+          };
+          if (onSelectDon) {
+            onSelectDon(donObj);
+          }
+        }
+        showToast(
+          `✓ Đã phân công ${isLuotNhan ? 'Lượt nhận' : 'Đơn'} ${selectedItemForAction.code
+          } cho cán bộ ${data.canBo.name}${coordNames}!`
+        );
       }
-
-      showToast(`✓ Đã phân công hồ sơ ${selectedItemForAction.code} cho cán bộ ${data.canBo.name}!`);
-      setTimeout(() => onNav('don-tiep-nhan'), 350);
     }
     setIsPhanCongModalOpen(false);
+    setIsBulkPhanCongMode(false);
     setSelectedItemForAction(null);
   };
 
   const itemsToAssign: TiepNhanDonItem[] = useMemo(() => {
+    if (isBulkPhanCongMode && selectedBulkIds.length > 0) {
+      const selectedSet = new Set(selectedBulkIds);
+      return items
+        .filter((it) => selectedSet.has(it.id))
+        .map((it) => ({
+          id: it.id,
+          code: it.code,
+          luotNhanId: it.luotNhanId || it.code,
+          nguoiNop: it.sender,
+          loaiDon:
+            it.loaiDon ||
+            (getEffectiveSourceType(it) === 'luot_nhan' ? 'Lượt nhận hồ sơ' : 'Hồ sơ / Đơn'),
+          ngayNhan: it.timeReceived || '23/09/2026',
+          ngayChuyenDen: '23/09/2026',
+          donViHienTai: 'Phòng Tiếp công dân & Xử lý đơn',
+          donViTiepNhanId: 'tiep-dan',
+          donViTiepNhan: 'Phòng Tiếp công dân & Xử lý đơn',
+          hanXuLy: it.deadlineText || 'Còn 2 ngày',
+          hanXuLyFull: it.deadlineFull || 'Còn 2 ngày',
+          trangThai: 'cho_phan_cong',
+          noiDungTomTat: it.title,
+        }));
+    }
     if (!selectedItemForAction) return [];
     return [
       {
@@ -341,7 +445,7 @@ export default function CongViecCuaToi({
         noiDungTomTat: selectedItemForAction.title,
       },
     ];
-  }, [selectedItemForAction]);
+  }, [isBulkPhanCongMode, selectedBulkIds, items, selectedItemForAction]);
 
   const donInfoForChuyen = useMemo(() => {
     if (!selectedItemForAction) {
@@ -876,6 +980,89 @@ export default function CongViecCuaToi({
       });
     }
 
+    // Đồng bộ thông tin phân công từ phanCongService (Mục 4: Hiển thị đầy đủ Mã đơn/lượt nhận, Loại đơn, Người tố giác, Nội dung tóm tắt, Người phân công, Ngày phân công, Hạn báo cáo, Trạng thái xử lý)
+    if (!isLeader) {
+      const assignedRecords = loadAllPhanCongRecords();
+      Object.values(assignedRecords).forEach((rec) => {
+        const existingIdx = list.findIndex(
+          (it) => it.code === rec.donCode || it.id === rec.donCode
+        );
+        const completedCount = rec.verificationTasks.filter(
+          (t) => t.status === 'da_hoan_thanh'
+        ).length;
+        const totalCount = rec.verificationTasks.length;
+
+        if (existingIdx >= 0) {
+          list[existingIdx] = {
+            ...list[existingIdx],
+            loaiDon: rec.loaiDon || list[existingIdx].loaiDon,
+            sender: rec.nguoiGuiDon || list[existingIdx].sender,
+            nguoiGiao: rec.nguoiPhanCongName,
+            ngayDuocGiao: rec.ngayPhanCong,
+            deadlineText: `Hạn BC: ${rec.thoiHanBaoCao}`,
+            holder: {
+              role: rec.taskStatus === 'cho_xu_ly' ? 'Chờ tiếp nhận' : 'Đang xử lý',
+              name: rec.canBoPhuTrachName,
+              department: rec.donViXuLyName,
+            },
+            actionTitle: `Xác minh nội dung được giao (${completedCount}/${totalCount} hoàn thành)`,
+          };
+        } else {
+          const isLn =
+            rec.donCode.toUpperCase().startsWith('LN') ||
+            rec.donCode.toUpperCase().startsWith('LR');
+          list.unshift({
+            id: rec.donCode,
+            code: rec.donCode,
+            title: rec.noiDungTomTat,
+            sender: rec.nguoiGuiDon,
+            source: rec.donViTiepNhan,
+            sourceType: isLn ? 'luot_nhan' : 'don',
+            timeReceived: rec.ngayTiepNhan,
+            priority: rec.mucDoUuTien === 'thuong' ? 'normal' : 'urgent',
+            deadlineType: 'upcoming',
+            deadlineText: `Hạn BC: ${rec.thoiHanBaoCao}`,
+            deadlineFull: rec.thoiHanBaoCao,
+            column:
+              rec.taskStatus === 'cho_xu_ly'
+                ? 'action_required'
+                : rec.taskStatus === 'dang_xu_ly' || rec.taskStatus === 'cho_hoan_thien_bao_cao'
+                  ? 'processing'
+                  : rec.taskStatus === 'cho_phe_duyet'
+                    ? 'waiting'
+                    : 'completed',
+            subStatus: rec.taskStatus === 'cho_xu_ly' ? 'moi_giao' : 'dang_xu_ly',
+            actionTitle: `Xác minh nội dung được giao (${completedCount}/${totalCount} hoàn thành)`,
+            nextAction: `Cán bộ phụ trách: ${rec.canBoPhuTrachName} • Hạn báo cáo: ${rec.thoiHanBaoCao}`,
+            holder: {
+              role: 'Đang xử lý',
+              name: rec.canBoPhuTrachName,
+              department: rec.donViXuLyName,
+            },
+            departmentId: rec.donViXuLyId,
+            departmentName: rec.donViXuLyName,
+            progress: {
+              currentStep: 2,
+              totalSteps: 5,
+              stepName: 'Xác minh nội dung',
+              steps: ['Tiếp nhận', 'Xác minh', 'Báo cáo đề xuất', 'Trình ký', 'Hoàn thành'],
+            },
+            category: 'Công việc phân công xác minh',
+            docCount: rec.taiLieuDinhKem.length,
+            cta: {
+              label: 'Xác minh & Báo cáo',
+              actionType: 'continue',
+              variant: 'primary',
+            },
+            loaiDon: rec.loaiDon,
+            luotNhanId: rec.luotNhanId,
+            nguoiGiao: rec.nguoiPhanCongName,
+            ngayDuocGiao: rec.ngayPhanCong,
+            aiStatus: 'completed',
+          });
+        }
+      });
+    }
 
     return list;
   }, [items, acceptedDons, extraCard, luotNhanList, tiepNhanItems, docs, isLeader, currentAccount]);
@@ -2410,6 +2597,78 @@ export default function CongViecCuaToi({
         )}
       </div>
 
+      {/* THANH CHỌN NHIỀU & PHÂN CÔNG HÀNG LOẠT */}
+      <div className="bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 shadow-2xs flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+            <span className="material-symbols-outlined text-[18px] text-[#004ac6]">
+              checklist
+            </span>
+            <span>Phân công nhiều Đơn / Lượt nhận:</span>
+          </div>
+          {selectedBulkIds.length > 0 ? (
+            <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-[#004ac6] border border-blue-200 text-xs font-extrabold">
+              Đã chọn {selectedBulkIds.length} hồ sơ
+            </span>
+          ) : (
+            <span className="text-[11.5px] text-slate-500">
+              Tích chọn vào ô vuông trên các thẻ công việc hoặc bấm chọn nhanh theo cột để phân công cùng lúc cho cán bộ
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={() => {
+              const assignableIds = filteredItems
+                .filter((i) => !i.isSigningDoc)
+                .map((i) => i.id);
+              const allSelected =
+                assignableIds.length > 0 &&
+                assignableIds.every((id) => selectedBulkIds.includes(id));
+              if (allSelected) {
+                setSelectedBulkIds([]);
+              } else {
+                setSelectedBulkIds(assignableIds);
+              }
+            }}
+            className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] transition-colors flex items-center gap-1 cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[14px]">select_all</span>
+            <span>
+              {filteredItems.filter((i) => !i.isSigningDoc).length > 0 &&
+                filteredItems
+                  .filter((i) => !i.isSigningDoc)
+                  .every((i) => selectedBulkIds.includes(i.id))
+                ? 'Bỏ chọn tất cả'
+                : `Chọn tất cả đang lọc (${filteredItems.filter((i) => !i.isSigningDoc).length})`}
+            </span>
+          </button>
+
+          {selectedBulkIds.length > 0 && (
+            <>
+              <button
+                type="button"
+                onClick={() => setSelectedBulkIds([])}
+                className="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 font-bold text-[11px] transition-colors cursor-pointer"
+              >
+                Bỏ chọn ({selectedBulkIds.length})
+              </button>
+              <button
+                type="button"
+                onClick={handleOpenBulkPhanCong}
+                className="px-3.5 py-1.5 rounded-lg bg-[#004ac6] hover:bg-blue-800 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[15px]">
+                  assignment_ind
+                </span>
+                <span>Phân công hàng loạt ({selectedBulkIds.length} hồ sơ)</span>
+              </button>
+            </>
+          )}
+        </div>
+      </div>
 
       {viewMode === 'kanban' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3.5 items-start">
@@ -2421,6 +2680,19 @@ export default function CongViecCuaToi({
                   CẦN XỬ LÝ
                 </h2>
               </div>
+              {columnItems.action_required.some((i) => !i.isSigningDoc) && (
+                <button
+                  type="button"
+                  onClick={() => handleToggleSelectColumn(columnItems.action_required)}
+                  className="text-[10.5px] font-bold text-rose-800 hover:text-rose-950 bg-white/80 hover:bg-white px-2 py-0.5 rounded border border-rose-200 transition-colors cursor-pointer"
+                >
+                  {columnItems.action_required
+                    .filter((i) => !i.isSigningDoc)
+                    .every((i) => selectedBulkIds.includes(i.id))
+                    ? 'Bỏ chọn cột'
+                    : 'Chọn cả cột'}
+                </button>
+              )}
             </div>
 
             <p className="text-[10.5px] text-rose-800/80 px-1 -mt-1 font-medium">
@@ -2446,6 +2718,8 @@ export default function CongViecCuaToi({
                     onBanGiaoDon={handleOpenBanGiaoDon}
                     onTraLaiDon={handleOpenTraLaiDon}
                     onPhanCong={handleOpenPhanCong}
+                    selected={selectedBulkIds.includes(item.id)}
+                    onToggleSelect={handleToggleBulkSelect}
                   />
                 ))
               )}
@@ -2460,7 +2734,19 @@ export default function CongViecCuaToi({
                   ĐANG THỰC HIỆN
                 </h2>
               </div>
-
+              {columnItems.processing.some((i) => !i.isSigningDoc) && (
+                <button
+                  type="button"
+                  onClick={() => handleToggleSelectColumn(columnItems.processing)}
+                  className="text-[10.5px] font-bold text-amber-800 hover:text-amber-950 bg-white/80 hover:bg-white px-2 py-0.5 rounded border border-amber-200 transition-colors cursor-pointer"
+                >
+                  {columnItems.processing
+                    .filter((i) => !i.isSigningDoc)
+                    .every((i) => selectedBulkIds.includes(i.id))
+                    ? 'Bỏ chọn cột'
+                    : 'Chọn cả cột'}
+                </button>
+              )}
             </div>
 
             <p className="text-[10.5px] text-amber-800/80 px-1 -mt-1 font-medium">
@@ -2486,6 +2772,8 @@ export default function CongViecCuaToi({
                     onBanGiaoDon={handleOpenBanGiaoDon}
                     onTraLaiDon={handleOpenTraLaiDon}
                     onPhanCong={handleOpenPhanCong}
+                    selected={selectedBulkIds.includes(item.id)}
+                    onToggleSelect={handleToggleBulkSelect}
                   />
                 ))
               )}
@@ -2500,6 +2788,19 @@ export default function CongViecCuaToi({
                   ĐANG CHỜ
                 </h2>
               </div>
+              {columnItems.waiting.some((i) => !i.isSigningDoc) && (
+                <button
+                  type="button"
+                  onClick={() => handleToggleSelectColumn(columnItems.waiting)}
+                  className="text-[10.5px] font-bold text-sky-800 hover:text-sky-950 bg-white/80 hover:bg-white px-2 py-0.5 rounded border border-sky-200 transition-colors cursor-pointer"
+                >
+                  {columnItems.waiting
+                    .filter((i) => !i.isSigningDoc)
+                    .every((i) => selectedBulkIds.includes(i.id))
+                    ? 'Bỏ chọn cột'
+                    : 'Chọn cả cột'}
+                </button>
+              )}
             </div>
 
             <p className="text-[10.5px] text-sky-800/80 px-1 -mt-1 font-medium">
@@ -2525,6 +2826,8 @@ export default function CongViecCuaToi({
                     onBanGiaoDon={handleOpenBanGiaoDon}
                     onTraLaiDon={handleOpenTraLaiDon}
                     onPhanCong={handleOpenPhanCong}
+                    selected={selectedBulkIds.includes(item.id)}
+                    onToggleSelect={handleToggleBulkSelect}
                   />
                 ))
               )}
@@ -2539,7 +2842,24 @@ export default function CongViecCuaToi({
                   HOÀN TẤT / BÀN GIAO
                 </h2>
               </div>
-
+              {[...columnItems.completed, ...columnItems.handed_over].some((i) => !i.isSigningDoc) && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleToggleSelectColumn([
+                      ...columnItems.completed,
+                      ...columnItems.handed_over,
+                    ])
+                  }
+                  className="text-[10.5px] font-bold text-emerald-800 hover:text-emerald-950 bg-white/80 hover:bg-white px-2 py-0.5 rounded border border-emerald-200 transition-colors cursor-pointer"
+                >
+                  {[...columnItems.completed, ...columnItems.handed_over]
+                    .filter((i) => !i.isSigningDoc)
+                    .every((i) => selectedBulkIds.includes(i.id))
+                    ? 'Bỏ chọn cột'
+                    : 'Chọn cả cột'}
+                </button>
+              )}
             </div>
 
             <p className="text-[10.5px] text-emerald-800/80 px-1 -mt-1 font-medium">
@@ -2565,6 +2885,8 @@ export default function CongViecCuaToi({
                     onBanGiaoDon={handleOpenBanGiaoDon}
                     onTraLaiDon={handleOpenTraLaiDon}
                     onPhanCong={handleOpenPhanCong}
+                    selected={selectedBulkIds.includes(item.id)}
+                    onToggleSelect={handleToggleBulkSelect}
                   />
                 ))
               )}
@@ -2578,6 +2900,24 @@ export default function CongViecCuaToi({
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                  <th className="py-3 px-3 w-10 text-center">
+                    <input
+                      type="checkbox"
+                      checked={
+                        filteredItems.filter((i) => !i.isSigningDoc).length > 0 &&
+                        filteredItems
+                          .filter((i) => !i.isSigningDoc)
+                          .every((i) => selectedBulkIds.includes(i.id))
+                      }
+                      onChange={() =>
+                        handleToggleSelectColumn(
+                          filteredItems.filter((i) => !i.isSigningDoc),
+                        )
+                      }
+                      className="w-3.5 h-3.5 rounded border-slate-300 text-[#004ac6] focus:ring-[#004ac6] cursor-pointer"
+                      title="Chọn / bỏ chọn tất cả"
+                    />
+                  </th>
                   <th className="py-3 px-3 w-28">Nguồn &amp; Mã</th>
                   <th className="py-3 px-4 min-w-[260px]">Tên hồ sơ / Việc cần xử lý</th>
                   <th className="py-3 px-3 min-w-[130px]">Trạng thái chính</th>
@@ -2590,7 +2930,7 @@ export default function CongViecCuaToi({
               <tbody className="divide-y divide-slate-100">
                 {filteredItems.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-12 text-center text-slate-500">
+                    <td colSpan={8} className="py-12 text-center text-slate-500">
                       <span className="material-symbols-outlined text-4xl text-slate-300 block mb-1">search_off</span>
                       <div className="font-semibold text-slate-700">Không tìm thấy công việc nào phù hợp</div>
                       <p className="text-[11.5px] text-slate-400 mt-0.5">Thử đổi từ khóa hoặc xóa bớt tiêu chí lọc.</p>
@@ -2599,12 +2939,27 @@ export default function CongViecCuaToi({
                 ) : (
                   filteredItems.map((item) => {
                     const srcType = getEffectiveSourceType(item);
+                    const isRowSelected = selectedBulkIds.includes(item.id);
                     return (
                       <tr
                         key={item.id}
                         onClick={() => handleItemClick(item)}
-                        className="hover:bg-slate-50/80 cursor-pointer transition-colors group"
+                        className={`hover:bg-slate-50/80 cursor-pointer transition-colors group ${isRowSelected ? 'bg-blue-50/50' : ''
+                          }`}
                       >
+                        <td
+                          className="py-3 px-3 text-center"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {!item.isSigningDoc && (
+                            <input
+                              type="checkbox"
+                              checked={isRowSelected}
+                              onChange={() => handleToggleBulkSelect(item.id)}
+                              className="w-3.5 h-3.5 rounded border-slate-300 text-[#004ac6] focus:ring-[#004ac6] cursor-pointer"
+                            />
+                          )}
+                        </td>
                         <td className="py-3 px-3">
                           <div className="flex flex-col gap-1">
                             <SourceTypeBadge sourceType={srcType} />
@@ -2642,16 +2997,34 @@ export default function CongViecCuaToi({
                         </td>
 
                         <td className="py-3 px-3 text-center">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleItemClick(item);
-                            }}
-                            className="px-2.5 py-1 rounded-lg bg-[#C62828] hover:bg-[#b71c1c] text-white font-bold text-[11px] transition-all shadow-2xs"
-                          >
-                            Xử lý
-                          </button>
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleItemClick(item);
+                              }}
+                              className="px-2.5 py-1 rounded-lg bg-[#C62828] hover:bg-[#b71c1c] text-white font-bold text-[11px] transition-all shadow-2xs cursor-pointer"
+                            >
+                              Xử lý
+                            </button>
+                            {!item.isSigningDoc && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenPhanCong(item);
+                                }}
+                                className="px-2 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-[#004ac6] border border-blue-200 font-bold text-[11px] transition-all flex items-center gap-1 cursor-pointer"
+                                title="Phân công đơn hoặc lượt nhận cho cán bộ"
+                              >
+                                <span className="material-symbols-outlined text-[13px]">
+                                  assignment_ind
+                                </span>
+                                <span>Phân công</span>
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );
@@ -2758,17 +3131,20 @@ export default function CongViecCuaToi({
         />
       )}
 
-      {selectedItemForAction && (
+      {(selectedItemForAction || (isBulkPhanCongMode && selectedBulkIds.length > 0)) && (
         <PhanCongModal
           isOpen={isPhanCongModalOpen}
           onClose={() => {
             setIsPhanCongModalOpen(false);
+            setIsBulkPhanCongMode(false);
             setSelectedItemForAction(null);
           }}
           onSubmit={handlePhanCongSubmit}
           itemsToAssign={itemsToAssign}
           currentDepartmentId="tiep-dan"
           departmentName="Phòng Tiếp công dân & Xử lý đơn"
+          nguoiPhanCongName={currentAccount?.name || 'Nguyễn Minh Anh'}
+          nguoiPhanCongChucVu={currentAccount?.chucVu || 'Chuyên viên điều phối & xử lý đơn'}
         />
       )}
       {selectedItemForAction && (
@@ -3043,9 +3419,11 @@ interface TaskCardProps {
   onBanGiaoDon?: (item: WorkItem) => void;
   onTraLaiDon?: (item: WorkItem) => void;
   onPhanCong?: (item: WorkItem) => void;
+  selected?: boolean;
+  onToggleSelect?: (itemId: string) => void;
 }
 
-function TaskCard({ item, onClick, onRetryAI, onTiepNhanXuLy, onBanGiao, onBanGiaoDon, onTraLaiDon, onPhanCong }: TaskCardProps) {
+function TaskCard({ item, onClick, onRetryAI, onTiepNhanXuLy, onBanGiao, onBanGiaoDon, onTraLaiDon, onPhanCong, selected, onToggleSelect }: TaskCardProps) {
   const [showMenu, setShowMenu] = useState(false);
   const isUrgent = item.priority === 'urgent';
   const isOverdue = item.deadlineType === 'overdue';
@@ -3055,15 +3433,27 @@ function TaskCard({ item, onClick, onRetryAI, onTiepNhanXuLy, onBanGiao, onBanGi
   return (
     <div
       onClick={onClick}
-      className={`bg-white rounded-xl p-3 shadow-2xs hover:shadow-md transition-all flex flex-col gap-2 relative cursor-pointer group/card border ${isOverdue
-        ? 'border-rose-300 hover:border-rose-500'
-        : isUrgent
-          ? 'border-amber-200 hover:border-[#C62828]'
-          : 'border-slate-200 hover:border-[#C62828]'
+      className={`bg-white rounded-xl p-3 shadow-2xs hover:shadow-md transition-all flex flex-col gap-2 relative cursor-pointer group/card border ${selected
+        ? 'border-[#004ac6] ring-2 ring-[#004ac6]/20 bg-blue-50/15'
+        : isOverdue
+          ? 'border-rose-300 hover:border-rose-500'
+          : isUrgent
+            ? 'border-amber-200 hover:border-[#C62828]'
+            : 'border-slate-200 hover:border-[#C62828]'
         }`}
     >
-      {/* DÒNG 1: [BADGE NGUỒN] [MÃ HỒ SƠ] + CÁC BADGE PHỤ (AI / NGHIỆP VỤ / DEADLINE) */}
+      {/* DÒNG 1: [CHECKBOX CHỌN NHIỀU] [BADGE NGUỒN] [MÃ HỒ SƠ] + CÁC BADGE PHỤ (AI / NGHIỆP VỤ / DEADLINE) */}
       <div className="flex items-center gap-1.5 text-xs flex-wrap">
+        {onToggleSelect && !item.isSigningDoc && (
+          <input
+            type="checkbox"
+            checked={Boolean(selected)}
+            onChange={() => onToggleSelect(item.id)}
+            onClick={(e) => e.stopPropagation()}
+            className="w-3.5 h-3.5 rounded border-slate-300 text-[#004ac6] focus:ring-[#004ac6] cursor-pointer shrink-0"
+            title="Chọn để phân công hàng loạt"
+          />
+        )}
         {/* PRIORITY */}
         {isUrgent ? (
           <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 tracking-wider uppercase shrink-0">
@@ -3152,6 +3542,38 @@ function TaskCard({ item, onClick, onRetryAI, onTiepNhanXuLy, onBanGiao, onBanGi
         </div>
       )}
 
+      {/* KHỐI THÔNG TIN NGHIỆP VỤ: NGƯỜI GỬI/TỐ GIÁC, LOẠI ĐƠN/LƯỢT NHẬN, NGƯỜI PHÂN CÔNG & NGÀY PHÂN CÔNG (MỤC 4) */}
+      {!item.isSigningDoc && (
+        <div className="p-2 rounded-lg bg-slate-50/90 border border-slate-200/80 text-[10.5px] space-y-1">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-slate-400">
+              {srcType === 'luot_nhan' ? 'Người nộp:' : 'Người gửi/Tố giác:'}
+            </span>
+            <span className="font-bold text-slate-800 truncate max-w-[175px]">
+              {item.sender || 'Công dân'}
+            </span>
+          </div>
+          {item.loaiDon && (
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-slate-400">
+                {srcType === 'luot_nhan' ? 'Phân loại:' : 'Loại đơn:'}
+              </span>
+              <span className="font-semibold text-[#004ac6] truncate max-w-[175px]">
+                {item.loaiDon}
+              </span>
+            </div>
+          )}
+          {item.nguoiGiao && (
+            <div className="flex items-center justify-between gap-2 pt-0.5 border-t border-slate-200/70">
+              <span className="text-slate-400">Phân công:</span>
+              <span className="font-medium text-slate-700 truncate max-w-[180px]">
+                {item.nguoiGiao} {item.ngayDuocGiao ? `(${item.ngayDuocGiao})` : ''}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* DÒNG 4: DEADLINE & NGƯỜI ĐANG XỬ LÝ (NẾU ĐANG CHỜ HOẶC ĐÃ BÀN GIAO) */}
       <div className="flex items-center justify-between text-[11px] pt-0.5 text-slate-500">
         <div className="flex items-center gap-1">
@@ -3170,7 +3592,7 @@ function TaskCard({ item, onClick, onRetryAI, onTiepNhanXuLy, onBanGiao, onBanGi
         )}
       </div>
 
-      {/* FOOTER: THANH TÁC VỤ (CTA NÚT CHÍNH & TÙY CHỌN [...]) */}
+      {/* FOOTER: THANH TÁC VỤ (CTA NÚT CHÍNH + NÚT PHÂN CÔNG ĐƠN/LƯỢT NHẬN + TÙY CHỌN [...]) */}
       <div className="flex items-center gap-1.5 pt-1.5 border-t border-slate-100 relative">
         <button
           type="button"
@@ -3178,7 +3600,7 @@ function TaskCard({ item, onClick, onRetryAI, onTiepNhanXuLy, onBanGiao, onBanGi
             e.stopPropagation();
             onClick();
           }}
-          className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-1 cursor-pointer ${item.column === 'action_required'
+          className={`flex-1 py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-1 cursor-pointer ${item.column === 'action_required'
             ? 'bg-[#C62828] hover:bg-[#b71c1c] text-white shadow-2xs'
             : item.column === 'processing'
               ? 'bg-[#004ac6] hover:bg-[#003ea8] text-white shadow-2xs'
@@ -3191,6 +3613,26 @@ function TaskCard({ item, onClick, onRetryAI, onTiepNhanXuLy, onBanGiao, onBanGi
           {item.column === 'handed_over' && <span className="material-symbols-outlined text-[14px]">sync</span>}
           <span>{item.cta?.label || (item.column === 'action_required' ? 'Xử lý ngay' : item.column === 'processing' ? 'Xử lý' : 'Xem tiến độ')}</span>
         </button>
+
+        {/* Nút Phân công trực tiếp cho Đơn hoặc Lượt nhận trên thẻ công việc của Chuyên viên */}
+        {/* {!item.isSigningDoc && onPhanCong && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onPhanCong(item);
+            }}
+            className="py-1.5 px-2.5 rounded-lg border border-blue-200 bg-blue-50/80 hover:bg-blue-100 text-[#004ac6] text-[11px] font-bold flex items-center gap-1 shrink-0 transition-all cursor-pointer"
+            title={
+              srcType === 'luot_nhan'
+                ? 'Phân công Lượt nhận này cho cán bộ'
+                : 'Phân công Đơn này cho cán bộ điều tra / chuyên môn'
+            }
+          >
+            <span className="material-symbols-outlined text-[14px]">assignment_ind</span>
+            <span>Phân công</span>
+          </button>
+        )} */}
 
         {/* NÚT [...] MỞ MENU CHUYỂN TIẾP NHẬN & PHÂN CÔNG */}
         <div className="relative">
@@ -3310,8 +3752,14 @@ function TaskCard({ item, onClick, onRetryAI, onTiepNhanXuLy, onBanGiao, onBanGi
                     <span className="material-symbols-outlined text-[17px]">assignment_ind</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-bold text-slate-900 group-hover:text-blue-700">Phân công cán bộ</div>
-                    <div className="text-[10.5px] text-slate-500 font-normal truncate">Giao cán bộ chuyên môn phụ trách</div>
+                    <div className="font-bold text-slate-900 group-hover:text-blue-700">
+                      {srcType === 'luot_nhan'
+                        ? 'Phân công lượt nhận cho cán bộ'
+                        : 'Phân công xử lý đơn cho cán bộ'}
+                    </div>
+                    <div className="text-[10.5px] text-slate-500 font-normal truncate">
+                      Giao cán bộ phụ trách, phối hợp &amp; nội dung công việc
+                    </div>
                   </div>
                 </button>
 

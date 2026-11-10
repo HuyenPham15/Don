@@ -43,6 +43,7 @@ export interface PhanTich5W1HSectionProps {
   onSelectHuongXuLy?: (huong: 'tiep-nhan' | 'chuyen' | 'ghep', note?: string) => void;
   showToast: (msg: string) => void;
   isAiReading?: boolean;
+  isNoPetitionElement?: boolean;
 }
 
 export const INITIAL_5W1H_DATA: ThanhPhan5W1H[] = [
@@ -464,14 +465,221 @@ export const INITIAL_5W1H_DATA: ThanhPhan5W1H[] = [
   },
 ];
 
+export const NO_PETITION_5W1H_DATA: ThanhPhan5W1H[] = [
+  {
+    key: 'what',
+    tieuDe: 'What – Việc gì',
+    tenTiengViet: 'Bản chất tài liệu & Dẫn chứng đối soát nội dung',
+    moTa: 'Đánh giá yếu tố cấu thành đơn và đối soát nội dung chứng từ với các hồ sơ vụ việc đang thụ lý',
+    icon: 'report_problem',
+    badgeColor: 'bg-rose-100 text-rose-800 border-rose-200',
+    borderColor: 'border-rose-200',
+    bgLight: 'bg-rose-50/40',
+    tomTatThanhPhan:
+      'Tài liệu không có văn bản đơn thư (0/4 yếu tố hình thức đơn), nhưng nội dung Hợp đồng số 18/2026/HĐKT-MK và Bảng điều chỉnh giá VLXD khớp 95.8% với chứng cứ đang thu thập tại Vụ việc VV-2026-0042 (Đơn Đ-2026-00125 / DS-29/2026-GOVEX).',
+    danhSachChiTiet: [
+      {
+        id: 'np-what-1',
+        nhan: 'Bản chất tài liệu nhận diện qua OCR',
+        giaTri:
+          'Tài liệu tải lên gồm 02 tệp chứng từ rời: (1) Hợp đồng kinh tế cung ứng vật tư xây dựng số 18/2026/HĐKT-MK (giá trị 1,485 tỷ đồng) và (2) Bảng thông báo điều chỉnh báo giá VLXD Quý III/2026.',
+        trangThai: 'da_nhan_dien',
+        nguonTrichXuat: {
+          fileIndex: 0,
+          fileName: 'Hop_dong_cung_ung_vat_tu_so_18_2026.pdf',
+          trang: 1,
+          doan: 'Phần tiêu đề & Điều 1 - Điều 3 hợp đồng thương mại',
+          highlightKey: 'noiDung',
+        },
+        canhBao: 'Tài liệu là chứng từ thương mại rời, không kèm tờ đơn. Tuy nhiên chứa dữ liệu giá vật tư san lấp Giai đoạn 2 KĐT mới Y đang được Tổ xác minh yêu cầu cung cấp.',
+      },
+      {
+        id: 'np-what-2',
+        nhan: 'Nội dung khiếu nại / tố cáo / kiến nghị / phản ánh trực tiếp',
+        giaTri:
+          'Chưa đề cập trong tài liệu (Không có câu chữ trình bày khiếu nại, tố cáo độc lập nên không đủ điều kiện lập mã đơn mới).',
+        trangThai: 'chua_de_cap',
+        nguonTrichXuat: {
+          fileIndex: 0,
+          fileName: 'Hop_dong_cung_ung_vat_tu_so_18_2026.pdf',
+          trang: 1,
+          doan: 'Quét toàn văn 02 tệp đính kèm',
+        },
+        canhBao: 'Không lập đơn thụ lý mới theo Thông tư 05/2021/TT-TTCP -> AI gợi ý GHÉP làm chứng cứ bổ sung vào hồ sơ đang mở.',
+      },
+    ],
+  },
+  {
+    key: 'who',
+    tieuDe: 'Who – Ai',
+    tenTiengViet: 'Chủ thể trên chứng từ & Dẫn chứng trùng khớp pháp nhân CSDL',
+    moTa: 'Đối soát các pháp nhân, cá nhân ký kết trên chứng từ với CSDL người liên quan trong các vụ việc đang giải quyết',
+    icon: 'groups',
+    badgeColor: 'bg-blue-100 text-[#004ac6] border-blue-200',
+    borderColor: 'border-blue-200',
+    bgLight: 'bg-blue-50/40',
+    tomTatThanhPhan:
+      'Phát hiện Dẫn chứng #1 & #3: Bên Mua (Công ty CP Đầu tư Phát triển Đô thị X - MST 0105519820) và người ký nhận (Ông Phạm Đức Tùng) trùng khớp 100% với tổ chức liên đới trong hồ sơ Đ-2026-00125 và Vụ việc VV-2026-0042.',
+    danhSachChiTiet: [
+      {
+        id: 'np-who-1',
+        nhan: 'Đơn vị gửi tài liệu (Bên A trong Hợp đồng)',
+        giaTri:
+          'Công ty TNHH Vật liệu Xây dựng Minh Khôi (MST: 0108923471) – Đại diện: Ông Lê Quốc Khánh (Giám đốc). Địa chỉ: Lô B4 Cụm CN Yên Nghĩa, quận Hà Đông, TP. Hà Nội.',
+        trangThai: 'da_nhan_dien',
+        nguonTrichXuat: {
+          fileIndex: 0,
+          fileName: 'Hop_dong_cung_ung_vat_tu_so_18_2026.pdf',
+          trang: 1,
+          doan: 'Mục Bên Bán (Bên A) - Đầu trang 1',
+          highlightKey: 'nguoiGui',
+        },
+      },
+      {
+        id: 'np-who-2',
+        nhan: '[Dẫn chứng ghép #1] Pháp nhân Bên Mua trùng khớp 100% đối tượng bị phản ánh',
+        giaTri:
+          'Công ty CP Đầu tư Phát triển Đô thị X (MST: 0105519820) – Ban điều hành Gói thầu hạ tầng số 04. Trùng khớp 100% mã số thuế và tên pháp nhân chủ đầu tư bị tố cáo tại đơn Đ-2026-00125 & hồ sơ vụ việc VV-2026-0042.',
+        trangThai: 'can_doi_chieu',
+        nguonTrichXuat: {
+          fileIndex: 0,
+          fileName: 'Hop_dong_cung_ung_vat_tu_so_18_2026.pdf',
+          trang: 1,
+          doan: 'Mục Bên Mua (Bên B) - Dòng 6-9',
+          highlightKey: 'doiTuong',
+        },
+        canhBao: 'Dẫn chứng quan trọng: MST 0105519820 đang nằm trong danh sách đối tượng kiểm tra của Tổ xác minh.',
+      },
+      {
+        id: 'np-who-3',
+        nhan: '[Dẫn chứng ghép #3] Cá nhân đại diện ký nhận trùng tên trong Biên bản hiện trường',
+        giaTri:
+          'Ông Phạm Đức Tùng (Chỉ huy trưởng Gói thầu số 04 - Ký đại diện Bên B) trùng khớp họ tên, chức danh với người đại diện chủ đầu tư ký Biên bản kiểm đếm ngày 18/05/2026 tại hồ sơ Đ-2026-00125.',
+        trangThai: 'da_nhan_dien',
+        nguonTrichXuat: {
+          fileIndex: 0,
+          fileName: 'Hop_dong_cung_ung_vat_tu_so_18_2026.pdf',
+          trang: 1,
+          doan: 'Phần chữ ký Đại diện Bên B cuối trang 1',
+          highlightKey: 'doiTuong',
+        },
+      },
+    ],
+  },
+  {
+    key: 'when',
+    tieuDe: 'When – Khi nào',
+    tenTiengViet: 'Mốc thời gian chứng từ & Đối chiếu giai đoạn xác minh',
+    moTa: 'Đối chiếu ngày ký kết, thời hạn giao vật tư với tiến độ vụ việc đang thụ lý',
+    icon: 'schedule',
+    badgeColor: 'bg-amber-100 text-amber-900 border-amber-300',
+    borderColor: 'border-amber-200',
+    bgLight: 'bg-amber-50/40',
+    tomTatThanhPhan:
+      'Phát hiện Dẫn chứng #4: Thời gian giao vật tư san lấp (05/08/2026 – 10/09/2026) khớp trực tiếp với giai đoạn san ủi mặt bằng đang bị khiếu kiện và Phiếu yêu cầu cung cấp tài liệu số 14/PYC-ĐXM ngày 10/09/2026.',
+    danhSachChiTiet: [
+      {
+        id: 'np-when-1',
+        nhan: '[Dẫn chứng ghép #4] Thời hạn cung ứng vật tư trùng giai đoạn san ủi thực địa',
+        giaTri:
+          'Hợp đồng ký ngày 02/08/2026; tiến độ giao cát san lấp và vật tư từ 05/08/2026 đến 10/09/2026; Thông báo điều chỉnh giá áp dụng từ 05/09/2026 — Khớp với Phiếu yêu cầu số 14/PYC-ĐXM của Đoàn thanh tra.',
+        trangThai: 'da_nhan_dien',
+        nguonTrichXuat: {
+          fileIndex: 0,
+          fileName: 'Hop_dong_cung_ung_vat_tu_so_18_2026.pdf',
+          trang: 1,
+          doan: 'Điều 2 (Khoản 2.1 - Tiến độ giao hàng)',
+          highlightKey: 'thoiGian',
+        },
+      },
+    ],
+  },
+  {
+    key: 'where',
+    tieuDe: 'Where – Ở đâu',
+    tenTiengViet: 'Địa điểm trên chứng từ & Dẫn chứng trùng khớp địa bàn dự án',
+    moTa: 'Đối soát địa điểm giao nhận vật tư trên hợp đồng với vị trí địa chính các vụ việc đang thụ lý',
+    icon: 'location_on',
+    badgeColor: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+    borderColor: 'border-emerald-200',
+    bgLight: 'bg-emerald-50/40',
+    tomTatThanhPhan:
+      'Phát hiện Dẫn chứng #2: Địa điểm giao nhận vật tư tại "Lô TT-02, Dự án Khu đô thị mới Y, phường Mộ Lao, quận Hà Đông" trùng khớp 98% với địa bàn phát sinh vụ việc VV-2026-0042 và đơn Đ-2026-00125.',
+    danhSachChiTiet: [
+      {
+        id: 'np-where-1',
+        nhan: '[Dẫn chứng ghép #2] Địa điểm chân công trình trùng khớp ranh giới dự án đang thanh tra',
+        giaTri:
+          'Kho bãi công trường Lô TT-02, Dự án Khu đô thị mới Y, phường Mộ Lao, quận Hà Đông, TP. Hà Nội (Nằm sát thửa đất số 48 tờ bản đồ 03 trong hồ sơ Đ-2026-00125 và vụ việc VV-2026-0042).',
+        trangThai: 'can_doi_chieu',
+        nguonTrichXuat: {
+          fileIndex: 0,
+          fileName: 'Hop_dong_cung_ung_vat_tu_so_18_2026.pdf',
+          trang: 1,
+          doan: 'Mục Bên B - Địa điểm giao nhận vật tư',
+          highlightKey: 'diaDiem',
+        },
+        canhBao: 'Trùng khớp trực tiếp tên Dự án Khu đô thị mới Y (phường Mộ Lao, quận Hà Đông) đang có Đoàn thanh tra theo QĐ 89/QĐ-UBND.',
+      },
+    ],
+  },
+  {
+    key: 'why',
+    tieuDe: 'Why – Tại sao',
+    tenTiengViet: 'Nhận định nguyên nhân gửi chứng từ & Căn cứ đề xuất ghép',
+    moTa: 'Phân tích lý do doanh nghiệp gửi chứng từ rời không kèm đơn',
+    icon: 'help_outline',
+    badgeColor: 'bg-purple-100 text-purple-900 border-purple-300',
+    borderColor: 'border-purple-200',
+    bgLight: 'bg-purple-50/40',
+    tomTatThanhPhan:
+      'Doanh nghiệp cung ứng / đương sự gửi bổ sung chứng từ hợp đồng và báo giá theo yêu cầu thu thập tài liệu của Tổ xác minh nhưng không đính kèm công văn hay tờ đơn dẫn chiếu.',
+    danhSachChiTiet: [
+      {
+        id: 'np-why-1',
+        nhan: 'Lý do gửi chứng từ rời theo suy luận AI',
+        giaTri:
+          'Cung cấp bằng chứng thực tế về khối lượng, đơn giá vật tư san lấp mặt bằng tại Dự án KĐT mới Y phục vụ Đoàn xác minh đối chiếu chi phí GPMB & thi công hạ tầng.',
+        trangThai: 'da_nhan_dien',
+        canhBao: 'Nếu xếp lưu rời sẽ làm thất lạc chứng cứ quan trọng của hồ sơ vụ việc VV-2026-0042 -> Khuyến nghị GHÉP HỒ SƠ.',
+      },
+    ],
+  },
+  {
+    key: 'how',
+    tieuDe: 'How – Như thế nào',
+    tenTiengViet: 'Phương thức xử lý nghiệp vụ đề xuất',
+    moTa: 'Hướng xử lý tối ưu khi tài liệu không phải là đơn nhưng có dẫn chứng liên kết hồ sơ đang mở',
+    icon: 'account_tree',
+    badgeColor: 'bg-indigo-100 text-indigo-900 border-indigo-300',
+    borderColor: 'border-indigo-200',
+    bgLight: 'bg-indigo-50/40',
+    tomTatThanhPhan:
+      'Không cấp mã đơn thụ lý mới (do không có yếu tố là đơn); thực hiện GHÉP trực tiếp 02 tệp chứng từ vào hồ sơ Đ-2026-00125 / DS-29/2026-GOVEX (Vụ việc VV-2026-0042).',
+    danhSachChiTiet: [
+      {
+        id: 'np-how-1',
+        nhan: 'Đề xuất của AI dựa trên 04 dẫn chứng đối soát CSDL',
+        giaTri:
+          'Ghép lượt nhận LN-59/2026-GOVEX làm "Tài liệu, chứng cứ bổ sung" vào hồ sơ đang thụ lý (Độ tin cậy ghép: 95.8%), đồng thời thông báo cho Tổ trưởng Tổ xác minh.',
+        trangThai: 'da_nhan_dien',
+        canhBao: 'Đảm bảo đúng quy định Thông tư 05/2021/TT-TTCP: Không phát sinh đơn ảo, tập trung toàn bộ chứng cứ về một đầu mối.',
+      },
+    ],
+  },
+];
+
 export const PhanTich5W1HSection: React.FC<PhanTich5W1HSectionProps> = ({
   extractData,
   onNavigateToDocument,
   onSelectHuongXuLy,
   showToast,
   isAiReading = false,
+  isNoPetitionElement = false,
 }) => {
-  const [data5W1H, setData5W1H] = useState<ThanhPhan5W1H[]>(INITIAL_5W1H_DATA);
+  const [data5W1H, setData5W1H] = useState<ThanhPhan5W1H[]>(
+    isNoPetitionElement ? NO_PETITION_5W1H_DATA : INITIAL_5W1H_DATA
+  );
   const [activeFilter, setActiveFilter] = useState<'all' | 'what' | 'who' | 'when' | 'where' | 'why' | 'how' | 'canh_bao'>('all');
   const [expandedKeys, setExpandedKeys] = useState<Record<string, boolean>>({
     what: true,
@@ -485,8 +693,19 @@ export const PhanTich5W1HSection: React.FC<PhanTich5W1HSectionProps> = ({
   const [isConfirmed, setIsConfirmed] = useState<boolean>(false);
   const [confirmedTime, setConfirmedTime] = useState<string | null>(null);
   const [officerReviewNote, setOfficerReviewNote] = useState<string>(
-    'Đã đối chiếu 6 thành phần 5W1H với hồ sơ tài liệu gốc. Thửa 48 có căn cứ sai lệch diện tích 150m² giữa trích lục và biên bản. Dấu hiệu đòi tiền cần chuyển cơ quan chức năng giám định file ghi âm.'
+    isNoPetitionElement
+      ? 'Đã kiểm tra 02 tệp chứng từ rời (Hợp đồng số 18/2026/HĐKT-MK & Bảng điều chỉnh báo giá VLXD). Tài liệu không có yếu tố là đơn thư độc lập, nhưng qua tra cứu CSDL phát hiện 04 dẫn chứng trùng khớp 95.8% với hồ sơ Đ-2026-00125 / DS-29/2026-GOVEX (Vụ việc VV-2026-0042). Thống nhất theo gợi ý AI: Ghép làm chứng cứ bổ sung vào hồ sơ đang thụ lý.'
+      : 'Đã đối chiếu 6 thành phần 5W1H với hồ sơ tài liệu gốc. Thửa 48 có căn cứ sai lệch diện tích 150m² giữa trích lục và biên bản. Dấu hiệu đòi tiền cần chuyển cơ quan chức năng giám định file ghi âm.'
   );
+
+  React.useEffect(() => {
+    setData5W1H(isNoPetitionElement ? NO_PETITION_5W1H_DATA : INITIAL_5W1H_DATA);
+    setOfficerReviewNote(
+      isNoPetitionElement
+        ? 'Đã kiểm tra 02 tệp chứng từ rời (Hợp đồng số 18/2026/HĐKT-MK & Bảng điều chỉnh báo giá VLXD). Tài liệu không có yếu tố là đơn thư độc lập, nhưng qua tra cứu CSDL phát hiện 04 dẫn chứng trùng khớp 95.8% với hồ sơ Đ-2026-00125 / DS-29/2026-GOVEX (Vụ việc VV-2026-0042). Thống nhất theo gợi ý AI: Ghép làm chứng cứ bổ sung vào hồ sơ đang thụ lý.'
+        : 'Đã đối chiếu 6 thành phần 5W1H với hồ sơ tài liệu gốc. Thửa 48 có căn cứ sai lệch diện tích 150m² giữa trích lục và biên bản. Dấu hiệu đòi tiền cần chuyển cơ quan chức năng giám định file ghi âm.'
+    );
+  }, [isNoPetitionElement]);
 
   const toggleExpand = (key: string) => {
     setExpandedKeys((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -523,7 +742,7 @@ export const PhanTich5W1HSection: React.FC<PhanTich5W1HSectionProps> = ({
   };
 
   const handleResetToAI = () => {
-    setData5W1H(INITIAL_5W1H_DATA);
+    setData5W1H(isNoPetitionElement ? NO_PETITION_5W1H_DATA : INITIAL_5W1H_DATA);
     setIsEditing5W1H(false);
     showToast('Đã khôi phục phân tích 5W1H về kết quả AI ban đầu');
   };
@@ -581,21 +800,45 @@ export const PhanTich5W1HSection: React.FC<PhanTich5W1HSectionProps> = ({
   return (
     <div className="space-y-4">
       {/* 1. EXECUTIVE SUMMARY & THỐNG KÊ 5W1H */}
-      <div className="p-3.5 rounded-md bg-linear-to-r from-blue-50/90 via-slate-50 to-indigo-50/80 border border-blue-200/90 space-y-3">
+      <div
+        className={`p-3.5 rounded-md space-y-3 ${
+          isNoPetitionElement
+            ? 'bg-linear-to-r from-amber-50/90 via-rose-50/50 to-slate-50 border border-amber-300/90'
+            : 'bg-linear-to-r from-blue-50/90 via-slate-50 to-indigo-50/80 border border-blue-200/90'
+        }`}
+      >
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-md bg-[#004ac6] text-white flex items-center justify-center shadow-xs">
-              <span className="material-symbols-outlined text-[18px]">psychology</span>
+            <div
+              className={`w-8 h-8 rounded-md text-white flex items-center justify-center shadow-xs ${
+                isNoPetitionElement ? 'bg-amber-600' : 'bg-[#004ac6]'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                {isNoPetitionElement ? 'find_in_page' : 'psychology'}
+              </span>
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 text-[13px] uppercase tracking-tight flex items-center gap-2">
-                <span>Phân tích nội dung đơn tố cáo (Mô hình 5W1H)</span>
-                <span className="px-2 py-0.2 rounded-full text-[10px] font-bold bg-blue-100 text-[#004ac6] border border-blue-200">
-                  AI Trợ lý pháp lý
+              <h3 className="font-bold text-slate-900 text-[13px] uppercase tracking-tight flex items-center gap-2 flex-wrap">
+                <span>
+                  {isNoPetitionElement
+                    ? 'Đánh giá cấu trúc 5W1H: Tài liệu không có yếu tố là đơn'
+                    : 'Phân tích nội dung đơn tố cáo (Mô hình 5W1H)'}
+                </span>
+                <span
+                  className={`px-2 py-0.2 rounded-full text-[10px] font-bold border ${
+                    isNoPetitionElement
+                      ? 'bg-rose-100 text-rose-800 border-rose-200'
+                      : 'bg-blue-100 text-[#004ac6] border border-blue-200'
+                  }`}
+                >
+                  {isNoPetitionElement ? 'Không đủ điều kiện là đơn' : 'AI Trợ lý pháp lý'}
                 </span>
               </h3>
               <p className="text-[11px] text-slate-600">
-                Tự động cấu trúc hóa nội dung từ kết quả OCR • Xác định thông tin còn thiếu &amp; Liên kết đối chiếu văn bản gốc
+                {isNoPetitionElement
+                  ? 'Rà soát 6 thành phần 5W1H trên tệp đính kèm • Không phát hiện nội dung khiếu nại, tố cáo, kiến nghị, phản ánh'
+                  : 'Tự động cấu trúc hóa nội dung từ kết quả OCR • Xác định thông tin còn thiếu & Liên kết đối chiếu văn bản gốc'}
               </p>
             </div>
           </div>
@@ -681,13 +924,23 @@ export const PhanTich5W1HSection: React.FC<PhanTich5W1HSectionProps> = ({
           <div className="flex items-center justify-between text-slate-500 text-[10.5px]">
             <span className="font-bold uppercase tracking-tight text-slate-700 flex items-center gap-1">
               <span className="material-symbols-outlined text-[14px] text-[#004ac6]">summarize</span>
-              Tóm tắt bản chất sự việc theo 5W1H (Executive Summary)
+              {isNoPetitionElement
+                ? 'Kết luận nhận diện 5W1H đối với tài liệu lượt nhận (Executive Summary)'
+                : 'Tóm tắt bản chất sự việc theo 5W1H (Executive Summary)'}
             </span>
-            <span className="text-emerald-700 font-semibold">Độ tin cậy tổng hợp: 96.2%</span>
+            <span className={isNoPetitionElement ? 'text-rose-700 font-semibold' : 'text-emerald-700 font-semibold'}>
+              {isNoPetitionElement ? 'Độ tin cậy nhận diện: 97.4%' : 'Độ tin cậy tổng hợp: 96.2%'}
+            </span>
           </div>
-          <p className="text-slate-800 leading-relaxed text-justify">
-            Đơn của <strong>Bà Vũ Thị Thanh &amp; Ông Nguyễn Văn A</strong> (địa chỉ Hà Đông) tố cáo <strong>Ông Trần Văn B</strong> (Phó Trưởng phòng TN&amp;MT quận Hà Đông kiêm Chủ tịch HĐ Bồi thường GPMB) trong khoảng thời gian từ tháng 04/2025 đến 06/2026 có hành vi cố ý làm trái trong công tác bồi thường GPMB tại <strong>thửa đất số 48 (Dự án KĐT mới Y, Mộ Lao)</strong>, tự ý giảm diện tích từ <strong>360m² xuống 210m²</strong> (thiếu 150m²) và áp đơn giá thấp bất thường (2.5 triệu/m² thay vì 4.2 triệu/m²). Người tố cáo cho rằng hành vi trên có sự thông đồng với Công ty CP X và có dấu hiệu đòi tiền bôi trơn.
-          </p>
+          {isNoPetitionElement ? (
+            <p className="text-slate-800 leading-relaxed text-justify">
+              Lượt nhận gửi qua đường bưu chính từ <strong>Công ty TNHH Vật liệu Xây dựng Minh Khôi</strong> chỉ gồm 02 chứng từ thương mại rời: <strong>Hợp đồng cung ứng vật tư xây dựng số 18/2026/HĐKT-MK</strong> và <strong>Bảng thông báo điều chỉnh báo giá VLXD Quý III/2026</strong>, <strong>không kèm theo văn bản đơn thư (0/4 yếu tố hình thức đơn)</strong>. Tuy nhiên, qua bóc tách thực thể 5W1H và <strong>tra cứu chéo CSDL GOVEX</strong>, AI phát hiện <strong>04 dẫn chứng cụ thể trùng khớp 95.8%</strong> với hồ sơ đơn đang thụ lý <strong>Đ-2026-00125 / DS-29/2026-GOVEX (Vụ việc VV-2026-0042)</strong>: trùng pháp nhân Bên Mua (<em>Công ty CP Đầu tư Phát triển Đô thị X - MST 0105519820</em>), trùng địa bàn (<em>Dự án KĐT mới Y, phường Mộ Lao, Hà Đông</em>), trùng người ký nhận (<em>Chỉ huy trưởng Phạm Đức Tùng</em>) và khớp với <em>Phiếu yêu cầu cung cấp tài liệu số 14/PYC-ĐXM</em>. <strong>AI gợi ý: Ghép lượt nhận vào hồ sơ đang mở làm tài liệu, chứng cứ bổ sung.</strong>
+            </p>
+          ) : (
+            <p className="text-slate-800 leading-relaxed text-justify">
+              Đơn của <strong>Bà Vũ Thị Thanh &amp; Ông Nguyễn Văn A</strong> (địa chỉ Hà Đông) tố cáo <strong>Ông Trần Văn B</strong> (Phó Trưởng phòng TN&amp;MT quận Hà Đông kiêm Chủ tịch HĐ Bồi thường GPMB) trong khoảng thời gian từ tháng 04/2025 đến 06/2026 có hành vi cố ý làm trái trong công tác bồi thường GPMB tại <strong>thửa đất số 48 (Dự án KĐT mới Y, Mộ Lao)</strong>, tự ý giảm diện tích từ <strong>360m² xuống 210m²</strong> (thiếu 150m²) và áp đơn giá thấp bất thường (2.5 triệu/m² thay vì 4.2 triệu/m²). Người tố cáo cho rằng hành vi trên có sự thông đồng với Công ty CP X và có dấu hiệu đòi tiền bôi trơn.
+            </p>
+          )}
         </div>
       </div>
 
@@ -905,49 +1158,89 @@ export const PhanTich5W1HSection: React.FC<PhanTich5W1HSectionProps> = ({
           <div className="flex items-center gap-1.5">
             <span className="material-symbols-outlined text-[17px] text-amber-700">fact_check</span>
             <h4 className="font-bold text-slate-900 text-[12px] uppercase tracking-tight">
-              Cảnh báo &amp; Các điểm mâu thuẫn cần cán bộ kiểm tra xác minh
+              {isNoPetitionElement
+                ? 'Tổng hợp 04 Dẫn chứng cụ thể từ CSDL làm căn cứ Gợi ý Ghép hồ sơ'
+                : 'Cảnh báo & Các điểm mâu thuẫn cần cán bộ kiểm tra xác minh'}
             </h4>
           </div>
           <span className="text-[10.5px] font-bold text-amber-900 bg-amber-100 px-2 py-0.5 rounded border border-amber-200">
-            03 điểm trọng tâm
+            {isNoPetitionElement ? '04 dẫn chứng khớp 95.8%' : '03 điểm trọng tâm'}
           </span>
         </div>
 
-        <ul className="space-y-1.5 text-[11.5px] text-slate-800">
-          <li className="flex items-start gap-2 p-1.5 rounded hover:bg-amber-50/50">
-            <span className="w-4 h-4 rounded-full bg-amber-200 text-amber-900 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">
-              1
-            </span>
-            <div>
-              <strong className="text-slate-900 font-semibold">Mâu thuẫn diện tích đất (150m²): </strong>
-              <span>
-                Trích lục bản đồ địa chính ghi nhận 360m², nhưng Biên bản kiểm đếm lập 210m². Cần yêu cầu Chi nhánh Văn phòng Đăng ký đất đai quận Hà Đông cung cấp hồ sơ kỹ thuật thửa đất gốc để làm rõ diện tích giảm có phải do thu hồi trước đó hay do sai số đo đạc.
+        {isNoPetitionElement ? (
+          <ul className="space-y-1.5 text-[11.5px] text-slate-800">
+            <li className="flex items-start gap-2 p-1.5 rounded hover:bg-amber-50/50">
+              <span className="w-4 h-4 rounded-full bg-indigo-200 text-indigo-900 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">
+                1
               </span>
-            </div>
-          </li>
-          <li className="flex items-start gap-2 p-1.5 rounded hover:bg-amber-50/50">
-            <span className="w-4 h-4 rounded-full bg-amber-200 text-amber-900 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">
-              2
-            </span>
-            <div>
-              <strong className="text-slate-900 font-semibold">Nghi vấn hành vi tiêu cực, nhận hối lộ: </strong>
-              <span>
-                Nội dung đòi tiền 200 triệu đồng chỉ là lời khai đơn phương của người tố cáo và các đoạn ghi âm trong USB chưa qua giám định tư pháp. Theo quy chế phối hợp, nếu có dấu hiệu tội phạm hình sự, cần lập hồ sơ chuyển cơ quan CSĐT phối hợp xác minh.
+              <div>
+                <strong className="text-slate-900 font-semibold">Dẫn chứng #1 – Trùng Pháp nhân &amp; Mã số thuế (Khớp 100%): </strong>
+                <span>
+                  Mục Bên Mua (Bên B) tại Trang 1 Hợp đồng số <code>18/2026/HĐKT-MK</code> ghi nhận <strong>Công ty CP Đầu tư Phát triển Đô thị X (MST: 0105519820)</strong> — trùng khớp tuyệt đối với tổ chức bị phản ánh trong hồ sơ <strong>Đ-2026-00125</strong> và <strong>DS-29/2026-GOVEX</strong>.
+                </span>
+              </div>
+            </li>
+            <li className="flex items-start gap-2 p-1.5 rounded hover:bg-amber-50/50">
+              <span className="w-4 h-4 rounded-full bg-indigo-200 text-indigo-900 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">
+                2
               </span>
-            </div>
-          </li>
-          <li className="flex items-start gap-2 p-1.5 rounded hover:bg-amber-50/50">
-            <span className="w-4 h-4 rounded-full bg-amber-200 text-amber-900 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">
-              3
-            </span>
-            <div>
-              <strong className="text-slate-900 font-semibold">Tình trạng cưỡng chế thực địa: </strong>
-              <span>
-                Đang có mâu thuẫn về việc san ủi hiện trường ngày 20/06/2026 trong khi công dân đang thực hiện quyền khiếu nại, tố cáo. Cần yêu cầu UBND phường Mộ Lao tạm dừng các biện pháp tác động thực địa để chờ kết luận xác minh.
+              <div>
+                <strong className="text-slate-900 font-semibold">Dẫn chứng #2 – Trùng Địa điểm &amp; Ranh giới Dự án (Khớp 98%): </strong>
+                <span>
+                  Địa điểm giao nhận vật tư tại <strong>Lô TT-02, Dự án Khu đô thị mới Y, phường Mộ Lao, quận Hà Đông</strong> nằm liền kề thửa đất số 48 tờ bản đồ 03 đang được Đoàn thanh tra (Vụ việc <strong>VV-2026-0042</strong>) kiểm tra hiện trạng san lấp.
+                </span>
+              </div>
+            </li>
+            <li className="flex items-start gap-2 p-1.5 rounded hover:bg-amber-50/50">
+              <span className="w-4 h-4 rounded-full bg-indigo-200 text-indigo-900 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">
+                3
               </span>
-            </div>
-          </li>
-        </ul>
+              <div>
+                <strong className="text-slate-900 font-semibold">Dẫn chứng #3 &amp; #4 – Trùng Nhân sự ký nhận &amp; Phiếu yêu cầu thu thập tài liệu (Khớp 95%): </strong>
+                <span>
+                  Ông <strong>Phạm Đức Tùng</strong> (Chỉ huy trưởng Gói thầu số 04 ký Bên B) có tên trong Biên bản làm việc ngày 18/05/2026; đồng thời chứng từ báo giá tháng 08–09/2026 khớp với <strong>Phiếu yêu cầu cung cấp tài liệu số 14/PYC-ĐXM ngày 10/09/2026</strong> của Tổ xác minh.
+                </span>
+              </div>
+            </li>
+          </ul>
+        ) : (
+          <ul className="space-y-1.5 text-[11.5px] text-slate-800">
+            <li className="flex items-start gap-2 p-1.5 rounded hover:bg-amber-50/50">
+              <span className="w-4 h-4 rounded-full bg-amber-200 text-amber-900 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">
+                1
+              </span>
+              <div>
+                <strong className="text-slate-900 font-semibold">Mâu thuẫn diện tích đất (150m²): </strong>
+                <span>
+                  Trích lục bản đồ địa chính ghi nhận 360m², nhưng Biên bản kiểm đếm lập 210m². Cần yêu cầu Chi nhánh Văn phòng Đăng ký đất đai quận Hà Đông cung cấp hồ sơ kỹ thuật thửa đất gốc để làm rõ diện tích giảm có phải do thu hồi trước đó hay do sai số đo đạc.
+                </span>
+              </div>
+            </li>
+            <li className="flex items-start gap-2 p-1.5 rounded hover:bg-amber-50/50">
+              <span className="w-4 h-4 rounded-full bg-amber-200 text-amber-900 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">
+                2
+              </span>
+              <div>
+                <strong className="text-slate-900 font-semibold">Nghi vấn hành vi tiêu cực, nhận hối lộ: </strong>
+                <span>
+                  Nội dung đòi tiền 200 triệu đồng chỉ là lời khai đơn phương của người tố cáo và các đoạn ghi âm trong USB chưa qua giám định tư pháp. Theo quy chế phối hợp, nếu có dấu hiệu tội phạm hình sự, cần lập hồ sơ chuyển cơ quan CSĐT phối hợp xác minh.
+                </span>
+              </div>
+            </li>
+            <li className="flex items-start gap-2 p-1.5 rounded hover:bg-amber-50/50">
+              <span className="w-4 h-4 rounded-full bg-amber-200 text-amber-900 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">
+                3
+              </span>
+              <div>
+                <strong className="text-slate-900 font-semibold">Tình trạng cưỡng chế thực địa: </strong>
+                <span>
+                  Đang có mâu thuẫn về việc san ủi hiện trường ngày 20/06/2026 trong khi công dân đang thực hiện quyền khiếu nại, tố cáo. Cần yêu cầu UBND phường Mộ Lao tạm dừng các biện pháp tác động thực địa để chờ kết luận xác minh.
+                </span>
+              </div>
+            </li>
+          </ul>
+        )}
       </div>
 
       {/* 5. GHI CHÚ ĐỐI SOÁT & XÁC NHẬN CỦA CÁN BỘ */}
